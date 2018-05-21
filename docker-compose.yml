@@ -10,7 +10,7 @@ services:
             - 5432:5432
         volumes:
             - postgres-data-volume:/var/lib/postgresql/data
-        container_name: postgres10-1
+        container_name: profile-db
 
     django:
         build: .
@@ -18,7 +18,7 @@ services:
         env_file:
             - ./.env
         environment:
-            DATABASE_URL: postgres://open_city_profile:open_city_profile@postgres10-1/open_city_profile
+            DATABASE_URL: postgres://open_city_profile:open_city_profile@profile-db/open_city_profile
         volumes:
             - .:/code
             - django-media-volume:/var/media/
