@@ -1,0 +1,33 @@
+version: '3'
+services:
+    postgres:
+        image: postgres:10.1
+        environment:
+            POSTGRES_USER: open_city_profile
+            POSTGRES_PASSWORD: open_city_profile
+            POSTGRES_DB: open_city_profile
+        ports:
+            - 5432:5432
+        volumes:
+            - postgres-data-volume:/var/lib/postgresql/data
+        container_name: postgres10-1
+
+    django:
+        build: .
+        command: bash -c 'tail -f /dev/null'
+        env_file:
+            - ./.env
+        environment:
+            DATABASE_URL: postgres://open_city_profile:open_city_profile@postgres10-1/open_city_profile
+        volumes:
+            - .:/code
+            - django-media-volume:/var/media/
+        ports:
+            - "8000:8000"
+        depends_on:
+            - postgres
+        container_name: profile-backend
+
+volumes:
+        postgres-data-volume:
+        django-media-volume:

@@ -1,0 +1,15 @@
+autoflake
+autopep8
+flake8
+importmagic
+ipython
+isort
+jedi
+pep8-naming
+pydocstyle
+pytest
+pytest-cov
+pytest-django
+rope
+yapf
+factory_boy
