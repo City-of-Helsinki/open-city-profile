@@ -24,6 +24,10 @@ env = environ.Env(
     CACHE_URL=(str, 'locmemcache://'),
     EMAIL_URL=(str, 'consolemail://'),
     SENTRY_DSN=(str, ''),
+    OIDC_API_TOKEN_AUDIENCE=(str, 'AUDIENCE_UNSET'),
+    OIDC_API_TOKEN_API_SCOPE_PREFIX=(str, 'API_SCOPE_PREFIX_UNSET'),
+    OIDC_API_TOKEN_REQUIRE_API_SCOPE_FOR_AUTHENTICATION=(str, True),
+    OIDC_API_TOKEN_ISSUER=(str, 'ISSUER_UNSET'),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -63,16 +67,25 @@ USE_TZ = True
 
 
 INSTALLED_APPS = [
+    'helusers',
+    'helusers.providers.helsinki_oidc',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'raven.contrib.django.raven_compat',
-    'helusers',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'rest_framework',
     'django_filters',
+
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -100,6 +113,29 @@ TEMPLATES = [
         },
     },
 ]
+
+# Authentication
+
+SITE_ID = 1
+AUTH_USER_MODEL = 'users.User'
+SOCIALACCOUNT_PROVIDERS = {
+    'helsinki_oidc': {
+        'VERIFIED_EMAIL': True
+    }
+}
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = True
+SOCIALACCOUNT_ADAPTER = 'helusers.adapter.SocialAccountAdapter'
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+OIDC_API_TOKEN_AUTH = {
+    'AUDIENCE': env.str('OIDC_API_TOKEN_AUDIENCE'),
+    'API_SCOPE_PREFIX': env.str('OIDC_API_TOKEN_API_SCOPE_PREFIX'),
+    'REQUIRE_API_SCOPE_FOR_AUTHENTICATION': env.str('OIDC_API_TOKEN_REQUIRE_API_SCOPE_FOR_AUTHENTICATION'),
+    'ISSUER': env.str('OIDC_API_TOKEN_ISSUER'),
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

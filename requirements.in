@@ -6,3 +6,4 @@ django-helusers
 djangorestframework
 django-filter
 coreapi
+django-allauth
