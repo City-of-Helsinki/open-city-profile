@@ -15,7 +15,7 @@
     * `docker exec -it profile-backend python manage.py createsuperuser`
    
 6. Run the server:
-    * `docker exec profile-backend python manage.py runserver 0:8000`
+    * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 
 ## Development without Docker
