@@ -7,3 +7,4 @@ djangorestframework
 django-filter
 coreapi
 django-allauth
+django-thesaurus>=0.0.2
