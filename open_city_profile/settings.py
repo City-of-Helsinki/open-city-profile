@@ -24,10 +24,10 @@ env = environ.Env(
     CACHE_URL=(str, 'locmemcache://'),
     EMAIL_URL=(str, 'consolemail://'),
     SENTRY_DSN=(str, ''),
-    OIDC_API_TOKEN_AUDIENCE=(str, 'AUDIENCE_UNSET'),
-    OIDC_API_TOKEN_API_SCOPE_PREFIX=(str, 'API_SCOPE_PREFIX_UNSET'),
-    OIDC_API_TOKEN_REQUIRE_API_SCOPE_FOR_AUTHENTICATION=(str, True),
-    OIDC_API_TOKEN_ISSUER=(str, 'ISSUER_UNSET'),
+    OIDC_CLIENT_ID=(str, ''),
+    OIDC_ENDPOINT=(str, ''),
+    OIDC_SECRET=(str, ''),
+    API_SCOPE_PREFIX=(str, ''),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -59,6 +59,12 @@ STATIC_URL = "/static/"
 ROOT_URLCONF = 'open_city_profile.urls'
 WSGI_APPLICATION = 'open_city_profile.wsgi.application'
 
+LANGUAGES = (
+    ('fi', 'Finnish'),
+    ('en', 'English'),
+    ('sv', 'Swedish'),
+)
+
 LANGUAGE_CODE = 'fi'
 TIME_ZONE = 'Europe/Helsinki'
 USE_I18N = True
@@ -88,6 +94,7 @@ INSTALLED_APPS = [
     'thesaurus',
 
     'users',
+    'profiles',
 ]
 
 MIDDLEWARE = [
@@ -133,11 +140,15 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
 OIDC_API_TOKEN_AUTH = {
-    'AUDIENCE': env.str('OIDC_API_TOKEN_AUDIENCE'),
-    'API_SCOPE_PREFIX': env.str('OIDC_API_TOKEN_API_SCOPE_PREFIX'),
-    'REQUIRE_API_SCOPE_FOR_AUTHENTICATION': env.str('OIDC_API_TOKEN_REQUIRE_API_SCOPE_FOR_AUTHENTICATION'),
-    'ISSUER': env.str('OIDC_API_TOKEN_ISSUER'),
+    'AUDIENCE': env.str('OIDC_CLIENT_ID'),
+    'API_SCOPE_PREFIX': env.str('API_SCOPE_PREFIX'),
+    'REQUIRE_API_SCOPE_FOR_AUTHENTICATION': True,
+    'ISSUER': env.str('OIDC_ENDPOINT'),
 }
+
+SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
+SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_SECRET')
+SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env.str('OIDC_ENDPOINT')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -152,3 +163,10 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
 }
+
+# Profiles related settings
+
+CONTACT_METHODS = (
+    ('email', 'Email'),
+    ('sms', 'SMS'),
+)
