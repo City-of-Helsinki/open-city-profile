@@ -66,3 +66,19 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
             raise Http404
 
         return profile
+
+
+class InterestConceptSerializer(serializers.ModelSerializer):
+    vocabulary = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='prefix'
+    )
+
+    class Meta:
+        model = Concept
+        fields = ['vocabulary', 'code', 'label',]
+
+
+class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Concept.objects.all()
+    serializer_class = InterestConceptSerializer
