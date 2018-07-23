@@ -1,0 +1,31 @@
+name: Helsinki
+origin_id: 91
+
+paths:
+    neighborhood: neighborhoods
+
+neighborhoods:
+  - type: neighborhood
+    name: Kaupunginosa
+    ocd_id: kaupunginosa
+    wfs_url: 'https://kartta.hel.fi/ws/geoserver/avoindata/wfs?sortBy=tunnus'
+    wfs_layer: 'avoindata:Kaupunginosajako'
+    fields:
+        name:
+            fi: nimi_fi
+            sv: nimi_se
+        origin_id: tunnus
+        ocd_id: nimi_fi
+
+  - type: sub_district
+    name: Osa-alue
+    parent: neighborhood
+    ocd_id: osa-alue
+    wfs_url: 'https://kartta.hel.fi/ws/geoserver/avoindata/wfs?sortBy=tunnus'
+    wfs_layer: 'avoindata:Piirijako_osaalue'
+    fields:
+        name:
+            fi: nimi_fi
+            sv: nimi_se
+        origin_id: tunnus
+        ocd_id: nimi_fi
