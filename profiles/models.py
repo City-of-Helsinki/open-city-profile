@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.contrib.postgres.fields import JSONField
+from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from users.models import User
@@ -13,4 +14,5 @@ class Profile(models.Model):
     language = models.CharField(max_length=7, choices=settings.LANGUAGES)
     contact_method = models.CharField(max_length=30, choices=settings.CONTACT_METHODS)
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
+    divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
     preferences = JSONField(null=True, blank=True)
