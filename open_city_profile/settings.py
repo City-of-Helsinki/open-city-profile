@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'parler',
+    'parler_rest',
     'thesaurus',
     'corsheaders',
 

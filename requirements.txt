@@ -14,7 +14,8 @@ django-cors-headers==2.4.0
 django-environ==0.4.4
 django-filter==1.1.0
 django-helusers==0.4.2
-django-parler==1.9.2      # via django-thesaurus
+django-parler-rest==1.4.2
+django-parler==1.9.2      # via django-parler-rest, django-thesaurus
 django-thesaurus==0.0.2
 django==2.0.5
 djangorestframework==3.8.2
