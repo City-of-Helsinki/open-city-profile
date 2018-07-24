@@ -180,3 +180,17 @@ CONTACT_METHODS = (
     ('email', 'Email'),
     ('sms', 'SMS'),
 )
+
+# Django-parler
+
+PARLER_LANGUAGES = {
+    1: (
+        {'code': 'fi',},
+        {'code': 'en',},
+        {'code': 'sv',},
+    ),
+    'default': {
+        'fallbacks': ['fi'],
+        'hide_untranslated': False,
+    }
+}
