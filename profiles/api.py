@@ -67,6 +67,10 @@ class ConceptRelatedField(RelatedField):
 
 class ProfileSerializer(serializers.ModelSerializer):
     concepts_of_interest = ConceptRelatedField(many=True)
+    divisions_of_interest = serializers.SlugRelatedField(
+        queryset=AdministrativeDivision.objects.all(),
+        many=True, slug_field='ocd_id'
+    )
 
     class Meta:
         exclude = ['id', 'user']
