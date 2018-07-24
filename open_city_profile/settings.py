@@ -100,6 +100,8 @@ INSTALLED_APPS = [
     'parler_rest',
     'thesaurus',
     'corsheaders',
+    'mptt',
+    'munigeo',
 
     'users',
     'profiles',
