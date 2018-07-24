@@ -2,6 +2,7 @@ import logging
 
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
+from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
 from rest_framework import serializers, generics, viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.relations import RelatedField
@@ -11,6 +12,31 @@ from thesaurus.models import Concept
 from profiles.models import Profile
 
 logger = logging.getLogger(__name__)
+
+
+class TranslatedModelSerializer(TranslatableModelSerializer):
+    translations = TranslatedFieldsField()
+
+    def to_representation(self, obj):
+        ret = super(TranslatedModelSerializer, self).to_representation(obj)
+        if obj is None:
+            return ret
+        return self.translated_fields_to_representation(obj, ret)
+
+    def translated_fields_to_representation(self, obj, ret):
+        translated_fields = {}
+
+        for lang_key, trans_dict in ret.pop('translations', {}).items():
+
+            for field_name, translation in trans_dict.items():
+                if not field_name in translated_fields:
+                    translated_fields[field_name] = {lang_key: translation}
+                else:
+                    translated_fields[field_name].update({lang_key: translation})
+
+        ret.update(translated_fields)
+
+        return ret
 
 
 class ConceptRelatedField(RelatedField):
@@ -68,7 +94,7 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
         return profile
 
 
-class InterestConceptSerializer(serializers.ModelSerializer):
+class InterestConceptSerializer(TranslatedModelSerializer):
     vocabulary = serializers.SlugRelatedField(
         read_only=True,
         slug_field='prefix'
@@ -76,7 +102,7 @@ class InterestConceptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Concept
-        fields = ['vocabulary', 'code', 'label',]
+        fields = ['vocabulary', 'code', 'translations',]
 
 
 class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
