@@ -2,6 +2,7 @@ import logging
 
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
+from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
 from rest_framework import serializers, generics, viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
@@ -108,3 +109,24 @@ class InterestConceptSerializer(TranslatedModelSerializer):
 class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Concept.objects.all()
     serializer_class = InterestConceptSerializer
+
+
+class GeoDivisionSerializer(TranslatedModelSerializer):
+    type = serializers.SlugRelatedField(read_only=True, slug_field='type')
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdministrativeDivision
+        fields = ('type', 'children', 'translations', 'origin_id', 'ocd_id', 'municipality')
+
+    def get_children(self, obj):
+        children = obj.children.filter(type__type='sub_district')
+        if children.count() <= 1:
+            return ''
+        serializer = GeoDivisionSerializer(children, many=True, context=self.context)
+        return serializer.data
+
+
+class GeoDivisionViewSet(viewsets.ModelViewSet):
+    queryset = AdministrativeDivision.objects.filter(type__type='neighborhood')
+    serializer_class = GeoDivisionSerializer
