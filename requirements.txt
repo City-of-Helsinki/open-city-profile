@@ -14,7 +14,11 @@ django-cors-headers==2.4.0
 django-environ==0.4.4
 django-filter==1.1.0
 django-helusers==0.4.2
-django-parler==1.9.2      # via django-thesaurus
+django-js-asset==1.1.0    # via django-mptt
+django-mptt==0.9.0        # via django-munigeo
+django-munigeo==0.3.0
+django-parler-rest==1.4.2
+django-parler==1.9.2      # via django-munigeo, django-parler-rest, django-thesaurus
 django-thesaurus==0.0.2
 django==2.0.5
 djangorestframework==3.8.2
@@ -34,8 +38,9 @@ python3-openid==3.1.0     # via django-allauth
 pytz==2018.4              # via django
 raven==6.8.0
 rdflib==4.2.2             # via django-thesaurus
+requests-cache==0.4.13    # via django-munigeo
 requests-oauthlib==0.8.0  # via django-allauth
-requests==2.18.4          # via coreapi, django-allauth, django-helusers, pyjwkest, requests-oauthlib
-six==1.11.0               # via django-environ, isodate, pyjwkest
+requests==2.18.4          # via coreapi, django-allauth, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
+six==1.11.0               # via django-munigeo, isodate, pyjwkest
 uritemplate==3.0.0        # via coreapi
 urllib3==1.22             # via requests

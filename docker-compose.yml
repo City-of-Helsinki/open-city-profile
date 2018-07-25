@@ -1,7 +1,8 @@
 version: '3'
 services:
     postgres:
-        image: postgres:10.1
+        build: ./docker/postgres/
+        restart: always
         environment:
             POSTGRES_USER: open_city_profile
             POSTGRES_PASSWORD: open_city_profile
@@ -9,11 +10,13 @@ services:
         ports:
             - 5432:5432
         volumes:
-            - postgres-data-volume:/var/lib/postgresql/data
+          - pgdata:/var/lib/postgresql/data
         container_name: profile-db
 
     django:
-        build: .
+        build:
+            context: ./
+            dockerfile: ./docker/django/Dockerfile
         command: bash -c 'tail -f /dev/null'
         env_file:
             - ./.env
@@ -29,5 +32,6 @@ services:
         container_name: profile-backend
 
 volumes:
-        postgres-data-volume:
+        pgdata:
+            driver: local
         django-media-volume:

@@ -2,6 +2,9 @@ FROM python:3.4
 
 ENV PYTHONUNBUFFERED 0
 
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y gdal-bin python-gdal python3-gdal
+
 RUN mkdir /code
 
 COPY requirements-dev.txt requirements.txt /code/

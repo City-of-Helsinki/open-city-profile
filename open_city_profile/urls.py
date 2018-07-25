@@ -3,11 +3,12 @@ from django.urls import include, path
 from rest_framework import routers
 from rest_framework.documentation import include_docs_urls
 
-from profiles.api import InterestConceptViewSet, ProfileViewSet
+from profiles.api import GeoDivisionViewSet, InterestConceptViewSet, ProfileViewSet
 
 router = routers.DefaultRouter()
 router.register('profile', ProfileViewSet)
 router.register('interest-concept', InterestConceptViewSet)
+router.register('geo-division', GeoDivisionViewSet, base_name='geo-division')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
