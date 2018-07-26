@@ -78,7 +78,6 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
