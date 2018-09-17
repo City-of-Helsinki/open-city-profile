@@ -131,5 +131,5 @@ class GeoDivisionSerializer(TranslatedModelSerializer):
 
 
 class GeoDivisionViewSet(viewsets.ModelViewSet):
-    queryset = AdministrativeDivision.objects.filter(type__type='neighborhood')
+    queryset = AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
     serializer_class = GeoDivisionSerializer
