@@ -5,6 +5,7 @@ from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
 from rest_framework import serializers, generics, viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.exceptions import APIException
 from rest_framework.relations import RelatedField
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 from thesaurus.models import Concept
@@ -64,6 +65,12 @@ class ConceptRelatedField(RelatedField):
             self.fail('incorrect_type', data_type=type(data).__name__)
 
 
+class ProfileAlreadyExists(APIException):
+    status_code = 409
+    default_detail = _('The profile for this user already exists.')
+    default_code = 'profile_already_exists'
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     concepts_of_interest = ConceptRelatedField(many=True)
     divisions_of_interest = serializers.SlugRelatedField(
@@ -84,6 +91,14 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        queryset = Profile.objects.filter(user=self.request.user)
+
+        if queryset.exists():
+            raise ProfileAlreadyExists()
+
+        serializer.save(user=self.request.user)
 
 
 class InterestConceptSerializer(TranslatedModelSerializer):
