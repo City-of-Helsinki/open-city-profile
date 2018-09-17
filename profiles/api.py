@@ -1,6 +1,5 @@
 import logging
 
-from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
@@ -85,17 +84,6 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
-
-    def get_object(self):
-        try:
-            profile = self.get_queryset().get(user=self.request.user)
-        except Profile.DoesNotExist:
-            # TODO: create profiles when the user is created, not here.
-            profile = Profile.objects.create(user=self.request.user)
-        except (TypeError, ValueError):
-            raise Http404
-
-        return profile
 
 
 class InterestConceptSerializer(TranslatedModelSerializer):
