@@ -87,6 +87,7 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+    lookup_field = 'user__uuid'
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
     def get_queryset(self):
