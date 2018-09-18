@@ -11,8 +11,14 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.EmailField(null=True, blank=True)
     phone = models.CharField(max_length=255, null=True, blank=True)
-    language = models.CharField(max_length=7, choices=settings.LANGUAGES)
-    contact_method = models.CharField(max_length=30, choices=settings.CONTACT_METHODS)
+    language = models.CharField(
+        max_length=7, choices=settings.LANGUAGES,
+        default=settings.LANGUAGES[0][0]
+    )
+    contact_method = models.CharField(
+        max_length=30, choices=settings.CONTACT_METHODS,
+        default=settings.CONTACT_METHODS[0][0]
+    )
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
     preferences = JSONField(null=True, blank=True)

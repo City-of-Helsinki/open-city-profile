@@ -1,11 +1,11 @@
 import logging
 
-from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
 from rest_framework import serializers, generics, viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.exceptions import APIException
 from rest_framework.relations import RelatedField
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 from thesaurus.models import Concept
@@ -65,6 +65,12 @@ class ConceptRelatedField(RelatedField):
             self.fail('incorrect_type', data_type=type(data).__name__)
 
 
+class ProfileAlreadyExists(APIException):
+    status_code = 409
+    default_detail = _('The profile for this user already exists.')
+    default_code = 'profile_already_exists'
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     concepts_of_interest = ConceptRelatedField(many=True)
     divisions_of_interest = serializers.SlugRelatedField(
@@ -81,21 +87,19 @@ class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+    lookup_field = 'user__uuid'
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
 
-    def get_object(self):
-        try:
-            profile = self.get_queryset().get(user=self.request.user)
-        except Profile.DoesNotExist:
-            # TODO: create profiles when the user is created, not here.
-            profile = Profile.objects.create(user=self.request.user)
-        except (TypeError, ValueError):
-            raise Http404
+    def perform_create(self, serializer):
+        queryset = Profile.objects.filter(user=self.request.user)
 
-        return profile
+        if queryset.exists():
+            raise ProfileAlreadyExists()
+
+        serializer.save(user=self.request.user)
 
 
 class InterestConceptSerializer(TranslatedModelSerializer):
