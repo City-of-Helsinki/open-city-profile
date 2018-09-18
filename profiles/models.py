@@ -16,3 +16,8 @@ class Profile(models.Model):
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
     preferences = JSONField(null=True, blank=True)
+
+
+class DivisionOfInterest(models.Model):
+    division = models.OneToOneField(
+        AdministrativeDivision, on_delete=models.CASCADE, related_name='division_of_interest')
