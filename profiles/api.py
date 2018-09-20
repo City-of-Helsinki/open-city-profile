@@ -72,10 +72,10 @@ class ProfileAlreadyExists(APIException):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    concepts_of_interest = ConceptRelatedField(many=True)
+    concepts_of_interest = ConceptRelatedField(many=True, required=False)
     divisions_of_interest = serializers.SlugRelatedField(
         queryset=AdministrativeDivision.objects.all(),
-        many=True, slug_field='ocd_id'
+        many=True, slug_field='ocd_id', required=False
     )
 
     class Meta:
