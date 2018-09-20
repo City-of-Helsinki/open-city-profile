@@ -134,6 +134,6 @@ class GeoDivisionSerializer(TranslatedModelSerializer):
         return serializer.data
 
 
-class GeoDivisionViewSet(viewsets.ModelViewSet):
+class GeoDivisionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
     serializer_class = GeoDivisionSerializer
