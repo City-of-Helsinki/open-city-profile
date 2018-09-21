@@ -188,9 +188,9 @@ CONTACT_METHODS = (
 
 PARLER_LANGUAGES = {
     1: (
-        {'code': 'fi',},
-        {'code': 'en',},
-        {'code': 'sv',},
+        {'code': 'fi'},
+        {'code': 'en'},
+        {'code': 'sv'},
     ),
     'default': {
         'fallbacks': ['fi'],
