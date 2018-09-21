@@ -15,7 +15,7 @@ else:
     default_var_root = checkout_dir('var')
 
 env = environ.Env(
-    DEBUG=(bool, False),
+    DEBUG=(bool, True),
     TIER=(str, 'dev'),  # one of: prod, qa, stage, test, dev
     SECRET_KEY=(str, ''),
     VAR_ROOT=(str, default_var_root),
@@ -197,3 +197,22 @@ PARLER_LANGUAGES = {
         'hide_untranslated': False,
     }
 }
+
+if 'SECRET_KEY' not in locals():
+    secret_file = os.path.join(BASE_DIR, '.django_secret')
+    try:
+        with open(secret_file) as f:
+            SECRET_KEY = f.read().strip()
+    except IOError:
+        import random
+        system_random = random.SystemRandom()
+        try:
+            SECRET_KEY = ''.join(
+                [system_random.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(64)])
+            with open(secret_file, 'w') as f:
+                import os
+                os.fchmod(f.fileno(), 0o0600)
+                f.write(SECRET_KEY)
+                f.close()
+        except IOError:
+            Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)

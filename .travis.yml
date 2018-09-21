@@ -1,0 +1,26 @@
+branches: {only: [master]}
+sudo: false
+language: python
+python: 3.4
+cache: pip
+
+addons:
+  postgresql: 9.6
+  apt:
+    packages:
+    - postgresql-9.6-postgis-2.3
+
+matrix:
+  include:
+    - env: TEST_PART=tests DATABASE_URL=postgres:///open_city_profile
+      services: [postgresql]
+      install: pip install -r requirements.txt -r requirements-dev.txt
+      before_script:
+        - psql -U postgres -c "create extension postgis"
+        - createdb open_city_profile
+      script: pytest -ra -vv --doctest-modules --cov=.
+      after_success: pip install codecov && codecov
+
+    - env: TEST_PART=style
+      install: pip install -r requirements.txt -r requirements-dev.txt
+      script: flake8
