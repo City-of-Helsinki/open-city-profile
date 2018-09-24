@@ -4,7 +4,6 @@ from django.utils.translation import ugettext_lazy as _
 from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
 from rest_framework import serializers, generics, viewsets, permissions
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.exceptions import APIException
 from rest_framework.relations import RelatedField
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
@@ -30,7 +29,7 @@ class TranslatedModelSerializer(TranslatableModelSerializer):
         for lang_key, trans_dict in ret.pop('translations', {}).items():
 
             for field_name, translation in trans_dict.items():
-                if not field_name in translated_fields:
+                if field_name not in translated_fields:
                     translated_fields[field_name] = {lang_key: translation}
                 else:
                     translated_fields[field_name].update({lang_key: translation})
@@ -110,7 +109,7 @@ class InterestConceptSerializer(TranslatedModelSerializer):
 
     class Meta:
         model = Concept
-        fields = ['vocabulary', 'code', 'translations',]
+        fields = ['vocabulary', 'code', 'translations']
 
 
 class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
