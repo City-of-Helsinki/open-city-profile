@@ -47,3 +47,21 @@ def test_put_update_own_profile(user_api_client, profile):
 
     profile.refresh_from_db()
     assert profile.phone == phone_number_data['phone']
+
+
+def test_expected_profile_data_fields(user_api_client, profile):
+    expected_fields = {
+        'nickname',
+        'email',
+        'phone',
+        'language',
+        'contact_method',
+        'concepts_of_interest',
+        'divisions_of_interest',
+        'preferences'
+    }
+
+    user_profile_url = get_user_profile_url(profile)
+    profile_endpoint_data = get(user_api_client, user_profile_url)
+
+    assert set(profile_endpoint_data.keys()) == expected_fields
