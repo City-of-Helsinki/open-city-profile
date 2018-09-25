@@ -3,10 +3,10 @@ import logging
 from django.utils.translation import ugettext_lazy as _
 from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
-from rest_framework import serializers, viewsets, permissions
+from rest_framework import permissions, serializers, viewsets
 from rest_framework.exceptions import APIException
 from rest_framework.relations import RelatedField
-from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from thesaurus.models import Concept
 
 from profiles.models import Profile

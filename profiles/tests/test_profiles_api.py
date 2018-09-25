@@ -4,7 +4,6 @@ from profiles.models import Profile
 from profiles.tests.factories import ProfileFactory
 from profiles.tests.utils import delete, get, post_create, put_update
 
-
 PROFILE_URL = reverse('profile-list')
 
 
