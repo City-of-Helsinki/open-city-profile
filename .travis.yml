@@ -23,4 +23,6 @@ matrix:
 
     - env: TEST_PART=style
       install: pip install -r requirements.txt -r requirements-dev.txt
-      script: flake8
+      script:
+        - flake8
+        - isort -c

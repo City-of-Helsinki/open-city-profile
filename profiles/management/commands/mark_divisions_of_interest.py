@@ -1,8 +1,9 @@
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.utils import translation
-from profiles.models import DivisionOfInterest
 from munigeo.models import AdministrativeDivision
+
+from profiles.models import DivisionOfInterest
 
 
 class Command(BaseCommand):
