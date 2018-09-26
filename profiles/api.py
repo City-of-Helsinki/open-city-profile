@@ -3,7 +3,7 @@ import logging
 from django.utils.translation import ugettext_lazy as _
 from munigeo.models import AdministrativeDivision
 from parler_rest.serializers import TranslatableModelSerializer, TranslatedFieldsField
-from rest_framework import serializers, generics, viewsets, permissions
+from rest_framework import serializers, viewsets, permissions
 from rest_framework.exceptions import APIException
 from rest_framework.relations import RelatedField
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
@@ -82,7 +82,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
 
 
-class ProfileViewSet(generics.RetrieveUpdateAPIView, viewsets.ModelViewSet):
+class ProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
