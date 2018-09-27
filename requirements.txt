@@ -30,6 +30,7 @@ itypes==1.1.0             # via coreapi
 jinja2==2.10              # via coreschema
 markupsafe==1.0           # via jinja2
 oauthlib==2.1.0           # via requests-oauthlib
+pillow==5.2.0
 psycopg2-binary==2.7.4
 pycryptodomex==3.6.1      # via pyjwkest
 pyjwkest==1.4.0           # via drf-oidc-auth
