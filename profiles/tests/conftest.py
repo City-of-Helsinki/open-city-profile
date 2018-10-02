@@ -1,8 +1,10 @@
 import factory.random
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from profiles.tests.factories import ProfileFactory, UserFactory
+from profiles.tests.utils import create_in_memory_image_file
 
 
 @pytest.fixture(autouse=True)
@@ -41,3 +43,21 @@ def user():
 @pytest.fixture
 def profile(user):
     return ProfileFactory(user=user)
+
+
+@pytest.fixture
+def default_image():
+    image_file = create_in_memory_image_file()
+    uploaded_image = SimpleUploadedFile(
+        'test_image.png',
+        image_file.read(),
+        'image/png',
+    )
+    return uploaded_image
+
+
+@pytest.fixture
+def profile_with_image(profile, default_image):
+    profile.image = default_image
+    profile.save()
+    return profile

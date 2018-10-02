@@ -16,7 +16,7 @@ django-filter==1.1.0
 django-helusers==0.4.2
 django-js-asset==1.1.0    # via django-mptt
 django-mptt==0.9.0        # via django-munigeo
-django-munigeo==0.3.0
+django-munigeo==0.3.1
 django-parler-rest==1.4.2
 django-parler==1.9.2      # via django-munigeo, django-parler-rest, django-thesaurus
 django-thesaurus==0.0.2
@@ -30,12 +30,14 @@ itypes==1.1.0             # via coreapi
 jinja2==2.10              # via coreschema
 markupsafe==1.0           # via jinja2
 oauthlib==2.1.0           # via requests-oauthlib
+pillow==5.2.0
 psycopg2-binary==2.7.4
 pycryptodomex==3.6.1      # via pyjwkest
 pyjwkest==1.4.0           # via drf-oidc-auth
 pyparsing==2.2.0          # via rdflib
 python3-openid==3.1.0     # via django-allauth
 pytz==2018.4              # via django
+pyyaml==3.13              # via django-munigeo
 raven==6.8.0
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.4.13    # via django-munigeo
