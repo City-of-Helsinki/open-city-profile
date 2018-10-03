@@ -45,6 +45,14 @@ def test_post_create_profile(user_api_client):
     assert profile.user == user_api_client.user
 
 
+def test_cannot_create_multiple_profiles(user_api_client, profile):
+    assert Profile.objects.count() == 1
+
+    post_create(user_api_client, PROFILE_URL, status_code=409)
+
+    assert Profile.objects.count() == 1
+
+
 def test_user_can_delete_own_profile(user_api_client, profile):
     assert Profile.objects.count() == 1
 
