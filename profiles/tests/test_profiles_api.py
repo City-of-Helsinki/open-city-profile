@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.utils import override_settings
 from rest_framework.reverse import reverse
+from thesaurus.models import Concept
 
 from profiles.models import get_user_media_folder, Profile
 from profiles.tests.factories import ProfileFactory
@@ -138,3 +139,49 @@ def test_override_previous_profile_image(user_api_client, profile_with_image):
     new_image_path = os.path.join(settings.MEDIA_ROOT, profile_with_image.image.url)
     assert os.path.exists(new_image_path)
     assert not os.path.exists(old_image_path)
+
+
+def test_concept_of_interest_to_representation(user_api_client, profile, concept):
+    profile.concepts_of_interest.add(concept)
+    user_profile_url = get_user_profile_url(profile)
+    profile_endpoint_data = get(user_api_client, user_profile_url)
+
+    serialized_concept_of_interest = '{}:{}'.format(concept.vocabulary.prefix, concept.code)
+
+    assert serialized_concept_of_interest in profile_endpoint_data['concepts_of_interest']
+
+
+def test_concept_of_interest_to_internal_value(user_api_client, profile, concept):
+    assert not profile.concepts_of_interest.exists()
+
+    serialized_concept_of_interest = '{}:{}'.format(concept.vocabulary.prefix, concept.code)
+    concept_of_interest_data = {'concepts_of_interest': [serialized_concept_of_interest]}
+
+    user_profile_url = get_user_profile_url(profile)
+    put_update(user_api_client, user_profile_url, concept_of_interest_data)
+
+    assert profile.concepts_of_interest.exists()
+    coi = profile.concepts_of_interest.first()
+    assert coi == concept
+
+
+def test_put_nonexistent_concept_of_interest(user_api_client, profile):
+    assert not profile.concepts_of_interest.exists()
+    assert not Concept.objects.exists()
+
+    serialized_concept_of_interest = 'nonexistent:concept'
+    concept_of_interest_data = {'concepts_of_interest': [serialized_concept_of_interest]}
+
+    user_profile_url = get_user_profile_url(profile)
+    put_update(user_api_client, user_profile_url, concept_of_interest_data, status_code=400)
+
+
+def test_put_concept_of_interest_in_wrong_format(user_api_client, profile, concept):
+    assert not profile.concepts_of_interest.exists()
+    assert Concept.objects.exists()
+
+    badly_serialized_concept_of_interest = '{}-{}'.format(concept.vocabulary.prefix, concept.code)
+    concept_of_interest_data = {'concepts_of_interest': [badly_serialized_concept_of_interest]}
+
+    user_profile_url = get_user_profile_url(profile)
+    put_update(user_api_client, user_profile_url, concept_of_interest_data, status_code=400)

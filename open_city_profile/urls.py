@@ -9,7 +9,7 @@ from profiles.api import GeoDivisionViewSet, InterestConceptViewSet, ProfileView
 
 router = routers.DefaultRouter()
 router.register('profile', ProfileViewSet)
-router.register('interest-concept', InterestConceptViewSet)
+router.register('interest-concept', InterestConceptViewSet, base_name='interest-concept')
 router.register('geo-division', GeoDivisionViewSet, base_name='geo-division')
 
 urlpatterns = [

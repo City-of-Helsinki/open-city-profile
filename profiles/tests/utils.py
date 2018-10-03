@@ -31,6 +31,20 @@ def delete(api_client, url, status_code=204):
     return response.data
 
 
+def check_disallowed_methods(api_client, urls, methods, status_code=405):
+    if isinstance(urls, str):
+        urls = (urls,)
+    if isinstance(methods, str):
+        methods = (methods,)
+
+    for url in urls:
+        for method in methods:
+            response = getattr(api_client, method)(url)
+            assert response.status_code == status_code, (
+                '%s %s expected %s, but got %s %s' % (method, url, status_code, response.status_code, response.data)
+            )
+
+
 def create_in_memory_image_file(name='test_image', image_format='png', size=(512, 256), color=(128, 128, 128)):
     image = Image.new('RGBA', size=size, color=color)
     file = BytesIO()

@@ -3,7 +3,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from profiles.tests.factories import ProfileFactory, UserFactory
+from profiles.tests.factories import ConceptFactory, ProfileFactory, UserFactory, VocabularyFactory
 from profiles.tests.utils import create_in_memory_image_file
 
 
@@ -43,6 +43,16 @@ def user():
 @pytest.fixture
 def profile(user):
     return ProfileFactory(user=user)
+
+
+@pytest.fixture
+def vocabulary():
+    return VocabularyFactory()
+
+
+@pytest.fixture
+def concept(vocabulary):
+    return ConceptFactory(vocabulary=vocabulary)
 
 
 @pytest.fixture
