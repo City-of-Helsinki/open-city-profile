@@ -13,8 +13,14 @@
 
 5. Create superuser if needed: 
     * `docker exec -it profile-backend python manage.py createsuperuser`
-   
-6. Run the server:
+    
+6. Import relevant Helsinki regions if needed:
+
+    * `docker exec profile-backend python manage.py geo_import finland --municipalities`
+    * `docker exec profile-backend python manage.py geo_import helsinki --divisions`
+    * `docker exec profile-backend python manage.py mark_divisions_of_interest`
+  
+7. Run the server:
     * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 
@@ -50,6 +56,15 @@ Create user and database
 Allow user to create test database
 
     sudo -u postgres psql -c "ALTER USER open_city_profile CREATEDB;"
+
+### Import administrative divisions
+
+In order to have the relevant Helsinki regions run the following commands:
+
+* `python manage.py geo_import finland --municipalities`
+* `python manage.py geo_import helsinki --divisions`
+* `python manage.py mark_divisions_of_interest`
+
 
 ### Daily running
 
