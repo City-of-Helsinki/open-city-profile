@@ -2,7 +2,7 @@ version: '3'
 services:
     postgres:
         build: ./docker/postgres/
-        restart: always
+        restart: unless-stopped
         environment:
             POSTGRES_USER: open_city_profile
             POSTGRES_PASSWORD: open_city_profile
