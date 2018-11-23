@@ -135,6 +135,8 @@ TEMPLATES = [
     },
 ]
 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
+
 CORS_ORIGIN_ALLOW_ALL = True
 
 # Authentication
