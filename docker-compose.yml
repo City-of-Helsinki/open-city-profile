@@ -2,13 +2,13 @@ version: '3'
 services:
     postgres:
         build: ./docker/postgres/
-        restart: unless-stopped
+        restart: on-failure
         environment:
             POSTGRES_USER: open_city_profile
             POSTGRES_PASSWORD: open_city_profile
             POSTGRES_DB: open_city_profile
         ports:
-            - 5432:5432
+            - 5433:5433
         volumes:
           - pgdata:/var/lib/postgresql/data
         container_name: profile-db
@@ -17,7 +17,7 @@ services:
         build:
             context: ./
             dockerfile: ./docker/django/Dockerfile
-        command: bash -c 'tail -f /dev/null'
+        command: python manage.py runserver 0:8080
         env_file:
             - ./.env
         environment:
@@ -26,7 +26,7 @@ services:
             - .:/code
             - django-media-volume:/var/media/
         ports:
-            - "8000:8000"
+            - "8080:8080"
         depends_on:
             - postgres
         container_name: profile-backend
