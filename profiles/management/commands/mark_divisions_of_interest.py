@@ -7,22 +7,25 @@ from profiles.models import DivisionOfInterest
 
 
 class Command(BaseCommand):
-    help = 'Mark divisions of interest'
+    help = "Mark divisions of interest"
 
     def handle(self, *args, **options):
         translation.activate(settings.LANGUAGES[0][0])
-        divisions = AdministrativeDivision.objects.filter(type__type__in=('neighborhood', 'sub_district'))\
-            .select_related('type')
+        divisions = AdministrativeDivision.objects.filter(
+            type__type__in=("neighborhood", "sub_district")
+        ).select_related("type")
 
-        n_list = [div for div in divisions if div.type.type == 'neighborhood']
-        sd_list = [div for div in divisions if div.type.type == 'sub_district']
-        n_names = {x.name for x in n_list if x.type.type == 'neighborhood'}
-        sd_names = {x.name for x in sd_list if x.type.type == 'sub_district'}
+        n_list = [div for div in divisions if div.type.type == "neighborhood"]
+        sd_list = [div for div in divisions if div.type.type == "sub_district"]
+        n_names = {x.name for x in n_list if x.type.type == "neighborhood"}
+        sd_names = {x.name for x in sd_list if x.type.type == "sub_district"}
 
         # Select all neighborhoods and those sub districts that are not one-to-one
         # mapped to a neighborhood (which in this case means they have a unique name)
         common_names = n_names.intersection(sd_names)
-        selected_divs = n_list + [div for div in sd_list if div.name not in common_names]
+        selected_divs = n_list + [
+            div for div in sd_list if div.name not in common_names
+        ]
 
         print("Marking the following administrative divisions:")
         for div in sorted(selected_divs, key=lambda x: x.name):

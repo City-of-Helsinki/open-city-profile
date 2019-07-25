@@ -5,14 +5,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('profiles', '0001_initial'),
-    ]
+    dependencies = [("profiles", "0001_initial")]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='divisions_of_interest',
-            field=models.ManyToManyField(blank=True, to='munigeo.AdministrativeDivision'),
-        ),
+            model_name="profile",
+            name="divisions_of_interest",
+            field=models.ManyToManyField(
+                blank=True, to="munigeo.AdministrativeDivision"
+            ),
+        )
     ]

@@ -11,6 +11,5 @@ class ExtendedUserAdmin(admin.ModelAdmin):
     inlines = [ProfileAdmin]
 
     def get_readonly_fields(self, request, obj=None):
-        fields = super(ExtendedUserAdmin, self).get_readonly_fields(
-            request, obj)
-        return list(fields) + ['uuid']
+        fields = super(ExtendedUserAdmin, self).get_readonly_fields(request, obj)
+        return list(fields) + ["uuid"]

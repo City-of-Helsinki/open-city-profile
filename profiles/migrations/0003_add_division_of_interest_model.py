@@ -7,16 +7,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('munigeo', '0004_delete_old_translations'),
-        ('profiles', '0002_add_munigeo_districts_to_profile'),
+        ("munigeo", "0004_delete_old_translations"),
+        ("profiles", "0002_add_munigeo_districts_to_profile"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DivisionOfInterest',
+            name="DivisionOfInterest",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('division', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='division_of_interest', to='munigeo.AdministrativeDivision')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "division",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="division_of_interest",
+                        to="munigeo.AdministrativeDivision",
+                    ),
+                ),
             ],
-        ),
+        )
     ]
