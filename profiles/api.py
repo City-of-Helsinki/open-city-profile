@@ -26,7 +26,7 @@ class TranslatedModelSerializer(TranslatableModelSerializer):
     def translated_fields_to_representation(self, obj, ret):
         translated_fields = {}
 
-        for lang_key, trans_dict in ret.pop('translations', {}).items():
+        for lang_key, trans_dict in ret.pop("translations", {}).items():
 
             for field_name, translation in trans_dict.items():
                 if field_name not in translated_fields:
@@ -41,44 +41,50 @@ class TranslatedModelSerializer(TranslatableModelSerializer):
 
 class ConceptRelatedField(RelatedField):
     default_error_messages = {
-        'required': _('This field is required.'),
-        'does_not_exist': _('Invalid prefix and/or code in "{value}" - object does not exist.'),
-        'incorrect_type': _('Incorrect type. Expected concept string in format "prefix:code", received {data_type}.'),
+        "required": _("This field is required."),
+        "does_not_exist": _(
+            'Invalid prefix and/or code in "{value}" - object does not exist.'
+        ),
+        "incorrect_type": _(
+            'Incorrect type. Expected concept string in format "prefix:code", received {data_type}.'
+        ),
     }
     queryset = Concept.objects.all()
 
     def to_representation(self, value):
-        return '{}:{}'.format(value.vocabulary.prefix, value.code)
+        return "{}:{}".format(value.vocabulary.prefix, value.code)
 
     def to_internal_value(self, data):
         try:
-            (prefix, code) = data.split(':')
+            (prefix, code) = data.split(":")
         except (ValueError, KeyError):
-            self.fail('incorrect_type', data_type=type(data).__name__)
+            self.fail("incorrect_type", data_type=type(data).__name__)
 
         try:
             return Concept.objects.get(vocabulary__prefix=prefix, code=code)
         except Concept.DoesNotExist:
-            self.fail('does_not_exist', value=data)
+            self.fail("does_not_exist", value=data)
         except (TypeError, ValueError):
-            self.fail('incorrect_type', data_type=type(data).__name__)
+            self.fail("incorrect_type", data_type=type(data).__name__)
 
 
 class ProfileAlreadyExists(APIException):
     status_code = 409
-    default_detail = _('The profile for this user already exists.')
-    default_code = 'profile_already_exists'
+    default_detail = _("The profile for this user already exists.")
+    default_code = "profile_already_exists"
 
 
 class ProfileSerializer(serializers.ModelSerializer):
     concepts_of_interest = ConceptRelatedField(many=True, required=False)
     divisions_of_interest = serializers.SlugRelatedField(
         queryset=AdministrativeDivision.objects.all(),
-        many=True, slug_field='ocd_id', required=False
+        many=True,
+        slug_field="ocd_id",
+        required=False,
     )
 
     class Meta:
-        exclude = ['id', 'user']
+        exclude = ["id", "user"]
         model = Profile
 
 
@@ -86,7 +92,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    lookup_field = 'user__uuid'
+    lookup_field = "user__uuid"
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
     def get_queryset(self):
@@ -102,14 +108,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
 class InterestConceptSerializer(TranslatedModelSerializer):
-    vocabulary = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='prefix'
-    )
+    vocabulary = serializers.SlugRelatedField(read_only=True, slug_field="prefix")
 
     class Meta:
         model = Concept
-        fields = ['vocabulary', 'code', 'translations']
+        fields = ["vocabulary", "code", "translations"]
 
 
 class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
@@ -118,17 +121,24 @@ class InterestConceptViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GeoDivisionSerializer(TranslatedModelSerializer):
-    type = serializers.SlugRelatedField(read_only=True, slug_field='type')
+    type = serializers.SlugRelatedField(read_only=True, slug_field="type")
     children = serializers.SerializerMethodField()
 
     class Meta:
         model = AdministrativeDivision
-        fields = ('type', 'children', 'translations', 'origin_id', 'ocd_id', 'municipality')
+        fields = (
+            "type",
+            "children",
+            "translations",
+            "origin_id",
+            "ocd_id",
+            "municipality",
+        )
 
     def get_children(self, obj):
-        children = obj.children.filter(type__type='sub_district')
+        children = obj.children.filter(type__type="sub_district")
         if children.count() <= 1:
-            return ''
+            return ""
         serializer = GeoDivisionSerializer(children, many=True, context=self.context)
         return serializer.data
 

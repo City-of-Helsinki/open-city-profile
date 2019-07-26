@@ -3,7 +3,12 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from profiles.tests.factories import ConceptFactory, ProfileFactory, UserFactory, VocabularyFactory
+from profiles.tests.factories import (
+    ConceptFactory,
+    ProfileFactory,
+    UserFactory,
+    VocabularyFactory,
+)
 from profiles.tests.utils import create_in_memory_image_file
 
 
@@ -19,7 +24,7 @@ def set_random_seed():
 
 @pytest.fixture(autouse=True)
 def email_setup(settings):
-    settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 
 @pytest.fixture
@@ -59,9 +64,7 @@ def concept(vocabulary):
 def default_image():
     image_file = create_in_memory_image_file()
     uploaded_image = SimpleUploadedFile(
-        'test_image.png',
-        image_file.read(),
-        'image/png',
+        "test_image.png", image_file.read(), "image/png"
     )
     return uploaded_image
 

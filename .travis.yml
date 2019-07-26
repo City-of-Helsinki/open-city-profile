@@ -1,14 +1,14 @@
 branches: {only: [master]}
 sudo: false
 language: python
-python: 3.4
+python: 3.7
 cache: pip
 
 addons:
   postgresql: 9.6
   apt:
     packages:
-    - postgresql-9.6-postgis-2.3
+    - postgresql-9.6-postgis-2.4
 
 matrix:
   include:
@@ -26,3 +26,4 @@ matrix:
       script:
         - flake8
         - isort -c
+        - black . --check
