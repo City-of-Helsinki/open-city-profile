@@ -26,3 +26,4 @@ matrix:
       script:
         - flake8
         - isort -c
+        - black . --check
