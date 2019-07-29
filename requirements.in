@@ -1,7 +1,6 @@
 django-environ
 Django
 psycopg2-binary
-raven
 django-helusers
 djangorestframework
 django-filter
@@ -12,3 +11,4 @@ django-cors-headers
 django-parler-rest
 django-munigeo
 pillow
+sentry-sdk

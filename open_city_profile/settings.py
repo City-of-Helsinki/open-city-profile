@@ -1,7 +1,9 @@
 import os
+import subprocess
 
 import environ
-import raven
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 checkout_dir = environ.Path(__file__) - 2
 assert os.path.exists(checkout_dir("manage.py"))
@@ -37,10 +39,13 @@ env = environ.Env(
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-try:
-    version = raven.fetch_git_sha(checkout_dir())
-except Exception:
-    version = None
+version = subprocess.check_output(["git", "describe", "--always"]).strip()
+sentry_sdk.init(
+    dsn=env.str("SENTRY_DSN", ""),
+    release=version,
+    environment=env.str("SENTRY_ENVIRONMENT", "development"),
+    integrations=[DjangoIntegration()],
+)
 
 BASE_DIR = str(checkout_dir)
 DEBUG = env.bool("DEBUG")
@@ -57,7 +62,6 @@ DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
 CACHES = {"default": env.cache()}
 vars().update(env.email_url())  # EMAIL_BACKEND etc.
-RAVEN_CONFIG = {"dsn": env.str("SENTRY_DSN"), "release": version}
 
 var_root = env.path("VAR_ROOT")
 MEDIA_ROOT = var_root("media")
@@ -87,7 +91,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
-    "raven.contrib.django.raven_compat",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
