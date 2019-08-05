@@ -1,13 +1,13 @@
 import os
 import tempfile
-import reversion
 
+import reversion
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.utils import override_settings
 from rest_framework.reverse import reverse
-from thesaurus.models import Concept
 from reversion.models import Version
+from thesaurus.models import Concept
 
 from profiles.models import get_user_media_folder, Profile
 from profiles.tests.factories import ProfileFactory
@@ -45,7 +45,7 @@ def test_user_can_see_only_own_profile(user_api_client, profile):
 
 def test_staff_can_view_all_profiles(staff_api_client):
     a_user_profile = ProfileFactory()
-    other_user_profile = ProfileFactory()
+    other_user_profile = ProfileFactory()  # noqa
 
     data = get(staff_api_client, PROFILE_URL)
     results = data["results"]
@@ -256,7 +256,9 @@ def test_update_own_profile_creates_change_log_entry(user_api_client):
     assert versions[0].field_dict["email"] == email_data["email"]
 
 
-def test_admin_update_profile_creates_change_log_entry(user_api_client, staff_api_client):
+def test_admin_update_profile_creates_change_log_entry(
+    user_api_client, staff_api_client
+):
     with reversion.create_revision():
         post_create(user_api_client, PROFILE_URL)
 

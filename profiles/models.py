@@ -1,8 +1,7 @@
 import os
 import shutil
+
 import reversion
-
-
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
@@ -55,7 +54,9 @@ class Profile(models.Model):
     preferences = JSONField(null=True, blank=True)
 
     def __str__(self):
-        return "{} {} ({})".format(self.user.first_name, self.user.last_name, self.user.uuid)
+        return "{} {} ({})".format(
+            self.user.first_name, self.user.last_name, self.user.uuid
+        )
 
 
 class DivisionOfInterest(models.Model):

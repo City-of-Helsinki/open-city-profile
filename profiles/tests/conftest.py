@@ -6,8 +6,8 @@ from rest_framework.test import APIClient
 from profiles.tests.factories import (
     ConceptFactory,
     ProfileFactory,
-    UserFactory,
     StaffUserFactory,
+    UserFactory,
     VocabularyFactory,
 )
 from profiles.tests.utils import create_in_memory_image_file

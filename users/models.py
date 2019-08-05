@@ -1,5 +1,4 @@
 import reversion
-
 from helusers.models import AbstractUser
 
 
