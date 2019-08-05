@@ -7,6 +7,7 @@ from profiles.tests.factories import (
     ConceptFactory,
     ProfileFactory,
     UserFactory,
+    StaffUserFactory,
     VocabularyFactory,
 )
 from profiles.tests.utils import create_in_memory_image_file
@@ -43,6 +44,19 @@ def user_api_client(user):
 @pytest.fixture
 def user():
     return UserFactory()
+
+
+@pytest.fixture
+def staff_api_client(staff_user):
+    api_client = APIClient()
+    api_client.force_authenticate(user=staff_user)
+    api_client.user = staff_user
+    return api_client
+
+
+@pytest.fixture
+def staff_user():
+    return StaffUserFactory()
 
 
 @pytest.fixture

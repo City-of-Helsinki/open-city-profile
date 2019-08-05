@@ -17,6 +17,13 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
 
 
+class StaffUserFactory(UserFactory):
+    is_staff = True
+
+    class Meta:
+        model = User
+
+
 class ProfileFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
 
