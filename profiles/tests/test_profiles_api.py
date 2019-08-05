@@ -43,15 +43,15 @@ def test_user_can_see_only_own_profile(user_api_client, profile):
     get(user_api_client, get_user_profile_url(other_user_profile), status_code=404)
 
 
-def test_staff_can_view_all_profiles(staff_api_client):
+def test_superuser_can_view_all_profiles(superuser_api_client):
     a_user_profile = ProfileFactory()
     other_user_profile = ProfileFactory()  # noqa
 
-    data = get(staff_api_client, PROFILE_URL)
+    data = get(superuser_api_client, PROFILE_URL)
     results = data["results"]
     assert len(results) == 2
 
-    get(staff_api_client, get_user_profile_url(a_user_profile), status_code=200)
+    get(superuser_api_client, get_user_profile_url(a_user_profile), status_code=200)
 
 
 def test_post_create_own_profile(user_api_client):
@@ -103,14 +103,14 @@ def test_put_update_own_profile(user_api_client, profile):
     assert profile.phone == phone_number_data["phone"]
 
 
-def test_staff_can_update_profile(staff_api_client, profile):
+def test_superuser_can_update_profile(superuser_api_client, profile):
     new_email_data = {"email": "new.email@provider.com"}
     assert profile.email != new_email_data["email"]
 
-    put_update(staff_api_client, get_user_profile_url(profile), new_email_data)
+    put_update(superuser_api_client, get_user_profile_url(profile), new_email_data)
     profile.refresh_from_db()
     assert profile.email == new_email_data["email"]
-    assert profile.user != staff_api_client.user
+    assert profile.user != superuser_api_client.user
 
 
 def test_expected_profile_data_fields(user_api_client, profile):
@@ -257,7 +257,7 @@ def test_update_own_profile_creates_change_log_entry(user_api_client):
 
 
 def test_admin_update_profile_creates_change_log_entry(
-    user_api_client, staff_api_client
+    user_api_client, superuser_api_client
 ):
     with reversion.create_revision():
         post_create(user_api_client, PROFILE_URL)
@@ -269,9 +269,9 @@ def test_admin_update_profile_creates_change_log_entry(
 
     user_profile_url = get_user_profile_url(profile)
     email_data = {"email": "new.email@provider.com"}
-    put_update(staff_api_client, user_profile_url, email_data)
+    put_update(superuser_api_client, user_profile_url, email_data)
 
     profile.refresh_from_db()
     versions = Version.objects.get_for_object(profile)
     assert len(versions) == 2
-    assert versions[0].revision.user == staff_api_client.user
+    assert versions[0].revision.user == superuser_api_client.user

@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from profiles.tests.factories import (
     ConceptFactory,
     ProfileFactory,
-    StaffUserFactory,
+    SuperuserFactory,
     UserFactory,
     VocabularyFactory,
 )
@@ -47,16 +47,16 @@ def user():
 
 
 @pytest.fixture
-def staff_api_client(staff_user):
+def superuser_api_client(superuser):
     api_client = APIClient()
-    api_client.force_authenticate(user=staff_user)
-    api_client.user = staff_user
+    api_client.force_authenticate(user=superuser)
+    api_client.user = superuser
     return api_client
 
 
 @pytest.fixture
-def staff_user():
-    return StaffUserFactory()
+def superuser():
+    return SuperuserFactory()
 
 
 @pytest.fixture

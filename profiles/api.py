@@ -96,7 +96,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.is_superuser:
             return self.queryset
         return self.queryset.filter(user=self.request.user)
 

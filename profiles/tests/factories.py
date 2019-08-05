@@ -17,8 +17,8 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
 
 
-class StaffUserFactory(UserFactory):
-    is_staff = True
+class SuperuserFactory(UserFactory):
+    is_superuser = True
 
     class Meta:
         model = User
