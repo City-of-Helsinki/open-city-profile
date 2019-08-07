@@ -11,6 +11,8 @@ from thesaurus.models import Concept
 
 from users.models import User
 
+from .consts import REPRESENTATION_TYPE, REPRESENTATIVE_CONFIRMATION_DEGREE
+
 
 def get_user_media_folder(instance, filename):
     return "%s/profile_images/%s" % (instance.user.uuid, filename)
@@ -27,6 +29,28 @@ class OverwriteStorage(FileSystemStorage):
         if self.exists(dir_name):
             shutil.rmtree(os.path.join(settings.MEDIA_ROOT, dir_name))
         return name
+
+
+@reversion.register()
+class LegalRelationship(models.Model):
+    representative = models.ForeignKey(  # "parent"
+        "Profile", related_name="representatives", on_delete=models.CASCADE
+    )
+    representee = models.ForeignKey(  # "child"
+        "Profile", related_name="representees", on_delete=models.CASCADE
+    )
+    type = models.CharField(  # ATM only "custodianship"
+        max_length=30, choices=REPRESENTATION_TYPE, default=REPRESENTATION_TYPE[0][0]
+    )
+    confirmation_degree = models.CharField(
+        max_length=30,
+        choices=REPRESENTATIVE_CONFIRMATION_DEGREE,
+        default=REPRESENTATIVE_CONFIRMATION_DEGREE[0][0],
+    )
+    expiration = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return "{} - {}".format(self.representative, self.type)
 
 
 @reversion.register()
@@ -52,6 +76,10 @@ class Profile(models.Model):
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
     preferences = JSONField(null=True, blank=True)
+
+    legal_relationships = models.ManyToManyField(
+        "self", through=LegalRelationship, symmetrical=False
+    )
 
     def __str__(self):
         return "{} {} ({})".format(
