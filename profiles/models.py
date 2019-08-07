@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import reversion
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
@@ -28,6 +29,7 @@ class OverwriteStorage(FileSystemStorage):
         return name
 
 
+@reversion.register()
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     nickname = models.CharField(max_length=32, null=True, blank=True)
@@ -50,6 +52,11 @@ class Profile(models.Model):
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
     preferences = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return "{} {} ({})".format(
+            self.user.first_name, self.user.last_name, self.user.uuid
+        )
 
 
 class DivisionOfInterest(models.Model):

@@ -1,10 +1,12 @@
 import os
 import tempfile
 
+import reversion
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.utils import override_settings
 from rest_framework.reverse import reverse
+from reversion.models import Version
 from thesaurus.models import Concept
 
 from profiles.models import get_user_media_folder, Profile
@@ -41,7 +43,18 @@ def test_user_can_see_only_own_profile(user_api_client, profile):
     get(user_api_client, get_user_profile_url(other_user_profile), status_code=404)
 
 
-def test_post_create_profile(user_api_client):
+def test_superuser_can_view_all_profiles(superuser_api_client):
+    a_user_profile = ProfileFactory()
+    other_user_profile = ProfileFactory()  # noqa
+
+    data = get(superuser_api_client, PROFILE_URL)
+    results = data["results"]
+    assert len(results) == 2
+
+    get(superuser_api_client, get_user_profile_url(a_user_profile), status_code=200)
+
+
+def test_post_create_own_profile(user_api_client):
     assert Profile.objects.count() == 0
 
     post_create(user_api_client, PROFILE_URL)
@@ -88,6 +101,16 @@ def test_put_update_own_profile(user_api_client, profile):
 
     profile.refresh_from_db()
     assert profile.phone == phone_number_data["phone"]
+
+
+def test_superuser_can_update_profile(superuser_api_client, profile):
+    new_email_data = {"email": "new.email@provider.com"}
+    assert profile.email != new_email_data["email"]
+
+    put_update(superuser_api_client, get_user_profile_url(profile), new_email_data)
+    profile.refresh_from_db()
+    assert profile.email == new_email_data["email"]
+    assert profile.user != superuser_api_client.user
 
 
 def test_expected_profile_data_fields(user_api_client, profile):
@@ -212,3 +235,43 @@ def test_put_concept_of_interest_in_wrong_format(user_api_client, profile, conce
     put_update(
         user_api_client, user_profile_url, concept_of_interest_data, status_code=400
     )
+
+
+def test_update_own_profile_creates_change_log_entry(user_api_client):
+    with reversion.create_revision():
+        post_create(user_api_client, PROFILE_URL)
+
+    profile = Profile.objects.latest("id")
+    versions = Version.objects.get_for_object(profile)
+    assert len(versions) == 1
+
+    user_profile_url = get_user_profile_url(profile)
+    email_data = {"email": "new.email@provider.com"}
+    put_update(user_api_client, user_profile_url, email_data)
+
+    profile.refresh_from_db()
+    versions = Version.objects.get_for_object(profile)
+    assert len(versions) == 2
+    assert versions[0].revision.user == user_api_client.user
+    assert versions[0].field_dict["email"] == email_data["email"]
+
+
+def test_admin_update_profile_creates_change_log_entry(
+    user_api_client, superuser_api_client
+):
+    with reversion.create_revision():
+        post_create(user_api_client, PROFILE_URL)
+
+    profile = Profile.objects.latest("id")
+    versions = Version.objects.get_for_object(profile)
+    assert len(versions) == 1
+    assert versions[0].revision.user == user_api_client.user
+
+    user_profile_url = get_user_profile_url(profile)
+    email_data = {"email": "new.email@provider.com"}
+    put_update(superuser_api_client, user_profile_url, email_data)
+
+    profile.refresh_from_db()
+    versions = Version.objects.get_for_object(profile)
+    assert len(versions) == 2
+    assert versions[0].revision.user == superuser_api_client.user

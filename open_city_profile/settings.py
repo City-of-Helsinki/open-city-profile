@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     "munigeo",
     "users",
     "profiles",
+    "reversion",
 ]
 
 MIDDLEWARE = [
@@ -116,6 +117,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "reversion.middleware.RevisionMiddleware",
 ]
 
 TEMPLATES = [
