@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     "users",
     "profiles",
     "reversion",
+    "youths",
 ]
 
 MIDDLEWARE = [
