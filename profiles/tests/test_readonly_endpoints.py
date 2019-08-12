@@ -1,6 +1,6 @@
 from rest_framework.reverse import reverse
 
-from profiles.tests.utils import check_disallowed_methods, get
+from utils.test_utils import check_disallowed_methods, get
 
 CONCEPTS_OF_INTEREST_LIST = reverse("interest-concept-list")
 

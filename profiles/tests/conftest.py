@@ -10,7 +10,7 @@ from profiles.tests.factories import (
     UserFactory,
     VocabularyFactory,
 )
-from profiles.tests.utils import create_in_memory_image_file
+from utils.test_utils import create_in_memory_image_file
 
 
 @pytest.fixture(autouse=True)
