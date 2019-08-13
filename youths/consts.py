@@ -1,22 +1,24 @@
+from django.utils.translation import ugettext_lazy as _
+
 GENDERS = (
-    ("male", "Male"),
-    ("female", "Female"),
-    ("other", "Other"),
-    ("dont_know", "Don't know"),
-    ("rather_not_say", "Rather not say"),
+    ("male", _("Male")),
+    ("female", _("Female")),
+    ("other", _("Other")),
+    ("dont_know", _("Don't know")),
+    ("rather_not_say", _("Rather not say")),
 )
 
 ILLNESSES = (
-    ("diabetes", "Diabetes"),
-    ("epilepsy", "Epilepsy"),
-    ("heart_disease", "Serious heart or circulatory disease"),
-    ("serious_allergy", "Serious allergy"),
+    ("diabetes", _("Diabetes")),
+    ("epilepsy", _("Epilepsy")),
+    ("heart_disease", _("Serious heart or circulatory disease")),
+    ("serious_allergy", _("Serious allergy")),
 )
 
 LANGUAGES = (
-    ("fi", "Finnish"),
-    ("en", "English"),
-    ("sv", "Swedish"),
-    ("so", "Somali"),
-    ("ar", "Arabic"),
+    ("fi", _("Finnish")),
+    ("en", _("English")),
+    ("sv", _("Swedish")),
+    ("so", _("Somali")),
+    ("ar", _("Arabic")),
 )
