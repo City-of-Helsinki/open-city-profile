@@ -124,6 +124,7 @@ def test_expected_profile_data_fields(user_api_client, profile):
         "concepts_of_interest",
         "divisions_of_interest",
         "preferences",
+        "legal_relationships",
     }
 
     user_profile_url = get_user_profile_url(profile)
