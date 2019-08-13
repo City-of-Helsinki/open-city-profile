@@ -13,6 +13,16 @@ def get(api_client, url, status_code=200):
     return response.data
 
 
+def patch_update(api_client, url, data=None, status_code=200):
+    response = api_client.patch(url, data)
+    assert (
+        response.status_code == status_code
+    ), "Expected status code {} but got {} with data {}".format(
+        status_code, response.status_code, response.data
+    )
+    return response.data
+
+
 def put_update(api_client, url, data=None, status_code=200):
     response = api_client.put(url, data)
     assert (

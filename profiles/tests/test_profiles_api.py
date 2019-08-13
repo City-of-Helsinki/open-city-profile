@@ -11,7 +11,7 @@ from thesaurus.models import Concept
 
 from profiles.models import get_user_media_folder, Profile
 from profiles.tests.factories import ProfileFactory
-from profiles.tests.utils import (
+from utils.test_utils import (
     create_in_memory_image_file,
     delete,
     get,

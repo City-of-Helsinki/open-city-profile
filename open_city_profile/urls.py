@@ -6,9 +6,11 @@ from rest_framework import routers
 from rest_framework.documentation import include_docs_urls
 
 from profiles.api import GeoDivisionViewSet, InterestConceptViewSet, ProfileViewSet
+from youths.api import YouthProfileViewSet
 
 router = routers.DefaultRouter()
 router.register("profile", ProfileViewSet)
+router.register("youth-profile", YouthProfileViewSet)
 router.register(
     "interest-concept", InterestConceptViewSet, base_name="interest-concept"
 )
