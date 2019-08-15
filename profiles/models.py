@@ -52,6 +52,9 @@ class LegalRelationship(models.Model):
     def __str__(self):
         return "{} - {}".format(self.representative, self.type)
 
+    def get_notification_context(self):
+        return {"relationship": self}
+
 
 @reversion.register()
 class Profile(models.Model):

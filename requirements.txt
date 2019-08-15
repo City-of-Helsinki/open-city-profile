@@ -10,15 +10,19 @@ coreapi==2.3.3
 coreschema==0.0.4         # via coreapi
 defusedxml==0.6.0         # via python3-openid
 django-allauth==0.39.1
+django-anymail==6.1.0     # via django-ilmoitin
 django-cors-headers==3.0.2
+django-enumfields==1.0.0  # via django-ilmoitin
 django-environ==0.4.5
 django-filter==2.2.0
 django-helusers==0.4.5
+django-ilmoitin==0.1.2
 django-js-asset==1.2.2    # via django-mptt
+django-mailer==1.2.6      # via django-ilmoitin
 django-mptt==0.10.0       # via django-munigeo
 django-munigeo==0.3.3
 django-parler-rest==2.0
-django-parler==1.9.2      # via django-munigeo, django-parler-rest, django-thesaurus
+django-parler==1.9.2      # via django-ilmoitin, django-munigeo, django-parler-rest, django-thesaurus
 django-reversion==3.0.4
 django-thesaurus==0.0.2
 django==2.2.3
@@ -29,7 +33,8 @@ future==0.17.1            # via pyjwkest, python-jose
 idna==2.8                 # via requests
 isodate==0.6.0            # via rdflib
 itypes==1.1.0             # via coreapi
-jinja2==2.10.1            # via coreschema
+jinja2==2.10.1            # via coreschema, django-ilmoitin
+lockfile==0.12.2          # via django-mailer
 markupsafe==1.1.1         # via jinja2
 oauthlib==3.0.2           # via requests-oauthlib
 pillow==6.1.0
@@ -45,10 +50,10 @@ pyyaml==5.1.1             # via django-munigeo
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.5.0     # via django-munigeo
 requests-oauthlib==1.2.0  # via django-allauth
-requests==2.22.0          # via coreapi, django-allauth, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
+requests==2.22.0          # via coreapi, django-allauth, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
 rsa==4.0                  # via python-jose
 sentry-sdk==0.10.2
-six==1.12.0               # via django-munigeo, isodate, pyjwkest, python-jose
+six==1.12.0               # via django-anymail, django-munigeo, isodate, pyjwkest, python-jose
 sqlparse==0.3.0           # via django
 uritemplate==3.0.0        # via coreapi
 urllib3==1.25.3           # via requests, sentry-sdk

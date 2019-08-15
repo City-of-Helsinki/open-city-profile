@@ -35,6 +35,12 @@ env = environ.Env(
     OIDC_ENDPOINT=(str, ""),
     OIDC_SECRET=(str, ""),
     API_SCOPE_PREFIX=(str, ""),
+    MAILER_EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
+    DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
+    MAIL_MAILGUN_KEY=(str, ""),
+    MAIL_MAILGUN_DOMAIN=(str, ""),
+    MAIL_MAILGUN_API=(str, ""),
+    NOTIFICATIONS_ENABLED=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -106,6 +112,8 @@ INSTALLED_APPS = [
     "profiles",
     "reversion",
     "youths",
+    "django_ilmoitin",
+    "mailer",
 ]
 
 MIDDLEWARE = [
@@ -184,6 +192,19 @@ PARLER_LANGUAGES = {
     1: ({"code": "fi"}, {"code": "en"}, {"code": "sv"}),
     "default": {"fallbacks": ["fi"], "hide_untranslated": False},
 }
+
+# Notification settings
+
+NOTIFICATIONS_ENABLED = True
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
+if env("MAIL_MAILGUN_KEY"):
+    ANYMAIL = {
+        "MAILGUN_API_KEY": env("MAIL_MAILGUN_KEY"),
+        "MAILGUN_SENDER_DOMAIN": env("MAIL_MAILGUN_DOMAIN"),
+        "MAILGUN_API_URL": env("MAIL_MAILGUN_API"),
+    }
+EMAIL_BACKEND = "mailer.backend.DbBackend"
+MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")
