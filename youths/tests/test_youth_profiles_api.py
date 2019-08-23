@@ -124,9 +124,16 @@ def test_expected_profile_data_fields(user_api_client, youth_profile):
         "preferred_language",
         "volunteer_info",
         "gender",
-        "illnesses",
+        "diabetes",
+        "epilepsy",
+        "heart_disease",
+        "serious_allergies",
         "allergies",
+        "extra_illnesses_info",
         "notes",
+        "approved_by",
+        "approved_time",
+        "photo_usage_approved",
     }
 
     youth_profile_url = get_youth_profile_url(youth_profile)
@@ -182,7 +189,7 @@ def test_spring_signup_expires_same_year(user_api_client):
     post_create(user_api_client, PROFILE_URL)
     post_create(user_api_client, YOUTH_PROFILE_URL, data=NEW_YOUTH_DATA)
     youth_profile = YouthProfile.objects.latest("id")
-    assert youth_profile.expiration == date(year=2019, month=6, day=30)
+    assert youth_profile.expiration == date(year=2019, month=7, day=31)
 
 
 @freeze_time("2019-09-01T00:00:00Z")
@@ -190,4 +197,4 @@ def test_fall_signup_expires_next_year(user_api_client):
     post_create(user_api_client, PROFILE_URL)
     post_create(user_api_client, YOUTH_PROFILE_URL, data=NEW_YOUTH_DATA)
     youth_profile = YouthProfile.objects.latest("id")
-    assert youth_profile.expiration == date(year=2020, month=6, day=30)
+    assert youth_profile.expiration == date(year=2020, month=7, day=31)

@@ -1,44 +1,26 @@
 from datetime import date
 
 import reversion
-from django import forms
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.forms import SelectMultiple
 
 from profiles.models import Profile
 
-from .consts import GENDERS, ILLNESSES, LANGUAGES
+from .consts import GENDERS, LANGUAGES
 
 
 def calculate_expiration():
-    # Membership always expires at the end of the season (30.6.).
+    # Membership always expires at the end of the season (31.7.).
     # Signups before May expire in the summer of the same year, others next year.
     today = date.today()
-    return date(year=today.year + 1 if today.month > 4 else today.year, month=6, day=30)
-
-
-class ChoiceArrayField(ArrayField):
-    """
-    A field that allows us to store an array of choices.
-    Uses Django's Postgres ArrayField and a MultipleChoiceField for its formfield.
-    Adapted from https://gist.github.com/danni/f55c4ce19598b2b345ef
-    """
-
-    def formfield(self, **kwargs):
-        defaults = {
-            "form_class": forms.MultipleChoiceField,
-            "choices": self.base_field.choices,
-            "widget": SelectMultiple,
-        }
-        defaults.update(kwargs)
-        return super(ArrayField, self).formfield(**defaults)
+    return date(year=today.year + 1 if today.month > 4 else today.year, month=7, day=31)
 
 
 @reversion.register()
 class YouthProfile(models.Model):
     # Required info
-    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    profile = models.OneToOneField(
+        Profile, related_name="youth_profile", on_delete=models.CASCADE
+    )
     ssn = models.CharField(max_length=11)  # TODO ssn validation?
     school_name = models.CharField(max_length=128)
     school_class = models.CharField(max_length=10)
@@ -50,16 +32,26 @@ class YouthProfile(models.Model):
     )
     volunteer_info = models.TextField(blank=True)
     gender = models.CharField(max_length=32, choices=GENDERS, blank=True)
-    illnesses = ChoiceArrayField(
-        base_field=models.CharField(max_length=32, choices=ILLNESSES),
-        size=4,
-        null=True,
-        blank=True,
-    )
+    diabetes = models.BooleanField(default=False)
+    epilepsy = models.BooleanField(default=False)
+    heart_disease = models.BooleanField(default=False)
+    extra_illnesses_info = models.TextField(blank=True)
+    serious_allergies = models.BooleanField(default=False)
     allergies = models.TextField(blank=True)
     notes = models.TextField(
         blank=True
     )  # For documenting e.g. restrictions on gaming or premises
+
+    # Permissions
+    approved_by = models.ForeignKey(
+        Profile,
+        related_name="approved_youth_profiles",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    approved_time = models.DateTimeField(null=True, blank=True, editable=False)
+    photo_usage_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return "{} {} ({})".format(

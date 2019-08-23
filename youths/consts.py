@@ -8,17 +8,12 @@ GENDERS = (
     ("rather_not_say", _("Rather not say")),
 )
 
-ILLNESSES = (
-    ("diabetes", _("Diabetes")),
-    ("epilepsy", _("Epilepsy")),
-    ("heart_disease", _("Serious heart or circulatory disease")),
-    ("serious_allergy", _("Serious allergy")),
-)
-
 LANGUAGES = (
     ("fi", _("Finnish")),
     ("en", _("English")),
     ("sv", _("Swedish")),
     ("so", _("Somali")),
     ("ar", _("Arabic")),
+    ("et", _("Estonian")),
+    ("ru", _("Russian")),
 )
