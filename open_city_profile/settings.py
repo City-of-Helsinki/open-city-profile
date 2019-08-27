@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "youths",
     "django_ilmoitin",
     "mailer",
+    "graphene_django",
 ]
 
 MIDDLEWARE = [
@@ -172,6 +173,11 @@ SOCIAL_AUTH_TUNNISTAMO_KEY = env.str("OIDC_CLIENT_ID")
 SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str("OIDC_SECRET")
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env.str("OIDC_ENDPOINT")
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "open_city_profile.oidc.GraphQLApiTokenAuthentication",
+]
+
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": ("helusers.oidc.ApiTokenAuthentication",),
@@ -206,6 +212,15 @@ if env("MAIL_MAILGUN_KEY"):
     }
 EMAIL_BACKEND = "mailer.backend.DbBackend"
 MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
+
+# Graphene
+
+GRAPHENE = {
+    "SCHEMA": "open_city_profile.schema.schema",
+    "MIDDLEWARE": ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+}
+
+GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")
