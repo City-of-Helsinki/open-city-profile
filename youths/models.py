@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 import reversion
@@ -43,12 +44,12 @@ class YouthProfile(models.Model):
     )  # For documenting e.g. restrictions on gaming or premises
 
     # Permissions
-    approved_by = models.ForeignKey(
-        Profile,
-        related_name="approved_youth_profiles",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
+    approver_email = models.EmailField()
+    approval_token = models.CharField(
+        max_length=36, blank=True, default=uuid.uuid4, editable=False
+    )
+    approval_notification_timestamp = models.DateTimeField(
+        null=True, blank=True, editable=False
     )
     approved_time = models.DateTimeField(null=True, blank=True, editable=False)
     photo_usage_approved = models.BooleanField(default=False)

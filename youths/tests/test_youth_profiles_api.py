@@ -16,6 +16,7 @@ NEW_YOUTH_DATA = {
     "ssn": "010110ASDF",
     "school_name": "Kontulan Alakoulu",
     "school_class": "1A",
+    "approver_email": "approver@example.com",
 }
 
 
@@ -131,7 +132,9 @@ def test_expected_profile_data_fields(user_api_client, youth_profile):
         "allergies",
         "extra_illnesses_info",
         "notes",
-        "approved_by",
+        "approver_email",
+        "approval_token",
+        "approval_notification_timestamp",
         "approved_time",
         "photo_usage_approved",
     }
