@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
 
 import graphene
+from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 from django_ilmoitin.utils import send_notification
@@ -15,6 +15,12 @@ from .consts import GENDERS, LANGUAGES
 from .enums import NotificationType
 from .models import YouthProfile
 
+with override("en"):
+    PreferredLanguage = graphene.Enum(
+        "PreferredLanguage", [(l[1].upper(), l[0]) for l in LANGUAGES]
+    )
+Gender = graphene.Enum("Gender", [(g[0].upper(), g[0]) for g in GENDERS])
+
 
 class YouthProfileType(DjangoObjectType):
     gender = graphene.Field(graphene.String, source="gender")
@@ -22,13 +28,6 @@ class YouthProfileType(DjangoObjectType):
     class Meta:
         model = YouthProfile
         exclude = ("id", "approval_token")
-
-
-with override("en"):
-    PreferredLanguage = graphene.Enum(
-        "PreferredLanguage", [(l[1].upper(), l[0]) for l in LANGUAGES]
-    )
-Gender = graphene.Enum("Gender", [(g[0].upper(), g[0]) for g in GENDERS])
 
 
 # Abstract base fields
@@ -91,7 +90,7 @@ class CreateYouthProfile(graphene.Mutation):
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
             context={"youth_profile": youth_profile},
         )
-        youth_profile.approval_notification_timestamp = datetime.now()
+        youth_profile.approval_notification_timestamp = timezone.now()
         youth_profile.save()
 
         return CreateYouthProfile(youth_profile=youth_profile)
@@ -127,7 +126,11 @@ class UpdateYouthProfile(graphene.Mutation):
             except Profile.DoesNotExist:
                 raise GraphQLError(_("No profile found, please create one!"))
 
-        youth_profile = YouthProfile.objects.get(profile=profile)
+        try:
+            youth_profile = YouthProfile.objects.get(profile=profile)
+        except YouthProfile.DoesNotExist:
+            raise GraphQLError(_("No youth profile found to update."))
+
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
         youth_profile.save()
@@ -139,7 +142,7 @@ class UpdateYouthProfile(graphene.Mutation):
                 notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
                 context={"youth_profile": youth_profile},
             )
-            youth_profile.approval_notification_timestamp = datetime.now()
+            youth_profile.approval_notification_timestamp = timezone.now()
             youth_profile.save()
 
         return UpdateYouthProfile(youth_profile=youth_profile)
@@ -174,7 +177,7 @@ class ApproveYouthProfile(graphene.Mutation):
         for field, value in youth_data.items():
             setattr(youth_profile, field, value)
 
-        youth_profile.approved_time = datetime.now()
+        youth_profile.approved_time = timezone.now()
         youth_profile.approval_token = ""  # invalidate
         youth_profile.save()
         send_notification(
@@ -195,9 +198,14 @@ class Query(graphene.ObjectType):
 
     @login_required
     def resolve_youth_profile(self, info, **kwargs):
+        profile_id = kwargs.get("profile_id")
+
+        if profile_id is not None and not info.context.user.is_superuser:
+            raise GraphQLError(_("Query by id not allowed for regular users."))
+
         if info.context.user.is_superuser:
             try:
-                return YouthProfile.objects.get(profile_id=kwargs.get("profile_id"))
+                return YouthProfile.objects.get(profile_id=profile_id)
             except YouthProfile.DoesNotExist:
                 raise GraphQLError(_("No youth profile found for provided profile id."))
         try:
