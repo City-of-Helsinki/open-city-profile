@@ -35,3 +35,8 @@ volumes:
         pgdata:
             driver: local
         django-media-volume:
+
+
+networks:
+    default:
+        name: helsinki
