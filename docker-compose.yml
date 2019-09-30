@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
     postgres:
         build: ./docker/postgres/
@@ -15,15 +15,15 @@ services:
 
     django:
         build:
-            context: ./
-            dockerfile: ./docker/django/Dockerfile
-        command: python manage.py runserver 0:8080
+            context: .
+            target: development
         env_file:
-            - ./.env
+            - docker-compose.env.yaml
         environment:
             DATABASE_URL: postgres://open_city_profile:open_city_profile@profile-db/open_city_profile
+            DATABASE_HOST: "profile-db"
         volumes:
-            - .:/code
+            - .:/app
             - django-media-volume:/var/media/
         ports:
             - "8080:8080"
