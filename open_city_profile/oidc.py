@@ -13,5 +13,8 @@ class GraphQLApiTokenAuthentication(ApiTokenAuthentication):
     """
 
     def authenticate(self, request, **kwargs):
-        user, auth = super().authenticate(request)
+        user_auth_tuple = super().authenticate(request)
+        if not user_auth_tuple:
+            return None
+        user, auth = user_auth_tuple
         return user
