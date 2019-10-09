@@ -1,29 +1,29 @@
-version: '3'
+version: '3.7'
 services:
     postgres:
-        build: ./docker/postgres/
+        image: helsinkitest/postgis:9.6-2.5-alpine
         restart: on-failure
         environment:
             POSTGRES_USER: open_city_profile
             POSTGRES_PASSWORD: open_city_profile
             POSTGRES_DB: open_city_profile
         ports:
-            - 5433:5433
+            - 5433:5432
         volumes:
           - pgdata:/var/lib/postgresql/data
         container_name: profile-db
 
     django:
         build:
-            context: ./
-            dockerfile: ./docker/django/Dockerfile
-        command: python manage.py runserver 0:8080
+            context: .
+            target: development
         env_file:
-            - ./.env
+            - docker-compose.env.yaml
         environment:
             DATABASE_URL: postgres://open_city_profile:open_city_profile@profile-db/open_city_profile
+            DATABASE_HOST: "profile-db"
         volumes:
-            - .:/code
+            - .:/app
             - django-media-volume:/var/media/
         ports:
             - "8080:8080"
@@ -35,3 +35,8 @@ volumes:
         pgdata:
             driver: local
         django-media-volume:
+
+
+networks:
+    default:
+        name: helsinki
