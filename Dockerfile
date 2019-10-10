@@ -7,22 +7,29 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 RUN mkdir /entrypoint
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
+COPY --chown=appuser:appuser requirements*.txt /app/
+
+RUN apt-install.sh \
+        build-essential \
         gdal-bin \
-        python3-gdal \
         netcat \
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt/archives
+        python3-gdal \
+    && pip install --no-cache-dir \
+        -r /app/requirements.txt \
+        -r /app/requirements-prod.txt \
+    && apt-cleanup.sh \
+        build-essential
 
-COPY --chown=appuser:appuser requirements.txt /app/requirements.txt
-RUN pip install -U pip \
-    && pip install --no-cache-dir -r /app/requirements.txt
-
-COPY docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
+COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
+
+# ==============================
+FROM appbase as staticbuilder
+# ==============================
+
+ENV VAR_ROOT /app
+COPY --chown=appuser:appuser . /app
+RUN python manage.py collectstatic --noinput
 
 # ==============================
 FROM appbase as development
@@ -44,6 +51,7 @@ EXPOSE 8080/tcp
 FROM appbase as production
 # ==============================
 
+COPY --from=staticbuilder --chown=appuser:appuser /app/static /app/static
 COPY --chown=appuser:appuser . /app/
 
 USER appuser
