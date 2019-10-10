@@ -1,0 +1,28 @@
+include:
+  - project: 'city-of-helsinki/kuva/ci-cd-config/ci-configuration'
+    ref: v1
+    file: '/.gitlab-ci-template.yml'
+
+variables:
+  SERVICE_PORT: "8080"
+
+build:
+  extends: .build
+
+review:
+  variables:
+    K8S_SECRET_ALLOWED_HOSTS: "*"
+    K8S_SECRET_DEBUG: 1
+    K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
+
+staging:
+  only:
+    refs:
+      - develop
+  variables:
+    K8S_SECRET_ALLOWED_HOSTS: "*"
+    K8S_SECRET_DEBUG: 0
+    K8S_SECRET_OIDC_ENDPOINT: "https://tunnistamo.test.kuva.hel.ninja/openid"
+    K8S_SECRET_OIDC_SECRET: "$GL_HEL_TEST_TUNNISTAMO_OIDC_SECRET"
+    K8S_SECRET_SECRET_KEY: "$GL_QA_DJANGO_SECRET_KEY"
+    K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
