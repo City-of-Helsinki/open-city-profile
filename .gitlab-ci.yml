@@ -4,6 +4,7 @@ include:
     file: '/.gitlab-ci-template.yml'
 
 variables:
+  DB_MIGRATE: /app/.prod/on_deploy.sh
   SERVICE_PORT: "8080"
 
 build:
