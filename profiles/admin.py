@@ -2,7 +2,7 @@ from django.contrib import admin
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
-from profiles.models import LegalRelationship, Profile
+from profiles.models import BasicProfile, LegalRelationship
 from youths.admin import YouthProfileAdminInline
 
 
@@ -22,9 +22,15 @@ class RepresenteeAdmin(admin.StackedInline):
     verbose_name_plural = "Represented by"
 
 
-@admin.register(Profile)
-class ExtendedProfileAdmin(VersionAdmin):
-    inlines = [RepresenteeAdmin, RepresentativeAdmin, YouthProfileAdminInline]
+# @admin.register(DataType)
+# class DataTypeAdmin(admin.ModelAdmin):
+#     model = DataType
+
+
+@admin.register(BasicProfile)
+class ExtendedProfileAdmin(admin.ModelAdmin):
+    readonly_fields = ("uuid",)
+    inlines = [RepresentativeAdmin, RepresenteeAdmin, YouthProfileAdminInline]
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "divisions_of_interest":
@@ -36,7 +42,7 @@ class ExtendedProfileAdmin(VersionAdmin):
 
 
 class ProfileAdminInline(admin.StackedInline):
-    model = Profile
+    model = BasicProfile
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "divisions_of_interest":

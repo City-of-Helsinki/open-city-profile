@@ -2,7 +2,7 @@ import factory
 from django.contrib.auth import get_user_model
 from thesaurus.models import Concept, Vocabulary
 
-from profiles.models import Profile
+from profiles.models import BasicProfile
 
 User = get_user_model()
 
@@ -24,11 +24,11 @@ class SuperuserFactory(UserFactory):
         model = User
 
 
-class ProfileFactory(factory.django.DjangoModelFactory):
+class BasicProfileFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
 
     class Meta:
-        model = Profile
+        model = BasicProfile
 
 
 class VocabularyFactory(factory.django.DjangoModelFactory):

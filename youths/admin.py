@@ -8,14 +8,14 @@ class YouthProfileAdminInline(admin.StackedInline):
     model = YouthProfile
     fk_name = "profile"
     extra = 0
-    readonly_fields = ("approved_time", "approval_notification_timestamp")
+    readonly_fields = ("approved_time", "approval_notification_timestamp", "uuid")
     fieldsets = (
         (
             _("Youth profile basic information"),
             {
                 "fields": (
+                    "uuid",
                     "profile",
-                    "ssn",
                     "school_name",
                     "school_class",
                     "expiration",
