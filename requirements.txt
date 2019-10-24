@@ -43,7 +43,7 @@ jinja2==2.10.1            # via coreschema, django-ilmoitin
 lockfile==0.12.2          # via django-mailer
 markupsafe==1.1.1         # via jinja2
 oauthlib==3.0.2           # via requests-oauthlib
-pillow==6.1.0
+pillow==6.2.0
 promise==2.2.1            # via graphene-django, graphql-core, graphql-relay
 psycopg2-binary==2.8.3
 pyasn1==0.4.5             # via rsa
