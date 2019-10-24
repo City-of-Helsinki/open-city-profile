@@ -30,7 +30,7 @@ django-thesaurus==0.0.2
 django==2.2.3
 djangorestframework==3.10.1
 drf-oidc-auth==0.9        # via django-helusers
-ecdsa==0.13.2             # via python-jose
+ecdsa==0.13.3             # via python-jose
 future==0.17.1            # via pyjwkest, python-jose
 graphene-django==2.5.0
 graphene==2.1.7           # via graphene-django
