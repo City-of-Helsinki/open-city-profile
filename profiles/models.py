@@ -59,6 +59,8 @@ class LegalRelationship(models.Model):
 @reversion.register()
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=255, blank=True)
+    last_name = models.CharField(max_length=255, blank=True)
     nickname = models.CharField(max_length=32, null=True, blank=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
@@ -84,10 +86,14 @@ class Profile(models.Model):
         "self", through=LegalRelationship, symmetrical=False
     )
 
+    def save(self, *args, **kwargs):
+        if not self.pk and self.user:
+            self.first_name = self.user.first_name or self.first_name
+            self.last_name = self.user.last_name or self.last_name
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return "{} {} ({})".format(
-            self.user.first_name, self.user.last_name, self.user.uuid
-        )
+        return "{} {} ({})".format(self.first_name, self.last_name, self.user.uuid)
 
 
 class DivisionOfInterest(models.Model):

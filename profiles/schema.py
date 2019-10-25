@@ -50,7 +50,7 @@ with override("en"):
 class ProfileType(DjangoObjectType):
     class Meta:
         model = Profile
-        fields = ("nickname", "image", "email", "phone")
+        fields = ("first_name", "last_name", "nickname", "image", "email", "phone")
 
     language = Language()
     contact_method = ContactMethod()
@@ -65,6 +65,8 @@ class ProfileType(DjangoObjectType):
 
 
 class ProfileInput(graphene.InputObjectType):
+    first_name = graphene.String()
+    last_name = graphene.String()
     nickname = graphene.String()
     image = graphene.String()
     email = graphene.String()
