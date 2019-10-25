@@ -4,7 +4,7 @@ from datetime import date
 import reversion
 from django.db import models
 
-from profiles.models import Profile
+from profiles.models import BasicProfile, ProfileBase
 
 from .consts import GENDERS, LANGUAGES
 
@@ -16,13 +16,12 @@ def calculate_expiration():
     return date(year=today.year + 1 if today.month > 4 else today.year, month=7, day=31)
 
 
-@reversion.register()
-class YouthProfile(models.Model):
+# @reversion.register()
+class YouthProfile(ProfileBase):
     # Required info
     profile = models.OneToOneField(
-        Profile, related_name="youth_profile", on_delete=models.CASCADE
+        BasicProfile, related_name="youth_profile", on_delete=models.CASCADE
     )
-    ssn = models.CharField(max_length=11)  # TODO ssn validation?
     school_name = models.CharField(max_length=128)
     school_class = models.CharField(max_length=10)
     expiration = models.DateField(default=calculate_expiration)
@@ -55,8 +54,6 @@ class YouthProfile(models.Model):
     photo_usage_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return "{} {} ({})".format(
-            self.profile.user.first_name,
-            self.profile.user.last_name,
-            self.profile.user.uuid,
+        return "Youth profile {} {} (User id {})".format(
+            self.profile.first_name, self.profile.last_name, self.profile.user.uuid
         )

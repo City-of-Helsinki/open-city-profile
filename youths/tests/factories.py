@@ -1,7 +1,7 @@
 import factory
 from django.contrib.auth import get_user_model
 
-from profiles.models import Profile
+from profiles.models import BasicProfile
 from youths.models import YouthProfile
 
 User = get_user_model()
@@ -24,17 +24,16 @@ class SuperuserFactory(UserFactory):
         model = User
 
 
-class ProfileFactory(factory.django.DjangoModelFactory):
+class BasicProfileFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     email = factory.Faker("email")
 
     class Meta:
-        model = Profile
+        model = BasicProfile
 
 
 class YouthProfileFactory(factory.django.DjangoModelFactory):
-    profile = factory.SubFactory(ProfileFactory)
-    ssn = factory.Faker("ein")
+    profile = factory.SubFactory(BasicProfileFactory)
     school_name = "Kontulan Alakoulu"
     school_class = "1A"
     approver_email = factory.Faker("email")

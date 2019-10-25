@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from open_city_profile.schema import schema
 from youths.tests.factories import (
-    ProfileFactory,
+    BasicProfileFactory,
     SuperuserFactory,
     UserFactory,
     YouthProfileFactory,
@@ -40,7 +40,7 @@ def superuser():
 
 @pytest.fixture
 def profile(user):
-    return ProfileFactory(user=user)
+    return BasicProfileFactory(user=user)
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 from profiles.tests.factories import (
     ConceptFactory,
-    ProfileFactory,
+    BasicProfileFactory,
     SuperuserFactory,
     UserFactory,
     VocabularyFactory,
@@ -61,7 +61,7 @@ def superuser():
 
 @pytest.fixture
 def profile(user):
-    return ProfileFactory(user=user)
+    return BasicProfileFactory(user=user)
 
 
 @pytest.fixture

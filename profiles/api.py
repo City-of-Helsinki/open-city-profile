@@ -9,7 +9,7 @@ from rest_framework.relations import RelatedField
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from thesaurus.models import Concept
 
-from profiles.models import Profile
+from profiles.models import BasicProfile
 
 logger = logging.getLogger(__name__)
 
@@ -68,13 +68,13 @@ class ConceptRelatedField(RelatedField):
             self.fail("incorrect_type", data_type=type(data).__name__)
 
 
-class ProfileAlreadyExists(APIException):
+class BasicProfileAlreadyExists(APIException):
     status_code = 409
-    default_detail = _("The profile for this user already exists.")
+    default_detail = _("The basic profile for this user already exists.")
     default_code = "profile_already_exists"
 
 
-class ProfileSerializer(serializers.ModelSerializer):
+class BasicProfileSerializer(serializers.ModelSerializer):
     concepts_of_interest = ConceptRelatedField(many=True, required=False)
     divisions_of_interest = serializers.SlugRelatedField(
         queryset=AdministrativeDivision.objects.all(),
@@ -84,14 +84,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        exclude = ["id", "user"]
-        model = Profile
+        exclude = ["user"]
+        model = BasicProfile
 
 
-class ProfileViewSet(viewsets.ModelViewSet):
+class BasicProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Profile.objects.all()
-    serializer_class = ProfileSerializer
+    queryset = BasicProfile.objects.all()
+    serializer_class = BasicProfileSerializer
     lookup_field = "user__uuid"
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
 
@@ -101,10 +101,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        queryset = Profile.objects.filter(user=self.request.user)
+        queryset = BasicProfile.objects.filter(user=self.request.user)
 
         if queryset.exists():
-            raise ProfileAlreadyExists()
+            raise BasicProfileAlreadyExists()
 
         serializer.save(user=self.request.user)
 
