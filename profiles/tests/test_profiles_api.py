@@ -113,8 +113,23 @@ def test_superuser_can_update_profile(superuser_api_client, profile):
     assert profile.user != superuser_api_client.user
 
 
+def test_put_update_own_first_name_and_last_name(user_api_client, profile):
+    assert Profile.objects.count() == 1
+
+    user_profile_url = get_user_profile_url(profile)
+    name_data = {"first_name": "New", "last_name": "User"}
+
+    put_update(user_api_client, user_profile_url, name_data)
+
+    profile.refresh_from_db()
+    assert profile.first_name == name_data["first_name"]
+    assert profile.last_name == name_data["last_name"]
+
+
 def test_expected_profile_data_fields(user_api_client, profile):
     expected_fields = {
+        "first_name",
+        "last_name",
         "nickname",
         "image",
         "email",
