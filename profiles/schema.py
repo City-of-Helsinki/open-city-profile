@@ -8,6 +8,9 @@ from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from services.models import Service
+from services.schema import ServiceType
+
 from .models import Profile
 
 
@@ -54,8 +57,12 @@ class ProfileType(DjangoObjectType):
 
     language = Language()
     contact_method = ContactMethod()
+    services = graphene.List(ServiceType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
+
+    def resolve_services(self, info, **kwargs):
+        return Service.objects.filter(profile=self)
 
     def resolve_concepts_of_interest(self, info, **kwargs):
         return self.concepts_of_interest.all()
