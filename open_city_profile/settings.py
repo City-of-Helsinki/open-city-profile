@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     "mailer",
     "graphene_django",
     "utils",
+    "services",
 ]
 
 MIDDLEWARE = [
