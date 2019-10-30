@@ -23,7 +23,14 @@ def test_new_profile_without_default_name():
 def test_new_profile_with_existing_name_and_default_name():
     user = UserFactory()
     profile = Profile.objects.create(
-        first_name="Notusersfirstname", last_name="Notuserslastname", user=user
+        first_name="Existingfirstname", last_name="Existinglastname", user=user
     )
-    assert profile.first_name != "Notusersfirstname"
-    assert profile.last_name != "Notuserslastname"
+    assert profile.first_name == "Existingfirstname"
+    assert profile.last_name == "Existinglastname"
+
+
+def test_new_profile_with_non_existing_name_and_default_name():
+    user = UserFactory()
+    profile = Profile.objects.create(first_name="", last_name="", user=user)
+    assert profile.first_name
+    assert profile.last_name

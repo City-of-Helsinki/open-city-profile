@@ -1,8 +1,10 @@
 import factory.random
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from graphene.test import Client as GraphQLClient
 from rest_framework.test import APIClient
 
+from open_city_profile.schema import schema
 from profiles.tests.factories import (
     ConceptFactory,
     ProfileFactory,
@@ -50,6 +52,20 @@ def user():
 def superuser_api_client(superuser):
     api_client = APIClient()
     api_client.force_authenticate(user=superuser)
+    api_client.user = superuser
+    return api_client
+
+
+@pytest.fixture
+def user_gql_client(user):
+    api_client = GraphQLClient(schema)
+    api_client.user = user
+    return api_client
+
+
+@pytest.fixture
+def superuser_gql_client(superuser):
+    api_client = GraphQLClient(schema)
     api_client.user = superuser
     return api_client
 
