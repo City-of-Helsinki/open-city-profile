@@ -10,6 +10,9 @@ class Service(models.Model):
     service_type = models.CharField(max_length=32, choices=SERVICE_TYPES, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("profile", "service_type")
+
     def __str__(self):
         return "{} {} - {}".format(
             self.profile.first_name, self.profile.last_name, self.service_type
