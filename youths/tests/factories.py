@@ -34,7 +34,6 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
 class YouthProfileFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
-    ssn = factory.Faker("ein")
     school_name = "Kontulan Alakoulu"
     school_class = "1A"
     approver_email = factory.Faker("email")
