@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
 from django.db import models
+from encrypted_fields import fields
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
@@ -102,3 +103,8 @@ class DivisionOfInterest(models.Model):
         on_delete=models.CASCADE,
         related_name="division_of_interest",
     )
+
+
+class SensitiveData(models.Model):
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    ssn = fields.EncryptedCharField(max_length=11)

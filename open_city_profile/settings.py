@@ -41,6 +41,7 @@ env = environ.Env(
     MAIL_MAILGUN_DOMAIN=(str, ""),
     MAIL_MAILGUN_API=(str, ""),
     NOTIFICATIONS_ENABLED=(bool, False),
+    FIELD_ENCRYPTION_KEYS=(list, []),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -74,6 +75,7 @@ MEDIA_ROOT = var_root("media")
 STATIC_ROOT = var_root("static")
 MEDIA_URL = env.str("MEDIA_URL")
 STATIC_URL = env.str("STATIC_URL")
+FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
 
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
@@ -117,6 +119,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "utils",
     "services",
+    "encrypted_fields",
 ]
 
 MIDDLEWARE = [
