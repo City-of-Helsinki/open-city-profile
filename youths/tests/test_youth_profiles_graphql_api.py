@@ -1,3 +1,4 @@
+import uuid
 from string import Template
 
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
@@ -7,13 +8,16 @@ def test_anon_user_query_should_fail(rf, youth_profile, anon_user_gql_client):
     request = rf.post("/graphql")
     request.user = anon_user_gql_client.user
 
-    query = """
+    t = Template(
+        """
         {
-            youthProfile(profileId: 1) {
+            youthProfile(profileId: "${profileId}") {
                 schoolClass
             }
         }
-    """
+        """
+    )
+    query = t.substitute(profileId=uuid.uuid4())
     expected_data = {"youthProfile": None}
     executed = anon_user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
@@ -23,13 +27,16 @@ def test_normal_user_query_by_id_should_fail(rf, youth_profile, user_gql_client)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    query = """
+    t = Template(
+        """
         {
-            youthProfile(profileId: 666) {
+            youthProfile(profileId: "${profileId}") {
                 schoolClass
             }
         }
-    """
+        """
+    )
+    query = t.substitute(profileId=uuid.uuid4())
     expected_data = {"youthProfile": None}
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
@@ -60,7 +67,7 @@ def test_superuser_can_query_by_id(rf, youth_profile, superuser_gql_client):
     t = Template(
         """
         {
-            youthProfile(profileId: ${profileId}) {
+            youthProfile(profileId: "${profileId}") {
                 schoolClass
             }
         }
@@ -81,7 +88,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         """
         mutation{
             createYouthProfile(
-                profileId: ${profileId}
+                profileId: "${profileId}"
                 youthProfileData: {
                     schoolClass: "${schoolClass}"
                     schoolName: "${schoolName}"
@@ -165,7 +172,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
         """
         mutation{
             createYouthProfile(
-                profileId: ${profileId}
+                profileId: "${profileId}"
                 youthProfileData: {
                     schoolClass: "${schoolClass}"
                     schoolName: "${schoolName}"
@@ -212,7 +219,7 @@ def test_superuser_can_update_youth_profile_mutation(
         """
         mutation{
             updateYouthProfile(
-                profileId: ${profileId}
+                profileId: "${profileId}"
                 youthProfileData: {
                     schoolClass: "${schoolClass}"
                 }

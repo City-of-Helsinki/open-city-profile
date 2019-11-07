@@ -15,27 +15,10 @@ class YouthProfileAdminInline(admin.StackedInline):
             {
                 "fields": (
                     "profile",
-                    "ssn",
                     "school_name",
                     "school_class",
                     "expiration",
-                    "preferred_language",
-                    "volunteer_info",
-                    "gender",
-                    "notes",
-                )
-            },
-        ),
-        (
-            _("Youth profile illnesses"),
-            {
-                "fields": (
-                    "diabetes",
-                    "epilepsy",
-                    "heart_disease",
-                    "serious_allergies",
-                    "allergies",
-                    "extra_illnesses_info",
+                    "language_at_home",
                 )
             },
         ),
@@ -43,6 +26,9 @@ class YouthProfileAdminInline(admin.StackedInline):
             _("Youth profile permissions"),
             {
                 "fields": (
+                    "approver_first_name",
+                    "approver_last_name",
+                    "approver_phone",
                     "approver_email",
                     "approval_notification_timestamp",
                     "approved_time",
