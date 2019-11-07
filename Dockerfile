@@ -1,5 +1,5 @@
 # ==============================
-FROM python:3.7-slim as appbase
+FROM helsinkitest/python:3.7-slim as appbase
 # ==============================
 
 ENV PYTHONUNBUFFERED 1
@@ -29,7 +29,8 @@ FROM appbase as development
 # ==============================
 
 COPY --chown=appuser:appuser requirements-dev.txt /app/requirements-dev.txt
-RUN pip install --no-cache-dir -r /app/requirements-dev.txt
+RUN pip install --no-cache-dir -r /app/requirements-dev.txt \
+    && pip install --no-cache-dir pip-tools
 
 ENV DEV_SERVER=1
 
