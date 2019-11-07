@@ -48,6 +48,7 @@ build/Release
 celerybeat-schedule
 coverage
 coverage.xml
+data/
 develop-eggs/
 dist/
 docs/_build/

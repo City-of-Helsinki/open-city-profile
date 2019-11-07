@@ -17,8 +17,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/archives
 
-COPY requirements.txt /app/requirements.txt
-
+COPY --chown=appuser:appuser requirements.txt /app/requirements.txt
 RUN pip install -U pip \
     && pip install --no-cache-dir -r /app/requirements.txt
 
@@ -29,12 +28,14 @@ ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
 FROM appbase as development
 # ==============================
 
-COPY requirements-dev.txt /app/requirements-dev.txt
+COPY --chown=appuser:appuser requirements-dev.txt /app/requirements-dev.txt
 RUN pip install --no-cache-dir -r /app/requirements-dev.txt
 
 ENV DEV_SERVER=1
 
-COPY . /app
+COPY --chown=appuser:appuser . /app/
+
+USER appuser
 
 EXPOSE 8080/tcp
 
@@ -42,6 +43,8 @@ EXPOSE 8080/tcp
 FROM appbase as production
 # ==============================
 
-COPY . /app
+COPY --chown=appuser:appuser . /app/
+
+USER appuser
 
 EXPOSE 8080/tcp
