@@ -46,7 +46,7 @@ class CreateYouthProfileInput(YouthProfileFields):
 class CreateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile_data = CreateYouthProfileInput(required=True)
-        profile_id = graphene.ID()
+        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -91,7 +91,7 @@ class UpdateYouthProfileInput(YouthProfileFields):
 class UpdateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile_data = UpdateYouthProfileInput(required=True)
-        profile_id = graphene.ID()
+        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -176,7 +176,7 @@ class ApproveYouthProfile(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.ID())
+    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.UUID())
 
     youth_profile_by_approval_token = graphene.Field(
         YouthProfileType, token=graphene.String()
