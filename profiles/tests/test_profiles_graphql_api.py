@@ -1,7 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 
-from services.consts import SERVICE_TYPES
-from services.tests.factories import ServiceFactory
+from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from .factories import ProfileFactory
 
@@ -31,7 +30,8 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
 
 def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
     profile = ProfileFactory()
-    ServiceFactory(profile=profile, service_type=SERVICE_TYPES[1][0])
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
 
@@ -72,8 +72,9 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
 
 def test_admin_user_can_filter_berth_profiles(rf, superuser_gql_client):
     profile_1, profile_2 = ProfileFactory(), ProfileFactory()
-    ServiceFactory(profile=profile_1, service_type=SERVICE_TYPES[1][0])
-    ServiceFactory(profile=profile_2, service_type=SERVICE_TYPES[1][0])
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
 
@@ -99,8 +100,9 @@ def test_admin_user_can_sort_berth_profiles(rf, superuser_gql_client):
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
     )
-    ServiceFactory(profile=profile_1, service_type=SERVICE_TYPES[1][0])
-    ServiceFactory(profile=profile_2, service_type=SERVICE_TYPES[1][0])
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
 
@@ -130,8 +132,9 @@ def test_admin_user_can_paginate_berth_profiles(rf, superuser_gql_client):
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
     )
-    ServiceFactory(profile=profile_1, service_type=SERVICE_TYPES[1][0])
-    ServiceFactory(profile=profile_2, service_type=SERVICE_TYPES[1][0])
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
 

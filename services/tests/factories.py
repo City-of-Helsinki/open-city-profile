@@ -2,7 +2,7 @@ import factory
 from django.contrib.auth import get_user_model
 
 from profiles.models import Profile
-from services.models import Service
+from services.models import Service, ServiceConnection
 
 User = get_user_model()
 
@@ -33,8 +33,15 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
 
 class ServiceFactory(factory.django.DjangoModelFactory):
-    profile = factory.SubFactory(ProfileFactory)
-    service_type = "berth"
+    service_type = "BERTH"
 
     class Meta:
         model = Service
+
+
+class ServiceConnectionFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    service = factory.SubFactory(ServiceFactory)
+
+    class Meta:
+        model = ServiceConnection

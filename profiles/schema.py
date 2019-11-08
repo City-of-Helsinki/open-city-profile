@@ -14,8 +14,8 @@ from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from services.consts import SERVICE_TYPES
-from services.models import Service
-from services.schema import ServiceType
+from services.models import ServiceConnection
+from services.schema import ServiceConnectionType
 
 from .models import Profile
 
@@ -68,7 +68,7 @@ class ProfilesConnection(graphene.Connection):
 
     def resolve_total_count(self, info):
         return self.iterable.model.objects.filter(
-            service__service_type=SERVICE_TYPES[1][0]
+            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
         ).count()
 
 
@@ -113,12 +113,12 @@ class ProfileType(DjangoObjectType):
 
     language = Language()
     contact_method = ContactMethod()
-    services = graphene.List(ServiceType)
+    service_connections = DjangoFilterConnectionField(ServiceConnectionType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
 
-    def resolve_services(self, info, **kwargs):
-        return Service.objects.filter(profile=self)
+    def resolve_service_connections(self, info, **kwargs):
+        return ServiceConnection.objects.filter(profile=self)
 
     def resolve_concepts_of_interest(self, info, **kwargs):
         return self.concepts_of_interest.all()
@@ -194,7 +194,9 @@ class Query(graphene.ObjectType):
         # authorized user with real django groups instead of superuser
         # check whether the consent is given for the profile
         if info.context.user.is_superuser:
-            return Profile.objects.filter(service__service_type=SERVICE_TYPES[1][0])
+            return Profile.objects.filter(
+                serviceconnection__service__service_type=SERVICE_TYPES[1][0]
+            )
         raise GraphQLError(_("You do not have permission to perform this action."))
 
 

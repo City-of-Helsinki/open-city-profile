@@ -2,25 +2,48 @@ from string import Template
 
 from django.utils.translation import ugettext_lazy as _
 
-from services.tests.factories import ProfileFactory, ServiceFactory
+from services.tests.factories import (
+    ProfileFactory,
+    ServiceConnectionFactory,
+    ServiceFactory,
+)
 
 
 def test_normal_user_can_query_own_services(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
-    service = ServiceFactory(profile=profile)
+    service = ServiceFactory()
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
     query = """
         {
             profile {
-                services {
-                    type
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                type
+                            }
+                        }
+                    }
                 }
             }
         }
     """
-    expected_data = {"profile": {"services": [{"type": service.service_type}]}}
+    expected_data = {
+        "profile": {
+            "serviceConnections": {
+                "edges": [
+                    {
+                        "node": {
+                            "service": {"type": service_connection.service.service_type}
+                        }
+                    }
+                ]
+            }
+        }
+    }
     executed = user_gql_client.execute(query, context_value=request)
     assert dict(executed["data"]) == expected_data
 
@@ -29,13 +52,16 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
+    ServiceFactory()
 
     t = Template(
         """
-        mutation{
-            addService(service: {type: ${serviceType}}){
-                service{
-                    type
+        mutation {
+            addServiceConnection(serviceConnection: { service: { type: ${serviceType} } }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
                 }
             }
         }
@@ -43,7 +69,9 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     )
     creation_data = {"serviceType": "BERTH"}
     query = t.substitute(**creation_data)
-    expected_data = {"addService": {"service": {"type": "BERTH"}}}
+    expected_data = {
+        "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
+    }
     executed = user_gql_client.execute(query, context_value=request)
     assert dict(executed["data"]) == expected_data
 
@@ -52,13 +80,16 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
+    ServiceFactory()
 
     t = Template(
         """
-        mutation{
-            addService(service: {type: ${serviceType}}){
-                service{
-                    type
+        mutation {
+            addServiceConnection(serviceConnection: { service: { type: ${serviceType} } }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
                 }
             }
         }
@@ -66,7 +97,9 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     )
     creation_data = {"serviceType": "BERTH"}
     query = t.substitute(**creation_data)
-    expected_data = {"addService": {"service": {"type": "BERTH"}}}
+    expected_data = {
+        "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
+    }
     executed = user_gql_client.execute(query, context_value=request)
     assert dict(executed["data"]) == expected_data
     assert "errors" not in executed
