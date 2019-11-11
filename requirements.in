@@ -9,11 +9,10 @@ django-graphql-jwt
 django-helusers
 django-ilmoitin>=0.2.0
 django-munigeo
-django-parler-rest
+django-parler
 django-reversion
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
-djangorestframework
 graphene-django
 pillow
 psycopg2-binary

@@ -26,7 +26,7 @@ class SuperuserFactory(UserFactory):
 
 class ProfileFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
-    email = factory.Faker("email")
+    nickname = factory.Faker("first_name")
 
     class Meta:
         model = Profile
