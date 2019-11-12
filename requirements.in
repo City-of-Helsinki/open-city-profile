@@ -2,11 +2,12 @@ Django
 coreapi
 django-allauth
 django-cors-headers
+django-enumfields
 django-environ
 django-filter
 django-graphql-jwt
 django-helusers
-django-ilmoitin
+django-ilmoitin>=0.2.0
 django-munigeo
 django-parler-rest
 django-reversion
