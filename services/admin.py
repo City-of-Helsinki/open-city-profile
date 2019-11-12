@@ -1,7 +1,9 @@
 from django.contrib import admin
+from guardian.admin import GuardedModelAdmin
+
 from .models import Service
 
 
 @admin.register(Service)
-class ServiceAdmin(admin.ModelAdmin):
+class ServiceAdmin(GuardedModelAdmin):
     pass

@@ -11,6 +11,12 @@ class Service(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        permissions = (
+            ("can_manage_profiles", "Can manage profiles"),
+            ("can_view_profiles", "Can view profiles"),
+        )
+
     def __str__(self):
         return self.service_type
 
