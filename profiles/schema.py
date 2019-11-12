@@ -3,19 +3,18 @@ from django.conf import settings
 from django.db.models import CharField, Value
 from django.db.models.functions import Concat
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
-from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from profiles.decorators import staff_required
 from services.consts import SERVICE_TYPES
 from services.models import ServiceConnection
-from services.schema import ServiceConnectionType
+from services.schema import AllowedServiceType, ServiceConnectionType
 
 from .models import Profile
 
@@ -172,7 +171,9 @@ class Query(graphene.ObjectType):
     profile = graphene.Field(ProfileType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
-    berth_profiles = DjangoFilterConnectionField(ProfileType)
+    berth_profiles = DjangoFilterConnectionField(
+        ProfileType, serviceType=graphene.Argument(AllowedServiceType, required=True)
+    )
 
     @login_required
     def resolve_profile(self, info, **kwargs):
@@ -188,16 +189,11 @@ class Query(graphene.ObjectType):
     def resolve_divisions_of_interest(self, info, **kwargs):
         return AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
 
-    @login_required
+    @staff_required(required_permission="view")
     def resolve_berth_profiles(self, info, **kwargs):
-        # TODO: authorization and consent checks
-        # authorized user with real django groups instead of superuser
-        # check whether the consent is given for the profile
-        if info.context.user.is_superuser:
-            return Profile.objects.filter(
-                serviceconnection__service__service_type=SERVICE_TYPES[1][0]
-            )
-        raise GraphQLError(_("You do not have permission to perform this action."))
+        return Profile.objects.filter(
+            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
+        )
 
 
 class Mutation(graphene.ObjectType):

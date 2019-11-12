@@ -1,5 +1,6 @@
 import factory
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from thesaurus.models import Concept, Vocabulary
 
 from profiles.models import Profile
@@ -22,6 +23,11 @@ class SuperuserFactory(UserFactory):
 
     class Meta:
         model = User
+
+
+class GroupFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Group
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
