@@ -11,20 +11,17 @@ from graphql_jwt.decorators import login_required
 
 from profiles.models import Profile
 
-from .consts import GENDERS, LANGUAGES
+from .consts import LANGUAGES
 from .enums import NotificationType
 from .models import YouthProfile
 
 with override("en"):
-    PreferredLanguage = graphene.Enum(
-        "PreferredLanguage", [(l[1].upper(), l[0]) for l in LANGUAGES]
+    LanguageAtHome = graphene.Enum(
+        "LanguageAtHome", [(l[1].upper(), l[0]) for l in LANGUAGES]
     )
-Gender = graphene.Enum("Gender", [(g[0].upper(), g[0]) for g in GENDERS])
 
 
 class YouthProfileType(DjangoObjectType):
-    gender = graphene.Field(graphene.String, source="gender")
-
     class Meta:
         model = YouthProfile
         exclude = ("id", "approval_token")
@@ -34,31 +31,22 @@ class YouthProfileType(DjangoObjectType):
 class YouthProfileFields(graphene.InputObjectType):
     school_name = graphene.String()
     school_class = graphene.String()
-    preferred_language = PreferredLanguage()
-    volunteer_info = graphene.String()
-    gender = Gender()
-    diabetes = graphene.Boolean()
-    epilepsy = graphene.Boolean()
-    heart_disease = graphene.Boolean()
-    extra_illnesses_info = graphene.String()
-    serious_allergies = graphene.Boolean()
-    allergies = graphene.String()
-    notes = graphene.String()
+    language_at_home = LanguageAtHome()
+    approver_first_name = graphene.String()
+    approver_last_name = graphene.String()
+    approver_phone = graphene.String()
     approver_email = graphene.String()
 
 
 # Subset of abstract fields are required for creation
 class CreateYouthProfileInput(YouthProfileFields):
-    ssn = graphene.String(required=True)
-    school_name = graphene.String(required=True)
-    school_class = graphene.String(required=True)
     approver_email = graphene.String(required=True)
 
 
 class CreateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile_data = CreateYouthProfileInput(required=True)
-        profile_id = graphene.ID()
+        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -103,7 +91,7 @@ class UpdateYouthProfileInput(YouthProfileFields):
 class UpdateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile_data = UpdateYouthProfileInput(required=True)
-        profile_id = graphene.ID()
+        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -149,13 +137,12 @@ class UpdateYouthProfile(graphene.Mutation):
 
 
 class ApproveYouthProfileInput(graphene.InputObjectType):
-    diabetes = graphene.Boolean()
-    epilepsy = graphene.Boolean()
-    heart_disease = graphene.Boolean()
-    extra_illnesses_info = graphene.String()
-    serious_allergies = graphene.Boolean()
-    allergies = graphene.String()
     photo_usage_approved = graphene.Boolean()
+    language_at_home = LanguageAtHome()
+    approver_first_name = graphene.String()
+    approver_last_name = graphene.String()
+    approver_phone = graphene.String()
+    approver_email = graphene.String()
 
 
 class ApproveYouthProfile(graphene.Mutation):
@@ -189,9 +176,8 @@ class ApproveYouthProfile(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.ID())
+    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.UUID())
 
-    # TODO should we hide some fields (e.g. gender) from the approver?
     youth_profile_by_approval_token = graphene.Field(
         YouthProfileType, token=graphene.String()
     )

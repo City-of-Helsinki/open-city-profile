@@ -13,7 +13,6 @@ PROFILE_URL = reverse("profile-list")
 YOUTH_PROFILE_URL = reverse("youthprofile-list")
 
 NEW_YOUTH_DATA = {
-    "ssn": "010110ASDF",
     "school_name": "Kontulan Alakoulu",
     "school_class": "1A",
     "approver_email": "approver@example.com",
@@ -104,35 +103,28 @@ def test_patch_update_own_youth_profile(user_api_client, youth_profile):
 
 
 def test_superuser_can_patch_update_youth_profile(superuser_api_client, youth_profile):
-    new_allergy_data = {"allergies": "foods, animals"}
-    assert youth_profile.allergies != new_allergy_data["allergies"]
+    new_approver_data = {"approver_first_name": "Teppo"}
+    assert youth_profile.approver_first_name != new_approver_data["approver_first_name"]
 
     patch_update(
-        superuser_api_client, get_youth_profile_url(youth_profile), new_allergy_data
+        superuser_api_client, get_youth_profile_url(youth_profile), new_approver_data
     )
     youth_profile.refresh_from_db()
-    assert youth_profile.allergies == new_allergy_data["allergies"]
+    assert youth_profile.approver_first_name == new_approver_data["approver_first_name"]
     assert youth_profile.profile.user != superuser_api_client.user
 
 
 def test_expected_profile_data_fields(user_api_client, youth_profile):
     expected_fields = {
         "profile",
-        "ssn",
         "school_name",
         "school_class",
         "expiration",
-        "preferred_language",
-        "volunteer_info",
-        "gender",
-        "diabetes",
-        "epilepsy",
-        "heart_disease",
-        "serious_allergies",
-        "allergies",
-        "extra_illnesses_info",
-        "notes",
+        "language_at_home",
+        "approver_first_name",
+        "approver_last_name",
         "approver_email",
+        "approver_phone",
         "approval_token",
         "approval_notification_timestamp",
         "approved_time",
@@ -155,14 +147,21 @@ def test_update_own_profile_creates_change_log_entry(user_api_client):
     assert len(versions) == 1
 
     youth_profile_url = get_youth_profile_url(youth_profile)
-    allergy_data = {"allergies": "foods, animals"}
-    patch_update(user_api_client, youth_profile_url, allergy_data)
+    approver_data = {"approver_first_name": "Teppo", "approver_last_name": "Testi"}
+    patch_update(user_api_client, youth_profile_url, approver_data)
 
     youth_profile.refresh_from_db()
     versions = Version.objects.get_for_object(youth_profile)
     assert len(versions) == 2
     assert versions[0].revision.user == user_api_client.user
-    assert versions[0].field_dict["allergies"] == allergy_data["allergies"]
+    assert (
+        versions[0].field_dict["approver_first_name"]
+        == approver_data["approver_first_name"]
+    )
+    assert (
+        versions[0].field_dict["approver_last_name"]
+        == approver_data["approver_last_name"]
+    )
 
 
 def test_admin_update_profile_creates_change_log_entry(
@@ -178,8 +177,8 @@ def test_admin_update_profile_creates_change_log_entry(
     assert versions[0].revision.user == user_api_client.user
 
     youth_profile_url = get_youth_profile_url(youth_profile)
-    allergy_data = {"allergies": "foods, animals"}
-    patch_update(superuser_api_client, youth_profile_url, allergy_data)
+    approver_data = {"approver_first_name": "Teppo", "approver_last_name": "Testi"}
+    patch_update(superuser_api_client, youth_profile_url, approver_data)
 
     youth_profile.refresh_from_db()
     versions = Version.objects.get_for_object(youth_profile)

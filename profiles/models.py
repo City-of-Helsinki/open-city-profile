@@ -11,6 +11,7 @@ from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from users.models import User
+from utils.models import UUIDModel
 
 from .consts import REPRESENTATION_TYPE, REPRESENTATIVE_CONFIRMATION_DEGREE
 
@@ -58,7 +59,7 @@ class LegalRelationship(models.Model):
 
 
 @reversion.register()
-class Profile(models.Model):
+class Profile(UUIDModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
@@ -88,7 +89,11 @@ class Profile(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        if not self.pk and not (self.first_name and self.last_name) and self.user:
+        if (
+            self._state.adding  # uuid pk forces us to do this, since self.pk is True
+            and not (self.first_name and self.last_name)
+            and self.user
+        ):
             self.first_name = self.user.first_name or self.first_name
             self.last_name = self.user.last_name or self.last_name
         super().save(*args, **kwargs)

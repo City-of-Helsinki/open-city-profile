@@ -6,7 +6,7 @@ from django.db import models
 
 from profiles.models import Profile
 
-from .consts import GENDERS, LANGUAGES
+from .consts import LANGUAGES
 
 
 def calculate_expiration():
@@ -22,28 +22,18 @@ class YouthProfile(models.Model):
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
-    ssn = models.CharField(max_length=11)  # TODO ssn validation?
     school_name = models.CharField(max_length=128)
     school_class = models.CharField(max_length=10)
     expiration = models.DateField(default=calculate_expiration)
 
-    # Optional info
-    preferred_language = models.CharField(
+    language_at_home = models.CharField(
         max_length=32, choices=LANGUAGES, default=LANGUAGES[0][0]
     )
-    volunteer_info = models.TextField(blank=True)
-    gender = models.CharField(max_length=32, choices=GENDERS, blank=True)
-    diabetes = models.BooleanField(default=False)
-    epilepsy = models.BooleanField(default=False)
-    heart_disease = models.BooleanField(default=False)
-    extra_illnesses_info = models.TextField(blank=True)
-    serious_allergies = models.BooleanField(default=False)
-    allergies = models.TextField(blank=True)
-    notes = models.TextField(
-        blank=True
-    )  # For documenting e.g. restrictions on gaming or premises
 
     # Permissions
+    approver_first_name = models.CharField(max_length=255, blank=True)
+    approver_last_name = models.CharField(max_length=255, blank=True)
+    approver_phone = models.CharField(max_length=50, blank=True)
     approver_email = models.EmailField()
     approval_token = models.CharField(
         max_length=36, blank=True, default=uuid.uuid4, editable=False
