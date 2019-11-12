@@ -171,7 +171,7 @@ class Query(graphene.ObjectType):
     profile = graphene.Field(ProfileType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
-    berth_profiles = DjangoFilterConnectionField(
+    profiles = DjangoFilterConnectionField(
         ProfileType, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
 
@@ -190,9 +190,9 @@ class Query(graphene.ObjectType):
         return AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
 
     @staff_required(required_permission="view")
-    def resolve_berth_profiles(self, info, **kwargs):
+    def resolve_profiles(self, info, **kwargs):
         return Profile.objects.filter(
-            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
+            serviceconnection__service__service_type=kwargs["serviceType"]
         )
 
 

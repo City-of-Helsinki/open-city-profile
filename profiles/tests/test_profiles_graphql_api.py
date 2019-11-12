@@ -13,7 +13,7 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
 
     query = """
         {
-            berthProfiles(serviceType: BERTH) {
+            profiles(serviceType: BERTH) {
                 edges {
                     node {
                         firstName
@@ -39,7 +39,7 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
 
     query = """
         {
-            berthProfiles(serviceType: BERTH) {
+            profiles(serviceType: BERTH) {
                 edges {
                     node {
                         firstName
@@ -54,7 +54,7 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
     """
 
     expected_data = {
-        "berthProfiles": {
+        "profiles": {
             "edges": [
                 {
                     "node": {
@@ -85,7 +85,7 @@ def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_clie
 
     query = """
         {
-            berthProfiles(serviceType: BERTH) {
+            profiles(serviceType: BERTH) {
                 edges {
                     node {
                         firstName
@@ -96,7 +96,7 @@ def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_clie
     """
 
     expected_data = {
-        "berthProfiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
+        "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
@@ -116,14 +116,14 @@ def test_staff_user_can_filter_berth_profiles(rf, user_gql_client):
 
     query = """
         query getBerthProfiles($firstName: String){
-            berthProfiles(serviceType: BERTH, firstName: $firstName) {
+            profiles(serviceType: BERTH, firstName: $firstName) {
                 count
                 totalCount
             }
         }
     """
 
-    expected_data = {"berthProfiles": {"count": 1, "totalCount": 2}}
+    expected_data = {"profiles": {"count": 1, "totalCount": 2}}
 
     executed = user_gql_client.execute(
         query, variables={"firstName": profile_2.first_name}, context=request
@@ -149,7 +149,7 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
 
     query = """
         query getBerthProfiles {
-            berthProfiles(serviceType: BERTH, orderBy: "-firstName") {
+            profiles(serviceType: BERTH, orderBy: "-firstName") {
                 edges {
                     node {
                         firstName
@@ -160,7 +160,7 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
     """
 
     expected_data = {
-        "berthProfiles": {
+        "profiles": {
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
         }
     }
@@ -185,7 +185,7 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
 
     query = """
         query getBerthProfiles {
-            berthProfiles(serviceType: BERTH, orderBy: "firstName", first: 1) {
+            profiles(serviceType: BERTH, orderBy: "firstName", first: 1) {
                 pageInfo {
                     endCursor
                 }
@@ -201,15 +201,15 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
     expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
     executed = user_gql_client.execute(query, context=request)
     assert "data" in executed
-    assert executed["data"]["berthProfiles"]["edges"] == expected_data["edges"]
-    assert "pageInfo" in executed["data"]["berthProfiles"]
-    assert "endCursor" in executed["data"]["berthProfiles"]["pageInfo"]
+    assert executed["data"]["profiles"]["edges"] == expected_data["edges"]
+    assert "pageInfo" in executed["data"]["profiles"]
+    assert "endCursor" in executed["data"]["profiles"]["pageInfo"]
 
-    end_cursor = executed["data"]["berthProfiles"]["pageInfo"]["endCursor"]
+    end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
 
     query = """
         query getBerthProfiles($endCursor: String){
-            berthProfiles(serviceType: BERTH, first: 1, after: $endCursor) {
+            profiles(serviceType: BERTH, first: 1, after: $endCursor) {
                 edges {
                     node {
                         firstName
@@ -224,7 +224,7 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
         query, variables={"endCursor": end_cursor}, context=request
     )
     assert "data" in executed
-    assert executed["data"]["berthProfiles"] == expected_data
+    assert executed["data"]["profiles"] == expected_data
 
 
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
@@ -245,7 +245,7 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 
     query = """
         {
-            berthProfiles(serviceType: BERTH) {
+            profiles(serviceType: BERTH) {
                 edges {
                     node {
                         firstName
@@ -256,14 +256,14 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     """
 
     expected_data = {
-        "berthProfiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
+        "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
     query = """
         {
-            berthProfiles(serviceType: YOUTH_MEMBERSHIP) {
+            profiles(serviceType: YOUTH_MEMBERSHIP) {
                 edges {
                     node {
                         firstName
