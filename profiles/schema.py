@@ -3,17 +3,19 @@ from django.conf import settings
 from django.db.models import CharField, Value
 from django.db.models.functions import Concat
 from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
 from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
+from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from profiles.decorators import staff_required
 from services.consts import SERVICE_TYPES
-from services.models import ServiceConnection
+from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 
 from .models import Profile
@@ -168,15 +170,34 @@ class UpdateProfile(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    profile = graphene.Field(ProfileType)
+    profile = graphene.Field(
+        ProfileType,
+        id=graphene.Argument(graphene.UUID, required=True),
+        serviceType=graphene.Argument(AllowedServiceType, required=True),
+    )
+    my_profile = graphene.Field(ProfileType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
     profiles = DjangoFilterConnectionField(
         ProfileType, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
 
-    @login_required
+    @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
+        try:
+            service = Service.objects.get(service_type=kwargs["serviceType"])
+            return (
+                Profile.objects.filter(serviceconnection__service=service)
+                .prefetch_related("concepts_of_interest", "divisions_of_interest")
+                .get(pk=kwargs["id"])
+            )
+        except Profile.DoesNotExist:
+            raise GraphQLError(_("Profile not found!"))
+        except Service.DoesNotExist:
+            raise GraphQLError(_("Service not found!"))
+
+    @login_required
+    def resolve_my_profile(self, info, **kwargs):
         return (
             Profile.objects.filter(user=info.context.user)
             .prefetch_related("concepts_of_interest", "divisions_of_interest")

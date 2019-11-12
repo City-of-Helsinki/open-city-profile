@@ -1,3 +1,5 @@
+from string import Template
+
 from django.utils.translation import ugettext_lazy as _
 from guardian.shortcuts import assign_perm
 
@@ -273,6 +275,206 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
         }
     """
 
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
+def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {"firstName": profile.first_name, "lastName": profile.last_name}
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
+    profile = ProfileFactory()
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=profile.pk, service_type=service.service_type)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
+def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
+    rf, user_gql_client
+):
+    profile = ProfileFactory()
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=profile.pk, service_type=service.service_type)
+    executed = user_gql_client.execute(query, context=request)
+    expected_data = {
+        "profile": {"firstName": profile.first_name, "lastName": profile.last_name}
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_cannot_query_a_profile_without_id(rf, user_gql_client):
+    profile = ProfileFactory()
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(serviceType: ${service_type}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(service_type=service.service_type)
+    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+
+
+def test_staff_user_cannot_query_a_profile_without_service_type(rf, user_gql_client):
+    profile = ProfileFactory()
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: ${id}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=profile.pk)
+    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+
+
+def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connected(
+    rf, user_gql_client
+):
+    profile = ProfileFactory()
+    service_berth = ServiceFactory()
+    service_youth = ServiceFactory(service_type="YOUTH_MEMBERSHIP")
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_youth)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=profile.pk, service_type=service_youth.service_type)
+    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _("Profile not found!")
+
+
+def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admin_of(
+    rf, user_gql_client
+):
+    profile = ProfileFactory()
+    service_berth = ServiceFactory()
+    service_youth = ServiceFactory(service_type="YOUTH_MEMBERSHIP")
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_youth)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                firstName
+                lastName
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=profile.pk, service_type=service_berth.service_type)
+    executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(

@@ -18,7 +18,7 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
 
     query = """
         {
-            profile {
+            myProfile {
                 serviceConnections {
                     edges {
                         node {
@@ -32,7 +32,7 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
         }
     """
     expected_data = {
-        "profile": {
+        "myProfile": {
             "serviceConnections": {
                 "edges": [
                     {
