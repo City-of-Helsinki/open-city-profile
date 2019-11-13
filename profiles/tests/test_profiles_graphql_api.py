@@ -490,3 +490,22 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
+
+
+def test_profile_node_exposes_key_for_federation_gateway(rf, anonymous_gql_client):
+    request = rf.post("/graphql")
+
+    query = """
+        query {
+            _service {
+                sdl
+            }
+        }
+    """
+
+    executed = anonymous_gql_client.execute(query, context=request)
+    print(executed["data"]["_service"]["sdl"])
+    assert (
+        'type ProfileNode implements Node  @key(fields: "id")'
+        in executed["data"]["_service"]["sdl"]
+    )

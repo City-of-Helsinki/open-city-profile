@@ -8,6 +8,7 @@ from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
+from graphene_federation import key
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
@@ -120,6 +121,7 @@ class AddressType(ContactType):
         fields = ("address_type", "primary", "email")
 
 
+@key(fields="id")
 class ProfileNode(DjangoObjectType):
     class Meta:
         model = Profile

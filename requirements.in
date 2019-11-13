@@ -15,6 +15,7 @@ django-reversion
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
 graphene-django
+graphene-federation
 pillow
 psycopg2-binary
 sentry-sdk

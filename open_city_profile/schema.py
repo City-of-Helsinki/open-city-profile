@@ -1,4 +1,5 @@
 import graphene
+from graphene_federation import build_schema
 
 import profiles.schema
 import services.schema
@@ -18,4 +19,4 @@ class Mutation(
     pass
 
 
-schema = graphene.Schema(query=Query, mutation=Mutation)
+schema = build_schema(Query, Mutation)

@@ -57,6 +57,12 @@ def superuser_api_client(superuser):
 
 
 @pytest.fixture
+def anonymous_gql_client():
+    gql_client = GraphQLClient(schema)
+    return gql_client
+
+
+@pytest.fixture
 def user_gql_client(user):
     api_client = GraphQLClient(schema)
     api_client.user = user
