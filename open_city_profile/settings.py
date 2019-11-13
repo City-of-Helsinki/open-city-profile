@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     "graphene_django",
     "utils",
     "services",
+    "guardian",
     "encrypted_fields",
 ]
 
@@ -179,6 +180,7 @@ SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env.str("OIDC_ENDPOINT")
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "open_city_profile.oidc.GraphQLApiTokenAuthentication",
+    "guardian.backends.ObjectPermissionBackend",
 ]
 
 # Profiles related settings
