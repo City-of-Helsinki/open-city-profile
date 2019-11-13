@@ -18,7 +18,7 @@ from services.consts import SERVICE_TYPES
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 
-from .models import Profile
+from .models import Address, Contact, Email, Phone, Profile
 
 
 class ConceptType(DjangoObjectType):
@@ -96,22 +96,41 @@ class ProfileFilter(FilterSet):
     )
 
 
+class ContactType(DjangoObjectType):
+    class Meta:
+        model = Contact
+        fields = ("primary",)
+
+
+class EmailType(ContactType):
+    class Meta:
+        model = Email
+        fields = ("email_type", "primary", "email")
+
+
+class PhoneType(ContactType):
+    class Meta:
+        model = Phone
+        fields = ("phone_type", "primary", "phone")
+
+
+class AddressType(ContactType):
+    class Meta:
+        model = Address
+        fields = ("address_type", "primary", "email")
+
+
 class ProfileType(DjangoObjectType):
     class Meta:
         model = Profile
-        fields = (
-            "first_name",
-            "last_name",
-            "nickname",
-            "image",
-            "email",
-            "phone",
-            "language",
-        )
+        fields = ("first_name", "last_name", "nickname", "image", "language")
         interfaces = (relay.Node,)
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
 
+    emails = graphene.List(EmailType)
+    phones = graphene.List(PhoneType)
+    addresses = graphene.List(AddressType)
     language = Language()
     contact_method = ContactMethod()
     service_connections = DjangoFilterConnectionField(ServiceConnectionType)
@@ -120,6 +139,15 @@ class ProfileType(DjangoObjectType):
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
+
+    def resolve_emails(self, info, **kwargs):
+        return Email.objects.filter(profile=self)
+
+    def resolve_phones(self, info, **kwargs):
+        return Phone.objects.filter(profile=self)
+
+    def resolve_addresses(self, info, **kwargs):
+        return Address.objects.filter(profile=self)
 
     def resolve_concepts_of_interest(self, info, **kwargs):
         return self.concepts_of_interest.all()
@@ -156,6 +184,14 @@ class UpdateProfile(graphene.Mutation):
         for field, value in profile_data.items():
             setattr(profile, field, value)
         profile.save()
+        email, created = Email.objects.get_or_create(profile=profile)
+        email.email = profile_data.email
+        email.primary = True
+        email.save()
+        phone, created = Phone.objects.get_or_create(profile=profile)
+        phone.phone = profile_data.phone
+        phone.primary = True
+        phone.save()
 
         cois = Concept.objects.annotate(
             identifier=Concat(

@@ -168,7 +168,7 @@ class ApproveYouthProfile(graphene.Mutation):
         youth_profile.approval_token = ""  # invalidate
         youth_profile.save()
         send_notification(
-            email=youth_profile.profile.email,
+            email=youth_profile.profile.get_default_email,
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMED.value,
             context={"youth_profile": youth_profile},
         )

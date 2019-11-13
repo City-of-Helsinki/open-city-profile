@@ -13,7 +13,6 @@ echo "Database is up!"
 # Apply database migrations
 if [[ "$APPLY_MIGRATIONS" = "1" ]]; then
     echo "Applying database migrations..."
-    ./manage.py makemigrations
     ./manage.py migrate --noinput
 fi
 

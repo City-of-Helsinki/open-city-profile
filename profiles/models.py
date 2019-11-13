@@ -6,13 +6,20 @@ from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
 from django.db import models
+from encrypted_fields import fields
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from users.models import User
 from utils.models import UUIDModel
 
-from .consts import REPRESENTATION_TYPE, REPRESENTATIVE_CONFIRMATION_DEGREE
+from .consts import (
+    ADDRESS_TYPES,
+    EMAIL_TYPES,
+    PHONE_TYPES,
+    REPRESENTATION_TYPE,
+    REPRESENTATIVE_CONFIRMATION_DEGREE,
+)
 
 
 def get_user_media_folder(instance, filename):
@@ -69,8 +76,6 @@ class Profile(UUIDModel):
         null=True,
         blank=True,
     )
-    email = models.EmailField(null=True, blank=True)
-    phone = models.CharField(max_length=255, null=True, blank=True)
     language = models.CharField(
         max_length=7, choices=settings.LANGUAGES, default=settings.LANGUAGES[0][0]
     )
@@ -86,6 +91,9 @@ class Profile(UUIDModel):
     legal_relationships = models.ManyToManyField(
         "self", through=LegalRelationship, symmetrical=False
     )
+
+    def get_default_email(self):
+        return Email.objects.get(profile=self, primary=True)
 
     def save(self, *args, **kwargs):
         if (
@@ -107,3 +115,42 @@ class DivisionOfInterest(models.Model):
         on_delete=models.CASCADE,
         related_name="division_of_interest",
     )
+
+
+class SensitiveData(models.Model):
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    ssn = fields.EncryptedCharField(max_length=11)
+
+
+class Contact(models.Model):
+    primary = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+
+
+class Phone(Contact):
+    profile = models.ForeignKey(
+        Profile, related_name="phones", on_delete=models.CASCADE
+    )
+    phone = models.CharField(max_length=255, null=True, blank=False)
+    phone_type = models.CharField(max_length=32, choices=PHONE_TYPES, blank=False)
+
+
+class Email(Contact):
+    profile = models.ForeignKey(
+        Profile, related_name="emails", on_delete=models.CASCADE
+    )
+    email = models.EmailField(null=True, blank=True)
+    email_type = models.CharField(max_length=32, choices=EMAIL_TYPES, blank=False)
+
+
+class Address(Contact):
+    profile = models.ForeignKey(
+        Profile, related_name="addresses", on_delete=models.CASCADE
+    )
+    address = models.CharField(max_length=128, blank=False)
+    postal_code = models.CharField(max_length=5, blank=False)
+    city = models.CharField(max_length=64, blank=False)
+    country_code = models.CharField(max_length=2, blank=True)
+    address_type = models.CharField(max_length=32, choices=ADDRESS_TYPES, blank=False)

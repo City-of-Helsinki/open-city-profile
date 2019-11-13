@@ -41,6 +41,7 @@ env = environ.Env(
     MAIL_MAILGUN_DOMAIN=(str, ""),
     MAIL_MAILGUN_API=(str, ""),
     NOTIFICATIONS_ENABLED=(bool, False),
+    FIELD_ENCRYPTION_KEYS=(list, []),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -74,6 +75,7 @@ MEDIA_ROOT = var_root("media")
 STATIC_ROOT = var_root("static")
 MEDIA_URL = env.str("MEDIA_URL")
 STATIC_URL = env.str("STATIC_URL")
+FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
 
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
@@ -100,10 +102,8 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "rest_framework",
     "django_filters",
     "parler",
-    "parler_rest",
     "thesaurus",
     "corsheaders",
     "mptt",
@@ -118,6 +118,7 @@ INSTALLED_APPS = [
     "utils",
     "services",
     "guardian",
+    "encrypted_fields",
 ]
 
 MIDDLEWARE = [
@@ -181,17 +182,6 @@ AUTHENTICATION_BACKENDS = [
     "open_city_profile.oidc.GraphQLApiTokenAuthentication",
     "guardian.backends.ObjectPermissionBackend",
 ]
-
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
-    "DEFAULT_AUTHENTICATION_CLASSES": ("helusers.oidc.ApiTokenAuthentication",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 100,
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
-}
 
 # Profiles related settings
 

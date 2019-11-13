@@ -47,8 +47,6 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
                         firstName
                         lastName
                         nickname
-                        email
-                        phone
                     }
                 }
             }
@@ -63,8 +61,6 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
                         "firstName": profile.first_name,
                         "lastName": profile.last_name,
                         "nickname": profile.nickname,
-                        "email": profile.email,
-                        "phone": profile.phone,
                     }
                 }
             ]
