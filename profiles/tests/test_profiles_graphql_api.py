@@ -4,10 +4,11 @@ from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.tests.factories import GroupFactory
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from ..schema import ProfileNode
-from .factories import GroupFactory, ProfileFactory
+from .factories import ProfileFactory
 
 
 def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
@@ -492,7 +493,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
     )
 
 
-def test_profile_node_exposes_key_for_federation_gateway(rf, anonymous_gql_client):
+def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_client):
     request = rf.post("/graphql")
 
     query = """
@@ -503,7 +504,7 @@ def test_profile_node_exposes_key_for_federation_gateway(rf, anonymous_gql_clien
         }
     """
 
-    executed = anonymous_gql_client.execute(query, context=request)
+    executed = anon_user_gql_client.execute(query, context=request)
     print(executed["data"]["_service"]["sdl"])
     assert (
         'type ProfileNode implements Node  @key(fields: "id")'
