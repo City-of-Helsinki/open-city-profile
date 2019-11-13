@@ -208,7 +208,7 @@ class UpdateProfile(graphene.Mutation):
 class Query(graphene.ObjectType):
     profile = graphene.Field(
         ProfileType,
-        id=graphene.Argument(graphene.UUID, required=True),
+        id=graphene.Argument(graphene.ID, required=True),
         serviceType=graphene.Argument(AllowedServiceType, required=True),
     )
     my_profile = graphene.Field(ProfileType)
@@ -225,7 +225,7 @@ class Query(graphene.ObjectType):
             return (
                 Profile.objects.filter(serviceconnection__service=service)
                 .prefetch_related("concepts_of_interest", "divisions_of_interest")
-                .get(pk=kwargs["id"])
+                .get(pk=relay.Node.from_global_id(kwargs["id"])[1])
             )
         except Profile.DoesNotExist:
             raise GraphQLError(_("Profile not found!"))

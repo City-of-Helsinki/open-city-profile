@@ -1,10 +1,12 @@
 from string import Template
 
 from django.utils.translation import ugettext_lazy as _
+from graphene import relay
 from guardian.shortcuts import assign_perm
 
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
+from ..schema import ProfileType
 from .factories import GroupFactory, ProfileFactory
 
 
@@ -315,7 +317,10 @@ def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
     """
     )
 
-    query = t.substitute(id=profile.pk, service_type=service.service_type)
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileType._meta.name, profile.id),
+        service_type=service.service_type,
+    )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -347,7 +352,10 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
     """
     )
 
-    query = t.substitute(id=profile.pk, service_type=service.service_type)
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileType._meta.name, profile.id),
+        service_type=service.service_type,
+    )
     executed = user_gql_client.execute(query, context=request)
     expected_data = {
         "profile": {"firstName": profile.first_name, "lastName": profile.last_name}
@@ -406,7 +414,7 @@ def test_staff_user_cannot_query_a_profile_without_service_type(rf, user_gql_cli
     """
     )
 
-    query = t.substitute(id=profile.pk)
+    query = t.substitute(id=relay.Node.to_global_id(ProfileType._meta.name, profile.id))
     executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -437,7 +445,10 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
     """
     )
 
-    query = t.substitute(id=profile.pk, service_type=service_youth.service_type)
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileType._meta.name, profile.id),
+        service_type=service_youth.service_type,
+    )
     executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -469,7 +480,10 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
     """
     )
 
-    query = t.substitute(id=profile.pk, service_type=service_berth.service_type)
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileType._meta.name, profile.id),
+        service_type=service_berth.service_type,
+    )
     executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
