@@ -22,7 +22,7 @@ class Service(models.Model):
 
 
 class ServiceConnection(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     service = models.ForeignKey(Service, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     enabled = models.BooleanField(default=True)
