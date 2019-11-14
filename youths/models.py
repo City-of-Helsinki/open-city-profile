@@ -22,6 +22,7 @@ class YouthProfile(models.Model):
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
+    birth_date = models.DateField()
     school_name = models.CharField(max_length=128)
     school_class = models.CharField(max_length=10)
     expiration = models.DateField(default=calculate_expiration)
