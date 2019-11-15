@@ -2,12 +2,14 @@
 
 set -e
 
-until nc -z -v -w30 "$DATABASE_HOST" 5432
-do
-  echo "Waiting for postgres database connection..."
-  sleep 1
-done
-echo "Database is up!"
+if [ -n "$DATABASE_HOST" ]; then
+    until nc -z -v -w30 "$DATABASE_HOST" 5432
+    do
+      echo "Waiting for postgres database connection..."
+      sleep 1
+    done
+    echo "Database is up!"
+fi
 
 
 # Apply database migrations

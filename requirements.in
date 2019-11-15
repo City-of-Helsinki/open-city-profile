@@ -17,5 +17,6 @@ django-thesaurus>=0.0.2
 graphene-django
 graphene-federation
 pillow
-psycopg2-binary
+psycopg2
+--no-binary psycopg2
 sentry-sdk
