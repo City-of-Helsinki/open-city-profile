@@ -6,6 +6,7 @@ django-enumfields
 django-environ
 django-filter
 django-graphql-jwt
+django-guardian
 django-helusers
 django-ilmoitin>=0.2.0
 django-munigeo
@@ -14,6 +15,8 @@ django-reversion
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
 graphene-django
+graphene-federation
 pillow
-psycopg2-binary
+psycopg2
+--no-binary psycopg2
 sentry-sdk

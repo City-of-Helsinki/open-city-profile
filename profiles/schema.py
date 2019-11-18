@@ -8,14 +8,16 @@ from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
+from graphene_federation import key
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from profiles.decorators import staff_required
 from services.consts import SERVICE_TYPES
-from services.models import Service
-from services.schema import ServiceType
+from services.models import Service, ServiceConnection
+from services.schema import AllowedServiceType, ServiceConnectionType
 
 from .models import Address, Contact, Email, Phone, Profile
 
@@ -68,7 +70,7 @@ class ProfilesConnection(graphene.Connection):
 
     def resolve_total_count(self, info):
         return self.iterable.model.objects.filter(
-            service__service_type=SERVICE_TYPES[1][0]
+            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
         ).count()
 
 
@@ -119,7 +121,8 @@ class AddressType(ContactType):
         fields = ("address_type", "primary", "email")
 
 
-class ProfileType(DjangoObjectType):
+@key(fields="id")
+class ProfileNode(DjangoObjectType):
     class Meta:
         model = Profile
         fields = ("first_name", "last_name", "nickname", "image", "language")
@@ -132,9 +135,12 @@ class ProfileType(DjangoObjectType):
     addresses = graphene.List(AddressType)
     language = Language()
     contact_method = ContactMethod()
-    services = graphene.List(ServiceType)
+    service_connections = DjangoFilterConnectionField(ServiceConnectionType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
+
+    def resolve_service_connections(self, info, **kwargs):
+        return ServiceConnection.objects.filter(profile=self)
 
     def resolve_emails(self, info, **kwargs):
         return Email.objects.filter(profile=self)
@@ -144,9 +150,6 @@ class ProfileType(DjangoObjectType):
 
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.filter(profile=self)
-
-    def resolve_services(self, info, **kwargs):
-        return Service.objects.filter(profile=self)
 
     def resolve_concepts_of_interest(self, info, **kwargs):
         return self.concepts_of_interest.all()
@@ -172,7 +175,7 @@ class UpdateProfile(graphene.Mutation):
     class Arguments:
         profile = ProfileInput(required=True)
 
-    profile = graphene.Field(ProfileType)
+    profile = graphene.Field(ProfileNode)
 
     @login_required
     def mutate(self, info, **kwargs):
@@ -205,13 +208,34 @@ class UpdateProfile(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    profile = graphene.Field(ProfileType)
+    profile = graphene.Field(
+        ProfileNode,
+        id=graphene.Argument(graphene.ID, required=True),
+        serviceType=graphene.Argument(AllowedServiceType, required=True),
+    )
+    my_profile = graphene.Field(ProfileNode)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
-    berth_profiles = DjangoFilterConnectionField(ProfileType)
+    profiles = DjangoFilterConnectionField(
+        ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
+    )
+
+    @staff_required(required_permission="view")
+    def resolve_profile(self, info, **kwargs):
+        try:
+            service = Service.objects.get(service_type=kwargs["serviceType"])
+            return (
+                Profile.objects.filter(serviceconnection__service=service)
+                .prefetch_related("concepts_of_interest", "divisions_of_interest")
+                .get(pk=relay.Node.from_global_id(kwargs["id"])[1])
+            )
+        except Profile.DoesNotExist:
+            raise GraphQLError(_("Profile not found!"))
+        except Service.DoesNotExist:
+            raise GraphQLError(_("Service not found!"))
 
     @login_required
-    def resolve_profile(self, info, **kwargs):
+    def resolve_my_profile(self, info, **kwargs):
         return (
             Profile.objects.filter(user=info.context.user)
             .prefetch_related("concepts_of_interest", "divisions_of_interest")
@@ -224,14 +248,11 @@ class Query(graphene.ObjectType):
     def resolve_divisions_of_interest(self, info, **kwargs):
         return AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
 
-    @login_required
-    def resolve_berth_profiles(self, info, **kwargs):
-        # TODO: authorization and consent checks
-        # authorized user with real django groups instead of superuser
-        # check whether the consent is given for the profile
-        if info.context.user.is_superuser:
-            return Profile.objects.filter(service__service_type=SERVICE_TYPES[1][0])
-        raise GraphQLError(_("You do not have permission to perform this action."))
+    @staff_required(required_permission="view")
+    def resolve_profiles(self, info, **kwargs):
+        return Profile.objects.filter(
+            serviceconnection__service__service_type=kwargs["serviceType"]
+        )
 
 
 class Mutation(graphene.ObjectType):
