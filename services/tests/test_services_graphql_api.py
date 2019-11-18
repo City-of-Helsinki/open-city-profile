@@ -44,7 +44,7 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query, context_value=request)
+    executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
 
@@ -72,7 +72,7 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     expected_data = {
         "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
     }
-    executed = user_gql_client.execute(query, context_value=request)
+    executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
 
@@ -100,12 +100,12 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     expected_data = {
         "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
     }
-    executed = user_gql_client.execute(query, context_value=request)
+    executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
     assert "errors" not in executed
 
     # do the mutation again
-    executed = user_gql_client.execute(query, context_value=request)
+    executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "Service already exists for this profile!"

@@ -8,6 +8,7 @@ from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
+from graphene_federation import key
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
@@ -120,7 +121,8 @@ class AddressType(ContactType):
         fields = ("address_type", "primary", "email")
 
 
-class ProfileType(DjangoObjectType):
+@key(fields="id")
+class ProfileNode(DjangoObjectType):
     class Meta:
         model = Profile
         fields = ("first_name", "last_name", "nickname", "image", "language")
@@ -173,7 +175,7 @@ class UpdateProfile(graphene.Mutation):
     class Arguments:
         profile = ProfileInput(required=True)
 
-    profile = graphene.Field(ProfileType)
+    profile = graphene.Field(ProfileNode)
 
     @login_required
     def mutate(self, info, **kwargs):
@@ -207,15 +209,15 @@ class UpdateProfile(graphene.Mutation):
 
 class Query(graphene.ObjectType):
     profile = graphene.Field(
-        ProfileType,
+        ProfileNode,
         id=graphene.Argument(graphene.ID, required=True),
         serviceType=graphene.Argument(AllowedServiceType, required=True),
     )
-    my_profile = graphene.Field(ProfileType)
+    my_profile = graphene.Field(ProfileNode)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
     profiles = DjangoFilterConnectionField(
-        ProfileType, serviceType=graphene.Argument(AllowedServiceType, required=True)
+        ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
 
     @staff_required(required_permission="view")

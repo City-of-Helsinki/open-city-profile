@@ -42,11 +42,18 @@ env = environ.Env(
     MAIL_MAILGUN_API=(str, ""),
     NOTIFICATIONS_ENABLED=(bool, False),
     FIELD_ENCRYPTION_KEYS=(list, []),
+    VERSION=(str, None),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-version = subprocess.check_output(["git", "describe", "--always"]).strip()
+version = env.str("VERSION")
+if version is None:
+    try:
+        version = subprocess.check_output(["git", "describe", "--always"]).strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        version = None
+
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
     release=version,

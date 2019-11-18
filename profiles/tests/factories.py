@@ -1,33 +1,8 @@
 import factory
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from thesaurus.models import Concept, Vocabulary
 
+from open_city_profile.tests.factories import UserFactory
 from profiles.models import Profile
-
-User = get_user_model()
-
-
-class UserFactory(factory.django.DjangoModelFactory):
-    uuid = factory.Faker("uuid4")
-    first_name = factory.Faker("first_name")
-    last_name = factory.Faker("last_name")
-    email = factory.Faker("email")
-
-    class Meta:
-        model = User
-
-
-class SuperuserFactory(UserFactory):
-    is_superuser = True
-
-    class Meta:
-        model = User
-
-
-class GroupFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Group
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
