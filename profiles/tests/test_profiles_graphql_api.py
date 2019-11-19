@@ -505,7 +505,6 @@ def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_clien
     """
 
     executed = anon_user_gql_client.execute(query, context=request)
-    print(executed["data"]["_service"]["sdl"])
     assert (
         'type ProfileNode implements Node  @key(fields: "id")'
         in executed["data"]["_service"]["sdl"]
