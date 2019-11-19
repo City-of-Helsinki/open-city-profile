@@ -94,6 +94,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
                     schoolName: "${schoolName}"
                     languageAtHome: ${language}
                     approverEmail: "${approverEmail}"
+                    birthDate: "${birthDate}"
                 }
             )
             {
@@ -101,6 +102,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
                     schoolClass
                     schoolName
                     approverEmail
+                    birthDate
                 }
             }
         }
@@ -112,6 +114,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
         "language": "FINNISH",
+        "birthDate": "2004-04-11",
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -119,6 +122,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
             "schoolClass": creation_data["schoolClass"],
             "schoolName": creation_data["schoolName"],
             "approverEmail": creation_data["approverEmail"],
+            "birthDate": creation_data["birthDate"],
         }
     }
     executed = user_gql_client.execute(query, context=request)
@@ -138,25 +142,26 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
             updateYouthProfile(
                 youthProfileData: {
                     schoolClass: "${schoolClass}"
+                    birthDate: "${birthDate}"
                 }
             )
             {
                 youthProfile {
                     schoolClass
                     schoolName
-                    approverEmail
+                    birthDate
                 }
             }
         }
         """
     )
-    creation_data = {"schoolClass": "2A"}
+    creation_data = {"schoolClass": "2A", "birthDate": "2002-02-02"}
     query = t.substitute(**creation_data)
     expected_data = {
         "youthProfile": {
             "schoolClass": creation_data["schoolClass"],
             "schoolName": youth_profile.school_name,
-            "approverEmail": youth_profile.approver_email,
+            "birthDate": creation_data["birthDate"],
         }
     }
     executed = user_gql_client.execute(query, context=request)
@@ -178,6 +183,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
                     schoolName: "${schoolName}"
                     languageAtHome: ${language}
                     approverEmail: "${approverEmail}"
+                    birthDate: "${birthDate}"
                 }
             )
             {
@@ -185,6 +191,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
                     schoolClass
                     schoolName
                     approverEmail
+                    birthDate
                 }
             }
         }
@@ -196,6 +203,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
         "language": "FINNISH",
+        "birthDate": "2002-02-02",
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -203,6 +211,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
             "schoolClass": creation_data["schoolClass"],
             "schoolName": creation_data["schoolName"],
             "approverEmail": creation_data["approverEmail"],
+            "birthDate": creation_data["birthDate"],
         }
     }
     executed = superuser_gql_client.execute(query, context=request)
@@ -222,6 +231,7 @@ def test_superuser_can_update_youth_profile_mutation(
                 profileId: "${profileId}"
                 youthProfileData: {
                     schoolClass: "${schoolClass}"
+                    birthDate: "${birthDate}"
                 }
             )
             {
@@ -229,18 +239,24 @@ def test_superuser_can_update_youth_profile_mutation(
                     schoolClass
                     schoolName
                     approverEmail
+                    birthDate
                 }
             }
         }
         """
     )
-    creation_data = {"schoolClass": "2A", "profileId": youth_profile.profile.pk}
+    creation_data = {
+        "schoolClass": "2A",
+        "profileId": youth_profile.profile.pk,
+        "birthDate": "2002-02-02",
+    }
     query = t.substitute(**creation_data)
     expected_data = {
         "youthProfile": {
             "schoolClass": creation_data["schoolClass"],
             "schoolName": youth_profile.school_name,
             "approverEmail": youth_profile.approver_email,
+            "birthDate": creation_data["birthDate"],
         }
     }
     executed = superuser_gql_client.execute(query, context=request)
@@ -283,6 +299,7 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
                     approverLastName: "${approver_last_name}"
                     approverPhone: "${approver_phone}"
                     approverEmail: "${approver_email}"
+                    birthDate: "${birthDate}"
                 }
             )
             {
@@ -292,6 +309,7 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
                     approverLastName
                     approverPhone
                     approverEmail
+                    birthDate
                 }
             }
         }
@@ -303,6 +321,7 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
         "approver_last_name": "Testi",
         "approver_phone": "0401234567",
         "approver_email": "teppo@testi.com",
+        "birthDate": "2002-02-02",
     }
     query = t.substitute(**approval_data)
     expected_data = {
@@ -312,6 +331,7 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
             "approverLastName": approval_data["approver_last_name"],
             "approverPhone": approval_data["approver_phone"],
             "approverEmail": approval_data["approver_email"],
+            "birthDate": approval_data["birthDate"],
         }
     }
     executed = anon_user_gql_client.execute(query, context=request)
