@@ -29,13 +29,27 @@ class YouthProfileType(DjangoObjectType):
 
 # Abstract base fields
 class YouthProfileFields(graphene.InputObjectType):
-    school_name = graphene.String()
-    school_class = graphene.String()
-    language_at_home = LanguageAtHome()
-    approver_first_name = graphene.String()
-    approver_last_name = graphene.String()
-    approver_phone = graphene.String()
-    approver_email = graphene.String()
+    school_name = graphene.String(description="The youth's school name.")
+    school_class = graphene.String(description="The youth's school class.")
+    language_at_home = LanguageAtHome(
+        description="The language which is spoken in the youth's home."
+    )
+    approver_first_name = graphene.String(
+        description="The youth's (supposed) guardian's first name."
+    )
+    approver_last_name = graphene.String(
+        description="The youth's (supposed) guardian's last name."
+    )
+    approver_phone = graphene.String(
+        description="The youth's (supposed) guardian's phone number."
+    )
+    approver_email = graphene.String(
+        description="The youth's (supposed) guardian's email address which will be used to send approval requests."
+    )
+    birth_date = graphene.Date(
+        required=True,
+        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
+    )
 
 
 # Subset of abstract fields are required for creation
@@ -136,13 +150,9 @@ class UpdateYouthProfile(graphene.Mutation):
         return UpdateYouthProfile(youth_profile=youth_profile)
 
 
-class ApproveYouthProfileInput(graphene.InputObjectType):
+class ApproveYouthProfileInput(YouthProfileFields):
+    # TODO: Photo usage needs to be present also in Create/Modify, but it cannot be given, if the youth is under 15
     photo_usage_approved = graphene.Boolean()
-    language_at_home = LanguageAtHome()
-    approver_first_name = graphene.String()
-    approver_last_name = graphene.String()
-    approver_phone = graphene.String()
-    approver_email = graphene.String()
 
 
 class ApproveYouthProfile(graphene.Mutation):
