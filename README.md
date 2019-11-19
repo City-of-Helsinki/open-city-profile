@@ -29,8 +29,24 @@ Open city profile is implemented using Django and it provides a GraphQL API.
     * `docker exec profile-backend python manage.py geo_import finland --municipalities`
     * `docker exec profile-backend python manage.py geo_import helsinki --divisions`
     * `docker exec profile-backend python manage.py mark_divisions_of_interest`
+
+7. Generate services: (command doesn't overwrite existing services with same `service_type`)
+   
+    * `docker exec profile-backend python manage.py generate_services`
   
-7. Run the server:
+8. Set permissions for service staff members if needed:
+   
+   * Create group(s) (via Django admin) and add user(s) to the group
+   * Create service permissions for group manually via Django admin or for example:
+     * `docker exec profile-backend python manage.py add_object_permission BERTH VeneAdmin can_view_profiles`
+     * where:
+       * `service_type=BERTH`
+       * `group_name=VeneAdmin`
+       * `permission=can_view_profiles`
+   * Permissions can be removed as follows:
+     * `docker exec profile-backend python manage.py remove_object_permission BERTH VeneAdmin can_view_profiles`
+
+9.  Run the server:
     * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 
