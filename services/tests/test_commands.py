@@ -3,11 +3,11 @@ from io import StringIO
 from django.core.management import call_command
 from guardian.shortcuts import assign_perm
 
-from profiles.tests.factories import GroupFactory
+from open_city_profile.tests.factories import GroupFactory, UserFactory
 from services.consts import SERVICE_TYPES
 from services.models import Service
 
-from .factories import ServiceFactory, UserFactory
+from .factories import ServiceFactory
 
 
 def test_command_generate_services_adds_all_services():
