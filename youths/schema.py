@@ -22,6 +22,10 @@ with override("en"):
 
 
 class YouthProfileType(DjangoObjectType):
+    membership_number = graphene.String(
+        source="membership_number", description="Youth's membership number"
+    )
+
     class Meta:
         model = YouthProfile
         exclude = ("id", "approval_token")

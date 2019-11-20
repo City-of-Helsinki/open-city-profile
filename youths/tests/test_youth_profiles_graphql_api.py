@@ -52,10 +52,16 @@ def test_normal_user_can_query_own_youth_profile(rf, user_gql_client):
         {
             youthProfile {
                 schoolClass
+                membershipNumber
             }
         }
     """
-    expected_data = {"youthProfile": {"schoolClass": youth_profile.school_class}}
+    expected_data = {
+        "youthProfile": {
+            "schoolClass": youth_profile.school_class,
+            "membershipNumber": youth_profile.membership_number,
+        }
+    }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
