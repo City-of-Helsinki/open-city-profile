@@ -2,13 +2,1004 @@ from string import Template
 
 from django.utils.translation import ugettext_lazy as _
 from graphene import relay
+from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.factories import GroupFactory
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from ..schema import ProfileNode
-from .factories import ProfileFactory
+from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
+
+
+def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile_data):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                createProfile(
+                    profile: {
+                        nickname: \"${nickname}\",
+                        addEmails:[
+                            {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                        ]
+                    }
+                ) {
+                profile{
+                    nickname,
+                    emails{
+                        edges{
+                        node{
+                            email,
+                            emailType,
+                            primary,
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "createProfile": {
+            "profile": {
+                "nickname": profile_data["nickname"],
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": email_data["primary"],
+                            }
+                        }
+                    ]
+                },
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        nickname=profile_data["nickname"],
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        nickname: \"${nickname}\",
+                        updateEmails:[
+                            {
+                                id: \"${email_id}\",
+                                emailType: ${email_type},
+                                email:\"${email}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
+                ) {
+                    profile{
+                        nickname,
+                        emails{
+                            edges{
+                            node{
+                                id
+                                email
+                                emailType
+                                primary
+                            }
+                            }
+                        }
+                    }
+                }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "nickname": profile_data["nickname"],
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailType", id=email.id),
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": email_data["primary"],
+                            }
+                        }
+                    ]
+                },
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        nickname=profile_data["nickname"],
+        email_id=to_global_id(type="EmailType", id=email.id),
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_add_email(rf, user_gql_client, email_data):
+    ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    addEmails:[
+                        {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                    ]
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            email
+                            emailType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": email_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
+    ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    addPhones:[
+                        {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                    ]
+                }
+            ) {
+                profile{
+                    phones{
+                        edges{
+                        node{
+                            phone
+                            phoneType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "phones": {
+                    "edges": [
+                        {
+                            "node": {
+                                "phone": phone_data["phone"],
+                                "phoneType": phone_data["phone_type"],
+                                "primary": phone_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        phone=phone_data["phone"],
+        phone_type=phone_data["phone_type"],
+        primary=str(phone_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_add_address(rf, user_gql_client, address_data):
+    ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    addAddresses:[
+                        {
+                            addressType: ${address_type},
+                            address:\"${address}\",
+                            postalCode: \"${postal_code}\",
+                            city: \"${city}\",
+                            countryCode: \"${country_code}\",
+                            primary: ${primary}
+                        }
+                    ]
+                }
+            ) {
+                profile{
+                    addresses{
+                        edges{
+                        node{
+                            address
+                            postalCode
+                            city
+                            countryCode
+                            addressType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "addresses": {
+                    "edges": [
+                        {
+                            "node": {
+                                "address": address_data["address"],
+                                "postalCode": address_data["postal_code"],
+                                "city": address_data["city"],
+                                "countryCode": address_data["country_code"],
+                                "addressType": address_data["address_type"],
+                                "primary": address_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        address=address_data["address"],
+        postal_code=address_data["postal_code"],
+        city=address_data["city"],
+        country_code=address_data["country_code"],
+        address_type=address_data["address_type"],
+        primary=str(address_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_address(rf, user_gql_client, address_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    address = AddressFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    updateAddresses:[
+                        {
+                            id: \"${address_id}\",
+                            addressType: ${address_type},
+                            address:\"${address}\",
+                            primary: ${primary}
+                        }
+                    ]
+                }
+            ) {
+                profile{
+                    addresses{
+                        edges{
+                        node{
+                            id
+                            address
+                            addressType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "addresses": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="AddressType", id=address.id),
+                                "address": address_data["address"],
+                                "addressType": address_data["address_type"],
+                                "primary": address_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        address_id=to_global_id(type="AddressType", id=address.id),
+        address=address_data["address"],
+        address_type=address_data["address_type"],
+        primary=str(address_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_email(rf, user_gql_client, email_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    updateEmails:[
+                        {
+                            id: \"${email_id}\",
+                            emailType: ${email_type},
+                            email:\"${email}\",
+                            primary: ${primary}
+                        }
+                    ]
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                            email
+                            emailType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailType", id=email.id),
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": email_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        email_id=to_global_id(type="EmailType", id=email.id),
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    phone = PhoneFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    updatePhones:[
+                        {
+                            id: \"${phone_id}\",
+                            phoneType: ${phone_type},
+                            phone:\"${phone}\",
+                            primary: ${primary}
+                        }
+                    ]
+                }
+            ) {
+                profile{
+                    phones{
+                        edges{
+                        node{
+                            id
+                            phone
+                            phoneType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "phones": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="PhoneType", id=phone.id),
+                                "phone": phone_data["phone"],
+                                "phoneType": phone_data["phone_type"],
+                                "primary": phone_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone=phone_data["phone"],
+        phone_type=phone_data["phone_type"],
+        primary=str(phone_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    removeEmails:[
+                        \"${email_id}\"
+                    ]
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                            email
+                            emailType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {"updateProfile": {"profile": {"emails": {"edges": []}}}}
+
+    mutation = t.substitute(
+        email_id=to_global_id(type="EmailType", id=email.id),
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    phone = PhoneFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    removePhones:[
+                        \"${phone_id}\"
+                    ]
+                }
+            ) {
+                profile{
+                    phones{
+                        edges{
+                        node{
+                            id
+                            phone
+                            phoneType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {"updateProfile": {"profile": {"phones": {"edges": []}}}}
+
+    mutation = t.substitute(
+        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone=phone_data["phone"],
+        phone_type=phone_data["phone_type"],
+        primary=str(phone_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
+    profile = ProfileFactory(user=user_gql_client.user)
+    address = AddressFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    removeAddresses:[
+                        \"${address_id}\"
+                    ]
+                }
+            ) {
+                profile{
+                    addresses{
+                        edges{
+                        node{
+                            id
+                            address
+                            addressType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {"updateProfile": {"profile": {"addresses": {"edges": []}}}}
+
+    mutation = t.substitute(
+        address_id=to_global_id(type="AddressType", id=address.id),
+        address=address_data["address"],
+        address_type=address_data["address_type"],
+        primary=str(address_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_emails(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                emails{
+                    edges{
+                        node{
+                            email
+                            emailType
+                            primary
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "emails": {
+                "edges": [
+                    {
+                        "node": {
+                            "email": email.email,
+                            "emailType": email.email_type,
+                            "primary": email.primary,
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_phones(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    phone = PhoneFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                phones{
+                    edges{
+                        node{
+                            phone
+                            phoneType
+                            primary
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "phones": {
+                "edges": [
+                    {
+                        "node": {
+                            "phone": phone.phone,
+                            "phoneType": phone.phone_type,
+                            "primary": phone.primary,
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_addresses(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    address = AddressFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                addresses{
+                    edges{
+                        node{
+                            address
+                            addressType
+                            primary
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "addresses": {
+                "edges": [
+                    {
+                        "node": {
+                            "address": address.address,
+                            "addressType": address.address_type,
+                            "primary": address.primary,
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    phone = PhoneFactory(profile=profile, primary=True)
+    email = EmailFactory(profile=profile, primary=True)
+    address = AddressFactory(profile=profile, primary=True)
+    PhoneFactory(profile=profile, primary=False)
+    EmailFactory(profile=profile, primary=False)
+    AddressFactory(profile=profile, primary=False)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                primaryPhone{
+                    phone,
+                    phoneType,
+                    primary
+                },
+                primaryEmail{
+                    email,
+                    emailType,
+                    primary
+                },
+                primaryAddress{
+                    address,
+                    addressType,
+                    primary
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "primaryPhone": {
+                "phone": phone.phone,
+                "phoneType": phone.phone_type,
+                "primary": phone.primary,
+            },
+            "primaryEmail": {
+                "email": email.email,
+                "emailType": email.email_type,
+                "primary": email.primary,
+            },
+            "primaryAddress": {
+                "address": address.address,
+                "addressType": address.address_type,
+                "primary": address.primary,
+            },
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_change_primary_contact_details(
+    rf, user_gql_client, email_data, phone_data, address_data
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    PhoneFactory(profile=profile, primary=True)
+    EmailFactory(profile=profile, primary=True)
+    AddressFactory(profile=profile, primary=True)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        addEmails:[
+                            {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                        ],
+                        addPhones:[
+                            {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                        ],
+                        addAddresses:[
+                            {addressType: ${address_type}, address:\"${address}\", primary: ${primary}}
+                        ]
+                    }
+                ) {
+                profile{
+                    primaryEmail{
+                        email,
+                        emailType,
+                        primary
+                    },
+                    primaryPhone{
+                        phone,
+                        phoneType,
+                        primary
+                    },
+                    primaryAddress{
+                        address,
+                        addressType,
+                        primary
+                    },
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "primaryEmail": {
+                    "email": email_data["email"],
+                    "emailType": email_data["email_type"],
+                    "primary": True,
+                },
+                "primaryPhone": {
+                    "phone": phone_data["phone"],
+                    "phoneType": phone_data["phone_type"],
+                    "primary": True,
+                },
+                "primaryAddress": {
+                    "address": address_data["address"],
+                    "addressType": address_data["address_type"],
+                    "primary": True,
+                },
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        phone=phone_data["phone"],
+        phone_type=phone_data["phone_type"],
+        address=address_data["address"],
+        address_type=address_data["address_type"],
+        primary="true",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_primary_contact_details(
+    rf, user_gql_client, email_data
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile)
+    email_2 = EmailFactory(profile=profile, primary=True)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                    updateEmails:[
+                        {
+                            id: \"${email_id}\",
+                            emailType: ${email_type},
+                            email:\"${email}\",
+                            primary: ${primary}
+                        }
+                    ]
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                            email
+                            emailType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailType", id=email_2.id),
+                                "email": email_2.email,
+                                "emailType": email_2.email_type,
+                                "primary": False,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailType", id=email.id),
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": True,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        email_id=to_global_id(type="EmailType", id=email.id),
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary="true",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):

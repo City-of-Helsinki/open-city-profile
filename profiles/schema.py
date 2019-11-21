@@ -19,7 +19,9 @@ from services.consts import SERVICE_TYPES
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 
+from .consts import ADDRESS_TYPES, EMAIL_TYPES, PHONE_TYPES
 from .models import Address, Contact, Email, Phone, Profile
+from .utils import create_nested, delete_nested, update_nested
 
 
 class ConceptType(DjangoObjectType):
@@ -101,24 +103,40 @@ class ContactType(DjangoObjectType):
     class Meta:
         model = Contact
         fields = ("primary",)
+        filter_fields = []
+        interfaces = (relay.Node,)
 
 
 class EmailType(ContactType):
     class Meta:
         model = Email
-        fields = ("email_type", "primary", "email")
+        fields = ("id", "email_type", "primary", "email")
+        filter_fields = []
+        interfaces = (relay.Node,)
 
 
 class PhoneType(ContactType):
     class Meta:
         model = Phone
-        fields = ("phone_type", "primary", "phone")
+        fields = ("id", "phone_type", "primary", "phone")
+        filter_fields = []
+        interfaces = (relay.Node,)
 
 
 class AddressType(ContactType):
     class Meta:
         model = Address
-        fields = ("address_type", "primary", "email")
+        fields = (
+            "id",
+            "address_type",
+            "primary",
+            "address",
+            "postal_code",
+            "city",
+            "country_code",
+        )
+        filter_fields = []
+        interfaces = (relay.Node,)
 
 
 @key(fields="id")
@@ -130,9 +148,12 @@ class ProfileNode(DjangoObjectType):
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
 
-    emails = graphene.List(EmailType)
-    phones = graphene.List(PhoneType)
-    addresses = graphene.List(AddressType)
+    primary_email = graphene.Field(EmailType)
+    primary_phone = graphene.Field(PhoneType)
+    primary_address = graphene.Field(AddressType)
+    emails = DjangoFilterConnectionField(EmailType)
+    phones = DjangoFilterConnectionField(PhoneType)
+    addresses = DjangoFilterConnectionField(AddressType)
     language = Language()
     contact_method = ContactMethod()
     service_connections = DjangoFilterConnectionField(ServiceConnectionType)
@@ -141,6 +162,15 @@ class ProfileNode(DjangoObjectType):
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
+
+    def resolve_primary_email(self, info, **kwargs):
+        return Email.objects.filter(profile=self, primary=True).first()
+
+    def resolve_primary_phone(self, info, **kwargs):
+        return Phone.objects.filter(profile=self, primary=True).first()
+
+    def resolve_primary_address(self, info, **kwargs):
+        return Address.objects.filter(profile=self, primary=True).first()
 
     def resolve_emails(self, info, **kwargs):
         return Email.objects.filter(profile=self)
@@ -158,17 +188,114 @@ class ProfileNode(DjangoObjectType):
         return self.divisions_of_interest.all()
 
 
+AllowedEmailType = graphene.Enum(
+    "emailType", [(st[0].upper(), st[0]) for st in EMAIL_TYPES]
+)
+
+
+class EmailInput(graphene.InputObjectType):
+    id = graphene.ID()
+    email = graphene.String(description="Email address.")
+    email_type = AllowedEmailType(description="Email address type.")
+    primary = graphene.Boolean(description="Is this primary mail address.")
+
+
+AllowedPhoneType = graphene.Enum(
+    "phoneType", [(st[0].upper(), st[0]) for st in PHONE_TYPES]
+)
+
+
+class PhoneInput(graphene.InputObjectType):
+    id = graphene.ID()
+    phone = graphene.String(description="Phone number.")
+    phone_type = AllowedPhoneType(description="Phone number type.")
+    primary = graphene.Boolean(description="Is this primary phone number.")
+
+
+AllowedAddressType = graphene.Enum(
+    "addressType", [(st[0].upper(), st[0]) for st in ADDRESS_TYPES]
+)
+
+
+class AddressInput(graphene.InputObjectType):
+    id = graphene.ID()
+    address = graphene.String(description="Street address.")
+    postal_code = graphene.String(description="Postal code.")
+    city = graphene.String(description="City.")
+    country_code = graphene.String(description="Country code")
+    address_type = AllowedAddressType(description="Address type.")
+    primary = graphene.Boolean(description="Is this primary address.")
+
+
 class ProfileInput(graphene.InputObjectType):
-    first_name = graphene.String()
-    last_name = graphene.String()
-    nickname = graphene.String()
-    image = graphene.String()
-    email = graphene.String()
-    phone = graphene.String()
-    language = Language()
-    contact_method = ContactMethod()
-    concepts_of_interest = graphene.List(graphene.String)
-    divisions_of_interest = graphene.List(graphene.String)
+    first_name = graphene.String(description="First name.")
+    last_name = graphene.String(description="Last name.")
+    nickname = graphene.String(description="Nickname.")
+    image = graphene.String(description="Profile image.")
+    language = Language(description="Language.")
+    contact_method = ContactMethod(description="Contact method.")
+    concepts_of_interest = graphene.List(
+        graphene.String, description="Concepts of interest."
+    )
+    divisions_of_interest = graphene.List(
+        graphene.String, description="Divisions of interest."
+    )
+    add_emails = graphene.List(EmailInput, description="Add emails to profile.")
+    update_emails = graphene.List(EmailInput, description="Update profile emails.")
+    remove_emails = graphene.List(
+        graphene.ID, description="Remove emails from profile."
+    )
+    add_phones = graphene.List(PhoneInput, description="Add phone numbers to profile.")
+    update_phones = graphene.List(
+        PhoneInput, description="Update profile phone numbers."
+    )
+    remove_phones = graphene.List(
+        graphene.ID, description="Remove phone numbers from profile."
+    )
+    add_addresses = graphene.List(AddressInput, description="Add addresses to profile.")
+    update_addresses = graphene.List(
+        AddressInput, description="Update profile addresses."
+    )
+    remove_addresses = graphene.List(
+        graphene.ID, description="Remove addresses from profile."
+    )
+
+
+class CreateProfile(graphene.Mutation):
+    class Arguments:
+        profile = ProfileInput(required=True)
+
+    profile = graphene.Field(ProfileNode)
+
+    @login_required
+    def mutate(self, info, **kwargs):
+        profile_data = kwargs.pop("profile")
+        concepts_of_interest = profile_data.pop("concepts_of_interest", [])
+        divisions_of_interest = profile_data.pop("divisions_of_interest", [])
+        nested_to_create = [
+            (Email, profile_data.pop("add_emails", [])),
+            (Phone, profile_data.pop("add_phones", [])),
+            (Address, profile_data.pop("add_addresses", [])),
+        ]
+
+        profile = Profile.objects.create(user=info.context.user)
+        for field, value in profile_data.items():
+            setattr(profile, field, value)
+        profile.save()
+
+        for model, data in nested_to_create:
+            create_nested(model, profile, data)
+
+        cois = Concept.objects.annotate(
+            identifier=Concat(
+                "vocabulary__prefix", Value(":"), "code", output_field=CharField()
+            )
+        ).filter(identifier__in=concepts_of_interest)
+        profile.concepts_of_interest.set(cois)
+        ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
+        profile.divisions_of_interest.set(ads)
+
+        return CreateProfile(profile=profile)
 
 
 class UpdateProfile(graphene.Mutation):
@@ -182,18 +309,35 @@ class UpdateProfile(graphene.Mutation):
         profile_data = kwargs.pop("profile")
         concepts_of_interest = profile_data.pop("concepts_of_interest", [])
         divisions_of_interest = profile_data.pop("divisions_of_interest", [])
-        profile, created = Profile.objects.get_or_create(user=info.context.user)
+        nested_to_create = [
+            (Email, profile_data.pop("add_emails", [])),
+            (Phone, profile_data.pop("add_phones", [])),
+            (Address, profile_data.pop("add_addresses", [])),
+        ]
+        nested_to_update = [
+            (Email, profile_data.pop("update_emails", [])),
+            (Phone, profile_data.pop("update_phones", [])),
+            (Address, profile_data.pop("update_addresses", [])),
+        ]
+        nested_to_delete = [
+            (Email, profile_data.pop("remove_emails", [])),
+            (Phone, profile_data.pop("remove_phones", [])),
+            (Address, profile_data.pop("remove_addresses", [])),
+        ]
+
+        profile = Profile.objects.get(user=info.context.user)
         for field, value in profile_data.items():
             setattr(profile, field, value)
         profile.save()
-        email, created = Email.objects.get_or_create(profile=profile)
-        email.email = profile_data.email
-        email.primary = True
-        email.save()
-        phone, created = Phone.objects.get_or_create(profile=profile)
-        phone.phone = profile_data.phone
-        phone.primary = True
-        phone.save()
+
+        for model, data in nested_to_create:
+            create_nested(model, profile, data)
+
+        for model, data in nested_to_update:
+            update_nested(model, profile, data)
+
+        for model, data in nested_to_delete:
+            delete_nested(model, profile, data)
 
         cois = Concept.objects.annotate(
             identifier=Concat(
@@ -256,4 +400,5 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
+    create_profile = CreateProfile.Field()
     update_profile = UpdateProfile.Field()

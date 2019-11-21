@@ -9,14 +9,12 @@ REPRESENTATIVE_CONFIRMATION_DEGREE = (
 )
 
 EMAIL_TYPES = (
-    ("", ""),
     ("WORK", _("Work email")),
     ("PERSONAL", _("Personal email")),
     ("OTHER", _("Other email")),
 )
 
 PHONE_TYPES = (
-    ("", ""),
     ("WORK", _("Work phone")),
     ("HOME", _("Home phone")),
     ("MOBILE", _("Mobile phone")),
@@ -24,7 +22,6 @@ PHONE_TYPES = (
 )
 
 ADDRESS_TYPES = (
-    ("", ""),
     ("WORK", _("Work address")),
     ("HOME", _("Home address")),
     ("OTHER", _("Other address")),
