@@ -46,7 +46,24 @@ Open city profile is implemented using Django and it provides a GraphQL API.
    * Permissions can be removed as follows:
      * `docker exec profile-backend python manage.py remove_object_permission BERTH VeneAdmin can_view_profiles`
 
-9.  Run the server:
+9. Seed development data (optional). This command will flush the database.
+
+    * Add all data with defaults: `docker exec profile-backend python manage.py seed_data`
+    * See `python manage.py help seed_data` for optional arguments
+    * Command will generate:
+      * All available services
+      * One group per service (with `can_manage_profiles` permissions)
+      * One user per group (with username `{service_type}_user`)
+      * Profiles
+        * With user
+        * With email, phone number and address 
+        * Connects to one random service
+      * Youth profiles
+        * Adds for existing profiles
+        * By default adds for 20% of profiles (0.2)
+        * Approved randomly
+
+10.  Run the server:
     * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 
