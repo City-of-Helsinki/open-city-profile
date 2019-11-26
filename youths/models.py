@@ -2,6 +2,7 @@ import uuid
 from datetime import date
 
 import reversion
+from django.conf import settings
 from django.db import models
 
 from profiles.models import Profile
@@ -44,6 +45,11 @@ class YouthProfile(models.Model):
     )
     approved_time = models.DateTimeField(null=True, blank=True, editable=False)
     photo_usage_approved = models.BooleanField(default=False)
+
+    @property
+    def membership_number(self):
+        num = 0 if self.pk is None else self.pk
+        return str(num).zfill(settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH)
 
     def __str__(self):
         return "{} {} ({})".format(

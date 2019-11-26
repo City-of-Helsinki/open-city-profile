@@ -252,3 +252,8 @@ if "SECRET_KEY" not in locals():
                 "Please create a %s file with random characters to generate your secret key!"
                 % secret_file
             )
+
+# A youth membership number is the youth profile's PK padded with zeroes.
+# This value tells what length the number will be padded to.
+# For example, PK 123, length 6 --> 000123.
+YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
