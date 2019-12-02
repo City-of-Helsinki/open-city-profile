@@ -8,14 +8,13 @@ from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
-from graphene_federation import key
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from graphene_federation import key
 from profiles.decorators import staff_required
-from services.consts import SERVICE_TYPES
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 
@@ -68,10 +67,8 @@ class ProfilesConnection(graphene.Connection):
     def resolve_count(self, info):
         return self.length
 
-    def resolve_total_count(self, info):
-        return self.iterable.model.objects.filter(
-            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
-        ).count()
+    def resolve_total_count(self, info, **kwargs):
+        return self.iterable.model.objects.count()
 
 
 class ProfileFilter(FilterSet):
