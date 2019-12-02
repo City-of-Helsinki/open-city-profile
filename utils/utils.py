@@ -6,33 +6,31 @@ from django.contrib.auth.models import Group
 from django.utils.timezone import get_current_timezone, make_aware
 from guardian.shortcuts import assign_perm
 
-from profiles.consts import ADDRESS_TYPES, EMAIL_TYPES, PHONE_TYPES
+from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Address, Email, Phone, Profile
-from services.consts import SERVICE_TYPES
+from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
-from youths.consts import LANGUAGES
+from youths.enums import YouthLanguage
 from youths.models import YouthProfile
 
 
 def generate_services():
     return Service.objects.bulk_create(
-        [Service(service_type=service_type[0]) for service_type in SERVICE_TYPES]
+        [Service(service_type=service_type.value) for service_type in ServiceType]
     )
 
 
 def generate_groups_for_services(services=[]):
     return Group.objects.bulk_create(
-        [Group(name=service.service_type) for service in services]
+        [Group(name=service.service_type.value) for service in services]
     )
 
 
 def assign_permissions(groups=[], services=[]):
     available_permissions = [item[0] for item in Service._meta.permissions]
     for group in groups:
-        service = next(
-            service for service in services if service.service_type == group.name
-        )
+        service = Service.objects.get(service_type=group.name)
         if service:
             for permission in available_permissions:
                 assign_perm(permission, group, service)
@@ -83,13 +81,13 @@ def generate_profiles(k=50, faker=None):
         Email.objects.create(
             profile=profile,
             primary=True,
-            email_type=EMAIL_TYPES[0][0],
+            email_type=EmailType.NONE,
             email=faker.email(),
         )
         Phone.objects.create(
             profile=profile,
             primary=True,
-            phone_type=PHONE_TYPES[0][0],
+            phone_type=PhoneType.NONE,
             phone=faker.phone_number(),
         )
         Address.objects.create(
@@ -99,7 +97,7 @@ def generate_profiles(k=50, faker=None):
             city=faker.city(),
             postal_code=faker.postcode(),
             country_code=faker.country_code(),
-            address_type=ADDRESS_TYPES[0][0],
+            address_type=AddressType.NONE,
         )
         services = Service.objects.all()
         if services.exists():
@@ -120,7 +118,7 @@ def generate_youth_profiles(percentage=0.2, faker=None):
                 get_current_timezone(),
                 is_dst=False,
             ),
-            language_at_home=random.choice(LANGUAGES)[0],
+            language_at_home=random.choice(list(YouthLanguage)),
             approver_first_name=faker.first_name() if approved else "",
             approver_last_name=profile.last_name if approved else "",
             approved_time=make_aware(

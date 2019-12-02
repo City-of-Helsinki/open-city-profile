@@ -7,18 +7,19 @@ from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from encrypted_fields import fields
+from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from users.models import User
 from utils.models import UUIDModel
 
-from .consts import (
-    ADDRESS_TYPES,
-    EMAIL_TYPES,
-    PHONE_TYPES,
-    REPRESENTATION_TYPE,
-    REPRESENTATIVE_CONFIRMATION_DEGREE,
+from .enums import (
+    AddressType,
+    EmailType,
+    PhoneType,
+    RepresentationType,
+    RepresentativeConfirmationDegree,
 )
 
 
@@ -47,13 +48,13 @@ class LegalRelationship(models.Model):
     representee = models.ForeignKey(  # "child"
         "Profile", related_name="representees", on_delete=models.CASCADE
     )
-    type = models.CharField(  # ATM only "custodianship"
-        max_length=30, choices=REPRESENTATION_TYPE, default=REPRESENTATION_TYPE[0][0]
+    type = EnumField(  # ATM only "custodianship"
+        RepresentationType, max_length=30, default=RepresentationType.CUSTODY
     )
-    confirmation_degree = models.CharField(
+    confirmation_degree = EnumField(
+        RepresentativeConfirmationDegree,
         max_length=30,
-        choices=REPRESENTATIVE_CONFIRMATION_DEGREE,
-        default=REPRESENTATIVE_CONFIRMATION_DEGREE[0][0],
+        default=RepresentativeConfirmationDegree.NONE,
     )
     expiration = models.DateField(blank=True, null=True)
 
@@ -134,7 +135,7 @@ class Phone(Contact):
         Profile, related_name="phones", on_delete=models.CASCADE
     )
     phone = models.CharField(max_length=255, null=True, blank=False)
-    phone_type = models.CharField(max_length=32, choices=PHONE_TYPES, blank=False)
+    phone_type = EnumField(PhoneType, max_length=32, blank=False)
 
 
 class Email(Contact):
@@ -142,7 +143,7 @@ class Email(Contact):
         Profile, related_name="emails", on_delete=models.CASCADE
     )
     email = models.EmailField(null=True, blank=True)
-    email_type = models.CharField(max_length=32, choices=EMAIL_TYPES, blank=False)
+    email_type = EnumField(EmailType, max_length=32, blank=False)
 
 
 class Address(Contact):
@@ -153,4 +154,4 @@ class Address(Contact):
     postal_code = models.CharField(max_length=5, blank=False)
     city = models.CharField(max_length=64, blank=False)
     country_code = models.CharField(max_length=2, blank=True)
-    address_type = models.CharField(max_length=32, choices=ADDRESS_TYPES, blank=False)
+    address_type = EnumField(AddressType, max_length=32, blank=False)

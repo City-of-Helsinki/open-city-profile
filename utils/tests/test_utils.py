@@ -3,7 +3,7 @@ from faker import Faker
 
 from open_city_profile.tests.factories import GroupFactory, UserFactory
 from profiles.models import Profile
-from services.consts import SERVICE_TYPES
+from services.enums import ServiceType
 from services.models import Service
 from services.tests.factories import ServiceFactory
 from users.models import User
@@ -22,8 +22,8 @@ from youths.models import YouthProfile
 def test_generates_services():
     assert Service.objects.count() == 0
     services = generate_services()
-    assert len(services) == len(SERVICE_TYPES)
-    assert Service.objects.count() == len(SERVICE_TYPES)
+    assert len(services) == len(ServiceType)
+    assert Service.objects.count() == len(ServiceType)
 
 
 def test_generates_group_for_service():
@@ -66,7 +66,7 @@ def test_creates_defined_user():
 
 
 def test_generates_group_admins():
-    group = GroupFactory(name="BERTH")
+    group = GroupFactory(name=ServiceType.BERTH.value)
     assert group.user_set.count() == 0
     generate_group_admins([group], faker=Faker())
     assert group.user_set.count() == 1

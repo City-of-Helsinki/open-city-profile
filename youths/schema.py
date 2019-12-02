@@ -11,13 +11,12 @@ from graphql_jwt.decorators import login_required
 
 from profiles.models import Profile
 
-from .consts import LANGUAGES
-from .enums import NotificationType
+from .enums import NotificationType, YouthLanguage
 from .models import YouthProfile
 
 with override("en"):
-    LanguageAtHome = graphene.Enum(
-        "LanguageAtHome", [(l[1].upper(), l[0]) for l in LANGUAGES]
+    LanguageAtHome = graphene.Enum.from_enum(
+        YouthLanguage, description=lambda e: e.label if e else ""
     )
 
 
@@ -26,9 +25,14 @@ class YouthProfileType(DjangoObjectType):
         source="membership_number", description="Youth's membership number"
     )
 
+    language_at_home = LanguageAtHome(
+        source="language_at_home",
+        description="The language which is spoken in the youth's home.",
+    )
+
     class Meta:
         model = YouthProfile
-        exclude = ("id", "approval_token")
+        exclude = ("id", "approval_token", "language_at_home")
 
 
 # Abstract base fields

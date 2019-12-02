@@ -1,14 +1,13 @@
 from django.db import models
+from enumfields import EnumField
 
 from profiles.models import Profile
 
-from .consts import SERVICE_TYPES
+from .enums import ServiceType
 
 
 class Service(models.Model):
-    service_type = models.CharField(
-        max_length=32, choices=SERVICE_TYPES, blank=False, unique=True
-    )
+    service_type = EnumField(ServiceType, max_length=32, blank=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -18,7 +17,7 @@ class Service(models.Model):
         )
 
     def __str__(self):
-        return self.service_type
+        return self.service_type.name
 
 
 class ServiceConnection(models.Model):
@@ -32,5 +31,5 @@ class ServiceConnection(models.Model):
 
     def __str__(self):
         return "{} {} - {}".format(
-            self.profile.first_name, self.profile.last_name, self.service.service_type
+            self.profile.first_name, self.profile.last_name, self.service
         )
