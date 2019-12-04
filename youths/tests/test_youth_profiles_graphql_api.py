@@ -1,6 +1,7 @@
 import uuid
 from string import Template
 
+from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
 
@@ -119,7 +120,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
-        "language": "FINNISH",
+        "language": YouthLanguage.FINNISH.name,
         "birthDate": "2004-04-11",
     }
     query = t.substitute(**creation_data)
@@ -207,8 +208,8 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
         "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
+        "language": YouthLanguage.FINNISH.name,
         "approverEmail": "hyvaksyja@ex.com",
-        "language": "FINNISH",
         "birthDate": "2002-02-02",
     }
     query = t.substitute(**creation_data)

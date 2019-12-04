@@ -2,6 +2,7 @@ from string import Template
 
 from django.utils.translation import ugettext_lazy as _
 
+from services.enums import ServiceType
 from services.tests.factories import (
     ProfileFactory,
     ServiceConnectionFactory,
@@ -14,7 +15,7 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
     request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
     service = ServiceFactory()
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+    ServiceConnectionFactory(profile=profile, service=service)
 
     query = """
         {
@@ -34,13 +35,7 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
     expected_data = {
         "myProfile": {
             "serviceConnections": {
-                "edges": [
-                    {
-                        "node": {
-                            "service": {"type": service_connection.service.service_type}
-                        }
-                    }
-                ]
+                "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
             }
         }
     }
@@ -57,7 +52,7 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     t = Template(
         """
         mutation {
-            addServiceConnection(serviceConnection: { service: { type: ${serviceType} } }) {
+            addServiceConnection(serviceConnection: { service: { type: ${service_type} } }) {
                 serviceConnection {
                     service {
                         type
@@ -65,12 +60,13 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
                 }
             }
         }
-        """
+    """
     )
-    creation_data = {"serviceType": "BERTH"}
-    query = t.substitute(**creation_data)
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
-        "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
+        "addServiceConnection": {
+            "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
+        }
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
@@ -85,7 +81,7 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     t = Template(
         """
         mutation {
-            addServiceConnection(serviceConnection: { service: { type: ${serviceType} } }) {
+            addServiceConnection(serviceConnection: { service: { type: ${service_type} } }) {
                 serviceConnection {
                     service {
                         type
@@ -93,12 +89,13 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
                 }
             }
         }
-        """
+    """
     )
-    creation_data = {"serviceType": "BERTH"}
-    query = t.substitute(**creation_data)
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
-        "addServiceConnection": {"serviceConnection": {"service": {"type": "BERTH"}}}
+        "addServiceConnection": {
+            "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
+        }
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data

@@ -3,7 +3,7 @@ from graphql_relay.node.node import from_global_id
 
 def create_nested(model, profile, data):
     for add_input in data:
-        item = model.objects.create(profile=profile)
+        item = model(profile=profile)
         for field, value in add_input.items():
             if field == "primary" and value is True:
                 model.objects.filter(profile=profile).update(primary=False)

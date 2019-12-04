@@ -4,10 +4,11 @@ from datetime import date
 import reversion
 from django.conf import settings
 from django.db import models
+from enumfields import EnumField
 
 from profiles.models import Profile
 
-from .consts import LANGUAGES
+from .enums import YouthLanguage as LanguageAtHome
 
 
 def calculate_expiration():
@@ -28,8 +29,8 @@ class YouthProfile(models.Model):
     school_class = models.CharField(max_length=10)
     expiration = models.DateField(default=calculate_expiration)
 
-    language_at_home = models.CharField(
-        max_length=32, choices=LANGUAGES, default=LANGUAGES[0][0]
+    language_at_home = EnumField(
+        LanguageAtHome, max_length=32, default=LanguageAtHome.FINNISH
     )
 
     # Permissions

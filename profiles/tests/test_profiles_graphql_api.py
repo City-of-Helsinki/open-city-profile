@@ -6,6 +6,7 @@ from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.factories import GroupFactory
+from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from ..schema import ProfileNode
@@ -121,7 +122,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
@@ -135,7 +136,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
 
     mutation = t.substitute(
         nickname=profile_data["nickname"],
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -379,7 +380,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="AddressType", id=address.id),
+                                "id": to_global_id(type="AddressNode", id=address.id),
                                 "address": address_data["address"],
                                 "addressType": address_data["address_type"],
                                 "primary": address_data["primary"],
@@ -392,7 +393,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     }
 
     mutation = t.substitute(
-        address_id=to_global_id(type="AddressType", id=address.id),
+        address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
@@ -446,7 +447,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
@@ -459,7 +460,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
     }
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -513,7 +514,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="PhoneType", id=phone.id),
+                                "id": to_global_id(type="PhoneNode", id=phone.id),
                                 "phone": phone_data["phone"],
                                 "phoneType": phone_data["phone_type"],
                                 "primary": phone_data["primary"],
@@ -526,7 +527,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
     }
 
     mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
@@ -571,7 +572,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
     expected_data = {"updateProfile": {"profile": {"emails": {"edges": []}}}}
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -616,7 +617,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
     expected_data = {"updateProfile": {"profile": {"phones": {"edges": []}}}}
 
     mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
@@ -661,7 +662,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
     expected_data = {"updateProfile": {"profile": {"addresses": {"edges": []}}}}
 
     mutation = t.substitute(
-        address_id=to_global_id(type="AddressType", id=address.id),
+        address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
@@ -697,7 +698,7 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
                     {
                         "node": {
                             "email": email.email,
-                            "emailType": email.email_type,
+                            "emailType": email.email_type.name,
                             "primary": email.primary,
                         }
                     }
@@ -736,7 +737,7 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
                     {
                         "node": {
                             "phone": phone.phone,
-                            "phoneType": phone.phone_type,
+                            "phoneType": phone.phone_type.name,
                             "primary": phone.primary,
                         }
                     }
@@ -775,7 +776,7 @@ def test_normal_user_can_query_addresses(rf, user_gql_client):
                     {
                         "node": {
                             "address": address.address,
-                            "addressType": address.address_type,
+                            "addressType": address.address_type.name,
                             "primary": address.primary,
                         }
                     }
@@ -822,17 +823,17 @@ def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
         "myProfile": {
             "primaryPhone": {
                 "phone": phone.phone,
-                "phoneType": phone.phone_type,
+                "phoneType": phone.phone_type.name,
                 "primary": phone.primary,
             },
             "primaryEmail": {
                 "email": email.email,
-                "emailType": email.email_type,
+                "emailType": email.email_type.name,
                 "primary": email.primary,
             },
             "primaryAddress": {
                 "address": address.address,
-                "addressType": address.address_type,
+                "addressType": address.address_type.name,
                 "primary": address.primary,
             },
         }
@@ -972,15 +973,15 @@ def test_normal_user_can_update_primary_contact_details(
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email_2.id),
+                                "id": to_global_id(type="EmailNode", id=email_2.id),
                                 "email": email_2.email,
-                                "emailType": email_2.email_type,
+                                "emailType": email_2.email_type.name,
                                 "primary": False,
                             }
                         },
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": True,
@@ -993,7 +994,7 @@ def test_normal_user_can_update_primary_contact_details(
     }
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary="true",
@@ -1007,9 +1008,10 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    query = """
+    t = Template(
+        """
         {
-            profiles(serviceType: BERTH) {
+            profiles(serviceType: ${service_type}) {
                 edges {
                     node {
                         firstName
@@ -1019,6 +1021,8 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
             }
         }
     """
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -1033,9 +1037,10 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
 
-    query = """
+    t = Template(
+        """
         {
-            profiles(serviceType: BERTH) {
+            profiles(serviceType: ${service_type}) {
                 edges {
                     node {
                         firstName
@@ -1046,7 +1051,8 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
             }
         }
     """
-
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
         "profiles": {
             "edges": [
@@ -1075,9 +1081,10 @@ def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_clie
     request = rf.post("/graphql")
     request.user = user
 
-    query = """
+    t = Template(
+        """
         {
-            profiles(serviceType: BERTH) {
+            profiles(serviceType: ${service_type}) {
                 edges {
                     node {
                         firstName
@@ -1086,7 +1093,8 @@ def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_clie
             }
         }
     """
-
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
     }
@@ -1107,8 +1115,8 @@ def test_staff_user_can_filter_berth_profiles(rf, user_gql_client):
     request.user = user
 
     query = """
-        query getBerthProfiles($firstName: String){
-            profiles(serviceType: BERTH, firstName: $firstName) {
+        query getBerthProfiles($serviceType: ServiceType!, $firstName: String){
+            profiles(serviceType: $serviceType, firstName: $firstName) {
                 count
                 totalCount
             }
@@ -1118,7 +1126,12 @@ def test_staff_user_can_filter_berth_profiles(rf, user_gql_client):
     expected_data = {"profiles": {"count": 1, "totalCount": 2}}
 
     executed = user_gql_client.execute(
-        query, variables={"firstName": profile_2.first_name}, context=request
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "firstName": profile_2.first_name,
+        },
+        context=request,
     )
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
@@ -1139,9 +1152,10 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user
 
-    query = """
+    t = Template(
+        """
         query getBerthProfiles {
-            profiles(serviceType: BERTH, orderBy: "-firstName") {
+            profiles(serviceType: ${service_type}, orderBy: "-firstName") {
                 edges {
                     node {
                         firstName
@@ -1150,7 +1164,8 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
             }
         }
     """
-
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
         "profiles": {
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
@@ -1189,7 +1204,8 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
             }
         }
     """
-
+    # )
+    # query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
     executed = user_gql_client.execute(query, context=request)
     assert "data" in executed
@@ -1210,7 +1226,6 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
             }
         }
     """
-
     expected_data = {"edges": [{"node": {"firstName": "Bryan"}}]}
     executed = user_gql_client.execute(
         query, variables={"endCursor": end_cursor}, context=request
@@ -1224,8 +1239,8 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 ):
     profile_berth = ProfileFactory()
     profile_youth = ProfileFactory()
-    service_berth = ServiceFactory(service_type="BERTH")
-    service_youth = ServiceFactory(service_type="YOUTH_MEMBERSHIP")
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile_berth, service=service_berth)
     ServiceConnectionFactory(profile=profile_youth, service=service_youth)
     group_berth = GroupFactory()
@@ -1235,9 +1250,10 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     request = rf.post("/graphql")
     request.user = user
 
-    query = """
+    t = Template(
+        """
         {
-            profiles(serviceType: BERTH) {
+            profiles(serviceType: ${service_type}) {
                 edges {
                     node {
                         firstName
@@ -1246,16 +1262,18 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
             }
         }
     """
-
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
-    query = """
+    t = Template(
+        """
         {
-            profiles(serviceType: YOUTH_MEMBERSHIP) {
+            profiles(serviceType: ${service_type}) {
                 edges {
                     node {
                         firstName
@@ -1264,7 +1282,8 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
             }
         }
     """
-
+    )
+    query = t.substitute(service_type=ServiceType.YOUTH_MEMBERSHIP.name)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -1311,7 +1330,7 @@ def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=service.service_type,
+        service_type=ServiceType.BERTH.name,
     )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -1346,7 +1365,7 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=service.service_type,
+        service_type=ServiceType.BERTH.name,
     )
     executed = user_gql_client.execute(query, context=request)
     expected_data = {
@@ -1378,7 +1397,7 @@ def test_staff_user_cannot_query_a_profile_without_id(rf, user_gql_client):
     """
     )
 
-    query = t.substitute(service_type=service.service_type)
+    query = t.substitute(service_type=ServiceType.BERTH.name)
     executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -1417,7 +1436,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
 ):
     profile = ProfileFactory()
     service_berth = ServiceFactory()
-    service_youth = ServiceFactory(service_type="YOUTH_MEMBERSHIP")
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service_berth)
     group = GroupFactory()
     user = user_gql_client.user
@@ -1439,9 +1458,8 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=service_youth.service_type,
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
     )
-    executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _("Profile not found!")
@@ -1452,7 +1470,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
 ):
     profile = ProfileFactory()
     service_berth = ServiceFactory()
-    service_youth = ServiceFactory(service_type="YOUTH_MEMBERSHIP")
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service_berth)
     group = GroupFactory()
     user = user_gql_client.user
@@ -1474,7 +1492,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=service_berth.service_type,
+        service_type=ServiceType.BERTH.name,
     )
     executed = user_gql_client.execute(query, context=request)
     executed = user_gql_client.execute(query, context=request)

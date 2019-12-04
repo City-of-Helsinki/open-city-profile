@@ -15,13 +15,22 @@ from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from profiles.decorators import staff_required
-from services.consts import SERVICE_TYPES
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 
-from .consts import ADDRESS_TYPES, EMAIL_TYPES, PHONE_TYPES
+from .enums import AddressType, EmailType, PhoneType
 from .models import Address, Contact, Email, Phone, Profile
 from .utils import create_nested, delete_nested, update_nested
+
+AllowedEmailType = graphene.Enum.from_enum(
+    EmailType, description=lambda e: e.label if e else ""
+)
+AllowedPhoneType = graphene.Enum.from_enum(
+    PhoneType, description=lambda e: e.label if e else ""
+)
+AllowedAddressType = graphene.Enum.from_enum(
+    AddressType, description=lambda e: e.label if e else ""
+)
 
 
 class ConceptType(DjangoObjectType):
@@ -70,10 +79,8 @@ class ProfilesConnection(graphene.Connection):
     def resolve_count(self, info):
         return self.length
 
-    def resolve_total_count(self, info):
-        return self.iterable.model.objects.filter(
-            serviceconnection__service__service_type=SERVICE_TYPES[1][0]
-        ).count()
+    def resolve_total_count(self, info, **kwargs):
+        return self.iterable.model.objects.count()
 
 
 class ProfileFilter(FilterSet):
@@ -99,7 +106,7 @@ class ProfileFilter(FilterSet):
     )
 
 
-class ContactType(DjangoObjectType):
+class ContactNode(DjangoObjectType):
     class Meta:
         model = Contact
         fields = ("primary",)
@@ -107,7 +114,9 @@ class ContactType(DjangoObjectType):
         interfaces = (relay.Node,)
 
 
-class EmailType(ContactType):
+class EmailNode(ContactNode):
+    email_type = AllowedEmailType()
+
     class Meta:
         model = Email
         fields = ("id", "email_type", "primary", "email")
@@ -115,7 +124,9 @@ class EmailType(ContactType):
         interfaces = (relay.Node,)
 
 
-class PhoneType(ContactType):
+class PhoneNode(ContactNode):
+    phone_type = AllowedPhoneType()
+
     class Meta:
         model = Phone
         fields = ("id", "phone_type", "primary", "phone")
@@ -123,7 +134,9 @@ class PhoneType(ContactType):
         interfaces = (relay.Node,)
 
 
-class AddressType(ContactType):
+class AddressNode(ContactNode):
+    address_type = AllowedAddressType()
+
     class Meta:
         model = Address
         fields = (
@@ -148,12 +161,12 @@ class ProfileNode(DjangoObjectType):
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
 
-    primary_email = graphene.Field(EmailType)
-    primary_phone = graphene.Field(PhoneType)
-    primary_address = graphene.Field(AddressType)
-    emails = DjangoFilterConnectionField(EmailType)
-    phones = DjangoFilterConnectionField(PhoneType)
-    addresses = DjangoFilterConnectionField(AddressType)
+    primary_email = graphene.Field(EmailNode)
+    primary_phone = graphene.Field(PhoneNode)
+    primary_address = graphene.Field(AddressNode)
+    emails = DjangoFilterConnectionField(EmailNode)
+    phones = DjangoFilterConnectionField(PhoneNode)
+    addresses = DjangoFilterConnectionField(AddressNode)
     language = Language()
     contact_method = ContactMethod()
     service_connections = DjangoFilterConnectionField(ServiceConnectionType)
@@ -188,11 +201,6 @@ class ProfileNode(DjangoObjectType):
         return self.divisions_of_interest.all()
 
 
-AllowedEmailType = graphene.Enum(
-    "emailType", [(st[0].upper(), st[0]) for st in EMAIL_TYPES]
-)
-
-
 class EmailInput(graphene.InputObjectType):
     id = graphene.ID()
     email = graphene.String(description="Email address.")
@@ -200,21 +208,11 @@ class EmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
 
 
-AllowedPhoneType = graphene.Enum(
-    "phoneType", [(st[0].upper(), st[0]) for st in PHONE_TYPES]
-)
-
-
 class PhoneInput(graphene.InputObjectType):
     id = graphene.ID()
     phone = graphene.String(description="Phone number.")
     phone_type = AllowedPhoneType(description="Phone number type.")
     primary = graphene.Boolean(description="Is this primary phone number.")
-
-
-AllowedAddressType = graphene.Enum(
-    "addressType", [(st[0].upper(), st[0]) for st in ADDRESS_TYPES]
-)
 
 
 class AddressInput(graphene.InputObjectType):
@@ -294,7 +292,6 @@ class CreateProfile(graphene.Mutation):
         profile.concepts_of_interest.set(cois)
         ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
         profile.divisions_of_interest.set(ads)
-
         return CreateProfile(profile=profile)
 
 

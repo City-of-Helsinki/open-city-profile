@@ -6,12 +6,16 @@ from graphene_django.types import DjangoObjectType
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 
-from .consts import SERVICE_TYPES
+from .enums import ServiceType
 from .models import Service, ServiceConnection
 
+AllowedServiceType = graphene.Enum.from_enum(
+    ServiceType, description=lambda e: e.label if e else ""
+)
 
-class ServiceType(DjangoObjectType):
-    type = graphene.Field(graphene.String, source="service_type")
+
+class ServiceNode(DjangoObjectType):
+    type = AllowedServiceType(source="service_type")
 
     class Meta:
         model = Service
@@ -26,11 +30,6 @@ class ServiceConnectionType(DjangoObjectType):
         fields = ("service", "created_at", "enabled")
         filter_fields = []
         interfaces = (relay.Node,)
-
-
-AllowedServiceType = graphene.Enum(
-    "type", [(st[0].upper(), st[0]) for st in SERVICE_TYPES]
-)
 
 
 class ServiceInput(graphene.InputObjectType):
