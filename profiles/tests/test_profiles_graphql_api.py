@@ -122,7 +122,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
@@ -136,7 +136,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
 
     mutation = t.substitute(
         nickname=profile_data["nickname"],
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -380,7 +380,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="AddressType", id=address.id),
+                                "id": to_global_id(type="AddressNode", id=address.id),
                                 "address": address_data["address"],
                                 "addressType": address_data["address_type"],
                                 "primary": address_data["primary"],
@@ -393,7 +393,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     }
 
     mutation = t.substitute(
-        address_id=to_global_id(type="AddressType", id=address.id),
+        address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
@@ -447,7 +447,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
@@ -460,7 +460,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
     }
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -514,7 +514,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="PhoneType", id=phone.id),
+                                "id": to_global_id(type="PhoneNode", id=phone.id),
                                 "phone": phone_data["phone"],
                                 "phoneType": phone_data["phone_type"],
                                 "primary": phone_data["primary"],
@@ -527,7 +527,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
     }
 
     mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
@@ -572,7 +572,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
     expected_data = {"updateProfile": {"profile": {"emails": {"edges": []}}}}
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -617,7 +617,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
     expected_data = {"updateProfile": {"profile": {"phones": {"edges": []}}}}
 
     mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneType", id=phone.id),
+        phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
@@ -662,7 +662,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
     expected_data = {"updateProfile": {"profile": {"addresses": {"edges": []}}}}
 
     mutation = t.substitute(
-        address_id=to_global_id(type="AddressType", id=address.id),
+        address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
@@ -698,7 +698,7 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
                     {
                         "node": {
                             "email": email.email,
-                            "emailType": email.email_type,
+                            "emailType": email.email_type.name,
                             "primary": email.primary,
                         }
                     }
@@ -737,7 +737,7 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
                     {
                         "node": {
                             "phone": phone.phone,
-                            "phoneType": phone.phone_type,
+                            "phoneType": phone.phone_type.name,
                             "primary": phone.primary,
                         }
                     }
@@ -776,7 +776,7 @@ def test_normal_user_can_query_addresses(rf, user_gql_client):
                     {
                         "node": {
                             "address": address.address,
-                            "addressType": address.address_type,
+                            "addressType": address.address_type.name,
                             "primary": address.primary,
                         }
                     }
@@ -823,17 +823,17 @@ def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
         "myProfile": {
             "primaryPhone": {
                 "phone": phone.phone,
-                "phoneType": phone.phone_type,
+                "phoneType": phone.phone_type.name,
                 "primary": phone.primary,
             },
             "primaryEmail": {
                 "email": email.email,
-                "emailType": email.email_type,
+                "emailType": email.email_type.name,
                 "primary": email.primary,
             },
             "primaryAddress": {
                 "address": address.address,
-                "addressType": address.address_type,
+                "addressType": address.address_type.name,
                 "primary": address.primary,
             },
         }
@@ -973,15 +973,15 @@ def test_normal_user_can_update_primary_contact_details(
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email_2.id),
+                                "id": to_global_id(type="EmailNode", id=email_2.id),
                                 "email": email_2.email,
-                                "emailType": email_2.email_type,
+                                "emailType": email_2.email_type.name,
                                 "primary": False,
                             }
                         },
                         {
                             "node": {
-                                "id": to_global_id(type="EmailType", id=email.id),
+                                "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": True,
@@ -994,7 +994,7 @@ def test_normal_user_can_update_primary_contact_details(
     }
 
     mutation = t.substitute(
-        email_id=to_global_id(type="EmailType", id=email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary="true",

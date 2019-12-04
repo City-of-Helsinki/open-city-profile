@@ -47,7 +47,7 @@ class EmailType(Enum):
 
 
 class PhoneType(Enum):
-    NONE = ""
+    NONE = "none"
     WORK = "work"
     HOME = "home"
     MOBILE = "mobile"
@@ -62,7 +62,7 @@ class PhoneType(Enum):
 
 
 class AddressType(Enum):
-    NONE = ""
+    NONE = "none"
     WORK = "work"
     HOME = "home"
     OTHER = "other"

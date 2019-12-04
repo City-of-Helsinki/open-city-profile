@@ -7,14 +7,14 @@ import youths.enums
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('youths', '0006_youthprofile_birth_date'),
-    ]
+    dependencies = [("youths", "0006_youthprofile_birth_date")]
 
     operations = [
         migrations.AlterField(
-            model_name='youthprofile',
-            name='language_at_home',
-            field=enumfields.fields.EnumField(default='fi', enum=youths.enums.YouthLanguage, max_length=32),
-        ),
+            model_name="youthprofile",
+            name="language_at_home",
+            field=enumfields.fields.EnumField(
+                default="fi", enum=youths.enums.YouthLanguage, max_length=32
+            ),
+        )
     ]
