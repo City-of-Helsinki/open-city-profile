@@ -31,10 +31,10 @@ env = environ.Env(
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
-    OIDC_CLIENT_ID=(str, ""),
-    OIDC_ENDPOINT=(str, ""),
-    OIDC_SECRET=(str, ""),
-    API_SCOPE_PREFIX=(str, ""),
+    TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
+    TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
+    TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
+    TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
     MAILER_EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
     DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
     MAIL_MAILGUN_KEY=(str, ""),
@@ -174,15 +174,11 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
 OIDC_API_TOKEN_AUTH = {
-    "AUDIENCE": env.str("OIDC_CLIENT_ID"),
-    "API_SCOPE_PREFIX": env.str("API_SCOPE_PREFIX"),
-    "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": True,
-    "ISSUER": env.str("OIDC_ENDPOINT"),
+    "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
+    "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
+    "ISSUER": env.str("TOKEN_AUTH_AUTHSERVER_URL"),
+    "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
-
-SOCIAL_AUTH_TUNNISTAMO_KEY = env.str("OIDC_CLIENT_ID")
-SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str("OIDC_SECRET")
-SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env.str("OIDC_ENDPOINT")
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",

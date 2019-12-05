@@ -17,6 +17,12 @@ from thesaurus.models import Concept
 from profiles.decorators import staff_required
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
+from youths.schema import (
+    CreateYouthProfile,
+    UpdateYouthProfile,
+    YouthProfileFields,
+    YouthProfileType,
+)
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import Address, Contact, Email, Phone, Profile
@@ -172,6 +178,7 @@ class ProfileNode(DjangoObjectType):
     service_connections = DjangoFilterConnectionField(ServiceConnectionType)
     concepts_of_interest = graphene.List(ConceptType)
     divisions_of_interest = graphene.List(AdministrativeDivisionType)
+    youth_profile = graphene.Field(YouthProfileType)
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
@@ -257,6 +264,7 @@ class ProfileInput(graphene.InputObjectType):
     remove_addresses = graphene.List(
         graphene.ID, description="Remove addresses from profile."
     )
+    youth_profile = graphene.InputField(YouthProfileFields)
 
 
 class CreateProfile(graphene.Mutation):
@@ -268,6 +276,7 @@ class CreateProfile(graphene.Mutation):
     @login_required
     def mutate(self, info, **kwargs):
         profile_data = kwargs.pop("profile")
+        youth_profile_data = profile_data.pop("youth_profile", None)
         concepts_of_interest = profile_data.pop("concepts_of_interest", [])
         divisions_of_interest = profile_data.pop("divisions_of_interest", [])
         nested_to_create = [
@@ -292,6 +301,11 @@ class CreateProfile(graphene.Mutation):
         profile.concepts_of_interest.set(cois)
         ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
         profile.divisions_of_interest.set(ads)
+        if youth_profile_data:
+            CreateYouthProfile().mutate(
+                info, youth_profile=youth_profile_data, profile_id=profile.id
+            )
+
         return CreateProfile(profile=profile)
 
 
@@ -304,6 +318,7 @@ class UpdateProfile(graphene.Mutation):
     @login_required
     def mutate(self, info, **kwargs):
         profile_data = kwargs.pop("profile")
+        youth_profile_data = profile_data.pop("youth_profile", None)
         concepts_of_interest = profile_data.pop("concepts_of_interest", [])
         divisions_of_interest = profile_data.pop("divisions_of_interest", [])
         nested_to_create = [
@@ -344,6 +359,11 @@ class UpdateProfile(graphene.Mutation):
         profile.concepts_of_interest.set(cois)
         ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
         profile.divisions_of_interest.set(ads)
+
+        if youth_profile_data:
+            UpdateYouthProfile().mutate(
+                info, youth_profile=youth_profile_data, profile_id=profile.id
+            )
 
         return UpdateProfile(profile=profile)
 
