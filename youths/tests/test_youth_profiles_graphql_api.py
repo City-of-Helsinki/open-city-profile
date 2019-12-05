@@ -67,6 +67,36 @@ def test_normal_user_can_query_own_youth_profile(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_can_query_own_youth_profile_through_my_profile(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    youth_profile = YouthProfileFactory(profile=profile)
+
+    query = """
+        {
+            myProfile{
+                youthProfile {
+                    schoolClass
+                    membershipNumber
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "youthProfile": {
+                "schoolClass": youth_profile.school_class,
+                "membershipNumber": youth_profile.membership_number,
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_superuser_can_query_by_id(rf, youth_profile, superuser_gql_client):
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
@@ -96,7 +126,7 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         mutation{
             createYouthProfile(
                 profileId: "${profileId}"
-                youthProfileData: {
+                youthProfile: {
                     schoolClass: "${schoolClass}"
                     schoolName: "${schoolName}"
                     languageAtHome: ${language}
@@ -136,6 +166,69 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
     assert dict(executed["data"]["createYouthProfile"]) == expected_data
 
 
+def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                createProfile(
+                    profile: {
+                        nickname: \"${nickname}\",
+                        youthProfile: {
+                            schoolClass: "${schoolClass}"
+                            schoolName: "${schoolName}"
+                            languageAtHome: ${language}
+                            approverEmail: "${approverEmail}"
+                            birthDate: "${birthDate}"
+                        }
+                    }
+                ) {
+                profile{
+                    nickname,
+                    youthProfile {
+                        schoolClass
+                        schoolName
+                        approverEmail
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "nickname": "Larry",
+        "schoolClass": "2A",
+        "schoolName": "Alakoulu",
+        "approverEmail": "hyvaksyja@ex.com",
+        "language": YouthLanguage.FINNISH.name,
+        "birthDate": "2004-04-11",
+    }
+
+    query = t.substitute(**creation_data)
+
+    expected_data = {
+        "createProfile": {
+            "profile": {
+                "nickname": "Larry",
+                "youthProfile": {
+                    "schoolClass": creation_data["schoolClass"],
+                    "schoolName": creation_data["schoolName"],
+                    "approverEmail": creation_data["approverEmail"],
+                    "birthDate": creation_data["birthDate"],
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -147,7 +240,7 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
         """
         mutation{
             updateYouthProfile(
-                youthProfileData: {
+                youthProfile: {
                     schoolClass: "${schoolClass}"
                     birthDate: "${birthDate}"
                 }
@@ -175,6 +268,64 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
     assert dict(executed["data"]["updateYouthProfile"]) == expected_data
 
 
+def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    youth_profile = YouthProfileFactory(profile=profile)
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        nickname: \"${nickname}\",
+                        youthProfile: {
+                            schoolClass: "${schoolClass}"
+                            birthDate: "${birthDate}"
+                        }
+                    }
+                ) {
+                profile{
+                    nickname,
+                    youthProfile {
+                        schoolClass
+                        schoolName
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "nickname": "Larry",
+        "schoolClass": "2A",
+        "birthDate": "2002-02-02",
+    }
+
+    query = t.substitute(**creation_data)
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "nickname": "Larry",
+                "youthProfile": {
+                    "schoolClass": creation_data["schoolClass"],
+                    "schoolName": youth_profile.school_name,
+                    "birthDate": creation_data["birthDate"],
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, user):
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
@@ -185,7 +336,7 @@ def test_superuser_can_create_youth_profile_mutation(rf, superuser_gql_client, u
         mutation{
             createYouthProfile(
                 profileId: "${profileId}"
-                youthProfileData: {
+                youthProfile: {
                     schoolClass: "${schoolClass}"
                     schoolName: "${schoolName}"
                     languageAtHome: ${language}
@@ -236,7 +387,7 @@ def test_superuser_can_update_youth_profile_mutation(
         mutation{
             updateYouthProfile(
                 profileId: "${profileId}"
-                youthProfileData: {
+                youthProfile: {
                     schoolClass: "${schoolClass}"
                     birthDate: "${birthDate}"
                 }

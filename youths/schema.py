@@ -67,14 +67,15 @@ class CreateYouthProfileInput(YouthProfileFields):
 
 class CreateYouthProfile(graphene.Mutation):
     class Arguments:
-        youth_profile_data = CreateYouthProfileInput(required=True)
+        youth_profile = CreateYouthProfileInput(required=True)
         profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
+    profile_id = graphene.UUID()
 
     @login_required
     def mutate(self, info, **kwargs):
-        input_data = kwargs.get("youth_profile_data")
+        input_data = kwargs.get("youth_profile")
         profile_id = kwargs.get("profile_id")
 
         if info.context.user.is_superuser:
@@ -112,14 +113,15 @@ class UpdateYouthProfileInput(YouthProfileFields):
 
 class UpdateYouthProfile(graphene.Mutation):
     class Arguments:
-        youth_profile_data = UpdateYouthProfileInput(required=True)
+        youth_profile = UpdateYouthProfileInput(required=True)
         profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
+    profile_id = graphene.UUID()
 
     @login_required
     def mutate(self, info, **kwargs):
-        input_data = kwargs.get("youth_profile_data")
+        input_data = kwargs.get("youth_profile")
         profile_id = kwargs.get("profile_id")
         resend_request_notification = input_data.pop(
             "resend_request_notification", False
