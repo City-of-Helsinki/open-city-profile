@@ -351,6 +351,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                             id: \"${address_id}\",
                             addressType: ${address_type},
                             address:\"${address}\",
+                            postalCode:\"${postal_code}\",
+                            city:\"${city}\",
                             primary: ${primary}
                         }
                     ]
@@ -362,6 +364,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                         node{
                             id
                             address
+                            postalCode
+                            city
                             addressType
                             primary
                         }
@@ -382,6 +386,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                             "node": {
                                 "id": to_global_id(type="AddressNode", id=address.id),
                                 "address": address_data["address"],
+                                "postalCode": address_data["postal_code"],
+                                "city": address_data["city"],
                                 "addressType": address_data["address_type"],
                                 "primary": address_data["primary"],
                             }
@@ -395,6 +401,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     mutation = t.substitute(
         address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
+        postal_code=address_data["postal_code"],
+        city=address_data["city"],
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
     )
@@ -864,7 +872,13 @@ def test_normal_user_can_change_primary_contact_details(
                             {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
                         ],
                         addAddresses:[
-                            {addressType: ${address_type}, address:\"${address}\", primary: ${primary}}
+                            {
+                                addressType: ${address_type},
+                                address:\"${address}\",
+                                postalCode:\"${postal_code}\",
+                                city:\"${city}\",
+                                primary: ${primary}
+                            }
                         ]
                     }
                 ) {
@@ -881,6 +895,8 @@ def test_normal_user_can_change_primary_contact_details(
                     },
                     primaryAddress{
                         address,
+                        postalCode,
+                        city,
                         addressType,
                         primary
                     },
@@ -905,6 +921,8 @@ def test_normal_user_can_change_primary_contact_details(
                 },
                 "primaryAddress": {
                     "address": address_data["address"],
+                    "postalCode": address_data["postal_code"],
+                    "city": address_data["city"],
                     "addressType": address_data["address_type"],
                     "primary": True,
                 },
@@ -918,6 +936,8 @@ def test_normal_user_can_change_primary_contact_details(
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         address=address_data["address"],
+        postal_code=address_data["postal_code"],
+        city=address_data["city"],
         address_type=address_data["address_type"],
         primary="true",
     )
