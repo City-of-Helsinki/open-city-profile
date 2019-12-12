@@ -106,6 +106,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
+    "django_elasticsearch_dsl",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -139,6 +140,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reversion.middleware.RevisionMiddleware",
+    "profiles.middleware.SetUser",
 ]
 
 TEMPLATES = [
@@ -160,6 +162,43 @@ TEMPLATES = [
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+# ELK stack
+
+ELASTICSEARCH_DSL={
+    'default': {
+        'hosts': 'profile-elk:9200'
+    },
+}
+
+LOGGING = {
+  'version': 1,
+  'disable_existing_loggers': False,
+  'handlers': {
+        'logstash': {
+            'level': 'DEBUG',
+            'class': 'logstash.TCPLogstashHandler',
+            'host': 'profile-elk',
+            'port': 5959, # Default value: 5959
+            'version': 1, # Version of logstash event schema. Default value: 0 (for backward compatibility of the library)
+            'message_type': 'django',  # 'type' field in logstash message. Default value: 'logstash'.
+            'fqdn': False, # Fully qualified domain name. Default value: false.
+            'tags': ['django.request'], # list of tags. Default: None.
+        },
+  },
+  'loggers': {
+        'django.request': {
+            'handlers': ['logstash'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['logstash'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    }
+}
 
 # Authentication
 

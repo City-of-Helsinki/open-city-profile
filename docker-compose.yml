@@ -13,6 +13,18 @@ services:
           - pgdata:/var/lib/postgresql/data
         container_name: profile-db
 
+    elk:
+        image: sebp/elk
+        restart: on-failure
+        ports:
+            - "5601:5601"
+            - "9200:9200"
+            - "5959:5959"
+            - "5044:5044"
+        container_name: profile-elk
+        volumes:
+            - ./elk/03-tcp-input.conf:/etc/logstash/conf.d/03-tcp-input.conf
+
     django:
         build:
             context: .
@@ -29,6 +41,7 @@ services:
             - "8080:8080"
         depends_on:
             - postgres
+            - elk
         container_name: profile-backend
 
 volumes:

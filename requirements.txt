@@ -15,6 +15,7 @@ defusedxml==0.6.0         # via python3-openid
 django-allauth==0.39.1
 django-anymail==6.1.0     # via django-ilmoitin
 django-cors-headers==3.0.2
+django-elasticsearch-dsl==7.0.0
 django-enumfields==1.0.0
 django-environ==0.4.5
 django-filter==2.2.0
@@ -35,6 +36,8 @@ django==2.2.8
 djangorestframework==3.10.1  # via django-parler-rest, drf-oidc-auth
 drf-oidc-auth==0.9        # via django-helusers
 ecdsa==0.13.3             # via python-jose
+elasticsearch-dsl==7.0.0
+elasticsearch==7.0.5      # via elasticsearch-dsl
 future==0.17.1            # via pyjwkest, python-jose
 graphene-django==2.5.0
 graphene-federation==0.0.4
@@ -46,6 +49,7 @@ isodate==0.6.0            # via rdflib
 itypes==1.1.0             # via coreapi
 jinja2==2.10.1            # via coreschema, django-ilmoitin
 lockfile==0.12.2          # via django-mailer
+logstash-python-formatter==0.1.2
 markupsafe==1.1.1         # via jinja2
 oauthlib==3.0.2           # via requests-oauthlib
 pillow==6.2.0
@@ -57,7 +61,9 @@ pycryptodomex==3.8.2      # via pyjwkest
 pyjwkest==1.4.2           # via drf-oidc-auth
 pyjwt==1.7.1              # via django-graphql-jwt
 pyparsing==2.4.1.1        # via rdflib
+python-dateutil==2.8.0    # via elasticsearch-dsl
 python-jose==3.0.1        # via django-helusers
+python-logstash==0.4.6
 python3-openid==3.1.0     # via django-allauth
 pytz==2019.1              # via django
 pyyaml==5.1.1             # via django-munigeo
@@ -69,7 +75,7 @@ rsa==4.0                  # via python-jose
 rx==1.6.1                 # via graphql-core
 sentry-sdk==0.10.2
 singledispatch==3.4.0.3   # via graphene-django
-six==1.12.0               # via django-anymail, django-munigeo, graphene, graphene-django, graphql-core, graphql-relay, isodate, promise, pyjwkest, python-jose, singledispatch
+six==1.12.0               # via django-anymail, django-munigeo, elasticsearch-dsl, graphene, graphene-django, graphql-core, graphql-relay, isodate, promise, pyjwkest, python-dateutil, python-jose, singledispatch
 sqlparse==0.3.0           # via django
 uritemplate==3.0.0        # via coreapi
-urllib3==1.25.3           # via requests, sentry-sdk
+urllib3==1.25.3           # via elasticsearch, requests, sentry-sdk
