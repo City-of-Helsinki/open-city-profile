@@ -78,7 +78,7 @@ class Profile(UUIDModel):
         blank=True,
     )
     language = models.CharField(
-        max_length=7, choices=settings.LANGUAGES, default=settings.LANGUAGES[0][0]
+        max_length=2, choices=settings.LANGUAGES, default=settings.LANGUAGES[0][0]
     )
     contact_method = models.CharField(
         max_length=30,
@@ -135,15 +135,19 @@ class Phone(Contact):
         Profile, related_name="phones", on_delete=models.CASCADE
     )
     phone = models.CharField(max_length=255, null=True, blank=False)
-    phone_type = EnumField(PhoneType, max_length=32, blank=False)
+    phone_type = EnumField(
+        PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
+    )
 
 
 class Email(Contact):
     profile = models.ForeignKey(
         Profile, related_name="emails", on_delete=models.CASCADE
     )
-    email = models.EmailField(null=True, blank=True)
-    email_type = EnumField(EmailType, max_length=32, blank=False)
+    email = models.EmailField(max_length=254, blank=False)
+    email_type = EnumField(
+        EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
+    )
 
 
 class Address(Contact):
@@ -153,5 +157,7 @@ class Address(Contact):
     address = models.CharField(max_length=128, blank=False)
     postal_code = models.CharField(max_length=5, blank=False)
     city = models.CharField(max_length=64, blank=False)
-    country_code = models.CharField(max_length=2, blank=True)
-    address_type = EnumField(AddressType, max_length=32, blank=False)
+    country_code = models.CharField(max_length=2, blank=False)
+    address_type = EnumField(
+        AddressType, max_length=32, blank=False, default=AddressType.HOME
+    )

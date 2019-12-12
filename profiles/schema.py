@@ -211,24 +211,24 @@ class ProfileNode(DjangoObjectType):
 class EmailInput(graphene.InputObjectType):
     id = graphene.ID()
     email = graphene.String(description="Email address.")
-    email_type = AllowedEmailType(description="Email address type.")
+    email_type = AllowedEmailType(description="Email address type.", required=True)
     primary = graphene.Boolean(description="Is this primary mail address.")
 
 
 class PhoneInput(graphene.InputObjectType):
     id = graphene.ID()
-    phone = graphene.String(description="Phone number.")
-    phone_type = AllowedPhoneType(description="Phone number type.")
+    phone = graphene.String(description="Phone number.", required=True)
+    phone_type = AllowedPhoneType(description="Phone number type.", required=True)
     primary = graphene.Boolean(description="Is this primary phone number.")
 
 
 class AddressInput(graphene.InputObjectType):
     id = graphene.ID()
-    address = graphene.String(description="Street address.")
-    postal_code = graphene.String(description="Postal code.")
-    city = graphene.String(description="City.")
+    address = graphene.String(description="Street address.", required=True)
+    postal_code = graphene.String(description="Postal code.", required=True)
+    city = graphene.String(description="City.", required=True)
     country_code = graphene.String(description="Country code")
-    address_type = AllowedAddressType(description="Address type.")
+    address_type = AllowedAddressType(description="Address type.", required=True)
     primary = graphene.Boolean(description="Is this primary address.")
 
 
