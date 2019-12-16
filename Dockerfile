@@ -10,18 +10,19 @@ RUN mkdir /entrypoint
 COPY --chown=appuser:appuser requirements*.txt /app/
 
 RUN apt-install.sh \
-        build-essential \
-        libpq-dev \
-        gdal-bin \
-        netcat \
-        pkg-config \
-        python3-gdal \
+    build-essential \
+    libpq-dev \
+    gdal-bin \
+    netcat \
+    pkg-config \
+    python3-gdal \
     && pip install --no-cache-dir \
-        -r /app/requirements.txt \
-        -r /app/requirements-prod.txt \
+    -r /app/requirements.txt \
+    && pip install --no-cache-dir \
+    -r /app/requirements-prod.txt \
     && apt-cleanup.sh \
-        build-essential \
-        pkg-config
+    build-essential \
+    pkg-config
 
 COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
