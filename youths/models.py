@@ -25,8 +25,8 @@ class YouthProfile(models.Model):
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
     birth_date = models.DateField()
-    school_name = models.CharField(max_length=128)
-    school_class = models.CharField(max_length=10)
+    school_name = models.CharField(max_length=128, blank=True)
+    school_class = models.CharField(max_length=10, blank=True)
     expiration = models.DateField(default=calculate_expiration)
 
     language_at_home = EnumField(
@@ -37,7 +37,7 @@ class YouthProfile(models.Model):
     approver_first_name = models.CharField(max_length=255, blank=True)
     approver_last_name = models.CharField(max_length=255, blank=True)
     approver_phone = models.CharField(max_length=50, blank=True)
-    approver_email = models.EmailField()
+    approver_email = models.EmailField(max_length=254, blank=True)
     approval_token = models.CharField(
         max_length=36, blank=True, default=uuid.uuid4, editable=False
     )
@@ -45,7 +45,7 @@ class YouthProfile(models.Model):
         null=True, blank=True, editable=False
     )
     approved_time = models.DateTimeField(null=True, blank=True, editable=False)
-    photo_usage_approved = models.BooleanField(default=False)
+    photo_usage_approved = models.NullBooleanField()
 
     @property
     def membership_number(self):
