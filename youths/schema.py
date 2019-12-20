@@ -79,15 +79,9 @@ class CreateYouthProfile(graphene.Mutation):
         profile_id = kwargs.get("profile_id")
 
         if info.context.user.is_superuser:
-            try:
-                profile = Profile.objects.get(pk=profile_id)
-            except Profile.DoesNotExist:
-                raise GraphQLError(_("Invalid profile id."))
+            profile = Profile.objects.get(pk=profile_id)
         else:
-            try:
-                profile = Profile.objects.get(user=info.context.user)
-            except Profile.DoesNotExist:
-                raise GraphQLError(_("No profile found, please create one!"))
+            profile = Profile.objects.get(user=info.context.user)
 
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
@@ -128,20 +122,11 @@ class UpdateYouthProfile(graphene.Mutation):
         )
 
         if info.context.user.is_superuser:
-            try:
-                profile = Profile.objects.get(pk=profile_id)
-            except Profile.DoesNotExist:
-                raise GraphQLError(_("Invalid profile id."))
+            profile = Profile.objects.get(pk=profile_id)
         else:
-            try:
-                profile = Profile.objects.get(user=info.context.user)
-            except Profile.DoesNotExist:
-                raise GraphQLError(_("No profile found, please create one!"))
+            profile = Profile.objects.get(user=info.context.user)
 
-        try:
-            youth_profile = YouthProfile.objects.get(profile=profile)
-        except YouthProfile.DoesNotExist:
-            raise GraphQLError(_("No youth profile found to update."))
+        youth_profile = YouthProfile.objects.get(profile=profile)
 
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
@@ -176,10 +161,7 @@ class ApproveYouthProfile(graphene.Mutation):
         youth_data = kwargs.get("approval_data")
         token = kwargs.get("approval_token")
 
-        try:
-            youth_profile = YouthProfile.objects.get(approval_token=token)
-        except YouthProfile.DoesNotExist:
-            raise GraphQLError(_("Invalid approval token."))
+        youth_profile = YouthProfile.objects.get(approval_token=token)
 
         for field, value in youth_data.items():
             setattr(youth_profile, field, value)
@@ -210,20 +192,11 @@ class Query(graphene.ObjectType):
             raise GraphQLError(_("Query by id not allowed for regular users."))
 
         if info.context.user.is_superuser:
-            try:
-                return YouthProfile.objects.get(profile_id=profile_id)
-            except YouthProfile.DoesNotExist:
-                raise GraphQLError(_("No youth profile found for provided profile id."))
-        try:
-            return YouthProfile.objects.get(profile__user=info.context.user)
-        except YouthProfile.DoesNotExist:
-            raise GraphQLError(_("No youth profile found for this profile."))
+            return YouthProfile.objects.get(profile_id=profile_id)
+        return YouthProfile.objects.get(profile__user=info.context.user)
 
     def resolve_youth_profile_by_approval_token(self, info, **kwargs):
-        try:
-            return YouthProfile.objects.get(approval_token=kwargs.get("token"))
-        except YouthProfile.DoesNotExist:
-            raise GraphQLError(_("Invalid approval token"))
+        return YouthProfile.objects.get(approval_token=kwargs.get("token"))
 
 
 class Mutation(graphene.ObjectType):

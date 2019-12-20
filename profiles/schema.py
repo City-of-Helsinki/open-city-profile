@@ -4,13 +4,11 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import CharField, Value
 from django.db.models.functions import Concat
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
-from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 from munigeo.models import AdministrativeDivision
@@ -423,17 +421,12 @@ class Query(graphene.ObjectType):
 
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
-        try:
-            service = Service.objects.get(service_type=kwargs["serviceType"])
-            return (
-                Profile.objects.filter(serviceconnection__service=service)
-                .prefetch_related("concepts_of_interest", "divisions_of_interest")
-                .get(pk=relay.Node.from_global_id(kwargs["id"])[1])
-            )
-        except Profile.DoesNotExist:
-            raise GraphQLError(_("Profile not found!"))
-        except Service.DoesNotExist:
-            raise GraphQLError(_("Service not found!"))
+        service = Service.objects.get(service_type=kwargs["serviceType"])
+        return (
+            Profile.objects.filter(serviceconnection__service=service)
+            .prefetch_related("concepts_of_interest", "divisions_of_interest")
+            .get(pk=relay.Node.from_global_id(kwargs["id"])[1])
+        )
 
     @login_required
     def resolve_my_profile(self, info, **kwargs):
