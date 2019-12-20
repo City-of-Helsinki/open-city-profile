@@ -1,7 +1,6 @@
 from string import Template
 
-from django.utils.translation import ugettext_lazy as _
-
+from open_city_profile.consts import SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
 from services.enums import ServiceType
 from services.tests.factories import (
     ProfileFactory,
@@ -104,6 +103,8 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     # do the mutation again
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
-    assert executed["errors"][0]["message"] == _(
-        "Service already exists for this profile!"
+    assert "code" in executed["errors"][0]["extensions"]
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
     )
