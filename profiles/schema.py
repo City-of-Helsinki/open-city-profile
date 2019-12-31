@@ -11,10 +11,12 @@ from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
+from graphql_relay.node.node import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from profiles.decorators import staff_required
+from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from youths.schema import (
@@ -368,6 +370,33 @@ class UpdateProfile(graphene.Mutation):
         return UpdateProfile(profile=profile)
 
 
+class DeleteProfile(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    def mutate(self, info, **kwargs):
+        id = kwargs.pop("id")
+        profile = Profile.objects.get(pk=from_global_id(id)[1])
+
+        # TODO: Should admin users be able to delete profiles?
+        # if profile.user != info.user.context:
+        #     raise GraphQLError(_("You do not have permission to perform this action."))
+
+        # TODO: Here we should check whether profile can be
+        #       actually removed. Waiting for spec for this.
+        #       For now just check if user has BERTH.
+        #
+        #       More info:
+        #       https://helsinkisolutionoffice.atlassian.net/browse/OM-248
+        if profile.serviceconnection_set.filter(service__service_type=ServiceType.BERTH).exists():
+            raise GraphQLError(_("Cannot delete profile with service BERTH connected to it"))
+
+        result = profile.delete()
+        return DeleteProfile(ok=result)
+
+
 class Query(graphene.ObjectType):
     profile = graphene.Field(
         ProfileNode,
@@ -419,3 +448,4 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     create_profile = CreateProfile.Field()
     update_profile = UpdateProfile.Field()
+    delete_profile = DeleteProfile.Field()
