@@ -1,10 +1,10 @@
 import graphene
 from django.db.utils import IntegrityError
-from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from graphene_django.types import DjangoObjectType
-from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
+
+from open_city_profile.exceptions import ServiceAlreadyExistsError
 
 from .enums import ServiceType
 from .models import Service, ServiceConnection
@@ -52,16 +52,14 @@ class AddServiceConnection(graphene.Mutation):
         service_connection_data = kwargs.pop("service_connection")
         service_data = service_connection_data.get("service")
         service_type = service_data.get("type")
+        service = Service.objects.get(service_type=service_type)
         try:
-            service = Service.objects.get(service_type=service_type)
             service_connection = ServiceConnection.objects.create(
                 profile=info.context.user.profile, service=service
             )
-            return AddServiceConnection(service_connection=service_connection)
-        except Service.DoesNotExist:
-            raise GraphQLError(_("Service not found!"))
         except IntegrityError:
-            raise GraphQLError(_("Service already exists for this profile!"))
+            raise ServiceAlreadyExistsError("Service connection already exists")
+        return AddServiceConnection(service_connection=service_connection)
 
 
 class Mutation(graphene.ObjectType):

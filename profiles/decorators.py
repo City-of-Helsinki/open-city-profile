@@ -1,5 +1,5 @@
+from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
-from graphql import GraphQLError
 
 from services.models import Service
 
@@ -19,18 +19,15 @@ def staff_required(required_permission="view"):
                         required_permission
                     )
                 )
-            try:
-                service = Service.objects.get(service_type=kwargs["serviceType"])
-                if info.context.user.has_perm(
-                    "can_{}_profiles".format(required_permission), service
-                ):
-                    return function(self, info, **kwargs)
-                else:
-                    raise GraphQLError(
-                        _("You do not have permission to perform this action.")
-                    )
-            except Service.DoesNotExist:
-                raise GraphQLError(_("Service not found!"))
+            service = Service.objects.get(service_type=kwargs["serviceType"])
+            if info.context.user.has_perm(
+                "can_{}_profiles".format(required_permission), service
+            ):
+                return function(self, info, **kwargs)
+            else:
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
 
         return wrapper
 

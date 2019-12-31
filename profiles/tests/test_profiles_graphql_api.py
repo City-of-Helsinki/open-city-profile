@@ -5,6 +5,7 @@ from graphene import relay
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR
 from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
@@ -1482,7 +1483,8 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
     )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
-    assert executed["errors"][0]["message"] == _("Profile not found!")
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == OBJECT_DOES_NOT_EXIST_ERROR
 
 
 def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admin_of(
