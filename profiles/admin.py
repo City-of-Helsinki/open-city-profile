@@ -3,6 +3,7 @@ from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
 from profiles.models import LegalRelationship, Profile
+from services.admin import ServiceConnectionInline
 from youths.admin import YouthProfileAdminInline
 
 
@@ -24,7 +25,12 @@ class RepresenteeAdmin(admin.StackedInline):
 
 @admin.register(Profile)
 class ExtendedProfileAdmin(VersionAdmin):
-    inlines = [RepresenteeAdmin, RepresentativeAdmin, YouthProfileAdminInline]
+    inlines = [
+        RepresenteeAdmin,
+        RepresentativeAdmin,
+        YouthProfileAdminInline,
+        ServiceConnectionInline,
+    ]
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "divisions_of_interest":
