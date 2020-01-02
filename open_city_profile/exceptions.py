@@ -7,3 +7,7 @@ class ProfileGraphQLError(GraphQLError):
 
 class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
+
+
+class TokenExpiredError(ProfileGraphQLError):
+    """Token has expired"""

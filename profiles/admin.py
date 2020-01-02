@@ -1,8 +1,9 @@
 from django.contrib import admin
+from django.forms.models import ModelForm
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
-from profiles.models import LegalRelationship, Profile
+from profiles.models import ClaimToken, LegalRelationship, Profile
 from services.admin import ServiceConnectionInline
 from youths.admin import YouthProfileAdminInline
 
@@ -23,6 +24,20 @@ class RepresenteeAdmin(admin.StackedInline):
     verbose_name_plural = "Represented by"
 
 
+class AlwaysChangedModelForm(ModelForm):
+    def has_changed(self):
+        """ Return always True to enable "empty" objects """
+        return True
+
+
+class ClaimTokenInline(admin.StackedInline):
+    model = ClaimToken
+    extra = 0
+    fk_name = "profile"
+    readonly_fields = ("token",)
+    form = AlwaysChangedModelForm
+
+
 @admin.register(Profile)
 class ExtendedProfileAdmin(VersionAdmin):
     inlines = [
@@ -30,6 +45,7 @@ class ExtendedProfileAdmin(VersionAdmin):
         RepresentativeAdmin,
         YouthProfileAdminInline,
         ServiceConnectionInline,
+        ClaimTokenInline,
     ]
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):

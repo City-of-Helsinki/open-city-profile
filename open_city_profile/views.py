@@ -7,13 +7,19 @@ from open_city_profile.consts import (
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    TOKEN_EXPIRED_ERROR,
 )
-from open_city_profile.exceptions import ProfileGraphQLError, ServiceAlreadyExistsError
+from open_city_profile.exceptions import (
+    ProfileGraphQLError,
+    ServiceAlreadyExistsError,
+    TokenExpiredError,
+)
 
 error_codes_shared = {
     Exception: GENERAL_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
+    TokenExpiredError: TOKEN_EXPIRED_ERROR,
 }
 error_codes_profile = {
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR

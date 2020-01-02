@@ -1,17 +1,25 @@
+from datetime import timedelta
 from string import Template
 
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
-from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR
+from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR, TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from ..schema import ProfileNode
-from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
+from .factories import (
+    AddressFactory,
+    ClaimTokenFactory,
+    EmailFactory,
+    PhoneFactory,
+    ProfileFactory,
+)
 
 
 def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile_data):
@@ -1540,3 +1548,79 @@ def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_clien
         'type ProfileNode implements Node  @key(fields: "id")'
         in executed["data"]["_service"]["sdl"]
     )
+
+
+def test_can_query_claimable_profile_with_token(rf, user_gql_client):
+    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    claim_token = ClaimTokenFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            claimableProfile(token: "${claimToken}") {
+                id
+                firstName
+                lastName
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+    expected_data = {
+        "claimableProfile": {
+            "id": to_global_id(type="ProfileNode", id=profile.id),
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+
+
+def test_cannot_query_claimable_profile_with_user_already_attached(rf, user_gql_client):
+    profile = ProfileFactory()
+    claim_token = ClaimTokenFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            claimableProfile(token: "${claimToken}") {
+                id
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+
+
+def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
+    profile = ProfileFactory(user=None)
+    claim_token = ClaimTokenFactory(
+        profile=profile, expires_at=timezone.now() - timedelta(days=1)
+    )
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            claimableProfile(token: "${claimToken}") {
+                id
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+    assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR

@@ -1,5 +1,6 @@
 import os
 import shutil
+import uuid
 
 import reversion
 from django.conf import settings
@@ -67,7 +68,7 @@ class LegalRelationship(models.Model):
 
 @reversion.register()
 class Profile(UUIDModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
     nickname = models.CharField(max_length=32, null=True, blank=True)
@@ -107,7 +108,12 @@ class Profile(UUIDModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return "{} {} ({})".format(self.first_name, self.last_name, self.user.uuid)
+        if self.user:
+            return "{} {} ({})".format(self.first_name, self.last_name, self.user.uuid)
+        elif self.first_name and self.last_name:
+            return "{} {}".format(self.first_name, self.last_name)
+        else:
+            return str(self.id)
 
 
 class DivisionOfInterest(models.Model):
@@ -161,3 +167,13 @@ class Address(Contact):
     address_type = EnumField(
         AddressType, max_length=32, blank=False, default=AddressType.HOME
     )
+
+
+class ClaimToken(models.Model):
+    profile = models.ForeignKey(
+        Profile, related_name="claim_tokens", on_delete=models.CASCADE
+    )
+    token = models.CharField(
+        max_length=36, blank=True, default=uuid.uuid4, editable=False
+    )
+    expires_at = models.DateTimeField(null=True, blank=True)
