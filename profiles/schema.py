@@ -1,5 +1,6 @@
 import graphene
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db.models import CharField, Value
 from django.db.models.functions import Concat
 from django.utils import timezone
@@ -10,11 +11,17 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql_jwt.decorators import login_required
+from graphql_relay.node.node import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
-from open_city_profile.exceptions import TokenExpiredError
+from open_city_profile.exceptions import (
+    CannotDeleteProfileWhileServiceConnectedError,
+    ProfileDoesNotExistError,
+    TokenExpiredError,
+)
 from profiles.decorators import staff_required
+from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from youths.schema import (
@@ -368,6 +375,40 @@ class UpdateProfile(graphene.Mutation):
         return UpdateProfile(profile=profile)
 
 
+class DeleteProfile(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    @login_required
+    def mutate(self, info, **kwargs):
+        try:
+            profile = Profile.objects.get(pk=from_global_id(kwargs["id"])[1])
+        except Profile.DoesNotExist as e:
+            raise ProfileDoesNotExistError(e)
+
+        # TODO: Should admin users be able to delete profiles?
+        if profile.user != info.context.user:
+            raise PermissionDenied("You do not have permission to perform this action.")
+
+        # TODO: Here we should check whether profile can be
+        #       actually removed. Waiting for spec for this.
+        #       For now just check if user has BERTH.
+        #
+        #       More info:
+        #       https://helsinkisolutionoffice.atlassian.net/browse/OM-248
+        if profile.serviceconnection_set.filter(
+            service__service_type=ServiceType.BERTH
+        ).exists():
+            raise CannotDeleteProfileWhileServiceConnectedError(
+                "Cannot delete profile while service BERTH still connected"
+            )
+
+        deleted_objects_count = profile.delete()[0]
+        return DeleteProfile(ok=deleted_objects_count > 0)
+
+
 class Query(graphene.ObjectType):
     profile = graphene.Field(
         ProfileNode,
@@ -381,7 +422,7 @@ class Query(graphene.ObjectType):
         ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
     claimable_profile = graphene.Field(
-        ProfileNode, token=graphene.Argument(graphene.UUID, required=True),
+        ProfileNode, token=graphene.Argument(graphene.UUID, required=True)
     )
 
     @staff_required(required_permission="view")
@@ -426,3 +467,4 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     create_profile = CreateProfile.Field()
     update_profile = UpdateProfile.Field()
+    delete_profile = DeleteProfile.Field()

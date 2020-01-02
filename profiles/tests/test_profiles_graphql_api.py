@@ -7,7 +7,13 @@ from graphene import relay
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
-from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR, TOKEN_EXPIRED_ERROR
+from open_city_profile.consts import (
+    CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
+    OBJECT_DOES_NOT_EXIST_ERROR,
+    PERMISSION_DENIED_ERROR,
+    PROFILE_DOES_NOT_EXIST_ERROR,
+    TOKEN_EXPIRED_ERROR,
+)
 from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
@@ -1030,6 +1036,119 @@ def test_normal_user_can_update_primary_contact_details(
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_delete_his_profile(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    ServiceConnectionFactory(profile=profile, service=service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                deleteProfile(
+                    id: \"${id}\",
+                ) {
+                    ok
+                }
+            }
+        """
+    )
+
+    expected_data = {"deleteProfile": {"ok": True}}
+
+    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_no_user_cannot_delete_other_users_profile(rf, superuser_gql_client):
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = superuser_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                deleteProfile(
+                    id: \"${id}\",
+                ) {
+                    ok
+                }
+            }
+        """
+    )
+
+    expected_data = {"deleteProfile": None}
+
+    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
+    executed = superuser_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+
+
+def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
+    rf, user_gql_client
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                deleteProfile(
+                    id: \"${id}\",
+                ) {
+                    ok
+                }
+            }
+        """
+    )
+
+    expected_data = {"deleteProfile": None}
+
+    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+    assert "code" in executed["errors"][0]["extensions"]
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR
+    )
+
+
+def test_normal_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    id = profile.id
+    profile.delete()
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                deleteProfile(
+                    id: \"${id}\",
+                ) {
+                    ok
+                }
+            }
+        """
+    )
+
+    expected_data = {"deleteProfile": None}
+
+    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=id))
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
 
 
 def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):

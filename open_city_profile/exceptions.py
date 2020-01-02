@@ -11,3 +11,11 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
 
 class TokenExpiredError(ProfileGraphQLError):
     """Token has expired"""
+
+
+class CannotDeleteProfileWhileServiceConnectedError(ProfileGraphQLError):
+    """Profile cannot be deleted while service is still connected"""
+
+
+class ProfileDoesNotExistError(ProfileGraphQLError):
+    """Profile does not exist"""

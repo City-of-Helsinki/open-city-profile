@@ -7,9 +7,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("profiles", "0016_claimtoken"),
-    ]
+    dependencies = [("profiles", "0016_claimtoken")]
 
     operations = [
         migrations.AlterField(
@@ -21,5 +19,5 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.PROTECT,
                 to=settings.AUTH_USER_MODEL,
             ),
-        ),
+        )
     ]

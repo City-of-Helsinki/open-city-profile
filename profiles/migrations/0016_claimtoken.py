@@ -7,9 +7,7 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("profiles", "0015_change_required_fields"),
-    ]
+    dependencies = [("profiles", "0015_change_required_fields")]
 
     operations = [
         migrations.CreateModel(
@@ -40,5 +38,5 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-        ),
+        )
     ]
