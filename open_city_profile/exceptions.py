@@ -7,3 +7,11 @@ class ProfileGraphQLError(GraphQLError):
 
 class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
+
+
+class CannotDeleteProfileWhileServiceConnectedError(ProfileGraphQLError):
+    """Profile cannot be deleted while service is still connected"""
+
+
+class ProfileDoesNotExistError(ProfileGraphQLError):
+    """Profile does not exist"""
