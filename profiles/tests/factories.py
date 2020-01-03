@@ -3,7 +3,7 @@ from thesaurus.models import Concept, Vocabulary
 
 from open_city_profile.tests.factories import UserFactory
 from profiles.enums import AddressType, EmailType, PhoneType
-from profiles.models import Address, Email, Phone, Profile
+from profiles.models import Address, ClaimToken, Email, Phone, Profile
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -11,6 +11,13 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Profile
+
+
+class ClaimTokenFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+
+    class Meta:
+        model = ClaimToken
 
 
 class EmailFactory(factory.django.DjangoModelFactory):

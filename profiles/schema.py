@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import CharField, Value
 from django.db.models.functions import Concat
+from django.utils import timezone
 from django.utils.translation import override
 from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
@@ -17,6 +18,7 @@ from thesaurus.models import Concept
 from open_city_profile.exceptions import (
     CannotDeleteProfileWhileServiceConnectedError,
     ProfileDoesNotExistError,
+    TokenExpiredError,
 )
 from profiles.decorators import staff_required
 from services.enums import ServiceType
@@ -30,7 +32,7 @@ from youths.schema import (
 )
 
 from .enums import AddressType, EmailType, PhoneType
-from .models import Address, Contact, Email, Phone, Profile
+from .models import Address, ClaimToken, Contact, Email, Phone, Profile
 from .utils import create_nested, delete_nested, update_nested
 
 AllowedEmailType = graphene.Enum.from_enum(
@@ -419,6 +421,9 @@ class Query(graphene.ObjectType):
     profiles = DjangoFilterConnectionField(
         ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
+    claimable_profile = graphene.Field(
+        ProfileNode, token=graphene.Argument(graphene.UUID, required=True)
+    )
 
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
@@ -448,6 +453,15 @@ class Query(graphene.ObjectType):
         return Profile.objects.filter(
             serviceconnection__service__service_type=kwargs["serviceType"]
         )
+
+    @login_required
+    def resolve_claimable_profile(self, info, **kwargs):
+        # TODO: Complete error handling for this OM-297
+        claim_token = ClaimToken.objects.get(token=kwargs["token"])
+        profile = Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
+        if claim_token.expires_at and claim_token.expires_at < timezone.now():
+            raise TokenExpiredError("Token for claiming this profile has expired")
+        return profile
 
 
 class Mutation(graphene.ObjectType):
