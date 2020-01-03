@@ -3,20 +3,29 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from graphene_django.views import GraphQLView as BaseGraphQLView
 
 from open_city_profile.consts import (
+    CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     GENERAL_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
+    PROFILE_DOES_NOT_EXIST_ERROR,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
 )
-from open_city_profile.exceptions import ProfileGraphQLError, ServiceAlreadyExistsError
+from open_city_profile.exceptions import (
+    CannotDeleteProfileWhileServiceConnectedError,
+    ProfileDoesNotExistError,
+    ProfileGraphQLError,
+    ServiceAlreadyExistsError,
+)
 
 error_codes_shared = {
     Exception: GENERAL_ERROR,
-    PermissionDenied: PERMISSION_DENIED_ERROR,
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
+    PermissionDenied: PERMISSION_DENIED_ERROR,
 }
 error_codes_profile = {
-    ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
+    CannotDeleteProfileWhileServiceConnectedError: CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
+    ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
+    ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
 }
 error_codes = {**error_codes_shared, **error_codes_profile}
 
