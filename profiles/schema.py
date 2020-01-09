@@ -183,8 +183,6 @@ class ProfileNode(DjangoObjectType):
     language = Language()
     contact_method = ContactMethod()
     service_connections = DjangoFilterConnectionField(ServiceConnectionType)
-    concepts_of_interest = graphene.List(ConceptType)
-    divisions_of_interest = graphene.List(AdministrativeDivisionType)
     youth_profile = graphene.Field(YouthProfileType)
 
     def resolve_service_connections(self, info, **kwargs):
@@ -207,12 +205,6 @@ class ProfileNode(DjangoObjectType):
 
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.filter(profile=self)
-
-    def resolve_concepts_of_interest(self, info, **kwargs):
-        return self.concepts_of_interest.all()
-
-    def resolve_divisions_of_interest(self, info, **kwargs):
-        return self.divisions_of_interest.all()
 
 
 class EmailInput(graphene.InputObjectType):
@@ -246,12 +238,6 @@ class ProfileInput(graphene.InputObjectType):
     image = graphene.String(description="Profile image.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
-    concepts_of_interest = graphene.List(
-        graphene.String, description="Concepts of interest."
-    )
-    divisions_of_interest = graphene.List(
-        graphene.String, description="Divisions of interest."
-    )
     add_emails = graphene.List(EmailInput, description="Add emails to profile.")
     update_emails = graphene.List(EmailInput, description="Update profile emails.")
     remove_emails = graphene.List(
@@ -416,8 +402,6 @@ class Query(graphene.ObjectType):
         serviceType=graphene.Argument(AllowedServiceType, required=True),
     )
     my_profile = graphene.Field(ProfileNode)
-    concepts_of_interest = graphene.List(ConceptType)
-    divisions_of_interest = graphene.List(AdministrativeDivisionType)
     profiles = DjangoFilterConnectionField(
         ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
@@ -441,12 +425,6 @@ class Query(graphene.ObjectType):
             .prefetch_related("concepts_of_interest", "divisions_of_interest")
             .first()
         )
-
-    def resolve_concepts_of_interest(self, info, **kwargs):
-        return Concept.objects.all()
-
-    def resolve_divisions_of_interest(self, info, **kwargs):
-        return AdministrativeDivision.objects.filter(division_of_interest__isnull=False)
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):

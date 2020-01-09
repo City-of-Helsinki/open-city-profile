@@ -4,7 +4,6 @@ import uuid
 
 import reversion
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from encrypted_fields import fields
@@ -88,7 +87,6 @@ class Profile(UUIDModel):
     )
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
-    preferences = JSONField(null=True, blank=True)
 
     legal_relationships = models.ManyToManyField(
         "self", through=LegalRelationship, symmetrical=False
