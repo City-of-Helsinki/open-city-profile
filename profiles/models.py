@@ -71,7 +71,7 @@ class Profile(UUIDModel):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
-    nickname = models.CharField(max_length=32, null=True, blank=True)
+    nickname = models.CharField(max_length=32, blank=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
         storage=OverwriteStorage(),
