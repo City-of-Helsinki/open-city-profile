@@ -1,6 +1,8 @@
 import uuid
 from string import Template
 
+from graphql_relay.node.node import to_global_id
+
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -282,6 +284,7 @@ def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
             mutation {
                 updateProfile(
                     profile: {
+                        id: \"${profileId}\",
                         nickname: \"${nickname}\",
                         youthProfile: {
                             schoolClass: "${schoolClass}"
@@ -303,6 +306,7 @@ def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
     )
 
     creation_data = {
+        "profileId": to_global_id(type="ProfileNode", id=profile.id),
         "nickname": "Larry",
         "schoolClass": "2A",
         "birthDate": "2002-02-02",

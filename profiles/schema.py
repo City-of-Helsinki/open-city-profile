@@ -46,6 +46,56 @@ AllowedAddressType = graphene.Enum.from_enum(
 )
 
 
+def update_profile(info, profile, profile_data):
+    youth_profile_data = profile_data.pop("youth_profile", None)
+    concepts_of_interest = profile_data.pop("concepts_of_interest", [])
+    divisions_of_interest = profile_data.pop("divisions_of_interest", [])
+    nested_to_create = [
+        (Email, profile_data.pop("add_emails", [])),
+        (Phone, profile_data.pop("add_phones", [])),
+        (Address, profile_data.pop("add_addresses", [])),
+    ]
+    nested_to_update = [
+        (Email, profile_data.pop("update_emails", [])),
+        (Phone, profile_data.pop("update_phones", [])),
+        (Address, profile_data.pop("update_addresses", [])),
+    ]
+    nested_to_delete = [
+        (Email, profile_data.pop("remove_emails", [])),
+        (Phone, profile_data.pop("remove_phones", [])),
+        (Address, profile_data.pop("remove_addresses", [])),
+    ]
+
+    for field, value in profile_data.items():
+        if not field == "id":
+            setattr(profile, field, value)
+    profile.save()
+
+    for model, data in nested_to_create:
+        create_nested(model, profile, data)
+
+    for model, data in nested_to_update:
+        update_nested(model, profile, data)
+
+    for model, data in nested_to_delete:
+        delete_nested(model, profile, data)
+
+    cois = Concept.objects.annotate(
+        identifier=Concat(
+            "vocabulary__prefix", Value(":"), "code", output_field=CharField()
+        )
+    ).filter(identifier__in=concepts_of_interest)
+    profile.concepts_of_interest.set(cois)
+    ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
+    profile.divisions_of_interest.set(ads)
+
+    if youth_profile_data:
+        UpdateYouthProfile().mutate(
+            info, youth_profile=youth_profile_data, profile_id=profile.id
+        )
+    return profile
+
+
 class ConceptType(DjangoObjectType):
     class Meta:
         model = Concept
@@ -274,6 +324,10 @@ class ProfileInput(graphene.InputObjectType):
     youth_profile = graphene.InputField(YouthProfileFields)
 
 
+class UpdateProfileInput(ProfileInput):
+    id = graphene.ID(required=True)
+
+
 class CreateProfile(graphene.Mutation):
     class Arguments:
         profile = ProfileInput(required=True)
@@ -318,60 +372,17 @@ class CreateProfile(graphene.Mutation):
 
 class UpdateProfile(graphene.Mutation):
     class Arguments:
-        profile = ProfileInput(required=True)
+        profile = UpdateProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
     @login_required
     def mutate(self, info, **kwargs):
         profile_data = kwargs.pop("profile")
-        youth_profile_data = profile_data.pop("youth_profile", None)
-        concepts_of_interest = profile_data.pop("concepts_of_interest", [])
-        divisions_of_interest = profile_data.pop("divisions_of_interest", [])
-        nested_to_create = [
-            (Email, profile_data.pop("add_emails", [])),
-            (Phone, profile_data.pop("add_phones", [])),
-            (Address, profile_data.pop("add_addresses", [])),
-        ]
-        nested_to_update = [
-            (Email, profile_data.pop("update_emails", [])),
-            (Phone, profile_data.pop("update_phones", [])),
-            (Address, profile_data.pop("update_addresses", [])),
-        ]
-        nested_to_delete = [
-            (Email, profile_data.pop("remove_emails", [])),
-            (Phone, profile_data.pop("remove_phones", [])),
-            (Address, profile_data.pop("remove_addresses", [])),
-        ]
-
-        profile = Profile.objects.get(user=info.context.user)
-        for field, value in profile_data.items():
-            setattr(profile, field, value)
-        profile.save()
-
-        for model, data in nested_to_create:
-            create_nested(model, profile, data)
-
-        for model, data in nested_to_update:
-            update_nested(model, profile, data)
-
-        for model, data in nested_to_delete:
-            delete_nested(model, profile, data)
-
-        cois = Concept.objects.annotate(
-            identifier=Concat(
-                "vocabulary__prefix", Value(":"), "code", output_field=CharField()
-            )
-        ).filter(identifier__in=concepts_of_interest)
-        profile.concepts_of_interest.set(cois)
-        ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
-        profile.divisions_of_interest.set(ads)
-
-        if youth_profile_data:
-            UpdateYouthProfile().mutate(
-                info, youth_profile=youth_profile_data, profile_id=profile.id
-            )
-
+        profile = Profile.objects.get(id=from_global_id(profile_data["id"])[1])
+        if profile.user != info.context.user:
+            raise PermissionDenied("You do not have permission to perform this action.")
+        update_profile(info, profile, profile_data)
         return UpdateProfile(profile=profile)
 
 
