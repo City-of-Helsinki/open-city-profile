@@ -3,6 +3,7 @@ from string import Template
 
 from graphql_relay.node.node import to_global_id
 
+from open_city_profile.consts import PERMISSION_DENIED_ERROR
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -168,6 +169,44 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
     assert dict(executed["data"]["createYouthProfile"]) == expected_data
 
 
+def test_superuser_cannot_create_youth_profile_mutation_for_others_profile(
+    rf, superuser_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = superuser_gql_client.user
+    profile = ProfileFactory()
+
+    t = Template(
+        """
+        mutation{
+            createYouthProfile(
+                profileId: "${profileId}"
+                youthProfile: {
+                    approverEmail: "${approverEmail}"
+                    birthDate: "${birthDate}"
+                }
+            )
+            {
+                youthProfile {
+                    approverEmail
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": to_global_id(type="Profile", id=profile.pk),
+        "approverEmail": "hyvaksyja@ex.com",
+        "birthDate": "2004-04-11",
+    }
+    query = t.substitute(**creation_data)
+    executed = superuser_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+
+
 def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
     rf, user_gql_client
 ):
@@ -275,7 +314,38 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
     assert dict(executed["data"]["updateYouthProfile"]) == expected_data
 
 
-def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
+def test_superuser_cannot_update_other_users_youth_profile(rf, superuser_gql_client):
+    request = rf.post("/graphql")
+    request.user = superuser_gql_client.user
+    profile = ProfileFactory()
+    youth_profile = YouthProfileFactory(profile=profile)
+
+    t = Template(
+        """
+        mutation{
+            updateYouthProfile(
+                youthProfile: {
+                    id: ${youthProfileId}
+                    birthDate: "${birthDate}"
+                }
+            )
+            {
+                youthProfile {
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {"birthDate": "2002-02-02", "youthProfileId": youth_profile.pk}
+    query = t.substitute(**creation_data)
+    executed = superuser_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+
+
+def test_normal_user_can_update_youth_profile_through_profile_mutation(
     rf, user_gql_client
 ):
     request = rf.post("/graphql")
@@ -335,6 +405,156 @@ def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
+
+
+def test_superuser_cannot_update_other_users_youth_profile_through_profile(
+    rf, superuser_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = superuser_gql_client.user
+    profile = ProfileFactory()
+    youth_profile = YouthProfileFactory(profile=profile)
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        id: \"${profileId}\",
+                        nickname: \"${nickname}\",
+                        youthProfile: {
+                            id: "${youthProfileId}"
+                            birthDate: "${birthDate}"
+                        }
+                    }
+                ) {
+                profile{
+                    nickname
+                    youthProfile {
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "profileId": to_global_id(type="ProfileNode", id=profile.pk),
+        "youthProfileId": youth_profile.pk,
+        "nickname": "Larry",
+        "birthDate": "2002-02-02",
+    }
+
+    query = t.substitute(**creation_data)
+    executed = superuser_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+
+
+def test_normal_user_can_create_youth_profile_through_existing_profile_mutation(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        id: \"${profileId}\",
+                        nickname: \"${nickname}\",
+                        youthProfile: {
+                            schoolClass: "${schoolClass}"
+                            schoolName: "${schoolName}"
+                            birthDate: "${birthDate}"
+                        }
+                    }
+                ) {
+                profile{
+                    nickname,
+                    youthProfile {
+                        schoolClass
+                        schoolName
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "profileId": to_global_id(type="ProfileNode", id=profile.pk),
+        "nickname": "Larry",
+        "schoolClass": "2A",
+        "schoolName": "Alakoulu",
+        "birthDate": "2002-02-02",
+    }
+
+    query = t.substitute(**creation_data)
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "nickname": "Larry",
+                "youthProfile": {
+                    "schoolClass": creation_data["schoolClass"],
+                    "schoolName": creation_data["schoolName"],
+                    "birthDate": creation_data["birthDate"],
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_superuser_cannot_create_other_users_youth_profile_through_profile(
+    rf, superuser_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = superuser_gql_client.user
+    profile = ProfileFactory()
+
+    t = Template(
+        """
+            mutation {
+                updateProfile(
+                    profile: {
+                        id: \"${profileId}\",
+                        nickname: \"${nickname}\",
+                        youthProfile: {
+                            birthDate: "${birthDate}"
+                        }
+                    }
+                ) {
+                profile{
+                    nickname,
+                    youthProfile {
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "profileId": to_global_id(type="ProfileNode", id=profile.pk),
+        "nickname": "Larry",
+        "birthDate": "2002-02-02",
+    }
+
+    query = t.substitute(**creation_data)
+    executed = superuser_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
 
 
 def test_anon_user_query_with_token(rf, youth_profile, anon_user_gql_client):

@@ -92,7 +92,11 @@ def update_profile(info, profile, profile_data):
 
     if youth_profile_data:
         if "id" in youth_profile_data:
-            UpdateYouthProfile().mutate(info, youth_profile=youth_profile_data)
+            UpdateYouthProfile().mutate(
+                info,
+                youth_profile=youth_profile_data,
+                profile_id=to_global_id(type="Profile", id=profile.id),
+            )
         else:
             CreateYouthProfile().mutate(
                 info,

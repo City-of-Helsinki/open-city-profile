@@ -74,7 +74,6 @@ class CreateYouthProfile(graphene.Mutation):
         profile_id = graphene.ID()
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.ID()
 
     @login_required
     def mutate(self, info, **kwargs):
@@ -106,24 +105,35 @@ class CreateYouthProfile(graphene.Mutation):
 class UpdateYouthProfileInput(YouthProfileFields):
     resend_request_notification = graphene.Boolean()
     birth_date = graphene.Date(
-        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
+        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not."
     )
 
 
 class UpdateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile = UpdateYouthProfileInput(required=True)
+        profile_id = graphene.ID()
 
     youth_profile = graphene.Field(YouthProfileType)
 
     @login_required
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
+
         resend_request_notification = input_data.pop(
             "resend_request_notification", False
         )
 
-        youth_profile = YouthProfile.objects.get(pk=input_data["id"])
+        profile_id = kwargs.get("profile_id", None)
+        if profile_id:
+            # if nested mutation is used, make sure that youthprofile really
+            # belongs to a profile given as an argument
+            youth_profile = YouthProfile.objects.get(
+                pk=input_data["id"], profile__pk=from_global_id(profile_id)[1]
+            )
+        else:
+            youth_profile = YouthProfile.objects.get(pk=input_data["id"])
+
         if youth_profile.profile.user != info.context.user:
             raise PermissionDenied("You do not have permission to perform this action.")
 
