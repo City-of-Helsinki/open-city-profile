@@ -1,6 +1,7 @@
 import uuid
 
 import graphene
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -8,6 +9,7 @@ from django_ilmoitin.utils import send_notification
 from graphene_django.types import DjangoObjectType
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
+from graphql_relay.node.node import from_global_id
 
 from profiles.models import Profile
 
@@ -32,11 +34,12 @@ class YouthProfileType(DjangoObjectType):
 
     class Meta:
         model = YouthProfile
-        exclude = ("id", "approval_token", "language_at_home")
+        exclude = ("approval_token", "language_at_home")
 
 
 # Abstract base fields
 class YouthProfileFields(graphene.InputObjectType):
+    id = graphene.ID()
     school_name = graphene.String(description="The youth's school name.")
     school_class = graphene.String(description="The youth's school class.")
     language_at_home = LanguageAtHome(
@@ -54,34 +57,33 @@ class YouthProfileFields(graphene.InputObjectType):
     approver_email = graphene.String(
         description="The youth's (supposed) guardian's email address which will be used to send approval requests."
     )
+
+
+# Subset of abstract fields are required for creation
+class CreateYouthProfileInput(YouthProfileFields):
+    approver_email = graphene.String(required=True)
     birth_date = graphene.Date(
         required=True,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
     )
 
 
-# Subset of abstract fields are required for creation
-class CreateYouthProfileInput(YouthProfileFields):
-    approver_email = graphene.String(required=True)
-
-
 class CreateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile = CreateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
+        profile_id = graphene.ID()
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
+    profile_id = graphene.ID()
 
     @login_required
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
         profile_id = kwargs.get("profile_id")
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
+        profile = Profile.objects.get(pk=from_global_id(profile_id)[1])
+        if profile.user != info.context.user:
+            raise PermissionDenied("You do not have permission to perform this action.")
 
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
@@ -103,30 +105,27 @@ class CreateYouthProfile(graphene.Mutation):
 
 class UpdateYouthProfileInput(YouthProfileFields):
     resend_request_notification = graphene.Boolean()
+    birth_date = graphene.Date(
+        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
+    )
 
 
 class UpdateYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile = UpdateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
 
     @login_required
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
-        profile_id = kwargs.get("profile_id")
         resend_request_notification = input_data.pop(
             "resend_request_notification", False
         )
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
-
-        youth_profile = YouthProfile.objects.get(profile=profile)
+        youth_profile = YouthProfile.objects.get(pk=input_data["id"])
+        if youth_profile.profile.user != info.context.user:
+            raise PermissionDenied("You do not have permission to perform this action.")
 
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
@@ -145,7 +144,7 @@ class UpdateYouthProfile(graphene.Mutation):
         return UpdateYouthProfile(youth_profile=youth_profile)
 
 
-class ApproveYouthProfileInput(YouthProfileFields):
+class ApproveYouthProfileInput(UpdateYouthProfileInput):
     # TODO: Photo usage needs to be present also in Create/Modify, but it cannot be given, if the youth is under 15
     photo_usage_approved = graphene.Boolean()
 
