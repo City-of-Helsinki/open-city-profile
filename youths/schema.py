@@ -55,39 +55,35 @@ class YouthProfileFields(graphene.InputObjectType):
         description="The youth's (supposed) guardian's email address which will be used to send approval requests."
     )
     birth_date = graphene.Date(
-        required=True,
+        required=False,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
     )
 
 
 # Subset of abstract fields are required for creation
-class CreateYouthProfileInput(YouthProfileFields):
+class CreateMyYouthProfileInput(YouthProfileFields):
     approver_email = graphene.String(required=True)
+    birth_date = graphene.Date(
+        required=True,
+        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
+    )
 
 
-class CreateYouthProfile(graphene.Mutation):
+class CreateMyYouthProfile(graphene.Mutation):
     class Arguments:
-        youth_profile = CreateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
+        youth_profile = CreateMyYouthProfileInput(required=True)
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
 
     @login_required
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
-        profile_id = kwargs.get("profile_id")
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
+        profile = Profile.objects.get(user=info.context.user)
 
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
         )
-        if not created:
-            raise GraphQLError(_("Youth profile already exists for this profile!"))
 
         youth_profile.approval_token = uuid.uuid4()
         send_notification(
@@ -98,35 +94,28 @@ class CreateYouthProfile(graphene.Mutation):
         youth_profile.approval_notification_timestamp = timezone.now()
         youth_profile.save()
 
-        return CreateYouthProfile(youth_profile=youth_profile)
+        return CreateMyYouthProfile(youth_profile=youth_profile)
 
 
 class UpdateYouthProfileInput(YouthProfileFields):
     resend_request_notification = graphene.Boolean()
 
 
-class UpdateYouthProfile(graphene.Mutation):
+class UpdateMyYouthProfile(graphene.Mutation):
     class Arguments:
         youth_profile = UpdateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
 
     @login_required
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
-        profile_id = kwargs.get("profile_id")
         resend_request_notification = input_data.pop(
             "resend_request_notification", False
         )
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
-
-        youth_profile = YouthProfile.objects.get(profile=profile)
+        profile = Profile.objects.get(user=info.context.user)
+        youth_profile, created = YouthProfile.objects.get_or_create(profile=profile)
 
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
@@ -142,7 +131,7 @@ class UpdateYouthProfile(graphene.Mutation):
             youth_profile.approval_notification_timestamp = timezone.now()
             youth_profile.save()
 
-        return UpdateYouthProfile(youth_profile=youth_profile)
+        return UpdateMyYouthProfile(youth_profile=youth_profile)
 
 
 class ApproveYouthProfileInput(YouthProfileFields):
@@ -200,6 +189,6 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_youth_profile = CreateYouthProfile.Field()
-    update_youth_profile = UpdateYouthProfile.Field()
+    create_my_youth_profile = CreateMyYouthProfile.Field()
+    update_my_youth_profile = UpdateMyYouthProfile.Field()
     approve_youth_profile = ApproveYouthProfile.Field()
