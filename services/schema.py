@@ -1,4 +1,5 @@
 import graphene
+from django.db import transaction
 from django.db.utils import IntegrityError
 from graphene import relay
 from graphene_django.types import DjangoObjectType
@@ -48,6 +49,7 @@ class AddServiceConnection(graphene.Mutation):
     service_connection = graphene.Field(ServiceConnectionType)
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         service_connection_data = kwargs.pop("service_connection")
         service_data = service_connection_data.get("service")

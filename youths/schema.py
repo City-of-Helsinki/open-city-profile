@@ -1,6 +1,7 @@
 import uuid
 
 import graphene
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -76,6 +77,7 @@ class CreateMyYouthProfile(graphene.Mutation):
     youth_profile = graphene.Field(YouthProfileType)
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
 
@@ -108,6 +110,7 @@ class UpdateMyYouthProfile(graphene.Mutation):
     youth_profile = graphene.Field(YouthProfileType)
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         input_data = kwargs.get("youth_profile")
         resend_request_notification = input_data.pop(
@@ -146,6 +149,7 @@ class ApproveYouthProfile(graphene.Mutation):
 
     youth_profile = graphene.Field(YouthProfileType)
 
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         youth_data = kwargs.get("approval_data")
         token = kwargs.get("approval_token")

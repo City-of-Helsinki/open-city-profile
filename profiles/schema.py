@@ -1,5 +1,6 @@
 import graphene
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django_filters import CharFilter, FilterSet, OrderingFilter
@@ -263,6 +264,7 @@ class CreateMyProfile(graphene.Mutation):
     profile = graphene.Field(ProfileNode)
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         profile_data = kwargs.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
@@ -293,6 +295,7 @@ class UpdateMyProfile(graphene.Mutation):
     profile = graphene.Field(ProfileNode)
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         profile_data = kwargs.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
@@ -336,6 +339,7 @@ class DeleteMyProfile(graphene.Mutation):
     ok = graphene.Boolean()
 
     @login_required
+    @transaction.atomic
     def mutate(self, info, **kwargs):
         try:
             profile = Profile.objects.get(user=info.context.user)
