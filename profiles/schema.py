@@ -22,8 +22,8 @@ from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from youths.schema import (
-    CreateMyYouthProfile,
-    UpdateMyYouthProfile,
+    CreateMyYouthProfileMutation,
+    UpdateMyYouthProfileMutation,
     YouthProfileFields,
     YouthProfileType,
 )
@@ -257,16 +257,17 @@ class ProfileInput(graphene.InputObjectType):
     youth_profile = graphene.InputField(YouthProfileFields)
 
 
-class CreateMyProfile(graphene.Mutation):
-    class Arguments:
+class CreateMyProfileMutation(relay.ClientIDMutation):
+    class Input:
         profile = ProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
+    @classmethod
     @login_required
     @transaction.atomic
-    def mutate(self, info, **kwargs):
-        profile_data = kwargs.pop("profile")
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
@@ -283,21 +284,24 @@ class CreateMyProfile(graphene.Mutation):
             create_nested(model, profile, data)
 
         if youth_profile_data:
-            CreateMyYouthProfile().mutate(info, youth_profile=youth_profile_data)
+            CreateMyYouthProfileMutation().mutate_and_get_payload(
+                root, info, youth_profile=youth_profile_data
+            )
 
-        return CreateMyProfile(profile=profile)
+        return CreateMyProfileMutation(profile=profile)
 
 
-class UpdateMyProfile(graphene.Mutation):
-    class Arguments:
+class UpdateMyProfileMutation(relay.ClientIDMutation):
+    class Input:
         profile = ProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
+    @classmethod
     @login_required
     @transaction.atomic
-    def mutate(self, info, **kwargs):
-        profile_data = kwargs.pop("profile")
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
@@ -330,17 +334,18 @@ class UpdateMyProfile(graphene.Mutation):
             delete_nested(model, profile, data)
 
         if youth_profile_data:
-            UpdateMyYouthProfile().mutate(info, youth_profile=youth_profile_data)
+            UpdateMyYouthProfileMutation().mutate_and_get_payload(
+                root, info, youth_profile=youth_profile_data
+            )
 
-        return UpdateMyProfile(profile=profile)
+        return UpdateMyProfileMutation(profile=profile)
 
 
-class DeleteMyProfile(graphene.Mutation):
-    ok = graphene.Boolean()
-
+class DeleteMyProfileMutation(relay.ClientIDMutation):
+    @classmethod
     @login_required
     @transaction.atomic
-    def mutate(self, info, **kwargs):
+    def mutate_and_get_payload(cls, root, info, **input):
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
@@ -359,8 +364,8 @@ class DeleteMyProfile(graphene.Mutation):
                 "Cannot delete profile while service BERTH still connected"
             )
 
-        deleted_objects_count = profile.delete()[0]
-        return DeleteMyProfile(ok=deleted_objects_count > 0)
+        profile.delete()
+        return DeleteMyProfileMutation()
 
 
 class Query(graphene.ObjectType):
@@ -405,6 +410,6 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_my_profile = CreateMyProfile.Field()
-    update_my_profile = UpdateMyProfile.Field()
-    delete_my_profile = DeleteMyProfile.Field()
+    create_my_profile = CreateMyProfileMutation.Field()
+    update_my_profile = UpdateMyProfileMutation.Field()
+    delete_my_profile = DeleteMyProfileMutation.Field()

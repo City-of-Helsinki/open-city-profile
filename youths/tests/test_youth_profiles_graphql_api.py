@@ -125,12 +125,15 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         """
         mutation{
             createMyYouthProfile(
-                youthProfile: {
-                    schoolClass: "${schoolClass}"
-                    schoolName: "${schoolName}"
-                    languageAtHome: ${language}
-                    approverEmail: "${approverEmail}"
-                    birthDate: "${birthDate}"
+                input: {
+                    youthProfile: {
+                        schoolClass: "${schoolClass}"
+                        schoolName: "${schoolName}"
+                        languageAtHome: ${language}
+                        approverEmail: "${approverEmail}"
+                        birthDate: "${birthDate}"
+                    }
+
                 }
             )
             {
@@ -175,14 +178,16 @@ def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
         """
             mutation {
                 createMyProfile(
-                    profile: {
-                        nickname: \"${nickname}\",
-                        youthProfile: {
-                            schoolClass: "${schoolClass}"
-                            schoolName: "${schoolName}"
-                            languageAtHome: ${language}
-                            approverEmail: "${approverEmail}"
-                            birthDate: "${birthDate}"
+                    input: {
+                        profile: {
+                            nickname: \"${nickname}\",
+                            youthProfile: {
+                                schoolClass: "${schoolClass}"
+                                schoolName: "${schoolName}"
+                                languageAtHome: ${language}
+                                approverEmail: "${approverEmail}"
+                                birthDate: "${birthDate}"
+                            }
                         }
                     }
                 ) {
@@ -239,9 +244,11 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
         """
         mutation{
             updateMyYouthProfile(
-                youthProfile: {
-                    schoolClass: "${schoolClass}"
-                    birthDate: "${birthDate}"
+                input: {
+                    youthProfile: {
+                        schoolClass: "${schoolClass}"
+                        birthDate: "${birthDate}"
+                    }
                 }
             )
             {
@@ -280,11 +287,13 @@ def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
         """
             mutation {
                 updateMyProfile(
-                    profile: {
-                        nickname: \"${nickname}\",
-                        youthProfile: {
-                            schoolClass: "${schoolClass}"
-                            birthDate: "${birthDate}"
+                    input: {
+                        profile: {
+                            nickname: \"${nickname}\",
+                            youthProfile: {
+                                schoolClass: "${schoolClass}"
+                                birthDate: "${birthDate}"
+                            }
                         }
                     }
                 ) {
@@ -354,14 +363,16 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
         """
         mutation{
             approveYouthProfile(
-                approvalToken: "${token}",
-                approvalData: {
-                    photoUsageApproved: true
-                    approverFirstName: "${approver_first_name}"
-                    approverLastName: "${approver_last_name}"
-                    approverPhone: "${approver_phone}"
-                    approverEmail: "${approver_email}"
-                    birthDate: "${birthDate}"
+                input: {
+                    approvalToken: "${token}",
+                    approvalData: {
+                        photoUsageApproved: true
+                        approverFirstName: "${approver_first_name}"
+                        approverLastName: "${approver_last_name}"
+                        approverPhone: "${approver_phone}"
+                        approverEmail: "${approver_email}"
+                        birthDate: "${birthDate}"
+                    }
                 }
             )
             {

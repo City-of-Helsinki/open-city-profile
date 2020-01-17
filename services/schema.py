@@ -42,16 +42,17 @@ class ServiceConnectionInput(graphene.InputObjectType):
     enabled = graphene.Boolean()
 
 
-class AddServiceConnection(graphene.Mutation):
-    class Arguments:
+class AddServiceConnectionMutation(relay.ClientIDMutation):
+    class Input:
         service_connection = ServiceConnectionInput(required=True)
 
     service_connection = graphene.Field(ServiceConnectionType)
 
+    @classmethod
     @login_required
     @transaction.atomic
-    def mutate(self, info, **kwargs):
-        service_connection_data = kwargs.pop("service_connection")
+    def mutate_and_get_payload(cls, root, info, **input):
+        service_connection_data = input.pop("service_connection")
         service_data = service_connection_data.get("service")
         service_type = service_data.get("type")
         service = Service.objects.get(service_type=service_type)
@@ -61,8 +62,8 @@ class AddServiceConnection(graphene.Mutation):
             )
         except IntegrityError:
             raise ServiceAlreadyExistsError("Service connection already exists")
-        return AddServiceConnection(service_connection=service_connection)
+        return AddServiceConnectionMutation(service_connection=service_connection)
 
 
 class Mutation(graphene.ObjectType):
-    add_service_connection = AddServiceConnection.Field()
+    add_service_connection = AddServiceConnectionMutation.Field()
