@@ -100,6 +100,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
             mutation {
                 updateProfile(
                     profile: {
+                        id: \"${profile_id}\",
                         nickname: \"${nickname}\",
                         updateEmails:[
                             {
@@ -150,6 +151,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         nickname=profile_data["nickname"],
         email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
@@ -157,11 +159,12 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
         primary=str(email_data["primary"]).lower(),
     )
     executed = user_gql_client.execute(mutation, context=request)
+    assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_add_email(rf, user_gql_client, email_data):
-    ProfileFactory(user=user_gql_client.user)
+    profile = ProfileFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -170,6 +173,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     addEmails:[
                         {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
                     ]
@@ -210,6 +214,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
@@ -219,7 +224,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
 
 
 def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
-    ProfileFactory(user=user_gql_client.user)
+    profile = ProfileFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -228,6 +233,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     addPhones:[
                         {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
                     ]
@@ -268,6 +274,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
@@ -277,7 +284,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_add_address(rf, user_gql_client, address_data):
-    ProfileFactory(user=user_gql_client.user)
+    profile = ProfileFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -286,6 +293,7 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     addAddresses:[
                         {
                             addressType: ${address_type},
@@ -339,6 +347,7 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         address=address_data["address"],
         postal_code=address_data["postal_code"],
         city=address_data["city"],
@@ -361,6 +370,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     updateAddresses:[
                         {
                             id: \"${address_id}\",
@@ -414,6 +424,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         postal_code=address_data["postal_code"],
@@ -436,6 +447,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     updateEmails:[
                         {
                             id: \"${email_id}\",
@@ -483,6 +495,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
@@ -503,6 +516,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     updatePhones:[
                         {
                             id: \"${phone_id}\",
@@ -550,6 +564,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
@@ -570,10 +585,11 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     removeEmails:[
                         \"${email_id}\"
                     ]
-                }
+                    }
             ) {
                 profile{
                     emails{
@@ -595,6 +611,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
     expected_data = {"updateProfile": {"profile": {"emails": {"edges": []}}}}
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
@@ -615,6 +632,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     removePhones:[
                         \"${phone_id}\"
                     ]
@@ -640,6 +658,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
     expected_data = {"updateProfile": {"profile": {"phones": {"edges": []}}}}
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         phone_id=to_global_id(type="PhoneNode", id=phone.id),
         phone=phone_data["phone"],
         phone_type=phone_data["phone_type"],
@@ -660,6 +679,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\",
                     removeAddresses:[
                         \"${address_id}\"
                     ]
@@ -685,6 +705,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
     expected_data = {"updateProfile": {"profile": {"addresses": {"edges": []}}}}
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         address_id=to_global_id(type="AddressNode", id=address.id),
         address=address_data["address"],
         address_type=address_data["address_type"],
@@ -880,6 +901,7 @@ def test_normal_user_can_change_primary_contact_details(
             mutation {
                 updateProfile(
                     profile: {
+                        id: \"${profile_id}\"
                         addEmails:[
                             {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
                         ],
@@ -946,6 +968,7 @@ def test_normal_user_can_change_primary_contact_details(
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
         phone=phone_data["phone"],
@@ -974,6 +997,7 @@ def test_normal_user_can_update_primary_contact_details(
             mutation {
                 updateProfile(
                     profile: {
+                    id: \"${profile_id}\"
                     updateEmails:[
                         {
                             id: \"${email_id}\",
@@ -1029,6 +1053,7 @@ def test_normal_user_can_update_primary_contact_details(
     }
 
     mutation = t.substitute(
+        profile_id=to_global_id(type="ProfileNode", id=profile.id),
         email_id=to_global_id(type="EmailNode", id=email.id),
         email=email_data["email"],
         email_type=email_data["email_type"],
