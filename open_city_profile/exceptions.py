@@ -20,5 +20,6 @@ class CannotDeleteProfileWhileServiceConnectedError(ProfileGraphQLError):
 class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
 
+
 class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
     """Profile does not have a primary email address"""

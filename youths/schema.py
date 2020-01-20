@@ -13,7 +13,7 @@ from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import ProfileHasNoPrimaryEmailError
-from profiles.models import Profile, Email
+from profiles.models import Email, Profile
 
 from .enums import NotificationType, YouthLanguage
 from .models import YouthProfile

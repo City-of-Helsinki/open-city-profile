@@ -462,5 +462,4 @@ def test_missing_primary_email_error(rf, youth_profile, anon_user_gql_client):
     query = t.substitute(**approval_data)
     executed = anon_user_gql_client.execute(query, context=request)
 
-    assert executed["data"]["approveYouthProfile"] is None
     assert executed["errors"][0].get("extensions").get("code") == "GENERAL_ERROR"
