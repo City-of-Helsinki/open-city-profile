@@ -1,6 +1,8 @@
 import uuid
 from string import Template
 
+from graphql_relay.node.node import to_global_id
+
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -110,7 +112,9 @@ def test_superuser_can_query_by_id(rf, youth_profile, superuser_gql_client):
         }
         """
     )
-    query = t.substitute(profileId=youth_profile.profile.pk)
+    query = t.substitute(
+        profileId=to_global_id(type="ProfileNode", id=youth_profile.profile.pk)
+    )
     expected_data = {"youthProfile": {"schoolClass": youth_profile.school_class}}
     executed = superuser_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
