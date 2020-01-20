@@ -3,6 +3,7 @@ from string import Template
 
 from graphql_relay.node.node import to_global_id
 
+from profiles.tests.factories import EmailFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -359,7 +360,11 @@ def test_anon_user_query_with_token(rf, youth_profile, anon_user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_client):
+def test_anon_user_can_approve_with_token(rf, anon_user_gql_client):
+    profile = ProfileFactory()
+    EmailFactory(primary=True, profile=profile)
+    youth_profile = YouthProfileFactory(profile=profile)
+
     request = rf.post("/graphql")
     request.user = anon_user_gql_client.user
 
@@ -413,3 +418,53 @@ def test_anon_user_can_approve_with_token(rf, youth_profile, anon_user_gql_clien
     }
     executed = anon_user_gql_client.execute(query, context=request)
     assert dict(executed["data"]["approveYouthProfile"]) == expected_data
+
+
+def test_missing_primary_email_error(rf, youth_profile, anon_user_gql_client):
+    request = rf.post("/graphql")
+    request.user = anon_user_gql_client.user
+
+    t = Template(
+        """
+        mutation{
+            approveYouthProfile(
+                input: {
+                    approvalToken: "${token}",
+                    approvalData: {
+                        photoUsageApproved: true
+                        approverFirstName: "${approver_first_name}"
+                        approverLastName: "${approver_last_name}"
+                        approverPhone: "${approver_phone}"
+                        approverEmail: "${approver_email}"
+                        birthDate: "${birthDate}"
+                    }
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                    approverFirstName
+                    approverLastName
+                    approverPhone
+                    approverEmail
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    approval_data = {
+        "token": youth_profile.approval_token,
+        "approver_first_name": "Teppo",
+        "approver_last_name": "Testi",
+        "approver_phone": "0401234567",
+        "approver_email": "teppo@testi.com",
+        "birthDate": "2002-02-02",
+    }
+    query = t.substitute(**approval_data)
+    executed = anon_user_gql_client.execute(query, context=request)
+
+    assert (
+        executed["errors"][0].get("extensions").get("code")
+        == "PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR"
+    )
