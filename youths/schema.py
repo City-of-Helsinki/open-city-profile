@@ -1,10 +1,12 @@
 import uuid
 
 import graphene
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
 from django_ilmoitin.utils import send_notification
+from graphene import relay
 from graphene_django.types import DjangoObjectType
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
@@ -57,39 +59,37 @@ class YouthProfileFields(graphene.InputObjectType):
         description="The youth's (supposed) guardian's email address which will be used to send approval requests."
     )
     birth_date = graphene.Date(
-        required=True,
+        required=False,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
     )
 
 
 # Subset of abstract fields are required for creation
-class CreateYouthProfileInput(YouthProfileFields):
+class CreateMyYouthProfileInput(YouthProfileFields):
     approver_email = graphene.String(required=True)
+    birth_date = graphene.Date(
+        required=True,
+        description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
+    )
 
 
-class CreateYouthProfile(graphene.Mutation):
-    class Arguments:
-        youth_profile = CreateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
+class CreateMyYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        youth_profile = CreateMyYouthProfileInput(required=True)
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
 
+    @classmethod
     @login_required
-    def mutate(self, info, **kwargs):
-        input_data = kwargs.get("youth_profile")
-        profile_id = kwargs.get("profile_id")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        input_data = input.get("youth_profile")
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
+        profile = Profile.objects.get(user=info.context.user)
 
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
         )
-        if not created:
-            raise GraphQLError(_("Youth profile already exists for this profile!"))
 
         youth_profile.approval_token = uuid.uuid4()
         send_notification(
@@ -100,35 +100,30 @@ class CreateYouthProfile(graphene.Mutation):
         youth_profile.approval_notification_timestamp = timezone.now()
         youth_profile.save()
 
-        return CreateYouthProfile(youth_profile=youth_profile)
+        return CreateMyYouthProfileMutation(youth_profile=youth_profile)
 
 
 class UpdateYouthProfileInput(YouthProfileFields):
     resend_request_notification = graphene.Boolean()
 
 
-class UpdateYouthProfile(graphene.Mutation):
-    class Arguments:
+class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
         youth_profile = UpdateYouthProfileInput(required=True)
-        profile_id = graphene.UUID()
 
     youth_profile = graphene.Field(YouthProfileType)
-    profile_id = graphene.UUID()
 
+    @classmethod
     @login_required
-    def mutate(self, info, **kwargs):
-        input_data = kwargs.get("youth_profile")
-        profile_id = kwargs.get("profile_id")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        input_data = input.get("youth_profile")
         resend_request_notification = input_data.pop(
             "resend_request_notification", False
         )
 
-        if info.context.user.is_superuser:
-            profile = Profile.objects.get(pk=profile_id)
-        else:
-            profile = Profile.objects.get(user=info.context.user)
-
-        youth_profile = YouthProfile.objects.get(profile=profile)
+        profile = Profile.objects.get(user=info.context.user)
+        youth_profile, created = YouthProfile.objects.get_or_create(profile=profile)
 
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
@@ -144,24 +139,26 @@ class UpdateYouthProfile(graphene.Mutation):
             youth_profile.approval_notification_timestamp = timezone.now()
             youth_profile.save()
 
-        return UpdateYouthProfile(youth_profile=youth_profile)
+        return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
 
 
-class ApproveYouthProfileInput(YouthProfileFields):
+class ApproveYouthProfileFields(YouthProfileFields):
     # TODO: Photo usage needs to be present also in Create/Modify, but it cannot be given, if the youth is under 15
     photo_usage_approved = graphene.Boolean()
 
 
-class ApproveYouthProfile(graphene.Mutation):
-    class Arguments:
+class ApproveYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
         approval_token = graphene.String(required=True)
-        approval_data = ApproveYouthProfileInput(required=True)
+        approval_data = ApproveYouthProfileFields(required=True)
 
     youth_profile = graphene.Field(YouthProfileType)
 
-    def mutate(self, info, **kwargs):
-        youth_data = kwargs.get("approval_data")
-        token = kwargs.get("approval_token")
+    @classmethod
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        youth_data = input.get("approval_data")
+        token = input.get("approval_token")
 
         youth_profile = YouthProfile.objects.get(approval_token=token)
 
@@ -183,7 +180,7 @@ class ApproveYouthProfile(graphene.Mutation):
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMED.value,
             context={"youth_profile": youth_profile},
         )
-        return ApproveYouthProfile(youth_profile=youth_profile)
+        return ApproveYouthProfileMutation(youth_profile=youth_profile)
 
 
 class Query(graphene.ObjectType):
@@ -209,6 +206,6 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_youth_profile = CreateYouthProfile.Field()
-    update_youth_profile = UpdateYouthProfile.Field()
-    approve_youth_profile = ApproveYouthProfile.Field()
+    create_my_youth_profile = CreateMyYouthProfileMutation.Field()
+    update_my_youth_profile = UpdateMyYouthProfileMutation.Field()
+    approve_youth_profile = ApproveYouthProfileMutation.Field()
