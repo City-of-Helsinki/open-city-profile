@@ -10,6 +10,7 @@ from graphene import relay
 from graphene_django.types import DjangoObjectType
 from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
+from graphql_relay.node.node import from_global_id
 
 from profiles.models import Profile
 
@@ -175,7 +176,7 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
-    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.UUID())
+    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.ID())
 
     youth_profile_by_approval_token = graphene.Field(
         YouthProfileType, token=graphene.String()
@@ -189,7 +190,7 @@ class Query(graphene.ObjectType):
             raise GraphQLError(_("Query by id not allowed for regular users."))
 
         if info.context.user.is_superuser:
-            return YouthProfile.objects.get(profile_id=profile_id)
+            return YouthProfile.objects.get(profile_id=from_global_id(profile_id)[1])
         return YouthProfile.objects.get(profile__user=info.context.user)
 
     def resolve_youth_profile_by_approval_token(self, info, **kwargs):

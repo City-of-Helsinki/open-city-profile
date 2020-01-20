@@ -33,3 +33,7 @@ staging:
     K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.test.kuva.hel.ninja/openid"
     K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: "True"
     K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
+    K8S_SECRET_MAIL_MAILGUN_KEY: "$SECRET_MAILGUN_API_KEY"
+    K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
+    K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
+    K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
