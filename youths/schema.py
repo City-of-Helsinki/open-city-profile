@@ -10,7 +10,8 @@ from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
-from profiles.models import Profile
+from open_city_profile.exceptions import ProfileHasNoPrimaryEmailError
+from profiles.models import Profile, Email
 
 from .enums import NotificationType, YouthLanguage
 from .models import YouthProfile
@@ -167,11 +168,18 @@ class ApproveYouthProfile(graphene.Mutation):
         for field, value in youth_data.items():
             setattr(youth_profile, field, value)
 
+        try:
+            email = youth_profile.profile.get_primary_email()
+        except Email.DoesNotExist:
+            raise ProfileHasNoPrimaryEmailError(
+                "Cannot send email confirmation, youth profile has no primary email address."
+            )
+
         youth_profile.approved_time = timezone.now()
         youth_profile.approval_token = ""  # invalidate
         youth_profile.save()
         send_notification(
-            email=youth_profile.profile.get_default_email,
+            email=email.email,
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMED.value,
             context={"youth_profile": youth_profile},
         )
