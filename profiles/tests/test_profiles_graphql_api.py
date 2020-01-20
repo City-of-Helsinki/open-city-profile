@@ -10,7 +10,6 @@ from guardian.shortcuts import assign_perm
 from open_city_profile.consts import (
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
-    PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     TOKEN_EXPIRED_ERROR,
 )
@@ -35,12 +34,14 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
     t = Template(
         """
             mutation {
-                createProfile(
-                    profile: {
-                        nickname: \"${nickname}\",
-                        addEmails:[
-                            {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
-                        ]
+                createMyProfile(
+                    input: {
+                        profile: {
+                            nickname: \"${nickname}\",
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ]
+                        }
                     }
                 ) {
                 profile{
@@ -61,7 +62,7 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
     )
 
     expected_data = {
-        "createProfile": {
+        "createMyProfile": {
             "profile": {
                 "nickname": profile_data["nickname"],
                 "emails": {
@@ -98,17 +99,19 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                        nickname: \"${nickname}\",
-                        updateEmails:[
-                            {
-                                id: \"${email_id}\",
-                                emailType: ${email_type},
-                                email:\"${email}\",
-                                primary: ${primary}
-                            }
-                        ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: \"${nickname}\",
+                            updateEmails:[
+                                {
+                                    id: \"${email_id}\",
+                                    emailType: ${email_type},
+                                    email:\"${email}\",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
                     }
                 ) {
                     profile{
@@ -130,7 +133,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "nickname": profile_data["nickname"],
                 "emails": {
@@ -168,12 +171,14 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    addEmails:[
-                        {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
-                    ]
-                }
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ]
+                        }
+                    }
             ) {
                 profile{
                     emails{
@@ -192,7 +197,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "emails": {
                     "edges": [
@@ -226,11 +231,13 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    addPhones:[
-                        {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        addPhones:[
+                            {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -250,7 +257,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "phones": {
                     "edges": [
@@ -284,31 +291,33 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    addAddresses:[
-                        {
-                            addressType: ${address_type},
-                            address:\"${address}\",
-                            postalCode: \"${postal_code}\",
-                            city: \"${city}\",
-                            countryCode: \"${country_code}\",
-                            primary: ${primary}
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            addAddresses: [
+                                {
+                                    addressType: ${address_type},
+                                    address:\"${address}\",
+                                    postalCode: \"${postal_code}\",
+                                    city: \"${city}\",
+                                    countryCode: \"${country_code}\",
+                                    primary: ${primary}
+                                }
+                            ]
                         }
-                    ]
-                }
-            ) {
-                profile{
-                    addresses{
-                        edges{
-                        node{
-                            address
-                            postalCode
-                            city
-                            countryCode
-                            addressType
-                            primary
-                        }
+                    }
+                ) {
+                profile {
+                    addresses {
+                        edges {
+                            node {
+                                address
+                                postalCode
+                                city
+                                countryCode
+                                addressType
+                                primary
+                            }
                         }
                     }
                 }
@@ -318,7 +327,7 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "addresses": {
                     "edges": [
@@ -359,18 +368,20 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    updateAddresses:[
-                        {
-                            id: \"${address_id}\",
-                            addressType: ${address_type},
-                            address:\"${address}\",
-                            postalCode:\"${postal_code}\",
-                            city:\"${city}\",
-                            primary: ${primary}
-                        }
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        updateAddresses:[
+                            {
+                                id: \"${address_id}\",
+                                addressType: ${address_type},
+                                address:\"${address}\",
+                                postalCode:\"${postal_code}\",
+                                city:\"${city}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -393,7 +404,7 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "addresses": {
                     "edges": [
@@ -434,16 +445,18 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    updateEmails:[
-                        {
-                            id: \"${email_id}\",
-                            emailType: ${email_type},
-                            email:\"${email}\",
-                            primary: ${primary}
-                        }
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        updateEmails:[
+                            {
+                                id: \"${email_id}\",
+                                emailType: ${email_type},
+                                email:\"${email}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -464,7 +477,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "emails": {
                     "edges": [
@@ -501,16 +514,18 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    updatePhones:[
-                        {
-                            id: \"${phone_id}\",
-                            phoneType: ${phone_type},
-                            phone:\"${phone}\",
-                            primary: ${primary}
-                        }
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        updatePhones:[
+                            {
+                                id: \"${phone_id}\",
+                                phoneType: ${phone_type},
+                                phone:\"${phone}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -531,7 +546,7 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "phones": {
                     "edges": [
@@ -568,11 +583,13 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    removeEmails:[
-                        \"${email_id}\"
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        removeEmails:[
+                            \"${email_id}\"
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -592,7 +609,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
         """
     )
 
-    expected_data = {"updateProfile": {"profile": {"emails": {"edges": []}}}}
+    expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
 
     mutation = t.substitute(
         email_id=to_global_id(type="EmailNode", id=email.id),
@@ -613,11 +630,13 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    removePhones:[
-                        \"${phone_id}\"
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        removePhones:[
+                            \"${phone_id}\"
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -637,7 +656,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
         """
     )
 
-    expected_data = {"updateProfile": {"profile": {"phones": {"edges": []}}}}
+    expected_data = {"updateMyProfile": {"profile": {"phones": {"edges": []}}}}
 
     mutation = t.substitute(
         phone_id=to_global_id(type="PhoneNode", id=phone.id),
@@ -658,11 +677,13 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    removeAddresses:[
-                        \"${address_id}\"
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        removeAddresses:[
+                            \"${address_id}\"
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -682,7 +703,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
         """
     )
 
-    expected_data = {"updateProfile": {"profile": {"addresses": {"edges": []}}}}
+    expected_data = {"updateMyProfile": {"profile": {"addresses": {"edges": []}}}}
 
     mutation = t.substitute(
         address_id=to_global_id(type="AddressNode", id=address.id),
@@ -878,23 +899,25 @@ def test_normal_user_can_change_primary_contact_details(
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                        addEmails:[
-                            {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
-                        ],
-                        addPhones:[
-                            {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
-                        ],
-                        addAddresses:[
-                            {
-                                addressType: ${address_type},
-                                address:\"${address}\",
-                                postalCode:\"${postal_code}\",
-                                city:\"${city}\",
-                                primary: ${primary}
-                            }
-                        ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ],
+                            addPhones:[
+                                {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                            ],
+                            addAddresses:[
+                                {
+                                    addressType: ${address_type},
+                                    address:\"${address}\",
+                                    postalCode:\"${postal_code}\",
+                                    city:\"${city}\",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
                     }
                 ) {
                 profile{
@@ -922,7 +945,7 @@ def test_normal_user_can_change_primary_contact_details(
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "primaryEmail": {
                     "email": email_data["email"],
@@ -972,16 +995,18 @@ def test_normal_user_can_update_primary_contact_details(
     t = Template(
         """
             mutation {
-                updateProfile(
-                    profile: {
-                    updateEmails:[
-                        {
-                            id: \"${email_id}\",
-                            emailType: ${email_type},
-                            email:\"${email}\",
-                            primary: ${primary}
-                        }
-                    ]
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        updateEmails:[
+                            {
+                                id: \"${email_id}\",
+                                emailType: ${email_type},
+                                email:\"${email}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
                 }
             ) {
                 profile{
@@ -1002,7 +1027,7 @@ def test_normal_user_can_update_primary_contact_details(
     )
 
     expected_data = {
-        "updateProfile": {
+        "updateMyProfile": {
             "profile": {
                 "emails": {
                     "edges": [
@@ -1048,46 +1073,18 @@ def test_normal_user_can_delete_his_profile(rf, user_gql_client):
     t = Template(
         """
             mutation {
-                deleteProfile(
-                    id: \"${id}\",
-                ) {
-                    ok
+                deleteMyProfile(input: {}) {
+                    clientMutationId
                 }
             }
         """
     )
 
-    expected_data = {"deleteProfile": {"ok": True}}
+    expected_data = {"deleteMyProfile": {"clientMutationId": None}}
 
     mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
-
-
-def test_no_user_cannot_delete_other_users_profile(rf, superuser_gql_client):
-    profile = ProfileFactory()
-    request = rf.post("/graphql")
-    request.user = superuser_gql_client.user
-
-    t = Template(
-        """
-            mutation {
-                deleteProfile(
-                    id: \"${id}\",
-                ) {
-                    ok
-                }
-            }
-        """
-    )
-
-    expected_data = {"deleteProfile": None}
-
-    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
-    executed = superuser_gql_client.execute(mutation, context=request)
-    assert dict(executed["data"]) == expected_data
-    assert "code" in executed["errors"][0]["extensions"]
-    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
 
 
 def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
@@ -1102,16 +1099,14 @@ def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
     t = Template(
         """
             mutation {
-                deleteProfile(
-                    id: \"${id}\",
-                ) {
-                    ok
+                deleteMyProfile(input: {}) {
+                    clientMutationId
                 }
             }
         """
     )
 
-    expected_data = {"deleteProfile": None}
+    expected_data = {"deleteMyProfile": None}
 
     mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
     executed = user_gql_client.execute(mutation, context=request)
@@ -1133,16 +1128,14 @@ def test_normal_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_
     t = Template(
         """
             mutation {
-                deleteProfile(
-                    id: \"${id}\",
-                ) {
-                    ok
+                deleteMyProfile(input: {}) {
+                    clientMutationId
                 }
             }
         """
     )
 
-    expected_data = {"deleteProfile": None}
+    expected_data = {"deleteMyProfile": None}
 
     mutation = t.substitute(id=to_global_id(type="ProfileNode", id=id))
     executed = user_gql_client.execute(mutation, context=request)

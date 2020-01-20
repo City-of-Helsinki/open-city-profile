@@ -1,8 +1,6 @@
 import graphene
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
-from django.db.models import CharField, Value
-from django.db.models.functions import Concat
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django_filters import CharFilter, FilterSet, OrderingFilter
@@ -11,7 +9,6 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql_jwt.decorators import login_required
-from graphql_relay.node.node import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
@@ -25,8 +22,8 @@ from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from youths.schema import (
-    CreateYouthProfile,
-    UpdateYouthProfile,
+    CreateMyYouthProfileMutation,
+    UpdateMyYouthProfileMutation,
     YouthProfileFields,
     YouthProfileType,
 )
@@ -260,18 +257,18 @@ class ProfileInput(graphene.InputObjectType):
     youth_profile = graphene.InputField(YouthProfileFields)
 
 
-class CreateProfile(graphene.Mutation):
-    class Arguments:
+class CreateMyProfileMutation(relay.ClientIDMutation):
+    class Input:
         profile = ProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
+    @classmethod
     @login_required
-    def mutate(self, info, **kwargs):
-        profile_data = kwargs.pop("profile")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
-        concepts_of_interest = profile_data.pop("concepts_of_interest", [])
-        divisions_of_interest = profile_data.pop("divisions_of_interest", [])
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
             (Phone, profile_data.pop("add_phones", [])),
@@ -286,34 +283,26 @@ class CreateProfile(graphene.Mutation):
         for model, data in nested_to_create:
             create_nested(model, profile, data)
 
-        cois = Concept.objects.annotate(
-            identifier=Concat(
-                "vocabulary__prefix", Value(":"), "code", output_field=CharField()
-            )
-        ).filter(identifier__in=concepts_of_interest)
-        profile.concepts_of_interest.set(cois)
-        ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
-        profile.divisions_of_interest.set(ads)
         if youth_profile_data:
-            CreateYouthProfile().mutate(
-                info, youth_profile=youth_profile_data, profile_id=profile.id
+            CreateMyYouthProfileMutation().mutate_and_get_payload(
+                root, info, youth_profile=youth_profile_data
             )
 
-        return CreateProfile(profile=profile)
+        return CreateMyProfileMutation(profile=profile)
 
 
-class UpdateProfile(graphene.Mutation):
-    class Arguments:
+class UpdateMyProfileMutation(relay.ClientIDMutation):
+    class Input:
         profile = ProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
+    @classmethod
     @login_required
-    def mutate(self, info, **kwargs):
-        profile_data = kwargs.pop("profile")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
-        concepts_of_interest = profile_data.pop("concepts_of_interest", [])
-        divisions_of_interest = profile_data.pop("divisions_of_interest", [])
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
             (Phone, profile_data.pop("add_phones", [])),
@@ -344,39 +333,23 @@ class UpdateProfile(graphene.Mutation):
         for model, data in nested_to_delete:
             delete_nested(model, profile, data)
 
-        cois = Concept.objects.annotate(
-            identifier=Concat(
-                "vocabulary__prefix", Value(":"), "code", output_field=CharField()
-            )
-        ).filter(identifier__in=concepts_of_interest)
-        profile.concepts_of_interest.set(cois)
-        ads = AdministrativeDivision.objects.filter(ocd_id__in=divisions_of_interest)
-        profile.divisions_of_interest.set(ads)
-
         if youth_profile_data:
-            UpdateYouthProfile().mutate(
-                info, youth_profile=youth_profile_data, profile_id=profile.id
+            UpdateMyYouthProfileMutation().mutate_and_get_payload(
+                root, info, youth_profile=youth_profile_data
             )
 
-        return UpdateProfile(profile=profile)
+        return UpdateMyProfileMutation(profile=profile)
 
 
-class DeleteProfile(graphene.Mutation):
-    ok = graphene.Boolean()
-
-    class Arguments:
-        id = graphene.ID(required=True)
-
+class DeleteMyProfileMutation(relay.ClientIDMutation):
+    @classmethod
     @login_required
-    def mutate(self, info, **kwargs):
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
         try:
-            profile = Profile.objects.get(pk=from_global_id(kwargs["id"])[1])
-        except Profile.DoesNotExist as e:
-            raise ProfileDoesNotExistError(e)
-
-        # TODO: Should admin users be able to delete profiles?
-        if profile.user != info.context.user:
-            raise PermissionDenied("You do not have permission to perform this action.")
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            raise ProfileDoesNotExistError("Profile does not exist")
 
         # TODO: Here we should check whether profile can be
         #       actually removed. Waiting for spec for this.
@@ -391,8 +364,8 @@ class DeleteProfile(graphene.Mutation):
                 "Cannot delete profile while service BERTH still connected"
             )
 
-        deleted_objects_count = profile.delete()[0]
-        return DeleteProfile(ok=deleted_objects_count > 0)
+        profile.delete()
+        return DeleteMyProfileMutation()
 
 
 class Query(graphene.ObjectType):
@@ -412,19 +385,13 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
         service = Service.objects.get(service_type=kwargs["serviceType"])
-        return (
-            Profile.objects.filter(serviceconnection__service=service)
-            .prefetch_related("concepts_of_interest", "divisions_of_interest")
-            .get(pk=relay.Node.from_global_id(kwargs["id"])[1])
+        return Profile.objects.filter(serviceconnection__service=service).get(
+            pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
 
     @login_required
     def resolve_my_profile(self, info, **kwargs):
-        return (
-            Profile.objects.filter(user=info.context.user)
-            .prefetch_related("concepts_of_interest", "divisions_of_interest")
-            .first()
-        )
+        return Profile.objects.filter(user=info.context.user).first()
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
@@ -443,6 +410,6 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_profile = CreateProfile.Field()
-    update_profile = UpdateProfile.Field()
-    delete_profile = DeleteProfile.Field()
+    create_my_profile = CreateMyProfileMutation.Field()
+    update_my_profile = UpdateMyProfileMutation.Field()
+    delete_my_profile = DeleteMyProfileMutation.Field()
