@@ -8,6 +8,7 @@ from open_city_profile.consts import (
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
+    PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     TOKEN_EXPIRED_ERROR,
 )
@@ -15,6 +16,7 @@ from open_city_profile.exceptions import (
     CannotDeleteProfileWhileServiceConnectedError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
+    ProfileHasNoPrimaryEmailError,
     ServiceAlreadyExistsError,
     TokenExpiredError,
 )
@@ -29,7 +31,9 @@ error_codes_profile = {
     CannotDeleteProfileWhileServiceConnectedError: CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
 }
+
 error_codes = {**error_codes_shared, **error_codes_profile}
 
 

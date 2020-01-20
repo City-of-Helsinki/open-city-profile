@@ -428,14 +428,16 @@ def test_missing_primary_email_error(rf, youth_profile, anon_user_gql_client):
         """
         mutation{
             approveYouthProfile(
-                approvalToken: "${token}",
-                approvalData: {
-                    photoUsageApproved: true
-                    approverFirstName: "${approver_first_name}"
-                    approverLastName: "${approver_last_name}"
-                    approverPhone: "${approver_phone}"
-                    approverEmail: "${approver_email}"
-                    birthDate: "${birthDate}"
+                input: {
+                    approvalToken: "${token}",
+                    approvalData: {
+                        photoUsageApproved: true
+                        approverFirstName: "${approver_first_name}"
+                        approverLastName: "${approver_last_name}"
+                        approverPhone: "${approver_phone}"
+                        approverEmail: "${approver_email}"
+                        birthDate: "${birthDate}"
+                    }
                 }
             )
             {
@@ -462,4 +464,7 @@ def test_missing_primary_email_error(rf, youth_profile, anon_user_gql_client):
     query = t.substitute(**approval_data)
     executed = anon_user_gql_client.execute(query, context=request)
 
-    assert executed["errors"][0].get("extensions").get("code") == "GENERAL_ERROR"
+    assert (
+        executed["errors"][0].get("extensions").get("code")
+        == "PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR"
+    )
