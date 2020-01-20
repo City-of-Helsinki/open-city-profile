@@ -51,7 +51,13 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     t = Template(
         """
         mutation {
-            addServiceConnection(serviceConnection: { service: { type: ${service_type} } }) {
+            addServiceConnection(input: {
+                serviceConnection: {
+                    service: {
+                        type: ${service_type}
+                    }
+                }
+            }) {
                 serviceConnection {
                     service {
                         type
@@ -80,7 +86,13 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_cli
     t = Template(
         """
         mutation {
-            addServiceConnection(serviceConnection: { service: { type: ${service_type} } }) {
+            addServiceConnection(input: {
+                serviceConnection: {
+                    service: {
+                        type: ${service_type}
+                    }
+                }
+            }) {
                 serviceConnection {
                     service {
                         type
