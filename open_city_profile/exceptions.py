@@ -19,3 +19,7 @@ class CannotDeleteProfileWhileServiceConnectedError(ProfileGraphQLError):
 
 class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
+
+
+class APINotImplementedError(ProfileGraphQLError):
+    """The functionality is not yet implemented"""

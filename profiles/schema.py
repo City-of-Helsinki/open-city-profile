@@ -13,6 +13,7 @@ from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from open_city_profile.exceptions import (
+    APINotImplementedError,
     CannotDeleteProfileWhileServiceConnectedError,
     ProfileDoesNotExistError,
     TokenExpiredError,
@@ -41,6 +42,44 @@ AllowedPhoneType = graphene.Enum.from_enum(
 AllowedAddressType = graphene.Enum.from_enum(
     AddressType, description=lambda e: e.label if e else ""
 )
+
+
+def get_claimable_profile(token=None):
+    claim_token = ClaimToken.objects.get(token=token)
+    if claim_token.expires_at and claim_token.expires_at < timezone.now():
+        raise TokenExpiredError("Token for claiming this profile has expired")
+    return Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
+
+
+def update_profile(profile, profile_data):
+    nested_to_create = [
+        (Email, profile_data.pop("add_emails", [])),
+        (Phone, profile_data.pop("add_phones", [])),
+        (Address, profile_data.pop("add_addresses", [])),
+    ]
+    nested_to_update = [
+        (Email, profile_data.pop("update_emails", [])),
+        (Phone, profile_data.pop("update_phones", [])),
+        (Address, profile_data.pop("update_addresses", [])),
+    ]
+    nested_to_delete = [
+        (Email, profile_data.pop("remove_emails", [])),
+        (Phone, profile_data.pop("remove_phones", [])),
+        (Address, profile_data.pop("remove_addresses", [])),
+    ]
+
+    for field, value in profile_data.items():
+        setattr(profile, field, value)
+    profile.save()
+
+    for model, data in nested_to_create:
+        create_nested(model, profile, data)
+
+    for model, data in nested_to_update:
+        update_nested(model, profile, data)
+
+    for model, data in nested_to_delete:
+        delete_nested(model, profile, data)
 
 
 class ConceptType(DjangoObjectType):
@@ -303,35 +342,8 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **input):
         profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
-        nested_to_create = [
-            (Email, profile_data.pop("add_emails", [])),
-            (Phone, profile_data.pop("add_phones", [])),
-            (Address, profile_data.pop("add_addresses", [])),
-        ]
-        nested_to_update = [
-            (Email, profile_data.pop("update_emails", [])),
-            (Phone, profile_data.pop("update_phones", [])),
-            (Address, profile_data.pop("update_addresses", [])),
-        ]
-        nested_to_delete = [
-            (Email, profile_data.pop("remove_emails", [])),
-            (Phone, profile_data.pop("remove_phones", [])),
-            (Address, profile_data.pop("remove_addresses", [])),
-        ]
-
         profile = Profile.objects.get(user=info.context.user)
-        for field, value in profile_data.items():
-            setattr(profile, field, value)
-        profile.save()
-
-        for model, data in nested_to_create:
-            create_nested(model, profile, data)
-
-        for model, data in nested_to_update:
-            update_nested(model, profile, data)
-
-        for model, data in nested_to_delete:
-            delete_nested(model, profile, data)
+        update_profile(profile, profile_data)
 
         if youth_profile_data:
             UpdateMyYouthProfileMutation().mutate_and_get_payload(
@@ -339,6 +351,34 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             )
 
         return UpdateMyProfileMutation(profile=profile)
+
+
+class ClaimProfileMutation(relay.ClientIDMutation):
+    class Input:
+        token = graphene.Argument(graphene.UUID, required=True)
+        profile = ProfileInput()
+
+    profile = graphene.Field(ProfileNode)
+
+    @classmethod
+    @login_required
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile_to_claim = get_claimable_profile(token=input["token"])
+        if Profile.objects.filter(user=info.context.user).exists():
+            # Logged in user has a profile
+            # TODO: Case with existing profile waiting for final spec, ticket:
+            #       https://helsinkisolutionoffice.atlassian.net/browse/OM-385
+            raise APINotImplementedError(
+                "Claiming a profile with existing profile not yet implemented"
+            )
+        else:
+            # Logged in user has no profile, let's use claimed profile
+            update_profile(profile_to_claim, input["profile"])
+            profile_to_claim.user = info.context.user
+            profile_to_claim.save()
+            profile_to_claim.claim_tokens.all().delete()
+            return ClaimProfileMutation(profile=profile_to_claim)
 
 
 class DeleteMyProfileMutation(relay.ClientIDMutation):
@@ -402,14 +442,11 @@ class Query(graphene.ObjectType):
     @login_required
     def resolve_claimable_profile(self, info, **kwargs):
         # TODO: Complete error handling for this OM-297
-        claim_token = ClaimToken.objects.get(token=kwargs["token"])
-        profile = Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
-        if claim_token.expires_at and claim_token.expires_at < timezone.now():
-            raise TokenExpiredError("Token for claiming this profile has expired")
-        return profile
+        return get_claimable_profile(token=kwargs["token"])
 
 
 class Mutation(graphene.ObjectType):
     create_my_profile = CreateMyProfileMutation.Field()
     update_my_profile = UpdateMyProfileMutation.Field()
     delete_my_profile = DeleteMyProfileMutation.Field()
+    claim_profile = ClaimProfileMutation.Field()

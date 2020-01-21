@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from graphene_django.views import GraphQLView as BaseGraphQLView
 
 from open_city_profile.consts import (
+    API_NOT_IMPLEMENTED_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     GENERAL_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
@@ -12,6 +13,7 @@ from open_city_profile.consts import (
     TOKEN_EXPIRED_ERROR,
 )
 from open_city_profile.exceptions import (
+    APINotImplementedError,
     CannotDeleteProfileWhileServiceConnectedError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
@@ -24,6 +26,7 @@ error_codes_shared = {
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
     TokenExpiredError: TOKEN_EXPIRED_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
+    APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
 }
 error_codes_profile = {
     CannotDeleteProfileWhileServiceConnectedError: CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
