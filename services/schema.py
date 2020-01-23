@@ -58,7 +58,9 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
         service = Service.objects.get(service_type=service_type)
         try:
             service_connection = ServiceConnection.objects.create(
-                profile=info.context.user.profile, service=service
+                profile=info.context.user.profile,
+                service=service,
+                enabled=service_connection_data.get("enabled", True),
             )
         except IntegrityError:
             raise ServiceAlreadyExistsError("Service connection already exists")
