@@ -8,6 +8,7 @@ from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import (
+    API_NOT_IMPLEMENTED_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
@@ -1736,3 +1737,124 @@ def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
+
+
+def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_client):
+    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    claim_token = ClaimTokenFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            claimProfile(
+                input: {
+                    token: "${claimToken}",
+                    profile: {
+                        firstName: "Joe",
+                        nickname: "Joey"
+                    }
+                }
+            ) {
+                profile {
+                    id
+                    firstName
+                    lastName
+                    nickname
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+    expected_data = {
+        "claimProfile": {
+            "profile": {
+                "id": to_global_id(type="ProfileNode", id=profile.id),
+                "firstName": "Joe",
+                "nickname": "Joey",
+                "lastName": profile.last_name,
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+    profile.refresh_from_db()
+    assert profile.user == user_gql_client.user
+    assert profile.claim_tokens.count() == 0
+
+
+def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_client):
+    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    expired_claim_token = ClaimTokenFactory(
+        profile=profile, expires_at=timezone.now() - timedelta(days=1)
+    )
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            claimProfile(
+                input: {
+                    token: "${claimToken}",
+                    profile: {
+                        firstName: "Joe",
+                        nickname: "Joey"
+                    }
+                }
+            ) {
+                profile {
+                    id
+                    firstName
+                    lastName
+                    nickname
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=expired_claim_token.token)
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+    assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
+
+
+def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_client):
+    ProfileFactory(user=user_gql_client.user)
+    profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            claimProfile(
+                input: {
+                    token: "${claimToken}",
+                    profile: {
+                        firstName: "Joe",
+                        nickname: "Joey"
+                    }
+                }
+            ) {
+                profile {
+                    id
+                    firstName
+                    lastName
+                    nickname
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=expired_claim_token.token)
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+    assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
