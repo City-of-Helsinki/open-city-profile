@@ -56,12 +56,14 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
                     service: {
                         type: ${service_type}
                     }
+                    enabled: false
                 }
             }) {
                 serviceConnection {
                     service {
                         type
                     }
+                    enabled
                 }
             }
         }
@@ -70,7 +72,10 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     query = t.substitute(service_type=ServiceType.BERTH.name)
     expected_data = {
         "addServiceConnection": {
-            "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
+            "serviceConnection": {
+                "service": {"type": ServiceType.BERTH.name},
+                "enabled": False,
+            }
         }
     }
     executed = user_gql_client.execute(query, context=request)
