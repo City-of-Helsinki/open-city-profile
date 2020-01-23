@@ -92,7 +92,7 @@ class Profile(UUIDModel):
         "self", through=LegalRelationship, symmetrical=False
     )
 
-    def get_default_email(self):
+    def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
 
     def save(self, *args, **kwargs):

@@ -23,3 +23,7 @@ class ProfileDoesNotExistError(ProfileGraphQLError):
 
 class APINotImplementedError(ProfileGraphQLError):
     """The functionality is not yet implemented"""
+
+
+class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
+    """Profile does not have a primary email address"""
