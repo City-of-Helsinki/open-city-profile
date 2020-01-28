@@ -1,5 +1,6 @@
 Django
 coreapi
+django-admin-sortable
 django-allauth
 django-cors-headers
 django-enumfields

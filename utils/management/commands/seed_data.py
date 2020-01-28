@@ -6,6 +6,7 @@ from faker import Faker
 from services.models import Service
 from utils.utils import (
     assign_permissions,
+    generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
     generate_profiles,
@@ -53,6 +54,8 @@ class Command(BaseCommand):
         locale = kwargs["locale"]
         faker = Faker(locale)
         with factory.Faker.override_default_locale(locale):
+            self.stdout.write("generating data fields...")
+            generate_data_fields()
             self.stdout.write("generating services...")
             services = generate_services()
             self.stdout.write("generating groups...")

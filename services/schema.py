@@ -8,19 +8,28 @@ from graphql_jwt.decorators import login_required
 from open_city_profile.exceptions import ServiceAlreadyExistsError
 
 from .enums import ServiceType
-from .models import Service, ServiceConnection
+from .models import AllowedDataField, Service, ServiceConnection
 
 AllowedServiceType = graphene.Enum.from_enum(
     ServiceType, description=lambda e: e.label if e else ""
 )
 
 
+class AllowedDataFieldNode(DjangoObjectType):
+    label = graphene.String()
+
+    class Meta:
+        model = AllowedDataField
+        interfaces = (relay.Node,)
+
+
 class ServiceNode(DjangoObjectType):
     type = AllowedServiceType(source="service_type")
+    title = graphene.String()
+    description = graphene.String()
 
     class Meta:
         model = Service
-        fields = ("created_at",)
         filter_fields = []
         interfaces = (relay.Node,)
 
