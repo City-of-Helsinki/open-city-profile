@@ -9,6 +9,7 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
+    generate_notifications,
     generate_profiles,
     generate_services,
     generate_youth_profiles,
@@ -69,4 +70,6 @@ class Command(BaseCommand):
             generate_profiles(profile_count, faker=faker)
             self.stdout.write("generating youth profiles...")
             generate_youth_profiles(kwargs["youthprofilepercentage"], faker=faker)
+            self.stdout.write("generating youth membership notifications...")
+            generate_notifications()
         self.stdout.write(self.style.SUCCESS("done."))
