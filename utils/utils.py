@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from django.utils.timezone import get_current_timezone, make_aware
+from django_ilmoitin.models import NotificationTemplate
 from guardian.shortcuts import assign_perm
 
 from profiles.enums import AddressType, EmailType, PhoneType
@@ -11,7 +12,7 @@ from profiles.models import Address, Email, Phone, Profile
 from services.enums import ServiceType
 from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
-from youths.enums import YouthLanguage
+from youths.enums import NotificationType, YouthLanguage
 from youths.models import YouthProfile
 
 DATA_FIELD_VALUES = [
@@ -198,3 +199,65 @@ def generate_youth_profiles(percentage=0.2, faker=None):
             else None,
             photo_usage_approved=bool(random.getrandbits(1)) if approved else False,
         )
+
+
+def generate_notifications():
+    template = NotificationTemplate(
+        type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value
+    )
+    fi_subject = "Vahvista nuorisojäsenyys"
+    fi_html = (
+        "Hei {{ youth_profile.approver_first_name }},<br /><br />{{ youth_profile.profile.first_name }} on "
+        "pyytänyt sinua vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen tätä "
+        'linkkiä:<br /><br /><a href="https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}">'
+        "https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}</a><br /><br /><i>Tämä viesti "
+        "on lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei käsitellä.</i>"
+    )
+    fi_text = (
+        "Hei {{ youth_profile.approver_first_name }},\r\n\r\n{{ youth_profile.profile.first_name }} on pyytänyt sinua "
+        "vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen tätä linkkiä:\r\n\r\n"
+        "https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}\r\n\r\nTämä viesti on "
+        "lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei käsitellä."
+    )
+    template.set_current_language("fi")
+    template.subject = fi_subject
+    template.body_html = fi_html
+    template.body_text = fi_text
+    template.set_current_language("sv")
+    template.subject = fi_subject + " SV TRANSLATION NEEDED"
+    template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
+    template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
+    template.set_current_language("en")
+    template.subject = fi_subject + " EN TRANSLATION NEEDED"
+    template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
+    template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
+    template.save()
+
+    template = NotificationTemplate(type=NotificationType.YOUTH_PROFILE_CONFIRMED.value)
+    fi_subject = "Nuorisojäsenyys vahvistettu"
+    fi_html = (
+        "Hei {{ youth_profile.profile.first_name }},\r\n<br /><br />\r\n{{ youth_profile.approver_first_name }} "
+        "on vahvistanut nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n<br /><br />\r\n"
+        '<a href="https://jassari.test.kuva.hel.ninja">https://jassari.test.kuva.hel.ninja</a>\r\n<br /><br />\r\n<i>'
+        "Tämä viesti on lähetetty järjestelmästä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei "
+        "käsitellä.</i>"
+    )
+    fi_text = (
+        "Hei {{ youth_profile.profile.first_name }},\r\n\r\n{{ youth_profile.approver_first_name }} on vahvistanut "
+        "nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n\r\nhttps://jassari.test.kuva.h"
+        "el.ninja\r\n\r\nTämä viesti on lähetetty järjestelmästä automaattisesti. Älä vastaa tähän viestiin, sillä "
+        "vastauksia ei käsitellä."
+    )
+    template.set_current_language("fi")
+    template.subject = fi_subject
+    template.body_html = fi_html
+    template.body_text = fi_text
+    template.set_current_language("sv")
+    template.subject = fi_subject + " SV TRANSLATION NEEDED"
+    template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
+    template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
+    template.set_current_language("en")
+    template.subject = fi_subject + " EN TRANSLATION NEEDED"
+    template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
+    template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
+    template.save()
