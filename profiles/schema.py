@@ -397,7 +397,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         #
         #       More info:
         #       https://helsinkisolutionoffice.atlassian.net/browse/OM-248
-        if profile.serviceconnection_set.filter(
+        if profile.service_connections.filter(
             service__service_type=ServiceType.BERTH
         ).exists():
             raise CannotDeleteProfileWhileServiceConnectedError(
@@ -415,6 +415,7 @@ class Query(graphene.ObjectType):
         serviceType=graphene.Argument(AllowedServiceType, required=True),
     )
     my_profile = graphene.Field(ProfileNode)
+    download_my_profile = graphene.JSONString()
     profiles = DjangoFilterConnectionField(
         ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
     )
@@ -425,7 +426,7 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
         service = Service.objects.get(service_type=kwargs["serviceType"])
-        return Profile.objects.filter(serviceconnection__service=service).get(
+        return Profile.objects.filter(service_connections__service=service).get(
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
 
@@ -436,13 +437,17 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
         return Profile.objects.filter(
-            serviceconnection__service__service_type=kwargs["serviceType"]
+            service_connections__service__service_type=kwargs["serviceType"]
         )
 
     @login_required
     def resolve_claimable_profile(self, info, **kwargs):
         # TODO: Complete error handling for this OM-297
         return get_claimable_profile(token=kwargs["token"])
+
+    @login_required
+    def resolve_download_my_profile(self, info, **kwargs):
+        return Profile.objects.filter(user=info.context.user).first().serialize()
 
 
 class Mutation(graphene.ObjectType):
