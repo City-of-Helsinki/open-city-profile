@@ -4,12 +4,14 @@ from faker import Faker
 from open_city_profile.tests.factories import GroupFactory, UserFactory
 from profiles.models import Profile
 from services.enums import ServiceType
-from services.models import Service
+from services.models import AllowedDataField, Service
 from services.tests.factories import ServiceFactory
 from users.models import User
 from utils.utils import (
     assign_permissions,
     create_user,
+    DATA_FIELD_VALUES,
+    generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
     generate_profiles,
@@ -105,3 +107,17 @@ def test_cant_generate_youth_profiles_without_profiles():
     assert YouthProfile.objects.count() == 0
     generate_youth_profiles(1, faker=Faker())
     assert YouthProfile.objects.count() == 0
+
+
+def test_generate_data_fields():
+    assert AllowedDataField.objects.count() == 0
+    generate_data_fields()
+    allowed_data_fields = AllowedDataField.objects.all()
+    assert len(allowed_data_fields) == 5
+
+    for value in DATA_FIELD_VALUES:
+        field = allowed_data_fields.filter(field_name=value["field_name"]).first()
+        assert field is not None
+        for translation in value["translations"]:
+            field.set_current_language(translation["code"])
+            assert field.label == translation["label"]

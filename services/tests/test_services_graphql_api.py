@@ -3,6 +3,7 @@ from string import Template
 from open_city_profile.consts import SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
 from services.enums import ServiceType
 from services.tests.factories import (
+    AllowedDataFieldFactory,
     ProfileFactory,
     ServiceConnectionFactory,
     ServiceFactory,
@@ -13,7 +14,12 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
+    name_field = AllowedDataFieldFactory(field_name="name", label="Name")
+    address_field = AllowedDataFieldFactory(field_name="address", label="Address")
+    AllowedDataFieldFactory(field_name="ssn", label="SSN")
     service = ServiceFactory()
+    service.allowed_data_fields.add(name_field)
+    service.allowed_data_fields.add(address_field)
     ServiceConnectionFactory(profile=profile, service=service)
 
     query = """
@@ -24,6 +30,16 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
                         node {
                             service {
                                 type
+                                title
+                                description
+                                allowedDataFields {
+                                    edges {
+                                        node {
+                                            fieldName
+                                            label
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -34,7 +50,33 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
     expected_data = {
         "myProfile": {
             "serviceConnections": {
-                "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
+                "edges": [
+                    {
+                        "node": {
+                            "service": {
+                                "type": ServiceType.BERTH.name,
+                                "title": service.title,
+                                "description": service.description,
+                                "allowedDataFields": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "fieldName": name_field.field_name,
+                                                "label": name_field.label,
+                                            }
+                                        },
+                                        {
+                                            "node": {
+                                                "fieldName": address_field.field_name,
+                                                "label": address_field.label,
+                                            }
+                                        },
+                                    ]
+                                },
+                            }
+                        }
+                    }
+                ]
             }
         }
     }

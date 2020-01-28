@@ -1,11 +1,18 @@
+from adminsortable.admin import SortableAdmin
 from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
+from parler.admin import TranslatableAdmin
 
-from .models import Service, ServiceConnection
+from .models import AllowedDataField, Service, ServiceConnection
 
 
 @admin.register(Service)
-class ServiceAdmin(GuardedModelAdmin):
+class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
+    pass
+
+
+@admin.register(AllowedDataField)
+class AllowedDataFieldAdmin(TranslatableAdmin, SortableAdmin):
     pass
 
 

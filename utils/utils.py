@@ -9,16 +9,82 @@ from guardian.shortcuts import assign_perm
 from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Address, Email, Phone, Profile
 from services.enums import ServiceType
-from services.models import Service, ServiceConnection
+from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
 from youths.enums import YouthLanguage
 from youths.models import YouthProfile
 
+DATA_FIELD_VALUES = [
+    {
+        "field_name": "name",
+        "translations": [
+            {"code": "en", "label": "Name"},
+            {"code": "fi", "label": "Nimi"},
+            {"code": "sv", "label": "Namn"},
+        ],
+    },
+    {
+        "field_name": "email",
+        "translations": [
+            {"code": "en", "label": "Email"},
+            {"code": "fi", "label": "Sähköposti"},
+            {"code": "sv", "label": "Epost"},
+        ],
+    },
+    {
+        "field_name": "address",
+        "translations": [
+            {"code": "en", "label": "Address"},
+            {"code": "fi", "label": "Osoite"},
+            {"code": "sv", "label": "Adress"},
+        ],
+    },
+    {
+        "field_name": "phone",
+        "translations": [
+            {"code": "en", "label": "Phone"},
+            {"code": "fi", "label": "Puhelinnumero"},
+            {"code": "sv", "label": "Telefonnummer"},
+        ],
+    },
+    {
+        "field_name": "ssn",
+        "translations": [
+            {"code": "en", "label": "Social Security Number"},
+            {"code": "fi", "label": "Henkilötunnus"},
+            {"code": "sv", "label": "Personnnumer"},
+        ],
+    },
+]
+
+
+def generate_data_fields():
+    for value in DATA_FIELD_VALUES:
+        data_field = AllowedDataField.objects.create(field_name=value.get("field_name"))
+        for translation in value.get("translations"):
+            data_field.set_current_language(translation["code"])
+            data_field.label = translation["label"]
+        data_field.save()
+
 
 def generate_services():
-    return Service.objects.bulk_create(
-        [Service(service_type=service_type.value) for service_type in ServiceType]
-    )
+    services = []
+    for service_type in ServiceType:
+        service = Service.objects.filter(service_type=service_type).first()
+        if not service:
+            service = Service.objects.create(
+                service_type=service_type,
+                title=service_type.name,
+                description="This is a description of {}".format(service_type.name),
+            )
+            for field in AllowedDataField.objects.all():
+                if (
+                    field.field_name != "ssn"
+                    or service.service_type == ServiceType.BERTH
+                ):
+                    service.allowed_data_fields.add(field)
+        services.append(service)
+    return services
 
 
 def generate_groups_for_services(services=[]):

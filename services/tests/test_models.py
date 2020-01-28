@@ -3,12 +3,17 @@ from django.db.utils import IntegrityError
 
 from ..enums import ServiceType
 from ..models import Service, ServiceConnection
-from .factories import ProfileFactory, ServiceConnectionFactory, ServiceFactory
+from .factories import (
+    AllowedDataFieldFactory,
+    ProfileFactory,
+    ServiceConnectionFactory,
+    ServiceFactory,
+)
 
 
 def test_generate_services_from_enum():
     for service_type in ServiceType:
-        Service.objects.get_or_create(service_type=service_type)
+        Service.objects.create(service_type=service_type)
     assert Service.objects.count() == len(ServiceType)
 
 
@@ -46,3 +51,10 @@ def test_connect_two_different_services_for_same_profile():
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
     assert ServiceConnection.objects.count() == 2
+
+
+def test_allowed_data_fields_get_correct_orders():
+    first_data_field = AllowedDataFieldFactory()
+    assert first_data_field.order == 1
+    second_data_field = AllowedDataFieldFactory()
+    assert second_data_field.order == 2
