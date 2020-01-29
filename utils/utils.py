@@ -68,16 +68,70 @@ def generate_data_fields():
         data_field.save()
 
 
+SERVICE_TRANSLATIONS = {
+    ServiceType.BERTH: {
+        "title": {"en": "Boat berths", "fi": "Venepaikka", "sv": "Båtplatser"},
+        "description": {
+            "en": "Boat berths in Helsinki city boat harbours.",
+            "fi": "Venepaikat helsingin kaupungin venesatamissa.",
+            "sv": "Båtplatser i Helsingfors båthamnar.",
+        },
+    },
+    ServiceType.YOUTH_MEMBERSHIP: {
+        "title": {
+            "en": "Youth service membership",
+            "fi": "Nuorisopalveluiden jäsenkortti",
+            "sv": "Ungdomstjänstmedlemskap",
+        },
+        "description": {
+            "en": (
+                "With youth service membership you get to participate in all activities offered by Helsinki city "
+                "community centers."
+            ),
+            "fi": (
+                "Nuorisopalveluiden Jäsenkortilla pääset mukaan nuorisotalojen toimintaan. Saat etuja kaupungin "
+                "kulttuuritapahtumissa ja paikoissa."
+            ),
+            "sv": (
+                "Med medlemskap i ungdomstjänsten får du delta i alla aktiviteter som erbjuds av Helsingfors "
+                "ungdomscenter."
+            ),
+        },
+    },
+    ServiceType.GODCHILDREN_OF_CULTURE: {
+        "title": {
+            "en": "Culture Kids",
+            "fi": "Kulttuurin kummilapset",
+            "sv": "Kulturens fadderbarn",
+        },
+        "description": {
+            "en": "Culture kids -service provides free cultural experiences for children born in Helsinki in 2020.",
+            "fi": (
+                "Kulttuurin kummilapset -palvelu tarjoaa ilmaisia kulttuurielämyksiä vuodesta 2020 alkaen ",
+                "Helsingissä syntyville lapsille.",
+            ),
+            "sv": "Kulturens fadderbarn - tjänsten ger gratis kulturupplevelser för barn födda i Helsingfors 2020.",
+        },
+    },
+}
+
+
 def generate_services():
     services = []
     for service_type in ServiceType:
         service = Service.objects.filter(service_type=service_type).first()
         if not service:
-            service = Service.objects.create(
-                service_type=service_type,
-                title=service_type.name,
-                description="This is a description of {}".format(service_type.name),
-            )
+            service = Service(service_type=service_type, title=service_type.name)
+            if service_type in SERVICE_TRANSLATIONS:
+                for language in ["fi", "en", "sv"]:
+                    service.set_current_language(language)
+                    service.title = SERVICE_TRANSLATIONS[service_type]["title"][
+                        language
+                    ]
+                    service.description = SERVICE_TRANSLATIONS[service_type][
+                        "description"
+                    ][language]
+            service.save()
             for field in AllowedDataField.objects.all():
                 if (
                     field.field_name != "ssn"
