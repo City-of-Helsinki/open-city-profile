@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 import graphene
 from django.db import transaction
@@ -24,7 +25,14 @@ with override("en"):
     )
 
 
+class MembershipStatus(graphene.Enum):
+    ACTIVE = "active"
+    PENDING = "pending"
+    EXPIRED = "expired"
+
+
 class YouthProfileType(DjangoObjectType):
+
     membership_number = graphene.String(
         source="membership_number", description="Youth's membership number"
     )
@@ -33,10 +41,20 @@ class YouthProfileType(DjangoObjectType):
         source="language_at_home",
         description="The language which is spoken in the youth's home.",
     )
+    membership_status = MembershipStatus(
+        description="Membership status based on expiration and approved_time fields"
+    )
 
     class Meta:
         model = YouthProfile
         exclude = ("id", "approval_token", "language_at_home")
+
+    def resolve_membership_status(self, info, **kwargs):
+        if self.expiration and self.expiration <= date.today():
+            return MembershipStatus.EXPIRED
+        elif self.approved_time and self.approved_time < timezone.now():
+            return MembershipStatus.ACTIVE
+        return MembershipStatus.PENDING
 
 
 # Abstract base fields

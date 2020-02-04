@@ -1,6 +1,8 @@
 import uuid
+from datetime import date
 from string import Template
 
+from django.utils import timezone
 from graphql_relay.node.node import to_global_id
 
 from profiles.tests.factories import EmailFactory
@@ -468,3 +470,33 @@ def test_missing_primary_email_error(rf, youth_profile, anon_user_gql_client):
         executed["errors"][0].get("extensions").get("code")
         == "PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR"
     )
+
+
+def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    youth_profile = YouthProfileFactory(profile=profile)
+
+    query = """
+        {
+            youthProfile {
+                membershipStatus
+            }
+        }
+    """
+    expected_data = {"youthProfile": {"membershipStatus": "PENDING"}}
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+    youth_profile.approved_time = timezone.now()
+    youth_profile.save()
+    expected_data = {"youthProfile": {"membershipStatus": "ACTIVE"}}
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+    youth_profile.expiration = date.today()
+    youth_profile.save()
+    expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
