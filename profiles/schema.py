@@ -210,16 +210,40 @@ class ProfileNode(DjangoObjectType):
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
 
-    primary_email = graphene.Field(EmailNode)
-    primary_phone = graphene.Field(PhoneNode)
-    primary_address = graphene.Field(AddressNode)
-    emails = DjangoFilterConnectionField(EmailNode)
-    phones = DjangoFilterConnectionField(PhoneNode)
-    addresses = DjangoFilterConnectionField(AddressNode)
+    primary_email = graphene.Field(
+        EmailNode,
+        description="Convenience field for the email which is marked as primary."
+    )
+    primary_phone = graphene.Field(
+        PhoneNode,
+        description="Convenience field for the phone which is marked as primary."
+    )
+    primary_address = graphene.Field(
+        AddressNode,
+        description="Convenience field for the address which is marked as primary."
+    )
+    emails = DjangoFilterConnectionField(
+        EmailNode,
+        description="List of email addresses of the profile."
+    )
+    phones = DjangoFilterConnectionField(
+        PhoneNode,
+        description="List of phone numbers of the profile."
+    )
+    addresses = DjangoFilterConnectionField(
+        AddressNode,
+        description="List of addresses of the profile."
+    )
     language = Language()
     contact_method = ContactMethod()
-    service_connections = DjangoFilterConnectionField(ServiceConnectionType)
-    youth_profile = graphene.Field(YouthProfileType)
+    service_connections = DjangoFilterConnectionField(
+        ServiceConnectionType,
+        description="List of the profile's connected services."
+    )
+    youth_profile = graphene.Field(
+        YouthProfileType,
+        description="The Youth membership data of the profile."
+    )
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
@@ -353,7 +377,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
         return UpdateMyProfileMutation(profile=profile)
 
 
-class ClaimProfileMutation(relay.ClientIDMutation):
+class   ClaimProfileMutation(relay.ClientIDMutation):
     class Input:
         token = graphene.Argument(graphene.UUID, required=True)
         profile = ProfileInput()
@@ -409,17 +433,37 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
+    # TODO: Add the complete list of error codes
     profile = graphene.Field(
         ProfileNode,
         id=graphene.Argument(graphene.ID, required=True),
         serviceType=graphene.Argument(AllowedServiceType, required=True),
+        description="Get profile by profile ID.\n\nRequires `staff` credentials for the service given in "
+                    "`serviceType`. The profile must have an active connection to the given `serviceType`, otherwise "
+                    "it will not be returned.\n\nPossible error codes:\n\n* `TODO`",
     )
-    my_profile = graphene.Field(ProfileNode)
+    # TODO: Add the complete list of error codes
+    my_profile = graphene.Field(
+        ProfileNode,
+        description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
+                    "Possible error codes:\n\n* `TODO`",
+    )
+    # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
-        ProfileNode, serviceType=graphene.Argument(AllowedServiceType, required=True)
+        ProfileNode,
+        serviceType=graphene.Argument(AllowedServiceType, required=True),
+        description="Search for profiles. The results are filtered based on the given parameters. The results are "
+                    "paged using Relay.\n\nRequires `staff` credentials for the service given in "
+                    "`serviceType`. The profiles must have an active connection to the given `serviceType`, otherwise "
+                    "they will not be returned.\n\nPossible error codes:\n\n* `TODO`",
     )
+    # TODO: Add the complete list of error codes
     claimable_profile = graphene.Field(
-        ProfileNode, token=graphene.Argument(graphene.UUID, required=True)
+        ProfileNode,
+        token=graphene.Argument(graphene.UUID, required=True),
+        description="Get a profile by the given `token` so that it may be linked to the currently authenticated user. "
+                    "The profile must not already have a user account linked to it.\n\nRequires authentication.\n\n"
+                    "Possible error codes:\n\n* `TODO`",
     )
 
     @staff_required(required_permission="view")
@@ -446,7 +490,34 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_my_profile = CreateMyProfileMutation.Field()
-    update_my_profile = UpdateMyProfileMutation.Field()
-    delete_my_profile = DeleteMyProfileMutation.Field()
-    claim_profile = ClaimProfileMutation.Field()
+    # TODO: Add the complete list of error codes
+    create_my_profile = CreateMyProfileMutation.Field(
+        description="Creates a new profile based on the given data. The new profile is linked to the currently "
+                    "authenticated user.\n\nOne or several of the following is possible to add:\n\n* Email\n"
+                    "* Address\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
+                    "to the profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    update_my_profile = UpdateMyProfileMutation.Field(
+        description="Updates the profile which is linked to the currently authenticated user based on the given data."
+                    "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
+                    "\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
+                    "to the profile **or** the existing youth profile will be updated if the profile is already"
+                    "linked to a youth profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    delete_my_profile = DeleteMyProfileMutation.Field(
+        description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
+                    "Requires authentication.\n\nPossible error codes:\n\n* "
+                    "`CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR`: Returned if the profile is connected to "
+                    "Berth service.\n\n* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to the"
+                    "currently authenticated user.\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    claim_profile = ClaimProfileMutation.Field(
+        description="Fetches a profile which has no linked user account yet by the given token and links the profile "
+                    "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented"
+                    " completely. If the authenticated user already has a profile, this mutation will respond with "
+                    "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently"
+                    "authenticated user already has a profile.\n\n* `TODO`"
+    )
