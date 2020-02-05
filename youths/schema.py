@@ -84,7 +84,9 @@ class YouthProfileFields(graphene.InputObjectType):
 
 # Subset of abstract fields are required for creation
 class CreateMyYouthProfileInput(YouthProfileFields):
-    approver_email = graphene.String(required=True)
+    approver_email = graphene.String(
+        required=True, description="The approver's email address."
+    )
     birth_date = graphene.Date(
         required=True,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
@@ -122,7 +124,10 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
 
 
 class UpdateYouthProfileInput(YouthProfileFields):
-    resend_request_notification = graphene.Boolean()
+    resend_request_notification = graphene.Boolean(
+        description="If set to `true`, a new approval token is generated and a new email notification is sent to the"
+        "approver's email address."
+    )
 
 
 class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
@@ -162,13 +167,21 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
 
 class ApproveYouthProfileFields(YouthProfileFields):
     # TODO: Photo usage needs to be present also in Create/Modify, but it cannot be given, if the youth is under 15
-    photo_usage_approved = graphene.Boolean()
+    photo_usage_approved = graphene.Boolean(
+        description="`true` if the youth is allowed to be photographed."
+    )
 
 
 class ApproveYouthProfileMutation(relay.ClientIDMutation):
     class Input:
-        approval_token = graphene.String(required=True)
-        approval_data = ApproveYouthProfileFields(required=True)
+        approval_token = graphene.String(
+            required=True,
+            description="This is the token with which a youth profile may be fetched for approval purposes.",
+        )
+        approval_data = ApproveYouthProfileFields(
+            required=True,
+            description="The youth profile data to approve. This may contain modifications done by the approver.",
+        )
 
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -202,10 +215,21 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
-    youth_profile = graphene.Field(YouthProfileType, profile_id=graphene.ID())
-
+    # TODO: Add the complete list of error codes
+    youth_profile = graphene.Field(
+        YouthProfileType,
+        profile_id=graphene.ID(),
+        description="Get a youth profile by youth profile ID.\n\n**NOTE:** Currently this requires `superuser` "
+        "credentials. This is going to be changed at one point so that service-specific staff "
+        "credentials and service type are used, just like the rest of the admin-type queries.\n\n"
+        "Possible error codes:\n\n* `TODO`",
+    )
+    # TODO: Add the complete list of error codes
     youth_profile_by_approval_token = graphene.Field(
-        YouthProfileType, token=graphene.String()
+        YouthProfileType,
+        token=graphene.String(),
+        description="Get a youth profile by approval token. \n\nDoesn't require authentication.\n\nPossible "
+        "error codes:\n\n* `TODO`",
     )
 
     @login_required
@@ -224,6 +248,26 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    create_my_youth_profile = CreateMyYouthProfileMutation.Field()
-    update_my_youth_profile = UpdateMyYouthProfileMutation.Field()
-    approve_youth_profile = ApproveYouthProfileMutation.Field()
+    # TODO: Add the complete list of error codes
+    create_my_youth_profile = CreateMyYouthProfileMutation.Field(
+        description="Creates a new youth profile and links it to the currently authenticated user's profile.\n\n"
+        "When the youth profile has been created, a notification is sent to the youth profile's approver "
+        "whose contact information is given in the input.\n\nRequires authentication.\n\nPossible error "
+        "codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    update_my_youth_profile = UpdateMyYouthProfileMutation.Field(
+        description="Updates the youth profile which belongs to the profile of the currently authenticated user.\n\n"
+        "The `resend_request_notification` parameter may be used to send a notification to the youth "
+        "profile's approver whose contact information is in the youth profile.\n\nRequires authentication."
+        "\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    approve_youth_profile = ApproveYouthProfileMutation.Field(
+        description="Fetches a youth profile using the given token, updates the data based on the given input data and"
+        " approves the youth profile so that it is considered active. A confirmation is sent to the youth "
+        "profile's email address after a successful approval.\n\nThe token is no longer valid after "
+        "it's been used to approve the youth profile.\n\nRequires authentication.\n\nPossible error "
+        "codes:\n\n* `PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR`: Returned if the youth profile doesn't have a "
+        "primary email address.\n\n* `TODO`"
+    )

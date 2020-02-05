@@ -77,4 +77,8 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
 
 
 class Mutation(graphene.ObjectType):
-    add_service_connection = AddServiceConnectionMutation.Field()
+    add_service_connection = AddServiceConnectionMutation.Field(
+        description="Connect the currently authenticated user's profile to the given service.\n\nRequires "
+        "authentication.\n\nPossible error codes:\n\n* `SERVICE_CONNECTION_ALREADY_EXISTS_ERROR`: "
+        "Returned if the currently authenticated user's profile is already connected to the given service."
+    )
