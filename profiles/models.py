@@ -12,7 +12,7 @@ from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from users.models import User
-from utils.models import UUIDModel
+from utils.models import SerializableMixin, UUIDModel
 
 from .enums import (
     AddressType,
@@ -66,7 +66,7 @@ class LegalRelationship(models.Model):
 
 
 @reversion.register()
-class Profile(UUIDModel):
+class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
@@ -90,6 +90,18 @@ class Profile(UUIDModel):
 
     legal_relationships = models.ManyToManyField(
         "self", through=LegalRelationship, symmetrical=False
+    )
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "nickname"},
+        {"name": "language"},
+        {"name": "contact_method"},
+        {"name": "sensitivedata"},
+        {"name": "emails"},
+        {"name": "phones"},
+        {"name": "addresses"},
+        {"name": "service_connections"},
     )
 
     def get_primary_email(self):
@@ -122,12 +134,13 @@ class DivisionOfInterest(models.Model):
     )
 
 
-class SensitiveData(models.Model):
+class SensitiveData(SerializableMixin):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     ssn = fields.EncryptedCharField(max_length=11)
+    serialize_fields = ({"name": "ssn"},)
 
 
-class Contact(models.Model):
+class Contact(SerializableMixin):
     primary = models.BooleanField(default=False)
 
     class Meta:
@@ -142,6 +155,11 @@ class Phone(Contact):
     phone_type = EnumField(
         PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
     )
+    serialize_fields = (
+        {"name": "primary"},
+        {"name": "phone_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "phone"},
+    )
 
 
 class Email(Contact):
@@ -151,6 +169,11 @@ class Email(Contact):
     email = models.EmailField(max_length=254, blank=False)
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
+    )
+    serialize_fields = (
+        {"name": "primary"},
+        {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "email"},
     )
 
 
@@ -164,6 +187,14 @@ class Address(Contact):
     country_code = models.CharField(max_length=2, blank=False)
     address_type = EnumField(
         AddressType, max_length=32, blank=False, default=AddressType.HOME
+    )
+    serialize_fields = (
+        {"name": "primary"},
+        {"name": "address_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "address"},
+        {"name": "postal_code"},
+        {"name": "city"},
+        {"name": "country_code"},
     )
 
 
