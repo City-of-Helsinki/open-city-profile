@@ -443,7 +443,12 @@ class Query(graphene.ObjectType):
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )
-    download_my_profile = graphene.JSONString()
+    # TODO: Change the description when the download API is implemented to fetch data from services as well
+    # TODO: Add the complete list of error codes
+    download_my_profile = graphene.JSONString(
+        description="Get the user information stored in the profile as machine readable JSON.\n\nRequires "
+        "authentication.\n\nPossible error codes:\n\n* `TODO`"
+    )
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
         ProfileNode,
