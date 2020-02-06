@@ -502,7 +502,7 @@ class Mutation(graphene.ObjectType):
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
         "\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
-        "to the profile **or** the existing youth profile will be updated if the profile is already"
+        "to the profile **or** the existing youth profile will be updated if the profile is already "
         "linked to a youth profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
@@ -510,15 +510,14 @@ class Mutation(graphene.ObjectType):
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
         "Requires authentication.\n\nPossible error codes:\n\n* "
         "`CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR`: Returned if the profile is connected to "
-        "Berth service.\n\n* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to the"
-        "currently authenticated user.\n\n* `TODO`"
+        "Berth service.\n\n* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
+        "the currently authenticated user.\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
         description="Fetches a profile which has no linked user account yet by the given token and links the profile "
         "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented"
         " completely. If the authenticated user already has a profile, this mutation will respond with "
-        "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently"
+        "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently "
         "authenticated user already has a profile.\n\n* `TODO`"
     )
-
