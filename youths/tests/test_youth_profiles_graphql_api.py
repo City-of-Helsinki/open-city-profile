@@ -1,8 +1,9 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from string import Template
 
 from django.utils import timezone
+from freezegun import freeze_time
 from graphql_relay.node.node import to_global_id
 
 from profiles.tests.factories import EmailFactory
@@ -500,3 +501,94 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
     expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
+
+    with freeze_time("2020-08-01"):
+        youth_profile.expiration = date(2021, 7, 31)
+        youth_profile.approved_time = date(2020, 4, 30)
+        youth_profile.save()
+        expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
+        executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+    with freeze_time("2020-05-01"):
+        youth_profile.approved_time = timezone.datetime(2020, 1, 1)
+        youth_profile.expiration = date(2021, 7, 31)
+        youth_profile.save()
+        expected_data = {"youthProfile": {"membershipStatus": "RENEWING"}}
+        executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+
+def test_youth_profile_expiration_should_renew_and_be_approvable(
+    rf, user_gql_client, anon_user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    EmailFactory(primary=True, profile=profile)
+
+    # Let's create a youth profile in the 2020
+    with freeze_time("2020-05-02"):
+        youth_profile = YouthProfileFactory(
+            profile=profile, approved_time=datetime.today()
+        )
+
+    # In the year 2021, let's renew it
+    with freeze_time("2021-05-01"):
+        mutation = """
+            mutation {
+                renewMyYouthProfile(input:{}) {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+        """
+        executed = user_gql_client.execute(mutation, context=request)
+        expected_data = {
+            "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "RENEWING"}}
+        }
+        assert dict(executed["data"]) == expected_data
+
+    # Later in the year 2021, let's check our membership status
+    with freeze_time("2021-08-01"):
+        query = """
+            {
+                youthProfile {
+                    membershipStatus
+                }
+            }
+        """
+        expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
+        executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+    # Let's go back in time a few months and re-approve the membership
+    with freeze_time("2021-05-02"):
+        request.user = anon_user_gql_client.user
+
+        t = Template(
+            """
+            mutation{
+                approveYouthProfile(
+                    input: {
+                        approvalToken: "${token}",
+                        approvalData: {}
+                    }
+                )
+                {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+            """
+        )
+        youth_profile.refresh_from_db()
+        approval_data = {"token": youth_profile.approval_token}
+        query = t.substitute(**approval_data)
+        expected_data = {
+            "approveYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
+        }
+        executed = anon_user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
