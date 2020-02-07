@@ -25,6 +25,7 @@ from .factories import (
     EmailFactory,
     PhoneFactory,
     ProfileFactory,
+    SensitiveDataFactory,
 )
 
 
@@ -1452,6 +1453,31 @@ def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_can_query_his_own_profiles_sensitivedata(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    sensitive_data = SensitiveDataFactory(profile=profile)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                firstName
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "firstName": profile.first_name,
+            "sensitivedata": {"ssn": sensitive_data.ssn},
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
     profile = ProfileFactory()
     service = ServiceFactory()
@@ -1643,6 +1669,80 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
+
+
+def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
+    rf, user_gql_client
+):
+    profile = ProfileFactory()
+    SensitiveDataFactory(profile=profile)
+    service_berth = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_berth)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    )
+
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
+        service_type=ServiceType.BERTH.name,
+    )
+    expected_data = {"profile": {"sensitivedata": None}}
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_query_sensitive_data_with_given_permissions(
+    rf, user_gql_client
+):
+    profile = ProfileFactory()
+    sensitive_data = SensitiveDataFactory(profile=profile)
+    service_berth = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_berth)
+    assign_perm("can_view_sensitivedata", group, service_berth)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    )
+
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
+        service_type=ServiceType.BERTH.name,
+    )
+    expected_data = {"profile": {"sensitivedata": {"ssn": sensitive_data.ssn}}}
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" not in executed
+    print(executed)
+    assert dict(executed["data"]) == expected_data
 
 
 def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_client):
