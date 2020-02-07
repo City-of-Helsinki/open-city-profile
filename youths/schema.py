@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 
 import graphene
@@ -13,11 +12,14 @@ from graphql import GraphQLError
 from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
-from open_city_profile.exceptions import ProfileHasNoPrimaryEmailError
+from open_city_profile.exceptions import (
+    CannotRenewYouthProfileError,
+    ProfileHasNoPrimaryEmailError,
+)
 from profiles.models import Email, Profile
 
 from .enums import NotificationType, YouthLanguage
-from .models import YouthProfile
+from .models import calculate_expiration, YouthProfile
 
 with override("en"):
     LanguageAtHome = graphene.Enum.from_enum(
@@ -29,6 +31,7 @@ class MembershipStatus(graphene.Enum):
     ACTIVE = "active"
     PENDING = "pending"
     EXPIRED = "expired"
+    RENEWING = "renewing"
 
 
 class YouthProfileType(DjangoObjectType):
@@ -52,7 +55,18 @@ class YouthProfileType(DjangoObjectType):
     def resolve_membership_status(self, info, **kwargs):
         if self.expiration and self.expiration <= date.today():
             return MembershipStatus.EXPIRED
-        elif self.approved_time and self.approved_time < timezone.now():
+        elif self.approved_time and self.approved_time <= timezone.now():
+            # Status RENEWING implemented naively. Calculates the expiration for the existing approval time and checks
+            # if it matches the current expiration date. If dates are different one of following will apply:
+            #
+            # 1. If calculated expiration for approval time is in the past, membership is considered expired
+            # 2. Otherwise status of the youth profile is RENEWING
+            approved_period_expiration = calculate_expiration(self.approved_time.date())
+            if not approved_period_expiration == self.expiration:
+                if date.today() < approved_period_expiration:
+                    return MembershipStatus.RENEWING
+                else:
+                    return MembershipStatus.EXPIRED
             return MembershipStatus.ACTIVE
         return MembershipStatus.PENDING
 
@@ -110,14 +124,7 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
         )
-
-        youth_profile.approval_token = uuid.uuid4()
-        send_notification(
-            email=youth_profile.approver_email,
-            notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
-            context={"youth_profile": youth_profile},
-        )
-        youth_profile.approval_notification_timestamp = timezone.now()
+        youth_profile.make_approvable()
         youth_profile.save()
 
         return CreateMyYouthProfileMutation(youth_profile=youth_profile)
@@ -153,16 +160,33 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
         youth_profile.save()
 
         if resend_request_notification:
-            youth_profile.approval_token = uuid.uuid4()
-            send_notification(
-                email=youth_profile.approver_email,
-                notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
-                context={"youth_profile": youth_profile},
-            )
-            youth_profile.approval_notification_timestamp = timezone.now()
+            youth_profile.make_approvable()
             youth_profile.save()
 
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
+
+
+class RenewMyYouthProfileMutation(relay.ClientIDMutation):
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @login_required
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile = Profile.objects.get(user=info.context.user)
+        youth_profile = YouthProfile.objects.get(profile=profile)
+
+        next_expiration = calculate_expiration(date.today())
+        if youth_profile.expiration == next_expiration:
+            raise CannotRenewYouthProfileError(
+                "Cannot renew youth profile. Either youth profile is already renewed or not yet in the next "
+                "renew window."
+            )
+        youth_profile.expiration = next_expiration
+        youth_profile.make_approvable()
+        youth_profile.save()
+
+        return RenewMyYouthProfileMutation(youth_profile=youth_profile)
 
 
 class ApproveYouthProfileFields(YouthProfileFields):
@@ -261,6 +285,13 @@ class Mutation(graphene.ObjectType):
         "The `resend_request_notification` parameter may be used to send a notification to the youth "
         "profile's approver whose contact information is in the youth profile.\n\nRequires authentication."
         "\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Update the description when we support the draft/published model for the youth profiles
+    # TODO: Add the complete list of error codes
+    renew_my_youth_profile = RenewMyYouthProfileMutation.Field(
+        description="Renews the youth profile. Renewing can only be done once per season.\n\nRequires Authentication."
+        "\n\nPossible error codes:\n\n* `CANNOT_RENEW_YOUTH_PROFILE_ERROR`: Returned if the youth profile is already "
+        "renewed or not in the renew window\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     approve_youth_profile = ApproveYouthProfileMutation.Field(

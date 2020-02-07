@@ -4,18 +4,24 @@ from datetime import date
 import reversion
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
+from django_ilmoitin.utils import send_notification
 from enumfields import EnumField
 
 from profiles.models import Profile
 
+from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
 
 
-def calculate_expiration():
+def calculate_expiration(from_date=date.today()):
     # Membership always expires at the end of the season (31.7.).
     # Signups before May expire in the summer of the same year, others next year.
-    today = date.today()
-    return date(year=today.year + 1 if today.month > 4 else today.year, month=7, day=31)
+    return date(
+        year=from_date.year + 1 if from_date.month > 4 else from_date.year,
+        month=7,
+        day=31,
+    )
 
 
 @reversion.register()
@@ -51,6 +57,15 @@ class YouthProfile(models.Model):
     def membership_number(self):
         num = 0 if self.pk is None else self.pk
         return str(num).zfill(settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH)
+
+    def make_approvable(self):
+        self.approval_token = uuid.uuid4()
+        send_notification(
+            email=self.approver_email,
+            notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
+            context={"youth_profile": self},
+        )
+        self.approval_notification_timestamp = timezone.now()
 
     def __str__(self):
         return "{} {} ({})".format(

@@ -5,6 +5,7 @@ from graphene_django.views import GraphQLView as BaseGraphQLView
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
+    CANNOT_RENEW_YOUTH_PROFILE_ERROR,
     GENERAL_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
@@ -16,6 +17,7 @@ from open_city_profile.consts import (
 from open_city_profile.exceptions import (
     APINotImplementedError,
     CannotDeleteProfileWhileServiceConnectedError,
+    CannotRenewYouthProfileError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
@@ -37,7 +39,11 @@ error_codes_profile = {
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
 }
 
-error_codes = {**error_codes_shared, **error_codes_profile}
+error_codes_youth_profile = {
+    CannotRenewYouthProfileError: CANNOT_RENEW_YOUTH_PROFILE_ERROR
+}
+
+error_codes = {**error_codes_shared, **error_codes_profile, **error_codes_youth_profile}
 
 
 class GraphQLView(BaseGraphQLView):

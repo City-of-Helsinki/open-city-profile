@@ -27,3 +27,7 @@ class APINotImplementedError(ProfileGraphQLError):
 
 class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
     """Profile does not have a primary email address"""
+
+
+class CannotRenewYouthProfileError(ProfileGraphQLError):
+    """Youth profile is already renewed or not yet in the next renew window"""
