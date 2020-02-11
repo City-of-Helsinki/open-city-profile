@@ -3,7 +3,7 @@ from django.forms.models import ModelForm
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
-from profiles.models import ClaimToken, LegalRelationship, Profile
+from profiles.models import ClaimToken, LegalRelationship, Profile, SensitiveData
 from services.admin import ServiceConnectionInline
 from youths.admin import YouthProfileAdminInline
 
@@ -38,9 +38,16 @@ class ClaimTokenInline(admin.StackedInline):
     form = AlwaysChangedModelForm
 
 
+class SensitiveDataAdminInline(admin.StackedInline):
+    model = SensitiveData
+    fk_name = "profile"
+    extra = 0
+
+
 @admin.register(Profile)
 class ExtendedProfileAdmin(VersionAdmin):
     inlines = [
+        SensitiveDataAdminInline,
         RepresenteeAdmin,
         RepresentativeAdmin,
         YouthProfileAdminInline,
