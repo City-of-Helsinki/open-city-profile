@@ -44,6 +44,8 @@ class Service(TranslatableModel):
         permissions = (
             ("can_manage_profiles", "Can manage profiles"),
             ("can_view_profiles", "Can view profiles"),
+            ("can_manage_sensitivedata", "Can manage sensitive data"),
+            ("can_view_sensitivedata", "Can view sensitive data"),
         )
 
     def __str__(self):

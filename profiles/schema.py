@@ -30,7 +30,7 @@ from youths.schema import (
 )
 
 from .enums import AddressType, EmailType, PhoneType
-from .models import Address, ClaimToken, Contact, Email, Phone, Profile
+from .models import Address, ClaimToken, Contact, Email, Phone, Profile, SensitiveData
 from .utils import create_nested, delete_nested, update_nested
 
 AllowedEmailType = graphene.Enum.from_enum(
@@ -201,6 +201,13 @@ class AddressNode(ContactNode):
         interfaces = (relay.Node,)
 
 
+class SensitiveDataNode(DjangoObjectType):
+    class Meta:
+        model = SensitiveData
+        fields = ("ssn",)
+        interfaces = (relay.Node,)
+
+
 @key(fields="id")
 class ProfileNode(DjangoObjectType):
     class Meta:
@@ -231,6 +238,10 @@ class ProfileNode(DjangoObjectType):
     addresses = DjangoFilterConnectionField(
         AddressNode, description="List of addresses of the profile."
     )
+    sensitivedata = graphene.Field(
+        SensitiveDataNode,
+        description="Data that is consider to be sensitive e.g. social security number",
+    )
     language = Language()
     contact_method = ContactMethod()
     service_connections = DjangoFilterConnectionField(
@@ -260,6 +271,20 @@ class ProfileNode(DjangoObjectType):
 
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.filter(profile=self)
+
+    def resolve_sensitivedata(self, info, **kwargs):
+        service = (
+            Service.objects.filter(service_type=info.context.service_type).first()
+            if hasattr(info.context, "service_type")
+            else None
+        )
+        if (
+            not service and info.context.user == self.user
+        ) or info.context.user.has_perm("can_view_sensitivedata", service):
+            return self.sensitivedata
+        else:
+            # TODO: We should return PermissionDenied as a partial error here.
+            return None
 
 
 class EmailInput(graphene.InputObjectType):
@@ -470,6 +495,8 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
         service = Service.objects.get(service_type=kwargs["serviceType"])
+        # serviceType passed on to the sub resolvers
+        info.context.service_type = kwargs["serviceType"]
         return Profile.objects.filter(service_connections__service=service).get(
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
@@ -480,6 +507,8 @@ class Query(graphene.ObjectType):
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
+        # serviceType passed on to the sub resolvers
+        info.context.service_type = kwargs["serviceType"]
         return Profile.objects.filter(
             service_connections__service__service_type=kwargs["serviceType"]
         )
