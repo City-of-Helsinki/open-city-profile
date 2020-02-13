@@ -1,5 +1,7 @@
 # Open city profile
 
+**This is a version of the app which is used for the MyDataShare pilot**
+
 ## Summary
 
 Open city profile is used to store common information (name, contact 
