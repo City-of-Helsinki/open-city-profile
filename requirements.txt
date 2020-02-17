@@ -32,7 +32,7 @@ django-parler==1.9.2
 django-reversion==3.0.4
 django-searchable-encrypted-fields==0.1.3
 django-thesaurus==0.0.2
-django==2.2.8
+django==2.2.10
 djangorestframework==3.10.1  # via django-parler-rest, drf-oidc-auth
 drf-oidc-auth==0.9        # via django-helusers
 ecdsa==0.13.3             # via python-jose
