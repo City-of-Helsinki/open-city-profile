@@ -19,5 +19,6 @@ graphene-django
 graphene-federation
 pillow
 psycopg2
+pyyaml>=5.3
 --no-binary psycopg2
 sentry-sdk
