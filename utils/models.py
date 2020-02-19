@@ -95,17 +95,20 @@ class SerializableMixin(models.Model):
 
         related_types = {item.name: type(item) for item in model._meta.related_objects}
         if field.get("name") in related_types.keys():
+            value = (
+                getattr(model, field.get("name")).serialize()
+                if hasattr(model, field.get("name"))
+                and hasattr(getattr(model, field.get("name")), "serialize")
+                else None
+            )
             # field is a related object, let's serialize more
             if related_types[field.get("name")] == OneToOneRel:
                 # do not wrap one-to-one relations into list
-                return getattr(model, field.get("name")).serialize()
+                return value
             else:
                 return {
                     "key": field.get("name").upper(),
-                    "children": getattr(model, field.get("name")).serialize()
-                    if hasattr(model, field.get("name"))
-                    and hasattr(getattr(model, field.get("name")), "serialize")
-                    else None,
+                    "children": value,
                 }
         else:
             # concrete field, let's just add the value
@@ -118,6 +121,8 @@ class SerializableMixin(models.Model):
         return {
             "key": self._meta.model_name.upper(),
             "children": [
-                self._resolve_field(self, field) for field in self.serialize_fields
+                self._resolve_field(self, field)
+                for field in self.serialize_fields
+                if self._resolve_field(self, field) is not None
             ],
         }

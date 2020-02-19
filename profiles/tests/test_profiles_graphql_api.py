@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from string import Template
 
@@ -1741,7 +1742,40 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
     expected_data = {"profile": {"sensitivedata": {"ssn": sensitive_data.ssn}}}
     executed = user_gql_client.execute(query, context=request)
     assert "errors" not in executed
-    print(executed)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_receives_null_sensitive_data_if_it_does_not_exist(rf, user_gql_client):
+    profile = ProfileFactory()
+    service_berth = ServiceFactory()
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_berth)
+    assign_perm("can_view_sensitivedata", group, service_berth)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        {
+            profile(id: "${id}", serviceType: ${service_type}) {
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    )
+
+    query = t.substitute(
+        id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
+        service_type=ServiceType.BERTH.name,
+    )
+    expected_data = {"profile": {"sensitivedata": None}}
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
     assert dict(executed["data"]) == expected_data
 
 
@@ -1958,3 +1992,33 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
+
+
+def test_user_can_download_profile(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    query = """
+        {
+            downloadMyProfile
+        }
+    """
+    expected_json = json.dumps(
+        {
+            "key": "PROFILE",
+            "children": [
+                {"key": "FIRST_NAME", "value": profile.first_name},
+                {"key": "LAST_NAME", "value": profile.last_name},
+                {"key": "NICKNAME", "value": profile.nickname},
+                {"key": "LANGUAGE", "value": profile.language},
+                {"key": "CONTACT_METHOD", "value": profile.contact_method},
+                {"key": "EMAILS", "children": []},
+                {"key": "PHONES", "children": []},
+                {"key": "ADDRESSES", "children": []},
+                {"key": "SERVICE_CONNECTIONS", "children": []},
+            ],
+        }
+    )
+    executed = user_gql_client.execute(query, context=request)
+    assert expected_json == executed["data"]["downloadMyProfile"]
