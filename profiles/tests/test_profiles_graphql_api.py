@@ -1434,6 +1434,264 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     )
 
 
+def test_staff_user_can_create_a_profile(
+    rf, user_gql_client, email_data, phone_data, address_data
+):
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    group_berth = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group_berth)
+    assign_perm("can_manage_profiles", group_berth, service_berth)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                        lastName: \"${last_name}\",
+                        addPhones: [{
+                            phoneType: ${phone_type},
+                            phone: \"${phone}\",
+                            primary: true
+                        }]
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    lastName
+                    phones {
+                        edges {
+                            node {
+                                phoneType
+                                phone
+                                primary
+                            }
+                        }
+                    }
+                    serviceConnections {
+                        edges {
+                            node {
+                                service {
+                                    type
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.BERTH.name,
+        first_name="John",
+        last_name="Doe",
+        phone_type=phone_data["phone_type"],
+        phone=phone_data["phone"],
+    )
+    expected_data = {
+        "createProfile": {
+            "profile": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "phones": {
+                    "edges": [
+                        {
+                            "node": {
+                                "phoneType": phone_data["phone_type"],
+                                "phone": phone_data["phone"],
+                                "primary": True,
+                            }
+                        }
+                    ]
+                },
+                "serviceConnections": {
+                    "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
+    rf, user_gql_client
+):
+    ServiceFactory(service_type=ServiceType.BERTH)
+    user = user_gql_client.user
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John",)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
+def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_client):
+    ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group_youth = GroupFactory(name="youth_membership")
+    user = user_gql_client.user
+    user.groups.add(group_youth)
+    assign_perm("can_manage_profiles", group_youth, service_youth)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John",)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
+def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_with_sensitive_data(
+    rf, user_gql_client
+):
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    group_berth = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group_berth)
+    assign_perm("can_manage_profiles", group_berth, service_berth)
+    assign_perm("can_manage_sensitivedata", group_berth, service_berth)
+    assign_perm("can_view_sensitivedata", group_berth, service_berth)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.BERTH.name, first_name="John", ssn="121282-123E"
+    )
+
+    expected_data = {
+        "createProfile": {
+            "profile": {"firstName": "John", "sensitivedata": {"ssn": "121282-123E"}}
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
+    rf, user_gql_client
+):
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group_berth = GroupFactory()
+    group_youth = GroupFactory(name="youth_membership")
+    user = user_gql_client.user
+    user.groups.add(group_berth)
+    user.groups.add(group_youth)
+    assign_perm("can_manage_profiles", group_berth, service_berth)
+    assign_perm("can_manage_sensitivedata", group_youth, service_youth)
+    assign_perm("can_view_sensitivedata", group_youth, service_youth)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.BERTH.name, first_name="John", ssn="121282-123E"
+    )
+
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
