@@ -1,8 +1,10 @@
 import graphene
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
+from django.utils.translation import ugettext_lazy as _
 from django_filters import CharFilter, FilterSet, OrderingFilter
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
@@ -208,6 +210,10 @@ class SensitiveDataNode(DjangoObjectType):
         interfaces = (relay.Node,)
 
 
+class SensitiveDataFields(graphene.InputObjectType):
+    ssn = graphene.String(description="Social security number.")
+
+
 @key(fields="id")
 class ProfileNode(DjangoObjectType):
     class Meta:
@@ -338,6 +344,7 @@ class ProfileInput(graphene.InputObjectType):
         graphene.ID, description="Remove addresses from profile."
     )
     youth_profile = graphene.InputField(YouthProfileFields)
+    sensitivedata = graphene.InputField(SensitiveDataFields)
 
 
 class CreateMyProfileMutation(relay.ClientIDMutation):
@@ -372,6 +379,55 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
             )
 
         return CreateMyProfileMutation(profile=profile)
+
+
+class CreateProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile = ProfileInput(require=True)
+
+    profile = graphene.Field(ProfileNode)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        service = Service.objects.get(service_type=input["service_type"])
+        # serviceType passed on to the sub resolvers
+        info.context.service_type = input["service_type"]
+        profile_data = input.pop("profile")
+        youth_profile_data = profile_data.pop("youth_profile", None)
+        sensitivedata = profile_data.pop("sensitivedata", None)
+        nested_to_create = [
+            (Email, profile_data.pop("add_emails", [])),
+            (Phone, profile_data.pop("add_phones", [])),
+            (Address, profile_data.pop("add_addresses", [])),
+        ]
+
+        profile = Profile(**profile_data)
+        profile.save()
+
+        for model, data in nested_to_create:
+            create_nested(model, profile, data)
+
+        if sensitivedata:
+            if info.context.user.has_perm("can_manage_sensitivedata", service):
+                SensitiveData.objects.create(profile=profile, **sensitivedata)
+                profile.refresh_from_db()
+            else:
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
+
+        if youth_profile_data:
+            CreateMyYouthProfileMutation().mutate_and_get_payload(
+                root, info, youth_profile=youth_profile_data
+            )
+
+        # create the service connection for the profile
+        profile.service_connections.create(service=service)
+
+        return CreateProfileMutation(profile=profile)
 
 
 class UpdateMyProfileMutation(relay.ClientIDMutation):
@@ -457,7 +513,7 @@ class Query(graphene.ObjectType):
     profile = graphene.Field(
         ProfileNode,
         id=graphene.Argument(graphene.ID, required=True),
-        serviceType=graphene.Argument(AllowedServiceType, required=True),
+        service_type=graphene.Argument(AllowedServiceType, required=True),
         description="Get profile by profile ID.\n\nRequires `staff` credentials for the service given in "
         "`serviceType`. The profile must have an active connection to the given `serviceType`, otherwise "
         "it will not be returned.\n\nPossible error codes:\n\n* `TODO`",
@@ -477,7 +533,7 @@ class Query(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
         ProfileNode,
-        serviceType=graphene.Argument(AllowedServiceType, required=True),
+        service_type=graphene.Argument(AllowedServiceType, required=True),
         description="Search for profiles. The results are filtered based on the given parameters. The results are "
         "paged using Relay.\n\nRequires `staff` credentials for the service given in "
         "`serviceType`. The profiles must have an active connection to the given `serviceType`, otherwise "
@@ -494,9 +550,9 @@ class Query(graphene.ObjectType):
 
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
-        service = Service.objects.get(service_type=kwargs["serviceType"])
+        service = Service.objects.get(service_type=kwargs["service_type"])
         # serviceType passed on to the sub resolvers
-        info.context.service_type = kwargs["serviceType"]
+        info.context.service_type = kwargs["service_type"]
         return Profile.objects.filter(service_connections__service=service).get(
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
@@ -508,9 +564,9 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
         # serviceType passed on to the sub resolvers
-        info.context.service_type = kwargs["serviceType"]
+        info.context.service_type = kwargs["service_type"]
         return Profile.objects.filter(
-            service_connections__service__service_type=kwargs["serviceType"]
+            service_connections__service__service_type=kwargs["service_type"]
         )
 
     @login_required
@@ -531,6 +587,7 @@ class Mutation(graphene.ObjectType):
         "* Address\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
         "to the profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
     )
+    create_profile = CreateProfileMutation.Field()
     # TODO: Add the complete list of error codes
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
