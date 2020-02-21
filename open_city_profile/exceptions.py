@@ -31,3 +31,7 @@ class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
 
 class CannotRenewYouthProfileError(ProfileGraphQLError):
     """Youth profile is already renewed or not yet in the next renew window"""
+
+
+class CannotSetPhotoUsagePermissionIfUnder15YearsError(ProfileGraphQLError):
+    """A youth cannot set photo usage permission by himself if he is under 15 years old"""

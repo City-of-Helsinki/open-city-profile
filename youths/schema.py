@@ -14,6 +14,7 @@ from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
     CannotRenewYouthProfileError,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileHasNoPrimaryEmailError,
 )
 from profiles.models import Email, Profile
@@ -24,6 +25,15 @@ from .models import calculate_expiration, YouthProfile
 with override("en"):
     LanguageAtHome = graphene.Enum.from_enum(
         YouthLanguage, description=lambda e: e.label if e else ""
+    )
+
+
+def calculate_age(birth_date):
+    today = date.today()
+    return (
+        today.year
+        - birth_date.year
+        - ((today.month, today.day) < (birth_date.month, birth_date.day))
     )
 
 
@@ -94,6 +104,12 @@ class YouthProfileFields(graphene.InputObjectType):
         required=False,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
     )
+    photo_usage_approved = graphene.Boolean(
+        description=(
+            "`true` if the youth is allowed to be photographed. Only youth over 15 years old can set this."
+            "For youth under 15 years old this is set by the (supposed) guardian in the approval phase"
+        )
+    )
 
 
 # Subset of abstract fields are required for creation
@@ -118,6 +134,13 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         input_data = input.get("youth_profile")
+
+        if "photo_usage_approved" in input_data:
+            # Disable setting photo usage by themselfs for youths under 15 years old
+            if calculate_age(input_data["birth_date"]) < 15:
+                raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
+                    "Cannot set photo usage permission if under 15 years old"
+                )
 
         profile = Profile.objects.get(user=info.context.user)
 
@@ -155,6 +178,17 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
         profile = Profile.objects.get(user=info.context.user)
         youth_profile, created = YouthProfile.objects.get_or_create(profile=profile)
 
+        if "photo_usage_approved" in input_data:
+            # Disable setting photo usage by themselfs for youths under 15 years old
+            # Check for birth date given in input or birth date persisted in the db
+            if (
+                "birth_date" in input_data
+                and calculate_age(input_data["birth_date"]) < 15
+            ) or calculate_age(youth_profile.birth_date) < 15:
+                raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
+                    "Cannot set photo usage permission if under 15 years old"
+                )
+
         for field, value in input_data.items():
             setattr(youth_profile, field, value)
         youth_profile.save()
@@ -189,20 +223,13 @@ class RenewMyYouthProfileMutation(relay.ClientIDMutation):
         return RenewMyYouthProfileMutation(youth_profile=youth_profile)
 
 
-class ApproveYouthProfileFields(YouthProfileFields):
-    # TODO: Photo usage needs to be present also in Create/Modify, but it cannot be given, if the youth is under 15
-    photo_usage_approved = graphene.Boolean(
-        description="`true` if the youth is allowed to be photographed."
-    )
-
-
 class ApproveYouthProfileMutation(relay.ClientIDMutation):
     class Input:
         approval_token = graphene.String(
             required=True,
             description="This is the token with which a youth profile may be fetched for approval purposes.",
         )
-        approval_data = ApproveYouthProfileFields(
+        approval_data = YouthProfileFields(
             required=True,
             description="The youth profile data to approve. This may contain modifications done by the approver.",
         )

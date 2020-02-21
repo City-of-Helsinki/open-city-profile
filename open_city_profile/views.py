@@ -6,6 +6,7 @@ from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     CANNOT_RENEW_YOUTH_PROFILE_ERROR,
+    CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
     GENERAL_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
@@ -18,6 +19,7 @@ from open_city_profile.exceptions import (
     APINotImplementedError,
     CannotDeleteProfileWhileServiceConnectedError,
     CannotRenewYouthProfileError,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
@@ -40,7 +42,8 @@ error_codes_profile = {
 }
 
 error_codes_youth_profile = {
-    CannotRenewYouthProfileError: CANNOT_RENEW_YOUTH_PROFILE_ERROR
+    CannotRenewYouthProfileError: CANNOT_RENEW_YOUTH_PROFILE_ERROR,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError: CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 }
 
 error_codes = {**error_codes_shared, **error_codes_profile, **error_codes_youth_profile}
