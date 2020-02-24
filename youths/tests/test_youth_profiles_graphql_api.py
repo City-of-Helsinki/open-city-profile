@@ -6,6 +6,9 @@ from django.utils import timezone
 from freezegun import freeze_time
 from graphql_relay.node.node import to_global_id
 
+from open_city_profile.consts import (
+    CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
+)
 from profiles.tests.factories import EmailFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
@@ -176,6 +179,105 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
     assert dict(executed["data"]["createMyYouthProfile"]) == expected_data
 
 
+def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_old(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            createMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                        approverEmail: "${approverEmail}"
+                        birthDate: "${birthDate}"
+                    }
+
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                    approverEmail
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": profile.pk,
+        "approverEmail": "hyvaksyja@ex.com",
+        "photoUsageApproved": "true",
+        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    expected_data = {
+        "youthProfile": {
+            "photoUsageApproved": True,
+            "approverEmail": creation_data["approverEmail"],
+            "birthDate": creation_data["birthDate"],
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["createMyYouthProfile"]) == expected_data
+
+
+def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_years_old(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            createMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                        approverEmail: "${approverEmail}"
+                        birthDate: "${birthDate}"
+                    }
+
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                    approverEmail
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": profile.pk,
+        "approverEmail": "hyvaksyja@ex.com",
+        "photoUsageApproved": "true",
+        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR
+    )
+
+
 def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
     rf, user_gql_client
 ):
@@ -280,6 +382,177 @@ def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]["updateMyYouthProfile"]) == expected_data
+
+
+def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_old(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            updateMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                        birthDate: "${birthDate}"
+                    }
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "photoUsageApproved": "true",
+        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    expected_data = {
+        "youthProfile": {
+            "photoUsageApproved": True,
+            "birthDate": creation_data["birthDate"],
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["updateMyYouthProfile"]) == expected_data
+
+
+def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_years_old(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            updateMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                        birthDate: "${birthDate}"
+                    }
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "photoUsageApproved": "true",
+        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR
+    )
+
+
+def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_old_based_on_existing_birth_date(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+    birth_date = today.replace(year=today.year - 15, day=today.day - 1)
+    YouthProfileFactory(profile=profile, birth_date=birth_date)
+
+    t = Template(
+        """
+        mutation{
+            updateMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                    }
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "photoUsageApproved": "true",
+    }
+    query = t.substitute(**creation_data)
+    expected_data = {"youthProfile": {"photoUsageApproved": True}}
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["updateMyYouthProfile"]) == expected_data
+
+
+def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_years_old_based_on_existing_birth_date(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+    birth_date = today.replace(year=today.year - 15, day=today.day + 1)
+    YouthProfileFactory(profile=profile, birth_date=birth_date)
+
+    t = Template(
+        """
+        mutation{
+            updateMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        photoUsageApproved: ${photoUsageApproved}
+                    }
+                }
+            )
+            {
+                youthProfile {
+                    photoUsageApproved
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "photoUsageApproved": "true",
+    }
+    query = t.substitute(**creation_data)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR
+    )
 
 
 def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
