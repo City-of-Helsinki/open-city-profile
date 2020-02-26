@@ -775,11 +775,32 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
+    query = """
+        {
+            youthProfile {
+                membershipStatus
+                renewable
+            }
+        }
+    """
+
+    with freeze_time("2020-05-01"):
+        youth_profile.expiration = date(2020, 7, 31)
+        youth_profile.approved_time = date(2019, 8, 1)
+        youth_profile.save()
+        expected_data = {
+            "youthProfile": {"membershipStatus": "ACTIVE", "renewable": True}
+        }
+        executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
     with freeze_time("2020-08-01"):
         youth_profile.expiration = date(2021, 7, 31)
         youth_profile.approved_time = date(2020, 4, 30)
         youth_profile.save()
-        expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
+        expected_data = {
+            "youthProfile": {"membershipStatus": "EXPIRED", "renewable": False}
+        }
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
@@ -787,7 +808,9 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         youth_profile.approved_time = timezone.datetime(2020, 1, 1)
         youth_profile.expiration = date(2021, 7, 31)
         youth_profile.save()
-        expected_data = {"youthProfile": {"membershipStatus": "RENEWING"}}
+        expected_data = {
+            "youthProfile": {"membershipStatus": "RENEWING", "renewable": False}
+        }
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
