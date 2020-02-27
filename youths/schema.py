@@ -57,10 +57,16 @@ class YouthProfileType(DjangoObjectType):
     membership_status = MembershipStatus(
         description="Membership status based on expiration and approved_time fields"
     )
+    renewable = graphene.Boolean(
+        description="Tells if the membership is currently renewable or not"
+    )
 
     class Meta:
         model = YouthProfile
         exclude = ("id", "approval_token", "language_at_home")
+
+    def resolve_renewable(self, info, **kwargs):
+        return self.expiration != calculate_expiration(date.today())
 
     def resolve_membership_status(self, info, **kwargs):
         if self.expiration and self.expiration <= date.today():
