@@ -7,6 +7,7 @@ from freezegun import freeze_time
 from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import (
+    APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 )
 from profiles.tests.factories import EmailFactory
@@ -177,6 +178,101 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]["createMyYouthProfile"]) == expected_data
+
+
+def test_normal_user_over_18_years_old_can_create_approved_youth_profile_mutation(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            createMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        schoolClass: "${schoolClass}"
+                        schoolName: "${schoolName}"
+                        birthDate: "${birthDate}"
+                    }
+
+                }
+            )
+            {
+                youthProfile {
+                    schoolClass
+                    schoolName
+                    birthDate
+                    membershipStatus
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": profile.pk,
+        "schoolClass": "2A",
+        "schoolName": "Alakoulu",
+        "birthDate": today.replace(year=today.year - 18, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    expected_data = {
+        "youthProfile": {
+            "schoolClass": creation_data["schoolClass"],
+            "schoolName": creation_data["schoolName"],
+            "birthDate": creation_data["birthDate"],
+            "membershipStatus": "ACTIVE",
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["createMyYouthProfile"]) == expected_data
+
+
+def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_18_years_old(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            createMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        birthDate: "${birthDate}"
+                    }
+
+                }
+            )
+            {
+                youthProfile {
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": profile.pk,
+        "birthDate": today.replace(year=today.year - 18, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR
+    )
 
 
 def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_old(
@@ -825,8 +921,11 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
 
     # Let's create a youth profile in the 2020
     with freeze_time("2020-05-02"):
+        today = date.today()
         youth_profile = YouthProfileFactory(
-            profile=profile, approved_time=datetime.today()
+            profile=profile,
+            approved_time=datetime.today(),
+            birth_date=today.replace(year=today.year - 15),
         )
 
     # In the year 2021, let's renew it
@@ -887,4 +986,38 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
             "approveYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
         }
         executed = anon_user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+
+def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_to_active(
+    rf, user_gql_client, anon_user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+
+    # Let's create a youth profile in the 2020
+    with freeze_time("2020-05-02"):
+        today = date.today()
+        YouthProfileFactory(
+            profile=profile,
+            approved_time=datetime.today(),
+            birth_date=today.replace(year=today.year - 18, day=today.day - 1),
+        )
+
+    # In the year 2021, let's renew it
+    with freeze_time("2021-05-01"):
+        mutation = """
+            mutation {
+                renewMyYouthProfile(input:{}) {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+        """
+        executed = user_gql_client.execute(mutation, context=request)
+        expected_data = {
+            "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
+        }
         assert dict(executed["data"]) == expected_data
