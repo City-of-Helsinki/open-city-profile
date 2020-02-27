@@ -1,3 +1,4 @@
+import pytest
 from django.contrib.auth import get_user_model
 
 from ..models import Profile
@@ -74,3 +75,65 @@ def test_serialize_profile():
     assert expected_firstname in serialized_profile.get("children")
     assert expected_email in serialized_profile.get("children")
     assert expected_sensitive_data in serialized_profile.get("children")
+
+
+def test_import_customer_data_with_valid_data_set():
+    data = [
+        {
+            "customer_id": "321456",
+            "first_name": "Jukka",
+            "last_name": "Virtanen",
+            "ssn": "010190-001A",
+            "email": "jukka.virtanen@example.com",
+            "address": {
+                "address": "Mannerheimintie 1 A 11",
+                "postal_code": "00100",
+                "city": "Helsinki",
+            },
+            "phones": ["0412345678", "358 503334411", "755 1122 K"],
+        },
+        {
+            "customer_id": "321457",
+            "first_name": "",
+            "last_name": "",
+            "ssn": "101086-1234",
+            "email": "mirja.korhonen@example.com",
+            "address": None,
+            "phones": [],
+        },
+    ]
+    assert Profile.objects.count() == 0
+    result = Profile.import_customer_data(data)
+    assert len(result.keys()) == 2
+    assert Profile.objects.count() == 2
+
+
+def test_import_customer_data_with_missing_customer_id():
+    data = [
+        {
+            "first_name": "Jukka",
+            "last_name": "Virtanen",
+            "ssn": "010190-001A",
+            "email": "jukka.virtanen@example.com",
+            "address": {
+                "address": "Mannerheimintie 1 A 11",
+                "postal_code": "00100",
+                "city": "Helsinki",
+            },
+            "phones": ["0412345678", "358 503334411", "755 1122 K"],
+        },
+        {
+            "customer_id": "321457",
+            "first_name": "",
+            "last_name": "",
+            "ssn": "101086-1234",
+            "email": "mirja.korhonen@example.com",
+            "address": None,
+            "phones": [],
+        },
+    ]
+    assert Profile.objects.count() == 0
+    with pytest.raises(Exception) as e:
+        Profile.import_customer_data(data)
+    assert str(e.value) == "Could not import unknown customer, index: 0"
+    assert Profile.objects.count() == 0

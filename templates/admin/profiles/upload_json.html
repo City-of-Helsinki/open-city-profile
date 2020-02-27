@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h2>Import profiles from JSON (Timmi structure)</h2>
+    <form id="upload-json" action={% url "admin:upload-json" %} method="POST" enctype="multipart/form-data">
+        {{ form.as_p }}
+        {% csrf_token %}
+
+        <button id="submit-button" type="submit">Upload JSON</button>
+    </form>
+</div>
+
+<script type="text/javascript"> 
+    document.getElementById("upload-json").addEventListener("submit", function(e) {
+        document.getElementById("submit-button").disabled = true
+    });
+</script>
+
+{% endblock %}

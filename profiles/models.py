@@ -5,7 +5,7 @@ import uuid
 import reversion
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.db import models, transaction
 from encrypted_fields import fields
 from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
@@ -124,6 +124,73 @@ class Profile(UUIDModel, SerializableMixin):
             return "{} {}".format(self.first_name, self.last_name)
         else:
             return str(self.id)
+
+    @classmethod
+    @transaction.atomic
+    def import_customer_data(cls, data):
+        """
+        Imports list of customers of the following shape:
+        {
+            "customer_id": "123",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@example.com",
+            "ssn": "123456-1234",
+            "address": {
+                "address": "Example street 1",
+                "postal_code": "12321",
+                "city": "Gotham City",
+            },
+            "phones": [
+                "040-1234567",
+                "091234567"
+            ]
+        }
+        And returns dict where key is the customer_id and value is the UUID of created profile object
+        """
+        result = {}
+        for customer_index, item in enumerate(data):
+            try:
+                profile = Profile.objects.create(
+                    first_name=item.get("first_name", ""),
+                    last_name=item.get("last_name", ""),
+                )
+                ssn = item.get("ssn")
+                if ssn:
+                    SensitiveData.objects.create(ssn=ssn, profile=profile)
+                email = item.get("email", None)
+                if email:
+                    profile.emails.create(
+                        email=email, email_type=EmailType.PERSONAL, primary=True,
+                    )
+                address = item.get("address", None)
+                if address:
+                    profile.addresses.create(
+                        address=address.get("address", ""),
+                        postal_code=address.get("postal_code", ""),
+                        city=address.get("city", ""),
+                        country_code="fi",
+                        address_type=AddressType.HOME,
+                        primary=True,
+                    )
+                phones = item.get("phones", ())
+                for index, phone in enumerate(phones):
+                    profile.phones.create(
+                        phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0,
+                    )
+                result[item["customer_id"]] = profile.pk
+            except Exception as err:
+                msg = (
+                    "Could not import customer_id: {}, index: {}".format(
+                        item["customer_id"], customer_index
+                    )
+                    if "customer_id" in item
+                    else "Could not import unknown customer, index: {}".format(
+                        customer_index
+                    )
+                )
+                raise Exception(msg) from err
+        return result
 
 
 class DivisionOfInterest(models.Model):
