@@ -13,6 +13,7 @@ from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
+    ApproverEmailCannotBeEmptyForMinorsError,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileHasNoPrimaryEmailError,
@@ -104,7 +105,10 @@ class YouthProfileFields(graphene.InputObjectType):
         description="The youth's (supposed) guardian's phone number."
     )
     approver_email = graphene.String(
-        description="The youth's (supposed) guardian's email address which will be used to send approval requests."
+        description=(
+            "The youth's (supposed) guardian's email address which will be used to send approval requests."
+            "This field is required for youth under 18 years old."
+        )
     )
     birth_date = graphene.Date(
         required=False,
@@ -120,9 +124,6 @@ class YouthProfileFields(graphene.InputObjectType):
 
 # Subset of abstract fields are required for creation
 class CreateMyYouthProfileInput(YouthProfileFields):
-    approver_email = graphene.String(
-        required=True, description="The approver's email address."
-    )
     birth_date = graphene.Date(
         required=True,
         description="The youth's birth date. This is used for example to calculate if the youth is a minor or not.",
@@ -153,7 +154,14 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
         youth_profile, created = YouthProfile.objects.get_or_create(
             profile=profile, defaults=input_data
         )
-        youth_profile.make_approvable()
+        if calculate_age(youth_profile.birth_date) >= 18:
+            youth_profile.approved_time = timezone.now()
+        else:
+            if not input_data.get("approver_email"):
+                raise ApproverEmailCannotBeEmptyForMinorsError(
+                    "Approver email is required for youth under 18 years old"
+                )
+            youth_profile.make_approvable()
         youth_profile.save()
 
         return CreateMyYouthProfileMutation(youth_profile=youth_profile)
@@ -223,7 +231,10 @@ class RenewMyYouthProfileMutation(relay.ClientIDMutation):
                 "renew window."
             )
         youth_profile.expiration = next_expiration
-        youth_profile.make_approvable()
+        if calculate_age(youth_profile.birth_date) >= 18:
+            youth_profile.approved_time = timezone.now()
+        else:
+            youth_profile.make_approvable()
         youth_profile.save()
 
         return RenewMyYouthProfileMutation(youth_profile=youth_profile)

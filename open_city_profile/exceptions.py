@@ -35,3 +35,7 @@ class CannotRenewYouthProfileError(ProfileGraphQLError):
 
 class CannotSetPhotoUsagePermissionIfUnder15YearsError(ProfileGraphQLError):
     """A youth cannot set photo usage permission by himself if he is under 15 years old"""
+
+
+class ApproverEmailCannotBeEmptyForMinorsError(ProfileGraphQLError):
+    """Approver email is required for youth under 18 years old"""
