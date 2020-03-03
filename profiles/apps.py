@@ -10,5 +10,7 @@ class ProfilesConfig(AppConfig):
         import profiles.notifications  # noqa isort:skip
 
     def ready(self):
+        import profiles.log_signals  # noqa isort:skip
+
         if settings.NOTIFICATIONS_ENABLED:
             import profiles.signals  # noqa isort:skip

@@ -1,4 +1,8 @@
+import threading
+
 from graphql_relay.node.node import from_global_id
+
+_thread_locals = threading.local()
 
 
 def create_nested(model, profile, data):
@@ -27,3 +31,19 @@ def update_nested(model, profile, data):
 def delete_nested(model, profile, data):
     for remove_id in data:
         model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
+
+
+def set_current_user(user):
+    _thread_locals.user = user
+
+
+def set_current_service(service):
+    _thread_locals.service = service
+
+
+def get_current_user():
+    return getattr(_thread_locals, "user", None)
+
+
+def get_current_service():
+    return getattr(_thread_locals, "service", None)
