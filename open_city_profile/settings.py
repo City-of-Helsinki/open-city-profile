@@ -43,6 +43,7 @@ env = environ.Env(
     NOTIFICATIONS_ENABLED=(bool, False),
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
+    AUDIT_LOGGING_ENABLED=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -140,6 +141,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reversion.middleware.RevisionMiddleware",
+    "profiles.middleware.SetUser",
 ]
 
 TEMPLATES = [
@@ -258,3 +260,19 @@ if "SECRET_KEY" not in locals():
 # This value tells what length the number will be padded to.
 # For example, PK 123, length 6 --> 000123.
 YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
+
+AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"audit": {"format": "[%(asctime)s] %(message)s"}},
+    "handlers": {
+        "audit": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "./audit.log",
+            "formatter": "audit",
+        }
+    },
+    "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
+}

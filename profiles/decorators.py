@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import ugettext_lazy as _
 from graphql.execution.base import ResolveInfo
 
+from profiles.utils import set_current_service
 from services.models import Service
 
 
@@ -37,6 +38,7 @@ def staff_required(required_permission="view"):
                     )
                 )
             service = Service.objects.get(service_type=kwargs["service_type"])
+            set_current_service(service.service_type)
             if context.user.has_perm(
                 "can_{}_profiles".format(required_permission), service
             ):

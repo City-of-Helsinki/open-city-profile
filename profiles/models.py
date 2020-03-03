@@ -103,6 +103,7 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "addresses"},
         {"name": "service_connections"},
     )
+    audit_log = True
 
     def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
@@ -161,7 +162,7 @@ class Profile(UUIDModel, SerializableMixin):
                 email = item.get("email", None)
                 if email:
                     profile.emails.create(
-                        email=email, email_type=EmailType.PERSONAL, primary=True,
+                        email=email, email_type=EmailType.PERSONAL, primary=True
                     )
                 address = item.get("address", None)
                 if address:
@@ -176,7 +177,7 @@ class Profile(UUIDModel, SerializableMixin):
                 phones = item.get("phones", ())
                 for index, phone in enumerate(phones):
                     profile.phones.create(
-                        phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0,
+                        phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0
                     )
                 result[item["customer_id"]] = profile.pk
             except Exception as err:
@@ -205,6 +206,7 @@ class SensitiveData(SerializableMixin):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     ssn = fields.EncryptedCharField(max_length=11)
     serialize_fields = ({"name": "ssn"},)
+    audit_log = True
 
 
 class Contact(SerializableMixin):
