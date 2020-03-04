@@ -4,7 +4,6 @@ from django.db.models import Max
 from enumfields import EnumField
 from parler.models import TranslatableModel, TranslatedFields
 
-from profiles.models import Profile
 from utils.models import SerializableMixin
 
 from .enums import ServiceType
@@ -54,7 +53,7 @@ class Service(TranslatableModel):
 
 class ServiceConnection(SerializableMixin):
     profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="service_connections"
+        "profiles.Profile", on_delete=models.CASCADE, related_name="service_connections"
     )
     service = models.ForeignKey(Service, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
