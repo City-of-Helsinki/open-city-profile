@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 from string import Template
 
+import pytest
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from graphene import relay
@@ -18,6 +19,7 @@ from open_city_profile.consts import (
 from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+from users.models import User
 
 from ..schema import ProfileNode
 from .factories import (
@@ -1088,6 +1090,8 @@ def test_normal_user_can_delete_his_profile(rf, user_gql_client):
     mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
+    with pytest.raises(User.DoesNotExist):
+        user_gql_client.user.refresh_from_db()
 
 
 def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
