@@ -1548,7 +1548,7 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
         }
     """
     )
-    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John",)
+    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John")
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -1584,7 +1584,7 @@ def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_
         }
     """
     )
-    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John",)
+    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John")
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(

@@ -79,9 +79,7 @@ class ExtendedProfileAdmin(VersionAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
-        my_urls = [
-            path("upload-json/", self.upload_json, name="upload-json"),
-        ]
+        my_urls = [path("upload-json/", self.upload_json, name="upload-json")]
         return my_urls + urls
 
     @method_decorator(superuser_required, name="dispatch")
@@ -96,14 +94,12 @@ class ExtendedProfileAdmin(VersionAdmin):
             else:
                 form = ImportProfilesFromJsonForm()
                 return render(
-                    request, "admin/profiles/upload_json.html", {"form": form},
+                    request, "admin/profiles/upload_json.html", {"form": form}
                 )
         except Exception as err:
-            messages.error(
-                request, err,
-            )
+            messages.error(request, err)
             form = ImportProfilesFromJsonForm()
-            return render(request, "admin/profiles/upload_json.html", {"form": form},)
+            return render(request, "admin/profiles/upload_json.html", {"form": form})
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "divisions_of_interest":
