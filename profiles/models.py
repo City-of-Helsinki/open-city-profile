@@ -11,6 +11,8 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from services.enums import ServiceType
+from services.models import Service, ServiceConnection
 from users.models import User
 from utils.models import SerializableMixin, UUIDModel
 
@@ -179,6 +181,11 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.phones.create(
                         phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0
                     )
+                ServiceConnection.objects.create(
+                    profile=profile,
+                    service=Service.objects.get(service_type=ServiceType.BERTH),
+                    enabled=False,
+                )
                 result[item["customer_id"]] = profile.pk
             except Exception as err:
                 msg = (
