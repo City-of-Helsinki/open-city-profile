@@ -1,6 +1,9 @@
 import pytest
 from django.contrib.auth import get_user_model
 
+from services.enums import ServiceType
+from services.tests.factories import ServiceFactory
+
 from ..models import Profile
 from .factories import EmailFactory, ProfileFactory, SensitiveDataFactory, UserFactory
 
@@ -78,6 +81,7 @@ def test_serialize_profile():
 
 
 def test_import_customer_data_with_valid_data_set():
+    ServiceFactory()
     data = [
         {
             "customer_id": "321456",
@@ -105,7 +109,13 @@ def test_import_customer_data_with_valid_data_set():
     assert Profile.objects.count() == 0
     result = Profile.import_customer_data(data)
     assert len(result.keys()) == 2
-    assert Profile.objects.count() == 2
+    profiles = Profile.objects.all()
+    assert len(profiles) == 2
+    for profile in profiles:
+        assert (
+            profile.service_connections.first().service.service_type
+            == ServiceType.BERTH
+        )
 
 
 def test_import_customer_data_with_missing_customer_id():
