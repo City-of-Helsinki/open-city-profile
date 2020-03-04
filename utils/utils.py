@@ -235,7 +235,7 @@ def generate_youth_profiles(percentage=0.2, faker=None):
         YouthProfile.objects.create(
             profile=profile,
             birth_date=make_aware(
-                faker.date_time_between(start_date="-17y", end_date="now"),
+                faker.date_time_between(start_date="-17y", end_date="-13y"),
                 get_current_timezone(),
                 is_dst=False,
             ),
