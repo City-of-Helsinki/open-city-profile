@@ -8,6 +8,7 @@ from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import (
     APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
+    CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 )
 from profiles.tests.factories import EmailFactory
@@ -272,6 +273,57 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
     assert (
         executed["errors"][0]["extensions"]["code"]
         == APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR
+    )
+
+
+def test_user_cannot_create_youth_profile_if_under_13_years_old(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    today = date.today()
+
+    t = Template(
+        """
+        mutation{
+            createMyYouthProfile(
+                input: {
+                    youthProfile: {
+                        schoolClass: "${schoolClass}"
+                        schoolName: "${schoolName}"
+                        languageAtHome: ${language}
+                        approverEmail: "${approverEmail}"
+                        birthDate: "${birthDate}"
+                    }
+
+                }
+            )
+            {
+                youthProfile {
+                    schoolClass
+                    schoolName
+                    approverEmail
+                    birthDate
+                }
+            }
+        }
+        """
+    )
+    creation_data = {
+        "profileId": profile.pk,
+        "schoolClass": "2A",
+        "schoolName": "Alakoulu",
+        "approverEmail": "hyvaksyja@ex.com",
+        "language": YouthLanguage.FINNISH.name,
+        "birthDate": today.replace(year=today.year - 13, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+    query = t.substitute(**creation_data)
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR
     )
 
 
@@ -601,9 +653,7 @@ def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_o
         }
         """
     )
-    creation_data = {
-        "photoUsageApproved": "true",
-    }
+    creation_data = {"photoUsageApproved": "true"}
     query = t.substitute(**creation_data)
     expected_data = {"youthProfile": {"photoUsageApproved": True}}
     executed = user_gql_client.execute(query, context=request)
@@ -639,9 +689,7 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
         }
         """
     )
-    creation_data = {
-        "photoUsageApproved": "true",
-    }
+    creation_data = {"photoUsageApproved": "true"}
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
