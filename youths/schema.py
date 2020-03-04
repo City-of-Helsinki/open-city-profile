@@ -22,19 +22,11 @@ from profiles.models import Email, Profile
 
 from .enums import NotificationType, YouthLanguage
 from .models import calculate_expiration, YouthProfile
+from .utils import calculate_age
 
 with override("en"):
     LanguageAtHome = graphene.Enum.from_enum(
         YouthLanguage, description=lambda e: e.label if e else ""
-    )
-
-
-def calculate_age(birth_date):
-    today = date.today()
-    return (
-        today.year
-        - birth_date.year
-        - ((today.month, today.day) < (birth_date.month, birth_date.day))
     )
 
 

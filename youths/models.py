@@ -8,10 +8,12 @@ from django.utils import timezone
 from django_ilmoitin.utils import send_notification
 from enumfields import EnumField
 
+from open_city_profile.exceptions import CannotCreateYouthProfileIfUnder13YearsOldError
 from profiles.models import Profile
 
 from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
+from .utils import calculate_age
 
 
 def calculate_expiration(from_date=date.today()):
@@ -24,13 +26,20 @@ def calculate_expiration(from_date=date.today()):
     )
 
 
+def validate_over_13_years_old(birth_date):
+    if calculate_age(birth_date) < 13:
+        raise CannotCreateYouthProfileIfUnder13YearsOldError(
+            "Under 13 years old cannot create youth profile"
+        )
+
+
 @reversion.register()
 class YouthProfile(models.Model):
     # Required info
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
-    birth_date = models.DateField()
+    birth_date = models.DateField(validators=[validate_over_13_years_old])
     school_name = models.CharField(max_length=128, blank=True)
     school_class = models.CharField(max_length=10, blank=True)
     expiration = models.DateField(default=calculate_expiration)
@@ -73,3 +82,7 @@ class YouthProfile(models.Model):
             self.profile.user.last_name,
             self.profile.user.uuid,
         )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
