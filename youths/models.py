@@ -73,6 +73,7 @@ class YouthProfile(models.Model):
             email=self.approver_email,
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
             context={"youth_profile": self},
+            language=self.language_at_home.value,
         )
         self.approval_notification_timestamp = timezone.now()
 
