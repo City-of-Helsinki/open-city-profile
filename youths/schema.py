@@ -270,6 +270,7 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
             email=email.email,
             notification_type=NotificationType.YOUTH_PROFILE_CONFIRMED.value,
             context={"youth_profile": youth_profile},
+            language=youth_profile.profile.language if youth_profile.profile else "fi",
         )
         return ApproveYouthProfileMutation(youth_profile=youth_profile)
 
