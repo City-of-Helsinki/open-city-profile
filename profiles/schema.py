@@ -503,8 +503,8 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
             raise CannotDeleteProfileWhileServiceConnectedError(
                 "Cannot delete profile while service BERTH still connected"
             )
-
         profile.delete()
+        info.context.user.delete()
         return DeleteMyProfileMutation()
 
 
