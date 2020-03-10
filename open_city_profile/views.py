@@ -7,6 +7,7 @@ from open_city_profile.consts import (
     APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
     CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
+    CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     CANNOT_RENEW_YOUTH_PROFILE_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
     GENERAL_ERROR,
@@ -22,6 +23,7 @@ from open_city_profile.exceptions import (
     ApproverEmailCannotBeEmptyForMinorsError,
     CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotDeleteProfileWhileServiceConnectedError,
+    CannotPerformThisActionWithGivenServiceType,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileDoesNotExistError,
@@ -37,6 +39,7 @@ error_codes_shared = {
     TokenExpiredError: TOKEN_EXPIRED_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
+    CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
 }
 error_codes_profile = {
     CannotDeleteProfileWhileServiceConnectedError: CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,

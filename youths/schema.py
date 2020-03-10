@@ -14,11 +14,15 @@ from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
     ApproverEmailCannotBeEmptyForMinorsError,
+    CannotPerformThisActionWithGivenServiceType,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileHasNoPrimaryEmailError,
 )
+from profiles.decorators import staff_required
 from profiles.models import Email, Profile
+from services.enums import ServiceType
+from services.schema import AllowedServiceType
 
 from .enums import NotificationType, YouthLanguage
 from .models import calculate_expiration, YouthProfile
@@ -28,6 +32,23 @@ with override("en"):
     LanguageAtHome = graphene.Enum.from_enum(
         YouthLanguage, description=lambda e: e.label if e else ""
     )
+
+
+def create_youth_profile(data, profile):
+    youth_profile, created = YouthProfile.objects.get_or_create(
+        profile=profile, defaults=data
+    )
+
+    if calculate_age(youth_profile.birth_date) >= 18:
+        youth_profile.approved_time = timezone.now()
+    else:
+        if not data.get("approver_email"):
+            raise ApproverEmailCannotBeEmptyForMinorsError(
+                "Approver email is required for youth under 18 years old"
+            )
+        youth_profile.make_approvable()
+    youth_profile.save()
+    return youth_profile
 
 
 class MembershipStatus(graphene.Enum):
@@ -122,6 +143,28 @@ class CreateMyYouthProfileInput(YouthProfileFields):
     )
 
 
+class CreateYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(graphene.ID, required=True)
+        youth_profile = CreateMyYouthProfileInput(required=True)
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        input_data = input.get("youth_profile")
+        if input.get("service_type") != ServiceType.YOUTH_MEMBERSHIP.value:
+            raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
+
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = create_youth_profile(input_data, profile)
+
+        return CreateYouthProfileMutation(youth_profile=youth_profile)
+
+
 class CreateMyYouthProfileMutation(relay.ClientIDMutation):
     class Input:
         youth_profile = CreateMyYouthProfileInput(required=True)
@@ -142,19 +185,7 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
                 )
 
         profile = Profile.objects.get(user=info.context.user)
-
-        youth_profile, created = YouthProfile.objects.get_or_create(
-            profile=profile, defaults=input_data
-        )
-        if calculate_age(youth_profile.birth_date) >= 18:
-            youth_profile.approved_time = timezone.now()
-        else:
-            if not input_data.get("approver_email"):
-                raise ApproverEmailCannotBeEmptyForMinorsError(
-                    "Approver email is required for youth under 18 years old"
-                )
-            youth_profile.make_approvable()
-        youth_profile.save()
+        youth_profile = create_youth_profile(input_data, profile)
 
         return CreateMyYouthProfileMutation(youth_profile=youth_profile)
 
@@ -309,6 +340,10 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
+    # TODO: Complete the description
+    create_youth_profile = CreateYouthProfileMutation.Field(
+        description="Admin mutation for creating a youth profile `TODO`"
+    )
     # TODO: Add the complete list of error codes
     create_my_youth_profile = CreateMyYouthProfileMutation.Field(
         description="Creates a new youth profile and links it to the currently authenticated user's profile.\n\n"
