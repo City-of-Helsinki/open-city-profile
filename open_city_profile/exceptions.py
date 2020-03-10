@@ -13,6 +13,10 @@ class TokenExpiredError(ProfileGraphQLError):
     """Token has expired"""
 
 
+class CannotPerformThisActionWithGivenServiceType(ProfileGraphQLError):
+    """Incorrect service type for given action"""
+
+
 class CannotDeleteProfileWhileServiceConnectedError(ProfileGraphQLError):
     """Profile cannot be deleted while service is still connected"""
 

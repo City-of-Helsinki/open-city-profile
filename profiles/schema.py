@@ -26,6 +26,7 @@ from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from youths.schema import (
     CreateMyYouthProfileMutation,
+    CreateYouthProfileMutation,
     UpdateMyYouthProfileMutation,
     YouthProfileFields,
     YouthProfileType,
@@ -420,8 +421,12 @@ class CreateProfileMutation(relay.ClientIDMutation):
                 )
 
         if youth_profile_data:
-            CreateMyYouthProfileMutation().mutate_and_get_payload(
-                root, info, youth_profile=youth_profile_data
+            CreateYouthProfileMutation().mutate_and_get_payload(
+                root,
+                info,
+                youth_profile=youth_profile_data,
+                service_type=input["service_type"],
+                profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.pk),
             )
 
         # create the service connection for the profile

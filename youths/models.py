@@ -78,11 +78,12 @@ class YouthProfile(models.Model):
         self.approval_notification_timestamp = timezone.now()
 
     def __str__(self):
-        return "{} {} ({})".format(
-            self.profile.user.first_name,
-            self.profile.user.last_name,
-            self.profile.user.uuid,
-        )
+        if self.profile:
+            return "{} {} ({})".format(
+                self.profile.first_name, self.profile.last_name, self.profile.pk
+            )
+        else:
+            return self.pk
 
     def save(self, *args, **kwargs):
         self.full_clean()

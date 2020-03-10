@@ -5,13 +5,20 @@ from string import Template
 from django.utils import timezone
 from freezegun import freeze_time
 from graphql_relay.node.node import to_global_id
+from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import (
     APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
     CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
+    CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
+    PERMISSION_DENIED_ERROR,
 )
+from open_city_profile.tests.factories import GroupFactory
+from profiles.models import Profile
 from profiles.tests.factories import EmailFactory
+from services.enums import ServiceType
+from services.tests.factories import ServiceFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -1069,3 +1076,328 @@ def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_
             "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
         }
         assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    youth_profile_data = {
+        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+        "school_name": "Koulu",
+        "school_class": "2B",
+        "language_at_home": YouthLanguage.ENGLISH.name,
+        "approver_first_name": "Jane",
+        "approver_last_name": "Doe",
+        "approver_phone": "040-1234567",
+        "approver_email": "jane.doe@example.com",
+    }
+
+    t = Template(
+        """
+        mutation {
+            createYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    youthProfile: {
+                        birthDate: \"${birth_date}\",
+                        schoolName: \"${school_name}\",
+                        schoolClass: \"${school_class}\",
+                        languageAtHome: ${language_at_home},
+                        approverEmail: \"${approver_email}\",
+                        approverPhone: \"${approver_phone}\",
+                        approverFirstName: \"${approver_first_name}\",
+                        approverLastName: \"${approver_last_name}\",
+                    }
+                }
+            ) {
+                youthProfile {
+                    birthDate
+                    schoolName
+                    schoolClass
+                    languageAtHome
+                    approverEmail
+                    approverPhone
+                    approverFirstName
+                    approverLastName
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        birth_date=youth_profile_data["birth_date"],
+        school_name=youth_profile_data["school_name"],
+        school_class=youth_profile_data["school_class"],
+        language_at_home=youth_profile_data["language_at_home"],
+        approver_email=youth_profile_data["approver_email"],
+        approver_phone=youth_profile_data["approver_phone"],
+        approver_first_name=youth_profile_data["approver_first_name"],
+        approver_last_name=youth_profile_data["approver_last_name"],
+    )
+    expected_data = {
+        "createYouthProfile": {
+            "youthProfile": {
+                "birthDate": youth_profile_data["birth_date"],
+                "schoolName": youth_profile_data["school_name"],
+                "schoolClass": youth_profile_data["school_class"],
+                "languageAtHome": youth_profile_data["language_at_home"],
+                "approverEmail": youth_profile_data["approver_email"],
+                "approverPhone": youth_profile_data["approver_phone"],
+                "approverFirstName": youth_profile_data["approver_first_name"],
+                "approverLastName": youth_profile_data["approver_last_name"],
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_client):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    birth_date = today.replace(year=today.year - 13, day=today.day - 1).strftime(
+        "%Y-%m-%d"
+    )
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                        lastName: \"${last_name}\",
+                        youthProfile: {
+                            birthDate: \"${birth_date}\",
+                            approverEmail: \"${approver_email}\",
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    lastName
+                    youthProfile {
+                        birthDate
+                        approverEmail
+                    }
+                    serviceConnections {
+                        edges {
+                            node {
+                                service {
+                                    type
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        first_name="John",
+        last_name="Doe",
+        birth_date=birth_date,
+        approver_email="jane.doe@example.com",
+    )
+    expected_data = {
+        "createProfile": {
+            "profile": {
+                "firstName": "John",
+                "lastName": "Doe",
+                "youthProfile": {
+                    "birthDate": birth_date,
+                    "approverEmail": "jane.doe@example.com",
+                },
+                "serviceConnections": {
+                    "edges": [
+                        {
+                            "node": {
+                                "service": {"type": ServiceType.YOUTH_MEMBERSHIP.name}
+                            }
+                        }
+                    ]
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
+    rf, user_gql_client
+):
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    group_youth = GroupFactory(name="Youth")
+    group_berth = GroupFactory(name="Berth")
+    user = user_gql_client.user
+    user.groups.add(group_youth)
+    user.groups.add(group_berth)
+    assign_perm("can_manage_profiles", group_youth, service_youth)
+    assign_perm("can_manage_profiles", group_berth, service_berth)
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    youth_profile_data = {
+        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+        "approver_email": "jane.doe@example.com",
+    }
+
+    t = Template(
+        """
+        mutation {
+            createYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    youthProfile: {
+                        birthDate: \"${birth_date}\",
+                        approverEmail: \"${approver_email}\",
+                    }
+                }
+            ) {
+                youthProfile {
+                    birthDate
+                    approverEmail
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.BERTH.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        birth_date=youth_profile_data["birth_date"],
+        approver_email=youth_profile_data["approver_email"],
+    )
+    executed = user_gql_client.execute(query, context=request)
+    assert (
+        executed["errors"][0].get("extensions").get("code")
+        == CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR
+    )
+
+
+def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_client):
+    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    user = user_gql_client.user
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    youth_profile_data = {
+        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
+            "%Y-%m-%d"
+        ),
+        "approver_email": "jane.doe@example.com",
+    }
+
+    t = Template(
+        """
+        mutation {
+            createYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    youthProfile: {
+                        birthDate: \"${birth_date}\",
+                        approverEmail: \"${approver_email}\",
+                    }
+                }
+            ) {
+                youthProfile {
+                    birthDate
+                    approverEmail
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        birth_date=youth_profile_data["birth_date"],
+        approver_email=youth_profile_data["approver_email"],
+    )
+    executed = user_gql_client.execute(query, context=request)
+    assert (
+        executed["errors"][0].get("extensions").get("code") == PERMISSION_DENIED_ERROR
+    )
+
+
+def test_nested_youth_profile_create_failure_also_fails_profile_creation(
+    rf, user_gql_client
+):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            createProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        firstName: \"${first_name}\",
+                        lastName: \"${last_name}\",
+                        youthProfile: {
+                            approverEmail: \"${approver_email}\",
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    youthProfile {
+                        birthDate
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        first_name="John",
+        last_name="Doe",
+        approver_email="jane.doe@example.com",
+    )
+
+    assert Profile.objects.count() == 0
+    user_gql_client.execute(query, context=request)
+    # Nested CreateYouthProfile mutation failed and CreateProfile should also fail
+    assert Profile.objects.count() == 0
