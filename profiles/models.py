@@ -261,7 +261,7 @@ class Address(Contact):
         Profile, related_name="addresses", on_delete=models.CASCADE
     )
     address = models.CharField(max_length=128, blank=False)
-    postal_code = models.CharField(max_length=5, blank=False)
+    postal_code = models.CharField(max_length=32, blank=False)
     city = models.CharField(max_length=64, blank=False)
     country_code = models.CharField(max_length=2, blank=False)
     address_type = EnumField(
