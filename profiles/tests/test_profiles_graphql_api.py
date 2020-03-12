@@ -1038,18 +1038,18 @@ def test_normal_user_can_update_primary_contact_details(
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailNode", id=email_2.id),
-                                "email": email_2.email,
-                                "emailType": email_2.email_type.name,
-                                "primary": False,
-                            }
-                        },
-                        {
-                            "node": {
                                 "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": True,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailNode", id=email_2.id),
+                                "email": email_2.email,
+                                "emailType": email_2.email_type.name,
+                                "primary": False,
                             }
                         },
                     ]
