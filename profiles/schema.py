@@ -581,7 +581,14 @@ class Query(graphene.ObjectType):
 
     @login_required
     def resolve_download_my_profile(self, info, **kwargs):
-        return Profile.objects.filter(user=info.context.user).first().serialize()
+        profile = Profile.objects.filter(user=info.context.user).first()
+        return {
+            "key": "DATA",
+            "children": [
+                profile.serialize(),
+                *map(lambda item: item.json(), profile.get_service_gdpr_data()),
+            ],
+        }
 
 
 class Mutation(graphene.ObjectType):

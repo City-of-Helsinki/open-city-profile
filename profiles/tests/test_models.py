@@ -2,7 +2,8 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
+from services.models import ServiceConnection
+from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from ..models import Profile
 from .factories import EmailFactory, ProfileFactory, SensitiveDataFactory, UserFactory
@@ -78,6 +79,42 @@ def test_serialize_profile():
     assert expected_firstname in serialized_profile.get("children")
     assert expected_email in serialized_profile.get("children")
     assert expected_sensitive_data in serialized_profile.get("children")
+
+
+def test_get_service_gdpr_data(monkeypatch):
+    def mock_download_gdpr_data(self):
+        if self.service.service_type == ServiceType.BERTH:
+            return {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
+        elif self.service.service_type == ServiceType.YOUTH_MEMBERSHIP:
+            return {
+                "key": "YOUTHPROFILE",
+                "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
+            }
+        else:
+            return {}
+
+    # Setup the data
+    profile = ProfileFactory()
+    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_kukkuu = ServiceFactory(service_type=ServiceType.GODCHILDREN_OF_CULTURE)
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    ServiceConnectionFactory(profile=profile, service=service_youth)
+    ServiceConnectionFactory(profile=profile, service=service_kukkuu)
+
+    # Let's monkeypatch the method in ServiceConnection to mock the http requests
+    monkeypatch.setattr(
+        ServiceConnection, "download_gdpr_data", mock_download_gdpr_data
+    )
+
+    response = profile.get_service_gdpr_data()
+    assert response == [
+        {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]},
+        {
+            "key": "YOUTHPROFILE",
+            "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
+        },
+    ]
 
 
 def test_import_customer_data_with_valid_data_set():

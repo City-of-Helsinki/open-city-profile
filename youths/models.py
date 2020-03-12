@@ -10,6 +10,7 @@ from enumfields import EnumField
 
 from open_city_profile.exceptions import CannotCreateYouthProfileIfUnder13YearsOldError
 from profiles.models import Profile
+from utils.models import SerializableMixin
 
 from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
@@ -34,7 +35,7 @@ def validate_over_13_years_old(birth_date):
 
 
 @reversion.register()
-class YouthProfile(models.Model):
+class YouthProfile(SerializableMixin):
     # Required info
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
@@ -88,3 +89,17 @@ class YouthProfile(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+    serialize_fields = (
+        {"name": "birth_date", "accessor": lambda x: x.strftime("%Y-%m-%d")},
+        {"name": "school_name"},
+        {"name": "school_class"},
+        {"name": "expiration", "accessor": lambda x: x.strftime("%Y-%m-%d")},
+        {"name": "language_at_home", "accessor": lambda x: x.value},
+        {"name": "approver_first_name"},
+        {"name": "approver_last_name"},
+        {"name": "approver_phone"},
+        {"name": "approver_email"},
+        {"name": "expiration", "accessor": lambda x: x.strftime("%Y-%m-%d %H:%M")},
+        {"name": "photo_usage_approved"},
+    )

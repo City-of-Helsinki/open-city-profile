@@ -13,6 +13,8 @@ pydocstyle
 pytest
 pytest-cov
 pytest-django
+pytest-mock
+requests-mock
 rope
 yapf
 factory_boy

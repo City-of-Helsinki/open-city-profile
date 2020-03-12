@@ -58,3 +58,46 @@ def test_allowed_data_fields_get_correct_orders():
     assert first_data_field.order == 1
     second_data_field = AllowedDataFieldFactory()
     assert second_data_field.order == 2
+
+
+def test_download_gdpr_data_with_valid_service_and_url(
+    requests_mock, youth_profile_response
+):
+    # setup models
+    profile = ProfileFactory()
+    service = ServiceFactory(gdpr_url="http://valid-gdpr-url.com/profiles/")
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+    # mock request
+    requests_mock.get(
+        f"http://valid-gdpr-url.com/profiles/{profile.pk}", json=youth_profile_response
+    )
+
+    response = service_connection.download_gdpr_data()
+    assert response.json() == youth_profile_response
+
+
+def test_download_gdpr_data_with_invalid_service(requests_mock):
+    # setup models
+    profile = ProfileFactory()
+    service = ServiceFactory()
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+    # mock request
+    requests_mock.get(f"http://valid-gdpr-url.com/profiles/{profile.pk}", json={})
+
+    response = service_connection.download_gdpr_data()
+    assert response == {}
+
+
+def test_download_gdpr_data_with_invalid_url(requests_mock):
+    # setup models
+    profile = ProfileFactory()
+    service = ServiceFactory(gdpr_url="http://invalid-gdpr-url.com/profiles/")
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+    # mock request
+    requests_mock.get(
+        f"http://invalid-gdpr-url.com/profiles/{profile.pk}", json={}, status_code=404
+    )
+
+    response = service_connection.download_gdpr_data()
+    assert response.status_code == 404
+    assert response.json() == {}

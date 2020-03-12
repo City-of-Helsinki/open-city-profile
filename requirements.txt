@@ -65,7 +65,7 @@ pyyaml==5.3
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.5.0     # via django-munigeo
 requests-oauthlib==1.2.0  # via django-allauth
-requests==2.22.0          # via coreapi, django-allauth, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
+requests==2.22.0
 rsa==4.0                  # via python-jose
 rx==1.6.1                 # via graphql-core
 sentry-sdk==0.10.2
