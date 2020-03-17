@@ -59,4 +59,4 @@ production:
         K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
         K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
-        K8S_SECRET_FIELD_ENCRYPTION_KEYS: "<new-key-needed>"
+        K8S_SECRET_FIELD_ENCRYPTION_KEYS: "6dda31bbd572d00e6e05c3933b80719770fd6e44645348915c33cf7db1741670"
