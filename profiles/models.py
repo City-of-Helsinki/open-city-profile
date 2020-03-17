@@ -70,9 +70,9 @@ class LegalRelationship(models.Model):
 @reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
-    first_name = models.CharField(max_length=255, blank=True)
-    last_name = models.CharField(max_length=255, blank=True)
-    nickname = models.CharField(max_length=32, blank=True)
+    first_name = models.CharField(max_length=255, blank=True, db_index=True)
+    last_name = models.CharField(max_length=255, blank=True, db_index=True)
+    nickname = models.CharField(max_length=32, blank=True, db_index=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
         storage=OverwriteStorage(),
@@ -80,7 +80,10 @@ class Profile(UUIDModel, SerializableMixin):
         blank=True,
     )
     language = models.CharField(
-        max_length=2, choices=settings.LANGUAGES, default=settings.LANGUAGES[0][0]
+        max_length=2,
+        choices=settings.LANGUAGES,
+        default=settings.LANGUAGES[0][0],
+        db_index=True,
     )
     contact_method = models.CharField(
         max_length=30,
@@ -227,7 +230,7 @@ class Phone(Contact):
     profile = models.ForeignKey(
         Profile, related_name="phones", on_delete=models.CASCADE
     )
-    phone = models.CharField(max_length=255, null=True, blank=False)
+    phone = models.CharField(max_length=255, null=True, blank=False, db_index=True)
     phone_type = EnumField(
         PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
     )
@@ -242,7 +245,7 @@ class Email(Contact):
     profile = models.ForeignKey(
         Profile, related_name="emails", on_delete=models.CASCADE
     )
-    email = models.EmailField(max_length=254, blank=False)
+    email = models.EmailField(max_length=254, blank=False, db_index=True)
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
@@ -258,7 +261,7 @@ class Address(Contact):
         Profile, related_name="addresses", on_delete=models.CASCADE
     )
     address = models.CharField(max_length=128, blank=False)
-    postal_code = models.CharField(max_length=5, blank=False)
+    postal_code = models.CharField(max_length=32, blank=False)
     city = models.CharField(max_length=64, blank=False)
     country_code = models.CharField(max_length=2, blank=False)
     address_type = EnumField(
