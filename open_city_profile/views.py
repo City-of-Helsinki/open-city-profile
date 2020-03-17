@@ -1,6 +1,7 @@
 import sentry_sdk
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from graphene_django.views import GraphQLView as BaseGraphQLView
+from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -32,12 +33,14 @@ from open_city_profile.exceptions import (
     ServiceAlreadyExistsError,
     TokenExpiredError,
 )
+from profiles.models import Profile
 
 error_codes_shared = {
     Exception: GENERAL_ERROR,
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
     TokenExpiredError: TOKEN_EXPIRED_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
+    JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
 }
@@ -55,6 +58,14 @@ error_codes_youth_profile = {
     CannotSetPhotoUsagePermissionIfUnder15YearsError: CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 }
 
+sentry_ignored_errors = (
+    ObjectDoesNotExist,
+    JwtPermissionDenied,
+    PermissionDenied,
+    Profile.sensitivedata.RelatedObjectDoesNotExist,
+)
+
+
 error_codes = {**error_codes_shared, **error_codes_profile, **error_codes_youth_profile}
 
 
@@ -67,8 +78,11 @@ class GraphQLView(BaseGraphQLView):
             errors = [
                 e
                 for e in result.errors
-                if not isinstance(
-                    getattr(e, "original_error", None), ProfileGraphQLError
+                if not (
+                    isinstance(getattr(e, "original_error", None), ProfileGraphQLError)
+                    or isinstance(
+                        getattr(e, "original_error", None), sentry_ignored_errors
+                    )
                 )
             ]
             if errors:
