@@ -706,7 +706,7 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
     )
 
 
-def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
+def test_normal_user_can_update_youth_profile_through_my_profile_mutation(
     rf, user_gql_client
 ):
     request = rf.post("/graphql")
@@ -757,6 +757,63 @@ def test_normal_user_can_update_youth_profile__through_my_profile_mutation(
                 "youthProfile": {
                     "schoolClass": creation_data["schoolClass"],
                     "schoolName": youth_profile.school_name,
+                    "birthDate": creation_data["birthDate"],
+                },
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
+    rf, user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    ProfileFactory(user=user_gql_client.user)
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: \"${nickname}\",
+                            youthProfile: {
+                                schoolClass: "${schoolClass}"
+                                birthDate: "${birthDate}"
+                            }
+                        }
+                    }
+                ) {
+                profile{
+                    nickname,
+                    youthProfile {
+                        schoolClass
+                        birthDate
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    creation_data = {
+        "nickname": "Larry",
+        "schoolClass": "2A",
+        "birthDate": "2002-02-02",
+    }
+
+    query = t.substitute(**creation_data)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "nickname": "Larry",
+                "youthProfile": {
+                    "schoolClass": creation_data["schoolClass"],
                     "birthDate": creation_data["birthDate"],
                 },
             }
