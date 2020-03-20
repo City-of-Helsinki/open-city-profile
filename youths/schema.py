@@ -213,7 +213,9 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
         )
 
         profile = Profile.objects.get(user=info.context.user)
-        youth_profile, created = YouthProfile.objects.get_or_create(profile=profile)
+        youth_profile, created = YouthProfile.objects.get_or_create(
+            profile=profile, defaults=input_data
+        )
 
         if "photo_usage_approved" in input_data:
             # Disable setting photo usage by themselfs for youths under 15 years old
@@ -225,10 +227,10 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
                 raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
                     "Cannot set photo usage permission if under 15 years old"
                 )
-
-        for field, value in input_data.items():
-            setattr(youth_profile, field, value)
-        youth_profile.save()
+        if not created:
+            for field, value in input_data.items():
+                setattr(youth_profile, field, value)
+            youth_profile.save()
 
         if resend_request_notification:
             youth_profile.make_approvable()
