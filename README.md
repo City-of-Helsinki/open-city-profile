@@ -43,7 +43,11 @@ Open city profile is implemented using Django and it provides a GraphQL API.
    
     * `docker exec profile-backend python manage.py generate_services`
   
-8. Set permissions for service staff members if needed:
+8. Generate notifications if needed:
+
+    * `docker exec profile-backend python manage.py generate_notifications`
+
+9. Set permissions for service staff members if needed:
    
    * Create group(s) (via Django admin) and add user(s) to the group
    * Create service permissions for group manually via Django admin or for example:
@@ -57,7 +61,7 @@ Open city profile is implemented using Django and it provides a GraphQL API.
      * `docker exec profile-backend python manage.py remove_object_permission BERTH 
      VeneAdmin can_view_profiles`
 
-9. Seed development data (optional). This command will flush the database.
+10. Seed development data (optional). This command will flush the database.
 
     * Add all data with defaults: `docker exec profile-backend python manage.py 
     seed_data`
@@ -75,7 +79,7 @@ Open city profile is implemented using Django and it provides a GraphQL API.
         * By default adds for 20% of profiles (0.2)
         * Approved randomly
 
-10.  Run the server:
+11.  Run the server:
     * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 ## Development without Docker
