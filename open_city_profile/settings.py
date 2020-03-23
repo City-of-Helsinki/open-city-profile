@@ -62,6 +62,8 @@ sentry_sdk.init(
     integrations=[DjangoIntegration()],
 )
 
+sentry_sdk.integrations.logging.ignore_logger("graphql.execution.utils")
+
 BASE_DIR = str(checkout_dir)
 DEBUG = env.bool("DEBUG")
 TIER = env.str("TIER")
