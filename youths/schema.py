@@ -227,14 +227,22 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
                 raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
                     "Cannot set photo usage permission if under 15 years old"
                 )
-        if not created:
+        if created:
+            if calculate_age(youth_profile.birth_date) >= 18:
+                youth_profile.approved_time = timezone.now()
+            else:
+                if not input_data.get("approver_email"):
+                    raise ApproverEmailCannotBeEmptyForMinorsError(
+                        "Approver email is required for youth under 18 years old"
+                    )
+                youth_profile.make_approvable()
+        else:
             for field, value in input_data.items():
                 setattr(youth_profile, field, value)
-            youth_profile.save()
+            if resend_request_notification:
+                youth_profile.make_approvable()
 
-        if resend_request_notification:
-            youth_profile.make_approvable()
-            youth_profile.save()
+        youth_profile.save()
 
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
 
