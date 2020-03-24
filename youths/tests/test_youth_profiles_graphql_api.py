@@ -793,6 +793,7 @@ def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
                     youthProfile {
                         schoolClass
                         birthDate
+                        membershipStatus
                     }
                 }
             }
@@ -815,6 +816,7 @@ def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
                 "youthProfile": {
                     "schoolClass": creation_data["schoolClass"],
                     "birthDate": creation_data["birthDate"],
+                    "membershipStatus": "ACTIVE",
                 },
             }
         }
