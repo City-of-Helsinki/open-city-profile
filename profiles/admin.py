@@ -10,6 +10,7 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
+from subscriptions.admin import SubscriptionInline
 
 from profiles.models import ClaimToken, LegalRelationship, Profile, SensitiveData
 from services.admin import ServiceConnectionInline
@@ -73,6 +74,7 @@ class ExtendedProfileAdmin(VersionAdmin):
         RepresentativeAdmin,
         YouthProfileAdminInline,
         ServiceConnectionInline,
+        SubscriptionInline,
         ClaimTokenInline,
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
