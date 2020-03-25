@@ -96,6 +96,8 @@ class Profile(UUIDModel, SerializableMixin):
     legal_relationships = models.ManyToManyField(
         "self", through=LegalRelationship, symmetrical=False
     )
+    newsletters_via_email = models.BooleanField(default=True)
+    newsletters_via_sms = models.BooleanField(default=False)
     serialize_fields = (
         {"name": "first_name"},
         {"name": "last_name"},
