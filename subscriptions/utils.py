@@ -43,23 +43,6 @@ subscription_type_categories = (
                     },
                 ),
             },
-            {
-                "code": "COVID_MEME_NOTIFICATIONS",
-                "translations": (
-                    {
-                        "locale": "fi",
-                        "value": "Haluan meemejä liittyen viimeisimpään covid19-tilanteeseen",
-                    },
-                    {
-                        "locale": "sv",
-                        "value": "Haluan meemejä liittyen viimeisimpään covid19-tilanteeseen_SV",
-                    },
-                    {
-                        "locale": "en",
-                        "value": "Haluan meemejä liittyen viimeisimpään covid19-tilanteeseen_EN",
-                    },
-                ),
-            },
         ),
     },
     {
@@ -87,23 +70,6 @@ subscription_type_categories = (
                     },
                 ),
             },
-            {
-                "code": "COVID_VOLUNTEERING_MEMES",
-                "translations": (
-                    {
-                        "locale": "fi",
-                        "value": "Olen halukas tekemään meemejä kehittyvästä tilanteesta",
-                    },
-                    {
-                        "locale": "sv",
-                        "value": "Olen halukas tekemään meemejä kehittyvästä tilanteesta_SV",
-                    },
-                    {
-                        "locale": "en",
-                        "value": "Olen halukas tekemään meemejä kehittyvästä tilanteesta_EN",
-                    },
-                ),
-            },
         ),
     },
 )
@@ -112,7 +78,7 @@ subscription_type_categories = (
 def generate_subscription_types():
     SubscriptionTypeCategory.objects.all().delete()
     for cat in subscription_type_categories:
-        category = SubscriptionTypeCategory.objects.create()
+        category = SubscriptionTypeCategory.objects.create(code=cat["code"])
         for translation in cat["translations"]:
             category.set_current_language(translation["locale"])
             category.label = translation["value"]
