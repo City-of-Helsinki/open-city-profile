@@ -1,4 +1,5 @@
 import graphene
+import subscriptions.schema
 from graphene_federation import build_schema
 
 import profiles.schema
@@ -6,7 +7,12 @@ import services.schema
 import youths.schema
 
 
-class Query(profiles.schema.Query, youths.schema.Query, graphene.ObjectType):
+class Query(
+    profiles.schema.Query,
+    youths.schema.Query,
+    subscriptions.schema.Query,
+    graphene.ObjectType,
+):
     pass
 
 

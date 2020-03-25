@@ -12,6 +12,7 @@ from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
+from subscriptions.schema import SubscriptionNode
 from thesaurus.models import Concept
 
 from open_city_profile.exceptions import (
@@ -257,6 +258,7 @@ class ProfileNode(DjangoObjectType):
     youth_profile = graphene.Field(
         YouthProfileType, description="The Youth membership data of the profile."
     )
+    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
