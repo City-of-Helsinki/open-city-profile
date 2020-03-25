@@ -130,6 +130,8 @@ INSTALLED_APPS = [
     "guardian",
     "encrypted_fields",
     "adminsortable",
+    "subscriptions",
+    "import_export",
 ]
 
 MIDDLEWARE = [
