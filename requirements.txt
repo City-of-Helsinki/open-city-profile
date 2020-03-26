@@ -11,7 +11,8 @@ certifi==2019.6.16        # via requests, sentry-sdk
 chardet==3.0.4            # via requests
 coreapi==2.3.3
 coreschema==0.0.4         # via coreapi
-defusedxml==0.6.0         # via python3-openid
+defusedxml==0.6.0         # via odfpy, python3-openid
+diff-match-patch==20181111  # via django-import-export
 django-admin-sortable==2.2.3
 django-allauth==0.39.1
 django-anymail==6.1.0     # via django-ilmoitin
@@ -23,6 +24,7 @@ django-graphql-jwt==0.2.2
 django-guardian==2.1.0
 django-helusers==0.4.5
 django-ilmoitin==0.2.0
+django-import-export==2.0.2
 django-js-asset==1.2.2    # via django-mptt
 django-mailer==1.2.6      # via django-ilmoitin
 django-mptt==0.10.0       # via django-munigeo
@@ -36,6 +38,7 @@ django==2.2.10
 djangorestframework==3.10.1  # via django-parler-rest, drf-oidc-auth
 drf-oidc-auth==0.9        # via django-helusers
 ecdsa==0.13.3             # via python-jose
+et-xmlfile==1.0.1         # via openpyxl
 future==0.17.1            # via pyjwkest, python-jose
 graphene-django==2.5.0
 graphene-federation==0.0.4
@@ -45,10 +48,14 @@ graphql-relay==2.0.0      # via graphene
 idna==2.8                 # via requests
 isodate==0.6.0            # via rdflib
 itypes==1.1.0             # via coreapi
+jdcal==1.4.1              # via openpyxl
 jinja2==2.10.1            # via coreschema, django-ilmoitin
 lockfile==0.12.2          # via django-mailer
+markuppy==1.14            # via tablib
 markupsafe==1.1.1         # via jinja2
 oauthlib==3.0.2           # via requests-oauthlib
+odfpy==1.4.1              # via tablib
+openpyxl==3.0.3           # via tablib
 pillow==6.2.0
 promise==2.2.1            # via graphene-django, graphql-core, graphql-relay
 psycopg2==2.8.3
@@ -72,5 +79,8 @@ sentry-sdk==0.10.2
 singledispatch==3.4.0.3   # via graphene-django
 six==1.12.0               # via django-anymail, django-munigeo, graphene, graphene-django, graphql-core, graphql-relay, isodate, promise, pyjwkest, python-jose, singledispatch
 sqlparse==0.3.0           # via django
+tablib[html,ods,xls,xlsx,yaml]==1.1.0  # via django-import-export
 uritemplate==3.0.0        # via coreapi
 urllib3==1.25.3           # via requests, sentry-sdk
+xlrd==1.2.0               # via tablib
+xlwt==1.3.0               # via tablib
