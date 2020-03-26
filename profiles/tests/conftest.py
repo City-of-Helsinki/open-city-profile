@@ -1,62 +1,11 @@
-import factory.random
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework.test import APIClient
+from faker import Faker
 
-from profiles.tests.factories import (
-    ConceptFactory,
-    ProfileFactory,
-    SuperuserFactory,
-    UserFactory,
-    VocabularyFactory,
-)
-from utils.test_utils import create_in_memory_image_file
+from open_city_profile.tests.conftest import *  # noqa
+from profiles.enums import AddressType, EmailType, PhoneType
+from profiles.tests.factories import ConceptFactory, ProfileFactory, VocabularyFactory
 
-
-@pytest.fixture(autouse=True)
-def allow_global_access_to_test_db(transactional_db):
-    pass
-
-
-@pytest.fixture(autouse=True)
-def set_random_seed():
-    factory.random.reseed_random(666)
-
-
-@pytest.fixture(autouse=True)
-def email_setup(settings):
-    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def user_api_client(user):
-    api_client = APIClient()
-    api_client.force_authenticate(user=user)
-    api_client.user = user
-    return api_client
-
-
-@pytest.fixture
-def user():
-    return UserFactory()
-
-
-@pytest.fixture
-def superuser_api_client(superuser):
-    api_client = APIClient()
-    api_client.force_authenticate(user=superuser)
-    api_client.user = superuser
-    return api_client
-
-
-@pytest.fixture
-def superuser():
-    return SuperuserFactory()
+fake = Faker()
 
 
 @pytest.fixture
@@ -75,16 +24,35 @@ def concept(vocabulary):
 
 
 @pytest.fixture
-def default_image():
-    image_file = create_in_memory_image_file()
-    uploaded_image = SimpleUploadedFile(
-        "test_image.png", image_file.read(), "image/png"
-    )
-    return uploaded_image
+def profile_data():
+    return {"nickname": fake.name()}
 
 
 @pytest.fixture
-def profile_with_image(profile, default_image):
-    profile.image = default_image
-    profile.save()
-    return profile
+def email_data(primary=False):
+    return {
+        "email": fake.email(),
+        "email_type": EmailType.PERSONAL.name,
+        "primary": primary,
+    }
+
+
+@pytest.fixture
+def phone_data(primary=False):
+    return {
+        "phone": fake.phone_number(),
+        "phone_type": PhoneType.WORK.name,
+        "primary": primary,
+    }
+
+
+@pytest.fixture
+def address_data(primary=False):
+    return {
+        "address": fake.street_address(),
+        "postal_code": fake.postalcode(),
+        "city": fake.city(),
+        "country_code": fake.country_code(representation="alpha-2"),
+        "address_type": AddressType.WORK.name,
+        "primary": primary,
+    }

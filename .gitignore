@@ -48,6 +48,7 @@ build/Release
 celerybeat-schedule
 coverage
 coverage.xml
+data/
 develop-eggs/
 dist/
 docs/_build/
@@ -78,4 +79,5 @@ target/
 var/
 venv/
 .pytest_cache/
-
+docker-compose.env.yaml
+.vscode/settings.json

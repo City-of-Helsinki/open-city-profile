@@ -1,5 +1,23 @@
 # Open city profile
 
+## Summary
+
+Open city profile is used to store common information (name, contact 
+information, areas of interests, ...) about the citizens of the city of Helsinki.
+
+When a citizen is using a service which is connected to the profile, the 
+service can query for the citizen's information from the profile so that the 
+citizen doesn't have to enter all of their data every time it is needed. The 
+services may also provide a better user experience using the profile's data, 
+for example by returning more relevant search results based on the citizen's 
+interests.
+
+The same data may also be queried by the employees of the city of Helsinki 
+while performing their daily duties, for example using the administrative 
+functions of Venepaikka service.
+
+Open city profile is implemented using Django and it provides a GraphQL API.
+
 ## Development with Docker
 
 1. Create `.env` environment file
@@ -19,10 +37,50 @@
     * `docker exec profile-backend python manage.py geo_import finland --municipalities`
     * `docker exec profile-backend python manage.py geo_import helsinki --divisions`
     * `docker exec profile-backend python manage.py mark_divisions_of_interest`
-  
-7. Run the server:
-    * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
+7. Generate services: (command doesn't overwrite existing services with same 
+`service_type`)
+   
+    * `docker exec profile-backend python manage.py generate_services`
+  
+8. Generate notifications if needed:
+
+    * `docker exec profile-backend python manage.py generate_notifications`
+
+9. Set permissions for service staff members if needed:
+   
+   * Create group(s) (via Django admin) and add user(s) to the group
+   * Create service permissions for group manually via Django admin or for example:
+     * `docker exec profile-backend python manage.py add_object_permission BERTH 
+     VeneAdmin can_view_profiles`
+     * where:
+       * `service_type=BERTH`
+       * `group_name=VeneAdmin`
+       * `permission=can_view_profiles`
+   * Permissions can be removed as follows:
+     * `docker exec profile-backend python manage.py remove_object_permission BERTH 
+     VeneAdmin can_view_profiles`
+
+10. Seed development data (optional). This command will flush the database.
+
+    * Add all data with defaults: `docker exec profile-backend python manage.py 
+    seed_data`
+    * See `python manage.py help seed_data` for optional arguments
+    * Command will generate:
+      * All available services
+      * One group per service (with `can_manage_profiles` permissions)
+      * One user per group (with username `{service_type}_user`)
+      * Profiles
+        * With user
+        * With email, phone number and address 
+        * Connects to one random service
+      * Youth profiles
+        * Adds for existing profiles
+        * By default adds for 20% of profiles (0.2)
+        * Approved randomly
+
+11.  Run the server:
+    * `docker exec -it profile-backend python manage.py runserver 0:8000`
 
 ## Development without Docker
 
@@ -65,7 +123,6 @@ In order to have the relevant Helsinki regions run the following commands:
 * `python manage.py geo_import helsinki --divisions`
 * `python manage.py mark_divisions_of_interest`
 
-
 ### Daily running
 
 * Set the `DEBUG` environment variable to `1`.
@@ -76,3 +133,26 @@ In order to have the relevant Helsinki regions run the following commands:
 
 * Set the `DEBUG` environment variable to `1`.
 * Run `pytest`.
+
+## Issue tracking
+
+* [Github issue list](https://github.com/City-of-Helsinki/open-city-profile/issues)
+* [Jira backlog](https://helsinkisolutionoffice.atlassian.net/secure/RapidBoard.jspa?rapidView=23&projectKey=OM&view=planning)
+
+## Builds
+
+We are using [Gitlab](https://gitlab.com/City-of-Helsinki/KuVa/github-mirrors/open-city-profile/pipelines) 
+for automated builds and deployment into the test environment.
+
+## Environments
+
+Test environment: https://helsinkiprofile.test.kuva.hel.ninja/graphql/
+
+## API documentation
+
+* [Generated GraphiQL documentation](https://helsinkiprofile.test.kuva.hel.ninja/graphql/)
+
+## Contributing
+
+Make your changes and create a pull request. If your PR isn't getting 
+approved, contact kuva-open-city-profile-developers@googlegroups.com.

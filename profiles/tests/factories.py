@@ -1,27 +1,9 @@
 import factory
-from django.contrib.auth import get_user_model
 from thesaurus.models import Concept, Vocabulary
 
-from profiles.models import Profile
-
-User = get_user_model()
-
-
-class UserFactory(factory.django.DjangoModelFactory):
-    uuid = factory.Faker("uuid4")
-    first_name = factory.Faker("first_name")
-    last_name = factory.Faker("last_name")
-    email = factory.Faker("email")
-
-    class Meta:
-        model = User
-
-
-class SuperuserFactory(UserFactory):
-    is_superuser = True
-
-    class Meta:
-        model = User
+from open_city_profile.tests.factories import UserFactory
+from profiles.enums import AddressType, EmailType, PhoneType
+from profiles.models import Address, ClaimToken, Email, Phone, Profile, SensitiveData
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -29,6 +11,46 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Profile
+
+
+class ClaimTokenFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+
+    class Meta:
+        model = ClaimToken
+
+
+class EmailFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    primary = False
+    email_type = EmailType.NONE
+    email = factory.Faker("email")
+
+    class Meta:
+        model = Email
+
+
+class PhoneFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    primary = False
+    phone_type = PhoneType.NONE
+    phone = factory.Faker("phone_number")
+
+    class Meta:
+        model = Phone
+
+
+class AddressFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    primary = False
+    address = factory.Faker("street_address")
+    postal_code = factory.Faker("postcode")
+    city = factory.Faker("city")
+    country_code = factory.Faker("country_code")
+    address_type = AddressType.NONE
+
+    class Meta:
+        model = Address
 
 
 class VocabularyFactory(factory.django.DjangoModelFactory):
@@ -44,3 +66,11 @@ class ConceptFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Concept
+
+
+class SensitiveDataFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    ssn = factory.Faker("ssn")
+
+    class Meta:
+        model = SensitiveData

@@ -31,21 +31,38 @@ env = environ.Env(
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
-    OIDC_CLIENT_ID=(str, ""),
-    OIDC_ENDPOINT=(str, ""),
-    OIDC_SECRET=(str, ""),
-    API_SCOPE_PREFIX=(str, ""),
+    TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
+    TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
+    TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
+    TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
+    MAILER_EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
+    DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
+    MAIL_MAILGUN_KEY=(str, ""),
+    MAIL_MAILGUN_DOMAIN=(str, ""),
+    MAIL_MAILGUN_API=(str, ""),
+    NOTIFICATIONS_ENABLED=(bool, False),
+    FIELD_ENCRYPTION_KEYS=(list, []),
+    VERSION=(str, None),
+    AUDIT_LOGGING_ENABLED=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-version = subprocess.check_output(["git", "describe", "--always"]).strip()
+version = env.str("VERSION")
+if version is None:
+    try:
+        version = subprocess.check_output(["git", "describe", "--always"]).strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        version = None
+
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
     release=version,
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
+
+sentry_sdk.integrations.logging.ignore_logger("graphql.execution.utils")
 
 BASE_DIR = str(checkout_dir)
 DEBUG = env.bool("DEBUG")
@@ -68,6 +85,7 @@ MEDIA_ROOT = var_root("media")
 STATIC_ROOT = var_root("static")
 MEDIA_URL = env.str("MEDIA_URL")
 STATIC_URL = env.str("STATIC_URL")
+FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
 
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
@@ -94,10 +112,8 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "rest_framework",
     "django_filters",
     "parler",
-    "parler_rest",
     "thesaurus",
     "corsheaders",
     "mptt",
@@ -106,6 +122,14 @@ INSTALLED_APPS = [
     "profiles",
     "reversion",
     "youths",
+    "django_ilmoitin",
+    "mailer",
+    "graphene_django",
+    "utils",
+    "services",
+    "guardian",
+    "encrypted_fields",
+    "adminsortable",
 ]
 
 MIDDLEWARE = [
@@ -119,12 +143,17 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reversion.middleware.RevisionMiddleware",
+    "profiles.middleware.SetUser",
 ]
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates"
+            )
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -154,25 +183,17 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
 OIDC_API_TOKEN_AUTH = {
-    "AUDIENCE": env.str("OIDC_CLIENT_ID"),
-    "API_SCOPE_PREFIX": env.str("API_SCOPE_PREFIX"),
-    "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": True,
-    "ISSUER": env.str("OIDC_ENDPOINT"),
+    "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
+    "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
+    "ISSUER": env.str("TOKEN_AUTH_AUTHSERVER_URL"),
+    "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
 
-SOCIAL_AUTH_TUNNISTAMO_KEY = env.str("OIDC_CLIENT_ID")
-SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str("OIDC_SECRET")
-SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env.str("OIDC_ENDPOINT")
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("helusers.oidc.ApiTokenAuthentication",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 100,
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    ),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
-}
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "open_city_profile.oidc.GraphQLApiTokenAuthentication",
+    "guardian.backends.ObjectPermissionBackend",
+]
 
 # Profiles related settings
 
@@ -184,6 +205,28 @@ PARLER_LANGUAGES = {
     1: ({"code": "fi"}, {"code": "en"}, {"code": "sv"}),
     "default": {"fallbacks": ["fi"], "hide_untranslated": False},
 }
+
+# Notification settings
+
+NOTIFICATIONS_ENABLED = True
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
+if env("MAIL_MAILGUN_KEY"):
+    ANYMAIL = {
+        "MAILGUN_API_KEY": env("MAIL_MAILGUN_KEY"),
+        "MAILGUN_SENDER_DOMAIN": env("MAIL_MAILGUN_DOMAIN"),
+        "MAILGUN_API_URL": env("MAIL_MAILGUN_API"),
+    }
+EMAIL_BACKEND = "mailer.backend.DbBackend"
+MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
+
+# Graphene
+
+GRAPHENE = {
+    "SCHEMA": "open_city_profile.schema.schema",
+    "MIDDLEWARE": ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+}
+
+GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")
@@ -214,3 +257,24 @@ if "SECRET_KEY" not in locals():
                 "Please create a %s file with random characters to generate your secret key!"
                 % secret_file
             )
+
+# A youth membership number is the youth profile's PK padded with zeroes.
+# This value tells what length the number will be padded to.
+# For example, PK 123, length 6 --> 000123.
+YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
+
+AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"audit": {"format": "[%(asctime)s] %(message)s"}},
+    "handlers": {
+        "audit": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "./audit.log",
+            "formatter": "audit",
+        }
+    },
+    "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
+}
