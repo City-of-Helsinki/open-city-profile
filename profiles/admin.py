@@ -102,6 +102,7 @@ class ExtendedProfileAdmin(VersionAdmin):
         AddressAdminInline,
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
+    list_filter = ("service_connections__service",)
 
     def get_urls(self):
         urls = super().get_urls()
