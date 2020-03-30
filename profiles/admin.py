@@ -11,7 +11,15 @@ from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
-from profiles.models import ClaimToken, LegalRelationship, Profile, SensitiveData
+from profiles.models import (
+    Address,
+    ClaimToken,
+    Email,
+    LegalRelationship,
+    Phone,
+    Profile,
+    SensitiveData,
+)
 from services.admin import ServiceConnectionInline
 from youths.admin import YouthProfileAdminInline
 
@@ -61,6 +69,21 @@ class SensitiveDataAdminInline(admin.StackedInline):
     extra = 0
 
 
+class EmailAdminInline(admin.StackedInline):
+    model = Email
+    extra = 0
+
+
+class PhoneAdminInline(admin.StackedInline):
+    model = Phone
+    extra = 0
+
+
+class AddressAdminInline(admin.StackedInline):
+    model = Address
+    extra = 0
+
+
 class ImportProfilesFromJsonForm(forms.Form):
     json_file = forms.FileField(required=True, label="Please select a json file")
 
@@ -74,6 +97,9 @@ class ExtendedProfileAdmin(VersionAdmin):
         YouthProfileAdminInline,
         ServiceConnectionInline,
         ClaimTokenInline,
+        EmailAdminInline,
+        PhoneAdminInline,
+        AddressAdminInline,
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
 
