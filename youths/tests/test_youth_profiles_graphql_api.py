@@ -1224,6 +1224,65 @@ def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
     assert executed["data"] == expected_data
 
 
+def test_staff_user_can_create_youth_profile_for_under_13_years_old(
+    rf, user_gql_client, phone_data
+):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    youth_profile_data = {
+        "birth_date": today.replace(year=today.year - 13, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+        "approver_email": "jane.doe@example.com",
+    }
+
+    t = Template(
+        """
+        mutation {
+            createYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    youthProfile: {
+                        birthDate: \"${birth_date}\",
+                        approverEmail: \"${approver_email}\",
+                    }
+                }
+            ) {
+                youthProfile {
+                    birthDate
+                    approverEmail
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        birth_date=youth_profile_data["birth_date"],
+        approver_email=youth_profile_data["approver_email"],
+    )
+    expected_data = {
+        "createYouthProfile": {
+            "youthProfile": {
+                "birthDate": youth_profile_data["birth_date"],
+                "approverEmail": youth_profile_data["approver_email"],
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
 def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_client):
     service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     group = GroupFactory()

@@ -14,6 +14,7 @@ from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
     ApproverEmailCannotBeEmptyForMinorsError,
+    CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotPerformThisActionWithGivenServiceType,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
@@ -176,6 +177,11 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         input_data = input.get("youth_profile")
+
+        if calculate_age(input_data["birth_date"]) < 13:
+            raise CannotCreateYouthProfileIfUnder13YearsOldError(
+                "Under 13 years old cannot create youth profile"
+            )
 
         if "photo_usage_approved" in input_data:
             # Disable setting photo usage by themselfs for youths under 15 years old
