@@ -1754,6 +1754,149 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
+    rf, user_gql_client
+):
+    def generate_expected_data(profiles):
+        return {
+            "profiles": {
+                "edges": [
+                    {
+                        "node": {
+                            "emails": {
+                                "edges": [
+                                    {"node": {"email": profile.emails.first().email}}
+                                ]
+                            },
+                            "phones": {
+                                "edges": [
+                                    {"node": {"phone": profile.phones.first().phone}}
+                                ]
+                            },
+                        }
+                    }
+                    for profile in profiles
+                ]
+            }
+        }
+
+    profile_1, profile_2, profile_3, profile_4 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    PhoneFactory(profile=profile_1, phone="0401234561", primary=True)
+    PhoneFactory(profile=profile_2, phone="0401234562", primary=True)
+    PhoneFactory(profile=profile_3, phone="0401234563", primary=True)
+    PhoneFactory(profile=profile_4, phone="0401234564", primary=True)
+
+    EmailFactory(profile=profile_1, email="first@example.com", primary=True)
+    EmailFactory(profile=profile_2, email="second@example.com", primary=True)
+    EmailFactory(profile=profile_3, email="third@example.com", primary=True)
+    EmailFactory(profile=profile_4, email="fourth@example.com", primary=True)
+
+    AddressFactory(profile=profile_1, primary=True, postal_code="00100")
+    AddressFactory(profile=profile_2, postal_code="00100")
+    AddressFactory(profile=profile_3, postal_code="00100")
+    AddressFactory(profile=profile_4, postal_code="00200")
+
+    cat = SubscriptionTypeCategoryFactory(code="TEST-CATEGORY-1")
+    type_1 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-1")
+    type_2 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-2")
+
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_2, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_2, enabled=False
+    )
+
+    Subscription.objects.create(
+        profile=profile_3, subscription_type=type_1, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_4, subscription_type=type_2, enabled=True
+    )
+
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    ServiceConnectionFactory(profile=profile_4, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $subscriptionType: String, $postalCode: String){
+            profiles(
+                serviceType: $serviceType,
+                enabledSubscriptions: $subscriptionType,
+                addresses_PostalCode: $postalCode
+            ) {
+                edges {
+                    node {
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                }
+                            }
+                        }
+                        phones {
+                            edges {
+                                node {
+                                    phone
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    # test for type 1 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_1.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data(
+        [profile_1, profile_2, profile_3]
+    )
+
+    # test for type 2 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_2.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data([profile_1])
+
+
 def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
