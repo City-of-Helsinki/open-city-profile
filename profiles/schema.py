@@ -5,7 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
-from django_filters import CharFilter, FilterSet, OrderingFilter
+from django_filters import (
+    BooleanFilter,
+    CharFilter,
+    ChoiceFilter,
+    FilterSet,
+    OrderingFilter,
+)
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
@@ -143,21 +149,46 @@ class ProfilesConnection(graphene.Connection):
 class ProfileFilter(FilterSet):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "email", "phone", "language")
+        fields = (
+            "first_name",
+            "last_name",
+            "nickname",
+            "emails__email",
+            "emails__email_type",
+            "emails__primary",
+            "phones__phone",
+            "phones__phone_type",
+            "phones__primary",
+            "addresses__address",
+            "addresses__postal_code",
+            "addresses__city",
+            "addresses__country_code",
+            "addresses__address_type",
+            "addresses__primary",
+            "language",
+        )
 
     first_name = CharFilter(lookup_expr="icontains")
     last_name = CharFilter(lookup_expr="icontains")
     nickname = CharFilter(lookup_expr="icontains")
-    email = CharFilter(lookup_expr="icontains")
-    phone = CharFilter(lookup_expr="icontains")
+    emails__email = CharFilter(lookup_expr="icontains")
+    emails__email_type = ChoiceFilter(choices=EmailType.choices())
+    emails__primary = BooleanFilter()
+    phones__phone = CharFilter(lookup_expr="icontains")
+    phones__phone_type = ChoiceFilter(choices=PhoneType.choices())
+    phones__primary = BooleanFilter()
+    addresses__address = CharFilter(lookup_expr="icontains")
+    addresses__postal_code = CharFilter(lookup_expr="icontains")
+    addresses__city = CharFilter(lookup_expr="icontains")
+    addresses__country_code = CharFilter(lookup_expr="icontains")
+    addresses__address_type = ChoiceFilter(choices=AddressType.choices())
+    addresses__primary = BooleanFilter()
     language = CharFilter()
     order_by = OrderingFilter(
         fields=(
             ("first_name", "firstName"),
             ("last_name", "lastName"),
             ("nickname", "nickname"),
-            ("email", "email"),
-            ("phone", "phone"),
             ("language", "language"),
         )
     )
