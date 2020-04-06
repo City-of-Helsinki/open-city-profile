@@ -191,6 +191,8 @@ OIDC_API_TOKEN_AUTH = {
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
 
+OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
+
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "open_city_profile.oidc.GraphQLApiTokenAuthentication",
