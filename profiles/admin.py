@@ -10,6 +10,7 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
+from subscriptions.admin import SubscriptionInline
 
 from profiles.models import (
     Address,
@@ -96,6 +97,7 @@ class ExtendedProfileAdmin(VersionAdmin):
         RepresentativeAdmin,
         YouthProfileAdminInline,
         ServiceConnectionInline,
+        SubscriptionInline,
         ClaimTokenInline,
         EmailAdminInline,
         PhoneAdminInline,

@@ -8,6 +8,11 @@ from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
+from subscriptions.models import Subscription
+from subscriptions.tests.factories import (
+    SubscriptionTypeCategoryFactory,
+    SubscriptionTypeFactory,
+)
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -1069,6 +1074,92 @@ def test_normal_user_can_update_primary_contact_details(
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
+    ProfileFactory(user=user_gql_client.user)
+    category = SubscriptionTypeCategoryFactory()
+    type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
+    type_2 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-2")
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            updateMyProfile(
+                input: {
+                    profile: {
+                        subscriptions: [
+                            {
+                                subscriptionTypeId: \"${type_1_id}\",
+                                enabled: ${type_1_enabled}
+                            },
+                            {
+                                subscriptionTypeId: \"${type_2_id}\",
+                                enabled: ${type_2_enabled}
+                            }
+                        ]
+                    }
+                }
+            ) {
+                profile {
+                    subscriptions {
+                        edges {
+                            node {
+                                enabled
+                                subscriptionType {
+                                    code
+                                    subscriptionTypeCategory {
+                                        code
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+    )
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "subscriptions": {
+                    "edges": [
+                        {
+                            "node": {
+                                "enabled": True,
+                                "subscriptionType": {
+                                    "code": type_1.code,
+                                    "subscriptionTypeCategory": {"code": category.code},
+                                },
+                            }
+                        },
+                        {
+                            "node": {
+                                "enabled": False,
+                                "subscriptionType": {
+                                    "code": type_2.code,
+                                    "subscriptionTypeCategory": {"code": category.code},
+                                },
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        type_1_id=to_global_id(type="SubscriptionTypeNode", id=type_1.id),
+        type_1_enabled="true",
+        type_2_id=to_global_id(type="SubscriptionTypeNode", id=type_2.id),
+        type_2_enabled="false",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_normal_user_can_delete_his_profile(rf, user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
@@ -2074,6 +2165,89 @@ def test_normal_user_can_query_his_own_profiles_sensitivedata(rf, user_gql_clien
         "myProfile": {
             "firstName": profile.first_name,
             "sensitivedata": {"ssn": sensitive_data.ssn},
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    cat = SubscriptionTypeCategoryFactory(
+        code="TEST-CATEGORY-1", label="Test Category 1"
+    )
+    type_1 = SubscriptionTypeFactory(
+        subscription_type_category=cat, code="TEST-1", label="Test 1"
+    )
+    type_2 = SubscriptionTypeFactory(
+        subscription_type_category=cat, code="TEST-2", label="Test 2"
+    )
+    Subscription.objects.create(profile=profile, subscription_type=type_1, enabled=True)
+    Subscription.objects.create(
+        profile=profile, subscription_type=type_2, enabled=False
+    )
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                subscriptions {
+                    edges {
+                        node {
+                            enabled
+                            subscriptionType {
+                                order
+                                code
+                                label
+                                subscriptionTypeCategory {
+                                    code
+                                    label
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+            "subscriptions": {
+                "edges": [
+                    {
+                        "node": {
+                            "enabled": True,
+                            "subscriptionType": {
+                                "order": 1,
+                                "code": "TEST-1",
+                                "label": "Test 1",
+                                "subscriptionTypeCategory": {
+                                    "code": "TEST-CATEGORY-1",
+                                    "label": "Test Category 1",
+                                },
+                            },
+                        }
+                    },
+                    {
+                        "node": {
+                            "enabled": False,
+                            "subscriptionType": {
+                                "order": 2,
+                                "code": "TEST-2",
+                                "label": "Test 2",
+                                "subscriptionTypeCategory": {
+                                    "code": "TEST-CATEGORY-1",
+                                    "label": "Test Category 1",
+                                },
+                            },
+                        }
+                    },
+                ]
+            },
         }
     }
     executed = user_gql_client.execute(query, context=request)

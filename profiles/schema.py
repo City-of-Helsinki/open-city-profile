@@ -18,6 +18,11 @@ from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
+from subscriptions.schema import (
+    SubscriptionInputType,
+    SubscriptionNode,
+    UpdateMySubscriptionMutation,
+)
 from thesaurus.models import Concept
 
 from open_city_profile.exceptions import (
@@ -288,6 +293,7 @@ class ProfileNode(DjangoObjectType):
     youth_profile = graphene.Field(
         YouthProfileType, description="The Youth membership data of the profile."
     )
+    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
@@ -375,6 +381,7 @@ class ProfileInput(graphene.InputObjectType):
     remove_addresses = graphene.List(
         graphene.ID, description="Remove addresses from profile."
     )
+    subscriptions = graphene.List(SubscriptionInputType)
     youth_profile = graphene.InputField(YouthProfileFields)
     sensitivedata = graphene.InputField(SensitiveDataFields)
 
@@ -416,7 +423,7 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(AllowedServiceType, required=True)
-        profile = ProfileInput(require=True)
+        profile = ProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
@@ -478,12 +485,17 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **input):
         profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
+        subscription_data = profile_data.pop("subscriptions", [])
         profile = Profile.objects.get(user=info.context.user)
         update_profile(profile, profile_data)
 
         if youth_profile_data:
             UpdateMyYouthProfileMutation().mutate_and_get_payload(
                 root, info, youth_profile=youth_profile_data
+            )
+        for subscription in subscription_data:
+            UpdateMySubscriptionMutation().mutate_and_get_payload(
+                root, info, subscription=subscription
             )
 
         return UpdateMyProfileMutation(profile=profile)

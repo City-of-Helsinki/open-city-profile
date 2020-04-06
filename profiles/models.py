@@ -113,6 +113,18 @@ class Profile(UUIDModel, SerializableMixin):
     def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
 
+    def get_primary_email_value(self):
+        try:
+            return self.get_primary_email().email
+        except Email.DoesNotExist:
+            return None
+
+    def get_primary_phone_value(self):
+        try:
+            return self.phones.get(primary=True).phone
+        except Phone.DoesNotExist:
+            return None
+
     def save(self, *args, **kwargs):
         if (
             self._state.adding  # uuid pk forces us to do this, since self.pk is True
