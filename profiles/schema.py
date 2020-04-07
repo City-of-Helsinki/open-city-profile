@@ -45,7 +45,12 @@ from youths.schema import (
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import Address, ClaimToken, Contact, Email, Phone, Profile, SensitiveData
-from .utils import create_nested, delete_nested, update_nested
+from .utils import (
+    create_nested,
+    delete_nested,
+    update_nested,
+    user_has_staff_perms_to_view_profile,
+)
 
 AllowedEmailType = graphene.Enum.from_enum(
     EmailType, description=lambda e: e.label if e else ""
@@ -339,6 +344,22 @@ class ProfileNode(DjangoObjectType):
         else:
             # TODO: We should return PermissionDenied as a partial error here.
             return None
+
+    @login_required
+    def __resolve_reference(self, info, **kwargs):
+        profile = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=ProfileNode
+        )
+        if not profile:
+            return None
+
+        user = info.context.user
+        if user == profile.user or user_has_staff_perms_to_view_profile(user, profile):
+            return profile
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
 
 class EmailInput(graphene.InputObjectType):
