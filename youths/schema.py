@@ -52,6 +52,15 @@ def create_youth_profile(data, profile):
     return youth_profile
 
 
+def cancel_youth_profile(youth_profile, input):
+    expiration = input.get("expiration")
+
+    youth_profile.expiration = expiration or date.today()
+    youth_profile.save()
+
+    return youth_profile
+
+
 class MembershipStatus(graphene.Enum):
     ACTIVE = "active"
     PENDING = "pending"
@@ -84,17 +93,20 @@ class YouthProfileType(DjangoObjectType):
         return self.expiration != calculate_expiration(date.today())
 
     def resolve_membership_status(self, info, **kwargs):
-        if self.expiration and self.expiration <= date.today():
+        if self.expiration <= date.today():
             return MembershipStatus.EXPIRED
         elif self.approved_time and self.approved_time <= timezone.now():
             # Status RENEWING implemented naively. Calculates the expiration for the existing approval time and checks
-            # if it matches the current expiration date. If dates are different one of following will apply:
+            # if expiration is set explicitly => status == EXPIRED. If expiration is greater than calculated expiration
+            # for the current period, do one of the following:
             #
             # 1. If calculated expiration for approval time is in the past, membership is considered expired
             # 2. Otherwise status of the youth profile is RENEWING
             approved_period_expiration = calculate_expiration(self.approved_time.date())
-            if not approved_period_expiration == self.expiration:
-                if date.today() < approved_period_expiration:
+            if self.expiration < approved_period_expiration:
+                return MembershipStatus.EXPIRED
+            elif self.expiration > approved_period_expiration:
+                if date.today() <= approved_period_expiration:
                     return MembershipStatus.RENEWING
                 else:
                     return MembershipStatus.EXPIRED
@@ -322,6 +334,50 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
         return ApproveYouthProfileMutation(youth_profile=youth_profile)
 
 
+class CancelYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(
+            graphene.ID, required=True, description="Profile id of the youth profile"
+        )
+        expiration = graphene.Date(
+            description="Optional value for expiration. If missing or blank, current date will be used"
+        )
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = cancel_youth_profile(profile.youth_profile, input)
+
+        return CancelYouthProfileMutation(youth_profile=youth_profile)
+
+
+class CancelMyYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        expiration = graphene.Date(
+            description="Optional value for expiration. If missing or blank, current date will be used"
+        )
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @login_required
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        youth_profile = cancel_youth_profile(
+            YouthProfile.objects.get(
+                profile=Profile.objects.get(user=info.context.user)
+            ),
+            input,
+        )
+
+        return CancelMyYouthProfileMutation(youth_profile=youth_profile)
+
+
 class Query(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     youth_profile = graphene.Field(
@@ -389,4 +445,10 @@ class Mutation(graphene.ObjectType):
         "it's been used to approve the youth profile.\n\nRequires authentication.\n\nPossible error "
         "codes:\n\n* `PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR`: Returned if the youth profile doesn't have a "
         "primary email address.\n\n* `TODO`"
+    )
+    cancel_youth_profile = CancelYouthProfileMutation.Field(
+        description="Cancels youth profile of given profile\n\nRequires Authentication."
+    )
+    cancel_my_youth_profile = CancelMyYouthProfileMutation.Field(
+        description="Cancels youth profile for current user\n\nRequires Authentication."
     )

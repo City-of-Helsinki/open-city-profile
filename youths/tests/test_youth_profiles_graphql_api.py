@@ -1014,15 +1014,18 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
-    with freeze_time("2020-05-01"):
         youth_profile.approved_time = timezone.datetime(2020, 1, 1)
         youth_profile.expiration = date(2021, 7, 31)
         youth_profile.save()
         expected_data = {
             "youthProfile": {"membershipStatus": "RENEWING", "renewable": False}
         }
-        executed = user_gql_client.execute(query, context=request)
-        assert dict(executed["data"]) == expected_data
+        with freeze_time("2020-05-01"):
+            executed = user_gql_client.execute(query, context=request)
+            assert dict(executed["data"]) == expected_data
+        with freeze_time("2020-07-31"):
+            executed = user_gql_client.execute(query, context=request)
+            assert dict(executed["data"]) == expected_data
 
 
 def test_youth_profile_expiration_should_renew_and_be_approvable(
@@ -1519,3 +1522,160 @@ def test_nested_youth_profile_create_failure_also_fails_profile_creation(
     user_gql_client.execute(query, context=request)
     # Nested CreateYouthProfile mutation failed and CreateProfile should also fail
     assert Profile.objects.count() == 0
+
+
+def test_staff_user_can_cancel_youth_membership_on_selected_date(rf, user_gql_client):
+    profile = ProfileFactory()
+    YouthProfileFactory(profile=profile)
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    youth_profile_data = {
+        "profile_id": to_global_id(type="ProfileNode", id=profile.pk),
+        "expiration": today.replace(year=today.year, day=today.day + 1).strftime(
+            "%Y-%m-%d"
+        ),
+    }
+
+    t = Template(
+        """
+        mutation {
+            cancelYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    expiration: \"${expiration}\"
+                }
+            ) {
+                youthProfile {
+                    expiration
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=youth_profile_data["profile_id"],
+        expiration=youth_profile_data["expiration"],
+    )
+    expected_data = {
+        "cancelYouthProfile": {
+            "youthProfile": {"expiration": youth_profile_data["expiration"]}
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_can_cancel_youth_membership_now(rf, user_gql_client):
+    profile = ProfileFactory()
+    YouthProfileFactory(profile=profile)
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    youth_profile_data = {"profile_id": to_global_id(type="ProfileNode", id=profile.pk)}
+
+    t = Template(
+        """
+        mutation {
+            cancelYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                }
+            ) {
+                youthProfile {
+                    expiration
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=youth_profile_data["profile_id"],
+    )
+    expected_data = {
+        "cancelYouthProfile": {
+            "youthProfile": {"expiration": date.today().strftime("%Y-%m-%d")}
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_can_cancel_youth_membership(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile, approved_time=datetime.now())
+
+    today = date.today()
+    expiration = today.replace(year=today.year, day=today.day + 1).strftime("%Y-%m-%d")
+
+    t = Template(
+        """
+        mutation{
+            cancelMyYouthProfile(
+                input: {
+                    expiration: \"${expiration}\"
+                }
+            )
+            {
+                youthProfile {
+                    expiration
+                    membershipStatus
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(expiration=expiration)
+
+    expected_data = {
+        "youthProfile": {"expiration": expiration, "membershipStatus": "EXPIRED"}
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["cancelMyYouthProfile"]) == expected_data
+
+
+def test_normal_user_can_cancel_youth_membership_now(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile, approved_time=datetime.now())
+
+    query = """
+        mutation{
+            cancelMyYouthProfile(
+                input: {}
+            )
+            {
+                youthProfile {
+                    expiration
+                    membershipStatus
+                }
+            }
+        }
+    """
+    expected_data = {
+        "youthProfile": {
+            "expiration": date.today().strftime("%Y-%m-%d"),
+            "membershipStatus": "EXPIRED",
+        }
+    }
+
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["cancelMyYouthProfile"]) == expected_data
