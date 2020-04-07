@@ -171,6 +171,7 @@ class ProfileFilter(FilterSet):
             "addresses__address_type",
             "addresses__primary",
             "language",
+            "enabled_subscriptions",
         )
 
     first_name = CharFilter(lookup_expr="icontains")
@@ -189,6 +190,7 @@ class ProfileFilter(FilterSet):
     addresses__address_type = ChoiceFilter(choices=AddressType.choices())
     addresses__primary = BooleanFilter()
     language = CharFilter()
+    enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
     order_by = OrderingFilter(
         fields=(
             ("first_name", "firstName"),
@@ -197,6 +199,14 @@ class ProfileFilter(FilterSet):
             ("language", "language"),
         )
     )
+
+    def get_enabled_subscriptions(self, queryset, name, value):
+        """
+        Custom filter to join the enabled of subscription with subscription type correctly
+        """
+        return queryset.filter(
+            subscriptions__enabled=True, subscriptions__subscription_type__code=value
+        )
 
 
 class ContactNode(DjangoObjectType):
