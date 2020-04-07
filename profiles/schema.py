@@ -45,7 +45,12 @@ from youths.schema import (
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import Address, ClaimToken, Contact, Email, Phone, Profile, SensitiveData
-from .utils import create_nested, delete_nested, update_nested
+from .utils import (
+    create_nested,
+    delete_nested,
+    update_nested,
+    user_has_staff_perms_to_view_profile,
+)
 
 AllowedEmailType = graphene.Enum.from_enum(
     EmailType, description=lambda e: e.label if e else ""
@@ -166,6 +171,7 @@ class ProfileFilter(FilterSet):
             "addresses__address_type",
             "addresses__primary",
             "language",
+            "enabled_subscriptions",
         )
 
     first_name = CharFilter(lookup_expr="icontains")
@@ -184,6 +190,7 @@ class ProfileFilter(FilterSet):
     addresses__address_type = ChoiceFilter(choices=AddressType.choices())
     addresses__primary = BooleanFilter()
     language = CharFilter()
+    enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
     order_by = OrderingFilter(
         fields=(
             ("first_name", "firstName"),
@@ -192,6 +199,14 @@ class ProfileFilter(FilterSet):
             ("language", "language"),
         )
     )
+
+    def get_enabled_subscriptions(self, queryset, name, value):
+        """
+        Custom filter to join the enabled of subscription with subscription type correctly
+        """
+        return queryset.filter(
+            subscriptions__enabled=True, subscriptions__subscription_type__code=value
+        )
 
 
 class ContactNode(DjangoObjectType):
@@ -329,6 +344,22 @@ class ProfileNode(DjangoObjectType):
         else:
             # TODO: We should return PermissionDenied as a partial error here.
             return None
+
+    @login_required
+    def __resolve_reference(self, info, **kwargs):
+        profile = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=ProfileNode
+        )
+        if not profile:
+            return None
+
+        user = info.context.user
+        if user == profile.user or user_has_staff_perms_to_view_profile(user, profile):
+            return profile
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
 
 class EmailInput(graphene.InputObjectType):
