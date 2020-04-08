@@ -2453,6 +2453,7 @@ def test_user_can_download_profile(rf, user_gql_client):
                 {"key": "PHONES", "children": []},
                 {"key": "ADDRESSES", "children": []},
                 {"key": "SERVICE_CONNECTIONS", "children": []},
+                {"key": "SUBSCRIPTIONS", "children": []},
             ],
         }
     )
