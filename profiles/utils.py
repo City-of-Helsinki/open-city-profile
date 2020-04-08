@@ -1,6 +1,12 @@
 import threading
+from typing import TYPE_CHECKING
 
 from graphql_relay.node.node import from_global_id
+
+if TYPE_CHECKING:
+    import profiles.models
+    import users.models
+
 
 _thread_locals = threading.local()
 
@@ -47,3 +53,20 @@ def get_current_user():
 
 def get_current_service():
     return getattr(_thread_locals, "service", None)
+
+
+def user_has_staff_perms_to_view_profile(
+    user: "users.models.User", profile: "profiles.models.Profile"
+) -> bool:
+    """
+    Checks is passed user has "can_view_profiles" permissions
+    for any service connected to the passed profile.
+    """
+
+    service_conns = profile.service_connections.filter(enabled=True)
+    return any(
+        [
+            user.has_perm("can_view_profiles", service_conn.service)
+            for service_conn in service_conns
+        ]
+    )

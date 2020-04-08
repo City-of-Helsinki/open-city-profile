@@ -22,6 +22,7 @@ from open_city_profile.consts import (
     TOKEN_EXPIRED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
+from profiles.enums import AddressType, EmailType, PhoneType
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 from users.models import User
@@ -1414,6 +1415,488 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_staff_user_can_filter_berth_profiles_by_emails(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    EmailFactory(profile=profile_1, primary=True, email_type=EmailType.PERSONAL)
+    email = EmailFactory(profile=profile_2, primary=False, email_type=EmailType.WORK)
+    EmailFactory(profile=profile_3, primary=False, email_type=EmailType.OTHER)
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by email
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $email: String){
+            profiles(serviceType: $serviceType, emails_Email: $email) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "email": email.email},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by email_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $emailType: String){
+            profiles(serviceType: $serviceType, emails_EmailType: $emailType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "emailType": email.email_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, emails_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_phones(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    PhoneFactory(profile=profile_1, primary=True, phone_type=PhoneType.HOME)
+    phone = PhoneFactory(profile=profile_2, primary=False, phone_type=PhoneType.WORK)
+    PhoneFactory(profile=profile_3, primary=False, phone_type=PhoneType.MOBILE)
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by phone
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $phone: String){
+            profiles(serviceType: $serviceType, phones_Phone: $phone) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "phone": phone.phone},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by phone_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $phoneType: String){
+            profiles(serviceType: $serviceType, phones_PhoneType: $phoneType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "phoneType": phone.phone_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, phones_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    AddressFactory(
+        profile=profile_1,
+        postal_code="00100",
+        city="Helsinki",
+        country_code="FI",
+        primary=True,
+        address_type=AddressType.HOME,
+    )
+    address = AddressFactory(
+        profile=profile_2,
+        postal_code="00100",
+        city="Espoo",
+        country_code="FI",
+        primary=False,
+        address_type=AddressType.WORK,
+    )
+    AddressFactory(
+        profile=profile_3,
+        postal_code="00200",
+        city="Stockholm",
+        country_code="SE",
+        primary=False,
+        address_type=AddressType.OTHER,
+    )
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by address
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $address: String){
+            profiles(serviceType: $serviceType, addresses_Address: $address) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "address": address.address},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by postal_code
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $postalCode: String){
+            profiles(serviceType: $serviceType, addresses_PostalCode: $postalCode) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "postalCode": address.postal_code,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by city
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $city: String){
+            profiles(serviceType: $serviceType, addresses_City: $city) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "city": address.city},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by country code
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $countryCode: String){
+            profiles(serviceType: $serviceType, addresses_CountryCode: $countryCode) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "countryCode": address.country_code,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by address_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $addressType: String){
+            profiles(serviceType: $serviceType, addresses_AddressType: $addressType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "addressType": address.address_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, addresses_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
+    rf, user_gql_client
+):
+    def generate_expected_data(profiles):
+        return {
+            "profiles": {
+                "edges": [
+                    {
+                        "node": {
+                            "emails": {
+                                "edges": [
+                                    {"node": {"email": profile.emails.first().email}}
+                                ]
+                            },
+                            "phones": {
+                                "edges": [
+                                    {"node": {"phone": profile.phones.first().phone}}
+                                ]
+                            },
+                        }
+                    }
+                    for profile in profiles
+                ]
+            }
+        }
+
+    profile_1, profile_2, profile_3, profile_4 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    PhoneFactory(profile=profile_1, phone="0401234561", primary=True)
+    PhoneFactory(profile=profile_2, phone="0401234562", primary=True)
+    PhoneFactory(profile=profile_3, phone="0401234563", primary=True)
+    PhoneFactory(profile=profile_4, phone="0401234564", primary=True)
+
+    EmailFactory(profile=profile_1, email="first@example.com", primary=True)
+    EmailFactory(profile=profile_2, email="second@example.com", primary=True)
+    EmailFactory(profile=profile_3, email="third@example.com", primary=True)
+    EmailFactory(profile=profile_4, email="fourth@example.com", primary=True)
+
+    AddressFactory(profile=profile_1, primary=True, postal_code="00100")
+    AddressFactory(profile=profile_2, postal_code="00100")
+    AddressFactory(profile=profile_3, postal_code="00100")
+    AddressFactory(profile=profile_4, postal_code="00200")
+
+    cat = SubscriptionTypeCategoryFactory(code="TEST-CATEGORY-1")
+    type_1 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-1")
+    type_2 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-2")
+
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_2, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_2, enabled=False
+    )
+
+    Subscription.objects.create(
+        profile=profile_3, subscription_type=type_1, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_4, subscription_type=type_2, enabled=True
+    )
+
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    ServiceConnectionFactory(profile=profile_4, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $subscriptionType: String, $postalCode: String){
+            profiles(
+                serviceType: $serviceType,
+                enabledSubscriptions: $subscriptionType,
+                addresses_PostalCode: $postalCode
+            ) {
+                edges {
+                    node {
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                }
+                            }
+                        }
+                        phones {
+                            edges {
+                                node {
+                                    phone
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    # test for type 1 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_1.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data(
+        [profile_1, profile_2, profile_3]
+    )
+
+    # test for type 2 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_2.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data([profile_1])
+
+
 def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
@@ -1443,8 +1926,7 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
             }
         }
     """
-    # )
-    # query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
     executed = user_gql_client.execute(query, context=request)
     assert "data" in executed

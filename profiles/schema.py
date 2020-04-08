@@ -5,7 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
-from django_filters import CharFilter, FilterSet, OrderingFilter
+from django_filters import (
+    BooleanFilter,
+    CharFilter,
+    ChoiceFilter,
+    FilterSet,
+    OrderingFilter,
+)
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
@@ -39,7 +45,12 @@ from youths.schema import (
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import Address, ClaimToken, Contact, Email, Phone, Profile, SensitiveData
-from .utils import create_nested, delete_nested, update_nested
+from .utils import (
+    create_nested,
+    delete_nested,
+    update_nested,
+    user_has_staff_perms_to_view_profile,
+)
 
 AllowedEmailType = graphene.Enum.from_enum(
     EmailType, description=lambda e: e.label if e else ""
@@ -143,24 +154,59 @@ class ProfilesConnection(graphene.Connection):
 class ProfileFilter(FilterSet):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "email", "phone", "language")
+        fields = (
+            "first_name",
+            "last_name",
+            "nickname",
+            "emails__email",
+            "emails__email_type",
+            "emails__primary",
+            "phones__phone",
+            "phones__phone_type",
+            "phones__primary",
+            "addresses__address",
+            "addresses__postal_code",
+            "addresses__city",
+            "addresses__country_code",
+            "addresses__address_type",
+            "addresses__primary",
+            "language",
+            "enabled_subscriptions",
+        )
 
     first_name = CharFilter(lookup_expr="icontains")
     last_name = CharFilter(lookup_expr="icontains")
     nickname = CharFilter(lookup_expr="icontains")
-    email = CharFilter(lookup_expr="icontains")
-    phone = CharFilter(lookup_expr="icontains")
+    emails__email = CharFilter(lookup_expr="icontains")
+    emails__email_type = ChoiceFilter(choices=EmailType.choices())
+    emails__primary = BooleanFilter()
+    phones__phone = CharFilter(lookup_expr="icontains")
+    phones__phone_type = ChoiceFilter(choices=PhoneType.choices())
+    phones__primary = BooleanFilter()
+    addresses__address = CharFilter(lookup_expr="icontains")
+    addresses__postal_code = CharFilter(lookup_expr="icontains")
+    addresses__city = CharFilter(lookup_expr="icontains")
+    addresses__country_code = CharFilter(lookup_expr="icontains")
+    addresses__address_type = ChoiceFilter(choices=AddressType.choices())
+    addresses__primary = BooleanFilter()
     language = CharFilter()
+    enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
     order_by = OrderingFilter(
         fields=(
             ("first_name", "firstName"),
             ("last_name", "lastName"),
             ("nickname", "nickname"),
-            ("email", "email"),
-            ("phone", "phone"),
             ("language", "language"),
         )
     )
+
+    def get_enabled_subscriptions(self, queryset, name, value):
+        """
+        Custom filter to join the enabled of subscription with subscription type correctly
+        """
+        return queryset.filter(
+            subscriptions__enabled=True, subscriptions__subscription_type__code=value
+        )
 
 
 class ContactNode(DjangoObjectType):
@@ -298,6 +344,22 @@ class ProfileNode(DjangoObjectType):
         else:
             # TODO: We should return PermissionDenied as a partial error here.
             return None
+
+    @login_required
+    def __resolve_reference(self, info, **kwargs):
+        profile = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=ProfileNode
+        )
+        if not profile:
+            return None
+
+        user = info.context.user
+        if user == profile.user or user_has_staff_perms_to_view_profile(user, profile):
+            return profile
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
 
 class EmailInput(graphene.InputObjectType):
