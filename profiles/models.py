@@ -107,6 +107,7 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "phones"},
         {"name": "addresses"},
         {"name": "service_connections"},
+        {"name": "subscriptions"},
     )
     audit_log = True
 
