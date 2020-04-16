@@ -1106,6 +1106,86 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
         assert dict(executed["data"]) == expected_data
 
 
+def test_youth_profile_expiration_should_be_renewable_by_staff_user(
+    rf, user_gql_client, anon_user_gql_client
+):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    profile = ProfileFactory()
+    request = rf.post("/graphql")
+    request.user = user
+    EmailFactory(primary=True, profile=profile)
+
+    # Let's create a youth profile in the 2020
+    with freeze_time("2020-05-02"):
+        today = date.today()
+        youth_profile = YouthProfileFactory(
+            profile=profile,
+            approved_time=datetime.today(),
+            birth_date=today.replace(year=today.year - 15),
+        )
+
+    # In the year 2021, let's renew it
+    with freeze_time("2021-05-01"):
+        t = Template(
+            """
+            mutation {
+                renewYouthProfile(input:{
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\"
+                }) {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+        """
+        )
+        mutation = t.substitute(
+            service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+            profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        )
+
+        executed = user_gql_client.execute(mutation, context=request)
+        expected_data = {
+            "renewYouthProfile": {"youthProfile": {"membershipStatus": "RENEWING"}}
+        }
+        assert dict(executed["data"]) == expected_data
+
+    # Let's go back in time a few months and re-approve the membership
+    with freeze_time("2021-05-02"):
+        request.user = anon_user_gql_client.user
+
+        t = Template(
+            """
+            mutation{
+                approveYouthProfile(
+                    input: {
+                        approvalToken: "${token}",
+                        approvalData: {}
+                    }
+                )
+                {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+            """
+        )
+        youth_profile.refresh_from_db()
+        approval_data = {"token": youth_profile.approval_token}
+        query = t.substitute(**approval_data)
+        expected_data = {
+            "approveYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
+        }
+        executed = anon_user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+
 def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_to_active(
     rf, user_gql_client, anon_user_gql_client
 ):

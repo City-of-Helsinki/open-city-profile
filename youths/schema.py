@@ -61,6 +61,26 @@ def cancel_youth_profile(youth_profile, input):
     return youth_profile
 
 
+def renew_youth_profile(profile):
+    youth_profile = YouthProfile.objects.get(profile=profile)
+
+    next_expiration = calculate_expiration(date.today())
+    if youth_profile.expiration == next_expiration:
+        raise CannotRenewYouthProfileError(
+            "Cannot renew youth profile. Either youth profile is already renewed or not yet in the next "
+            "renew window."
+        )
+    youth_profile.expiration = next_expiration
+
+    if calculate_age(youth_profile.birth_date) >= 18:
+        youth_profile.approved_time = timezone.now()
+    else:
+        youth_profile.make_approvable()
+
+    youth_profile.save()
+    return youth_profile
+
+
 class MembershipStatus(graphene.Enum):
     ACTIVE = "active"
     PENDING = "pending"
@@ -265,6 +285,26 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
 
 
+class RenewYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(graphene.ID, required=True)
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        if input.get("service_type") != ServiceType.YOUTH_MEMBERSHIP.value:
+            raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
+
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = renew_youth_profile(profile)
+
+        return RenewYouthProfileMutation(youth_profile=youth_profile)
+
+
 class RenewMyYouthProfileMutation(relay.ClientIDMutation):
     youth_profile = graphene.Field(YouthProfileType)
 
@@ -273,21 +313,7 @@ class RenewMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         profile = Profile.objects.get(user=info.context.user)
-        youth_profile = YouthProfile.objects.get(profile=profile)
-
-        next_expiration = calculate_expiration(date.today())
-        if youth_profile.expiration == next_expiration:
-            raise CannotRenewYouthProfileError(
-                "Cannot renew youth profile. Either youth profile is already renewed or not yet in the next "
-                "renew window."
-            )
-        youth_profile.expiration = next_expiration
-        if calculate_age(youth_profile.birth_date) >= 18:
-            youth_profile.approved_time = timezone.now()
-        else:
-            youth_profile.make_approvable()
-        youth_profile.save()
-
+        youth_profile = renew_youth_profile(profile)
         return RenewMyYouthProfileMutation(youth_profile=youth_profile)
 
 
@@ -429,6 +455,13 @@ class Mutation(graphene.ObjectType):
         "The `resend_request_notification` parameter may be used to send a notification to the youth "
         "profile's approver whose contact information is in the youth profile.\n\nRequires authentication."
         "\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Update the description when we support the draft/published model for the youth profiles
+    # TODO: Add the complete list of error codes
+    renew_youth_profile = RenewYouthProfileMutation.Field(
+        description="Renews the youth profile. Renewing can only be done once per season.\n\nRequires Authentication."
+        "\n\nPossible error codes:\n\n* `CANNOT_RENEW_YOUTH_PROFILE_ERROR`: Returned if the youth profile is already "
+        "renewed or not in the renew window\n\n* `TODO`"
     )
     # TODO: Update the description when we support the draft/published model for the youth profiles
     # TODO: Add the complete list of error codes
