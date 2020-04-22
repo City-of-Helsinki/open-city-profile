@@ -995,7 +995,7 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
     """
 
     with freeze_time("2020-05-01"):
-        youth_profile.expiration = date(2020, 7, 31)
+        youth_profile.expiration = date(2020, 8, 31)
         youth_profile.approved_time = date(2019, 8, 1)
         youth_profile.save()
         expected_data = {
@@ -1004,8 +1004,8 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
-    with freeze_time("2020-08-01"):
-        youth_profile.expiration = date(2021, 7, 31)
+    with freeze_time("2020-09-01"):
+        youth_profile.expiration = date(2021, 8, 31)
         youth_profile.approved_time = date(2020, 4, 30)
         youth_profile.save()
         expected_data = {
@@ -1015,7 +1015,7 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         assert dict(executed["data"]) == expected_data
 
         youth_profile.approved_time = timezone.datetime(2020, 1, 1)
-        youth_profile.expiration = date(2021, 7, 31)
+        youth_profile.expiration = date(2021, 8, 31)
         youth_profile.save()
         expected_data = {
             "youthProfile": {"membershipStatus": "RENEWING", "renewable": False}
@@ -1023,7 +1023,7 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         with freeze_time("2020-05-01"):
             executed = user_gql_client.execute(query, context=request)
             assert dict(executed["data"]) == expected_data
-        with freeze_time("2020-07-31"):
+        with freeze_time("2020-08-31"):
             executed = user_gql_client.execute(query, context=request)
             assert dict(executed["data"]) == expected_data
 
@@ -1063,7 +1063,7 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
         assert dict(executed["data"]) == expected_data
 
     # Later in the year 2021, let's check our membership status
-    with freeze_time("2021-08-01"):
+    with freeze_time("2021-09-01"):
         query = """
             {
                 youthProfile {
