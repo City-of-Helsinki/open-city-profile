@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False},
+            options={"abstract": False, "ordering": ["order"]},
             bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False},
+            options={"abstract": False, "ordering": ["order"]},
             bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
