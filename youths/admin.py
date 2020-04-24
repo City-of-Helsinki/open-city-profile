@@ -15,6 +15,7 @@ class YouthProfileAdminInline(admin.StackedInline):
             {
                 "fields": (
                     "profile",
+                    "birth_date",
                     "school_name",
                     "school_class",
                     "expiration",
