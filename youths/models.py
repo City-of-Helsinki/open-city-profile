@@ -34,6 +34,8 @@ class YouthProfile(models.Model):
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
+    # Post-save signal generates the membership number
+    membership_number = models.CharField(max_length=16, blank=True)
     birth_date = models.DateField()
     school_name = models.CharField(max_length=128, blank=True)
     school_class = models.CharField(max_length=10, blank=True)
@@ -56,11 +58,6 @@ class YouthProfile(models.Model):
     )
     approved_time = models.DateTimeField(null=True, blank=True, editable=False)
     photo_usage_approved = models.NullBooleanField()
-
-    @property
-    def membership_number(self):
-        num = 0 if self.pk is None else self.pk
-        return str(num).zfill(settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH)
 
     def make_approvable(self):
         self.approval_token = uuid.uuid4()
