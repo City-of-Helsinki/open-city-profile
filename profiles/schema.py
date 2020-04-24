@@ -101,6 +101,16 @@ def update_profile(profile, profile_data):
         delete_nested(model, profile, data)
 
 
+def update_sensitivedata(profile, sensitive_data):
+    if hasattr(profile, "sensitivedata"):
+        profile_sensitivedata = profile.sensitivedata
+    else:
+        profile_sensitivedata = SensitiveData(profile=profile)
+    for field, value in sensitive_data.items():
+        setattr(profile_sensitivedata, field, value)
+    profile_sensitivedata.save()
+
+
 class ConceptType(DjangoObjectType):
     class Meta:
         model = Concept
@@ -516,6 +526,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **input):
         profile_data = input.pop("profile")
         youth_profile_data = profile_data.pop("youth_profile", None)
+        sensitive_data = profile_data.pop("sensitivedata", None)
         subscription_data = profile_data.pop("subscriptions", [])
         profile = Profile.objects.get(user=info.context.user)
         update_profile(profile, profile_data)
@@ -524,6 +535,9 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             UpdateMyYouthProfileMutation().mutate_and_get_payload(
                 root, info, youth_profile=youth_profile_data
             )
+        if sensitive_data:
+            update_sensitivedata(profile, sensitive_data)
+
         for subscription in subscription_data:
             UpdateMySubscriptionMutation().mutate_and_get_payload(
                 root, info, subscription=subscription
