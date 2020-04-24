@@ -31,7 +31,7 @@ class SubscriptionTypeAdmin(ExportActionMixin, TranslatableAdmin, SortableAdmin)
 
     def get_export_data(self, file_format, queryset, *args, **kwargs):
         profiles = Profile.objects.filter(
-            subscriptions__subscription_type__in=queryset
+            subscriptions__subscription_type__in=queryset, subscriptions__enabled=True
         ).distinct()
         return super().get_export_data(file_format, profiles, *args, **kwargs)
 
