@@ -1074,6 +1074,53 @@ def test_normal_user_can_update_primary_contact_details(
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    SensitiveDataFactory(profile=profile, ssn="010199-1234")
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: "${nickname}"
+                            sensitivedata: {
+                                ssn: "${ssn}"
+                            }
+                        }
+                    }
+                ) {
+                    profile {
+                        nickname
+                        sensitivedata {
+                            ssn
+                        }
+                    }
+                }
+            }
+        """
+    )
+
+    data = {"nickname": "Larry", "ssn": "010199-4321"}
+
+    query = t.substitute(**data)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "nickname": data["nickname"],
+                "sensitivedata": {"ssn": data["ssn"]},
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
     ProfileFactory(user=user_gql_client.user)
     category = SubscriptionTypeCategoryFactory()
