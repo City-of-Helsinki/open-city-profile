@@ -191,8 +191,3 @@ Test environment: https://helsinkiprofile.test.kuva.hel.ninja/graphql/
 ## API documentation
 
 * [Generated GraphiQL documentation](https://helsinkiprofile.test.kuva.hel.ninja/graphql/)
-
-## Contributing
-
-Make your changes and create a pull request. If your PR isn't getting
-approved, contact kuva-open-city-profile-developers@googlegroups.com.
