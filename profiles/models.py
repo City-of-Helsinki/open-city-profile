@@ -96,6 +96,12 @@ class Profile(UUIDModel, SerializableMixin):
     legal_relationships = models.ManyToManyField(
         "self", through=LegalRelationship, symmetrical=False
     )
+    primary_email = models.OneToOneField(
+        "profiles.Email",
+        on_delete=models.deletion.PROTECT,
+        related_name="primary_email_profile",
+        null=True,
+    )
     serialize_fields = (
         {"name": "first_name"},
         {"name": "last_name"},
@@ -267,6 +273,9 @@ class Email(Contact):
         {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
         {"name": "email"},
     )
+
+    class Meta:
+        unique_together = (("id", "profile"),)
 
 
 class Address(Contact):
