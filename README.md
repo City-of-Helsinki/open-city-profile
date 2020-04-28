@@ -1,5 +1,8 @@
 # Open city profile
 
+[![status](https://travis-ci.com/City-of-Helsinki/open-city-profile.svg)](https://github.com/City-of-Helsinki/open-city-profile)
+[![codecov](https://codecov.io/gh/City-of-Helsinki/open-city-profile/branch/develop/graph/badge.svg)](https://codecov.io/gh/City-of-Helsinki/open-city-profile)
+
 ## Summary
 
 Open city profile is used to store common information (name, contact
@@ -18,7 +21,11 @@ functions of Venepaikka service.
 
 Open city profile is implemented using Django and it provides a GraphQL API.
 
-## Development with Docker
+## Development with [Docker](https://docs.docker.com/)
+
+Prerequisites:
+* Docker engine: 18.06.0+
+* Docker compose 1.22.0+
 
 1. Create a `docker-compose.env.yaml` file in the project folder:
    * Use `docker-compose.env.yaml.example` as a base, it does not need any changes
@@ -87,7 +94,6 @@ Open city profile is implemented using Django and it provides a GraphQL API.
 ## Development without Docker
 
 Prerequisites:
-
 * PostgreSQL 9.6
 * PostGIS 2.5
 * Python 3.7
@@ -177,22 +183,24 @@ commit.
 ## Issue tracking
 
 * [Github issue list](https://github.com/City-of-Helsinki/open-city-profile/issues)
-* [Jira backlog](https://helsinkisolutionoffice.atlassian.net/secure/RapidBoard.jspa?rapidView=23&projectKey=OM&view=planning)
-
-## Builds
-
-We are using [Gitlab](https://gitlab.com/City-of-Helsinki/KuVa/github-mirrors/open-city-profile/pipelines)
-for automated builds and deployment into the test environment.
-
-## Environments
-
-Test environment: https://helsinkiprofile.test.kuva.hel.ninja/graphql/
+* [Jira issues](https://helsinkisolutionoffice.atlassian.net/projects/OM/issues/?filter=allissues)
 
 ## API documentation
 
-* [Generated GraphiQL documentation](https://helsinkiprofile.test.kuva.hel.ninja/graphql/)
+* [Generated GraphiQL documentation](https://profiili-api.test.kuva.hel.ninja/graphql/)
 
-## Contributing
+## Environments
+Test: https://profiili-api.test.kuva.hel.ninja/graphql/
 
-Make your changes and create a pull request. If your PR isn't getting
-approved, contact kuva-open-city-profile-developers@googlegroups.com.
+Production: https://profiili-api.prod.kuva.hel.ninja/graphql/
+
+## CI/CD builds
+
+Project is using [Gitlab](https://gitlab.com/City-of-Helsinki/KuVa/github-mirrors/open-city-profile/pipelines)
+for automated builds and deployment into the test environment.
+The test environment is built automatically from the `develop` branch.
+
+## Dependent services
+For a complete service the following additional components are also required:
+* [tunnistamo](https://github.com/City-of-Helsinki/tunnistamo) is used as the authentication service
+* [open-city-profile-ui](https://github.com/City-of-Helsinki/open-city-profile-ui/) provides UI
