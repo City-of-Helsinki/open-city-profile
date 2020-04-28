@@ -460,7 +460,10 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     # TODO: Complete the description
     create_youth_profile = CreateYouthProfileMutation.Field(
-        description="Admin mutation for creating a youth profile `TODO`"
+        description="Creates a new youth profile and links it to the profile specified with profile_id argument.\n\n"
+        "When the youth profile has been created, a notification is sent to the youth profile's approver "
+        "whose contact information is given in the input.\n\nRequires elevated privileges.\n\nPossible error "
+        "codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     create_my_youth_profile = CreateMyYouthProfileMutation.Field(
@@ -471,9 +474,9 @@ class Mutation(graphene.ObjectType):
     )
     # TODO: Add the complete list of error codes
     update_youth_profile = UpdateYouthProfileMutation.Field(
-        description="Updates the youth profile which belongs to the profile of the currently authenticated user.\n\n"
+        description="Updates the youth profile which belongs to the profile specified in profile_id argument.\n\n"
         "The `resend_request_notification` parameter may be used to send a notification to the youth "
-        "profile's approver whose contact information is in the youth profile.\n\nRequires authentication."
+        "profile's approver whose contact information is in the youth profile.\n\nRequires elevated privileges."
         "\n\nPossible error codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
