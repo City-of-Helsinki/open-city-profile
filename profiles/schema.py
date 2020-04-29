@@ -586,7 +586,7 @@ class UpdateProfileInput(ProfileInput):
 class UpdateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(AllowedServiceType, required=True)
-        profile = UpdateProfileInput(require=True)
+        profile = UpdateProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
