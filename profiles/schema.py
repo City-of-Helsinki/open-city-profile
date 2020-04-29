@@ -39,6 +39,7 @@ from youths.schema import (
     CreateMyYouthProfileMutation,
     CreateYouthProfileMutation,
     UpdateMyYouthProfileMutation,
+    UpdateYouthProfileMutation,
     YouthProfileFields,
     YouthProfileType,
 )
@@ -268,7 +269,7 @@ class AddressNode(ContactNode):
 class SensitiveDataNode(DjangoObjectType):
     class Meta:
         model = SensitiveData
-        fields = ("ssn",)
+        fields = ("id", "ssn")
         interfaces = (relay.Node,)
 
 
@@ -373,27 +374,53 @@ class ProfileNode(DjangoObjectType):
 
 
 class EmailInput(graphene.InputObjectType):
-    id = graphene.ID()
-    email = graphene.String(description="Email address.")
-    email_type = AllowedEmailType(description="Email address type.", required=True)
     primary = graphene.Boolean(description="Is this primary mail address.")
 
 
+class CreateEmailInput(EmailInput):
+    email = graphene.String(description="Email address.", required=True)
+    email_type = AllowedEmailType(description="Email address type.", required=True)
+
+
+class UpdateEmailInput(EmailInput):
+    id = graphene.ID(required=True)
+    email = graphene.String(description="Email address.")
+    email_type = AllowedEmailType(description="Email address type.")
+
+
 class PhoneInput(graphene.InputObjectType):
-    id = graphene.ID()
-    phone = graphene.String(description="Phone number.", required=True)
-    phone_type = AllowedPhoneType(description="Phone number type.", required=True)
     primary = graphene.Boolean(description="Is this primary phone number.")
 
 
+class CreatePhoneInput(PhoneInput):
+    phone = graphene.String(description="Phone number.", required=True)
+    phone_type = AllowedPhoneType(description="Phone number type.", required=True)
+
+
+class UpdatePhoneInput(PhoneInput):
+    id = graphene.ID(required=True)
+    phone = graphene.String(description="Phone number.")
+    phone_type = AllowedPhoneType(description="Phone number type.")
+
+
 class AddressInput(graphene.InputObjectType):
-    id = graphene.ID()
+    country_code = graphene.String(description="Country code")
+    primary = graphene.Boolean(description="Is this primary address.")
+
+
+class CreateAddressInput(AddressInput):
     address = graphene.String(description="Street address.", required=True)
     postal_code = graphene.String(description="Postal code.", required=True)
     city = graphene.String(description="City.", required=True)
-    country_code = graphene.String(description="Country code")
     address_type = AllowedAddressType(description="Address type.", required=True)
-    primary = graphene.Boolean(description="Is this primary address.")
+
+
+class UpdateAddressInput(AddressInput):
+    id = graphene.ID(required=True)
+    address = graphene.String(description="Street address.")
+    postal_code = graphene.String(description="Postal code.")
+    city = graphene.String(description="City.")
+    address_type = AllowedAddressType(description="Address type.")
 
 
 class ProfileInput(graphene.InputObjectType):
@@ -403,21 +430,27 @@ class ProfileInput(graphene.InputObjectType):
     image = graphene.String(description="Profile image.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
-    add_emails = graphene.List(EmailInput, description="Add emails to profile.")
-    update_emails = graphene.List(EmailInput, description="Update profile emails.")
+    add_emails = graphene.List(CreateEmailInput, description="Add emails to profile.")
+    update_emails = graphene.List(
+        UpdateEmailInput, description="Update profile emails."
+    )
     remove_emails = graphene.List(
         graphene.ID, description="Remove emails from profile."
     )
-    add_phones = graphene.List(PhoneInput, description="Add phone numbers to profile.")
+    add_phones = graphene.List(
+        CreatePhoneInput, description="Add phone numbers to profile."
+    )
     update_phones = graphene.List(
-        PhoneInput, description="Update profile phone numbers."
+        UpdatePhoneInput, description="Update profile phone numbers."
     )
     remove_phones = graphene.List(
         graphene.ID, description="Remove phone numbers from profile."
     )
-    add_addresses = graphene.List(AddressInput, description="Add addresses to profile.")
+    add_addresses = graphene.List(
+        CreateAddressInput, description="Add addresses to profile."
+    )
     update_addresses = graphene.List(
-        AddressInput, description="Update profile addresses."
+        UpdateAddressInput, description="Update profile addresses."
     )
     remove_addresses = graphene.List(
         graphene.ID, description="Remove addresses from profile."
@@ -542,6 +575,46 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             UpdateMySubscriptionMutation().mutate_and_get_payload(
                 root, info, subscription=subscription
             )
+
+        return UpdateMyProfileMutation(profile=profile)
+
+
+class UpdateProfileInput(ProfileInput):
+    id = graphene.Argument(graphene.ID, required=True)
+
+
+class UpdateProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile = UpdateProfileInput(require=True)
+
+    profile = graphene.Field(ProfileNode)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        # serviceType passed on to the sub resolvers
+        info.context.service_type = input["service_type"]
+        profile_data = input.get("profile")
+        profile = graphene.Node.get_node_from_global_id(
+            info, profile_data.pop("id"), only_type=ProfileNode
+        )
+        youth_profile_data = profile_data.pop("youth_profile", None)
+        sensitive_data = profile_data.pop("sensitivedata", None)
+        update_profile(profile, profile_data)
+
+        if youth_profile_data:
+            UpdateYouthProfileMutation().mutate_and_get_payload(
+                root,
+                info,
+                youth_profile=youth_profile_data,
+                service_type=input["service_type"],
+                profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.pk),
+            )
+
+        if sensitive_data:
+            update_sensitivedata(profile, sensitive_data)
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -688,6 +761,13 @@ class Mutation(graphene.ObjectType):
         "\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
         "to the profile **or** the existing youth profile will be updated if the profile is already "
         "linked to a youth profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+    )
+    update_profile = UpdateProfileMutation.Field(
+        description="Updates the profile with id given as an argument based on the given data."
+        "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
+        "\n* Phone\n\nIf youth data or sensitive data is given, associated data will also be created "
+        "and linked to the profile **or** the existing data set will be updated if the profile is "
+        "already linked to it.\n\nRequires elevated privileges.\n\nPossible error codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(

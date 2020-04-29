@@ -23,9 +23,11 @@ from open_city_profile.consts import (
 )
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
+from profiles.models import Profile
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 from users.models import User
+from youths.tests.factories import YouthProfileFactory
 
 from ..schema import ProfileNode
 from .factories import (
@@ -2315,6 +2317,164 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
+
+
+def test_staff_user_can_update_a_profile(rf, user_gql_client):
+    profile = ProfileFactory(first_name="Joe")
+    phone = PhoneFactory(profile=profile)
+    address = AddressFactory(profile=profile)
+    YouthProfileFactory(profile=profile)
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+    assign_perm("can_manage_sensitivedata", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    data = {
+        "first_name": "John",
+        "email": {
+            "email": "another@example.com",
+            "email_type": EmailType.WORK.name,
+            "primary": True,
+        },
+        "phone": "0407654321",
+        "school_class": "5F",
+        "ssn": "010199-1234",
+    }
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        firstName: \"${first_name}\",
+                        addEmails: [{
+                            email: \"${email}\"
+                            emailType: ${email_type}
+                            primary: ${primary}
+                        }],
+                        updatePhones: [{
+                            id: \"${phone_id}\",
+                            phone: \"${phone}\",
+                        }],
+                        removeAddresses: [\"${address_id}\"],
+                        youthProfile: {
+                            schoolClass: \"${school_class}\"
+                        },
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    emails {
+                        edges {
+                            node {
+                                email
+                            }
+                        }
+                    }
+                    phones {
+                        edges {
+                            node {
+                                phone
+                            }
+                        }
+                    }
+                    addresses {
+                        edges {
+                            node {
+                                address
+                            }
+                        }
+                    }
+                    youthProfile {
+                        schoolClass
+                    }
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        first_name=data["first_name"],
+        phone_id=to_global_id("PhoneNode", phone.pk),
+        email=data["email"]["email"],
+        email_type=data["email"]["email_type"],
+        primary=str(data["email"]["primary"]).lower(),
+        phone=data["phone"],
+        address_id=to_global_id(type="AddressNode", id=address.pk),
+        school_class=data["school_class"],
+        ssn=data["ssn"],
+    )
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "firstName": data["first_name"],
+                "emails": {"edges": [{"node": {"email": data["email"]["email"]}}]},
+                "phones": {"edges": [{"node": {"phone": data["phone"]}}]},
+                "addresses": {"edges": []},
+                "youthProfile": {"schoolClass": data["school_class"]},
+                "sensitivedata": {"ssn": data["ssn"]},
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
+    rf, user_gql_client
+):
+    profile = ProfileFactory(first_name="Joe")
+    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        firstName: \"${first_name}\",
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        first_name="John",
+    )
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+    assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

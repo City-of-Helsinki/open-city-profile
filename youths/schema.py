@@ -235,6 +235,60 @@ class UpdateYouthProfileInput(YouthProfileFields):
     )
 
 
+def update_youth_profile(input_data, profile):
+    resend_request_notification = input_data.pop("resend_request_notification", False)
+    youth_profile, created = YouthProfile.objects.get_or_create(
+        profile=profile, defaults=input_data
+    )
+
+    if "photo_usage_approved" in input_data:
+        # Disable setting photo usage by themselfs for youths under 15 years old
+        # Check for birth date given in input or birth date persisted in the db
+        if (
+            "birth_date" in input_data and calculate_age(input_data["birth_date"]) < 15
+        ) or calculate_age(youth_profile.birth_date) < 15:
+            raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
+                "Cannot set photo usage permission if under 15 years old"
+            )
+    if created:
+        if calculate_age(youth_profile.birth_date) >= 18:
+            youth_profile.approved_time = timezone.now()
+        else:
+            if not input_data.get("approver_email"):
+                raise ApproverEmailCannotBeEmptyForMinorsError(
+                    "Approver email is required for youth under 18 years old"
+                )
+            youth_profile.make_approvable()
+    else:
+        for field, value in input_data.items():
+            setattr(youth_profile, field, value)
+        if resend_request_notification:
+            youth_profile.make_approvable()
+
+    youth_profile.save()
+    return youth_profile
+
+
+class UpdateYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(graphene.ID, required=True)
+        youth_profile = UpdateYouthProfileInput(required=True)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        input_data = input.get("youth_profile")
+
+        if input.get("service_type") != ServiceType.YOUTH_MEMBERSHIP.value:
+            raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
+
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = update_youth_profile(input_data, profile)
+        return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
+
+
 class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
     class Input:
         youth_profile = UpdateYouthProfileInput(required=True)
@@ -246,42 +300,8 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         input_data = input.get("youth_profile")
-        resend_request_notification = input_data.pop(
-            "resend_request_notification", False
-        )
-
         profile = Profile.objects.get(user=info.context.user)
-        youth_profile, created = YouthProfile.objects.get_or_create(
-            profile=profile, defaults=input_data
-        )
-
-        if "photo_usage_approved" in input_data:
-            # Disable setting photo usage by themselfs for youths under 15 years old
-            # Check for birth date given in input or birth date persisted in the db
-            if (
-                "birth_date" in input_data
-                and calculate_age(input_data["birth_date"]) < 15
-            ) or calculate_age(youth_profile.birth_date) < 15:
-                raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
-                    "Cannot set photo usage permission if under 15 years old"
-                )
-        if created:
-            if calculate_age(youth_profile.birth_date) >= 18:
-                youth_profile.approved_time = timezone.now()
-            else:
-                if not input_data.get("approver_email"):
-                    raise ApproverEmailCannotBeEmptyForMinorsError(
-                        "Approver email is required for youth under 18 years old"
-                    )
-                youth_profile.make_approvable()
-        else:
-            for field, value in input_data.items():
-                setattr(youth_profile, field, value)
-            if resend_request_notification:
-                youth_profile.make_approvable()
-
-        youth_profile.save()
-
+        youth_profile = update_youth_profile(input_data, profile)
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
 
 
@@ -440,7 +460,10 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     # TODO: Complete the description
     create_youth_profile = CreateYouthProfileMutation.Field(
-        description="Admin mutation for creating a youth profile `TODO`"
+        description="Creates a new youth profile and links it to the profile specified with profile_id argument.\n\n"
+        "When the youth profile has been created, a notification is sent to the youth profile's approver "
+        "whose contact information is given in the input.\n\nRequires elevated privileges.\n\nPossible error "
+        "codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     create_my_youth_profile = CreateMyYouthProfileMutation.Field(
@@ -448,6 +471,13 @@ class Mutation(graphene.ObjectType):
         "When the youth profile has been created, a notification is sent to the youth profile's approver "
         "whose contact information is given in the input.\n\nRequires authentication.\n\nPossible error "
         "codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
+    update_youth_profile = UpdateYouthProfileMutation.Field(
+        description="Updates the youth profile which belongs to the profile specified in profile_id argument.\n\n"
+        "The `resend_request_notification` parameter may be used to send a notification to the youth "
+        "profile's approver whose contact information is in the youth profile.\n\nRequires elevated privileges."
+        "\n\nPossible error codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     update_my_youth_profile = UpdateMyYouthProfileMutation.Field(
