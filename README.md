@@ -35,6 +35,7 @@ Prerequisites:
    * Set entrypoint/startup variables according to taste.
      * `CREATE_SUPERUSER`, creates a superuser with credentials `admin`:`admin` (admin@example.com)
      * `APPLY_MIGRATIONS`, applies migrations on startup
+     * `ENABLE_GRAPHIQL`, enables GraphiQL interface for `/graphql/`
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
 
 2. Run `docker-compose up`

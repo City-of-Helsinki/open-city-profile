@@ -98,6 +98,8 @@ TIME_ZONE = "Europe/Helsinki"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+# Set to True to enable GraphiQL interface, this will overriden to True if DEBUG=True
+ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
     "helusers",
