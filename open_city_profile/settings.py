@@ -44,6 +44,7 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
+    ENABLE_GRAPHIQL=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
