@@ -1,5 +1,11 @@
 import factory
-from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
+from subscriptions.models import (
+    Subscription,
+    SubscriptionType,
+    SubscriptionTypeCategory,
+)
+
+from profiles.tests.factories import ProfileFactory
 
 
 class SubscriptionTypeCategoryFactory(factory.django.DjangoModelFactory):
@@ -17,3 +23,11 @@ class SubscriptionTypeFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = SubscriptionType
+
+
+class SubscriptionFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+    subscription_type = factory.SubFactory(SubscriptionTypeFactory)
+
+    class Meta:
+        model = Subscription
