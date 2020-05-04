@@ -15,6 +15,7 @@ review:
         K8S_SECRET_ALLOWED_HOSTS: "*"
         K8S_SECRET_DEBUG: 1
         K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
+        K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
 
 staging:
     only:
