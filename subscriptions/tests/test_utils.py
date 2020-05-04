@@ -1,5 +1,6 @@
 import pytest
 from django.apps import apps
+
 from subscriptions.models import (
     Subscription,
     SubscriptionType,

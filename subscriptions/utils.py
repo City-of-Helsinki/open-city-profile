@@ -1,4 +1,5 @@
 from django.db import transaction
+
 from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
 
 SUBSCRIPTION_TYPE_CATEGORIES = (

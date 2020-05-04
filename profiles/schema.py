@@ -18,11 +18,6 @@ from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphql_jwt.decorators import login_required
 from munigeo.models import AdministrativeDivision
-from subscriptions.schema import (
-    SubscriptionInputType,
-    SubscriptionNode,
-    UpdateMySubscriptionMutation,
-)
 from thesaurus.models import Concept
 
 from open_city_profile.exceptions import (
@@ -35,6 +30,11 @@ from profiles.decorators import staff_required
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
+from subscriptions.schema import (
+    SubscriptionInputType,
+    SubscriptionNode,
+    UpdateMySubscriptionMutation,
+)
 from youths.schema import (
     CreateMyYouthProfileMutation,
     CreateYouthProfileMutation,

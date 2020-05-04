@@ -1,11 +1,11 @@
 import factory
+
+from profiles.tests.factories import ProfileFactory
 from subscriptions.models import (
     Subscription,
     SubscriptionType,
     SubscriptionTypeCategory,
 )
-
-from profiles.tests.factories import ProfileFactory
 
 
 class SubscriptionTypeCategoryFactory(factory.django.DjangoModelFactory):
