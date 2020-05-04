@@ -17,7 +17,7 @@ def get_next_subscription_type_order():
 
 
 class SubscriptionTypeCategory(TranslatableModel, SortableMixin):
-    code = models.CharField(max_length=32)
+    code = models.CharField(max_length=32, unique=True)
     translations = TranslatedFields(label=models.CharField(max_length=255))
     created_at = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(
@@ -37,7 +37,7 @@ class SubscriptionType(TranslatableModel, SortableMixin):
         on_delete=models.CASCADE,
         related_name="subscription_types",
     )
-    code = models.CharField(max_length=32)
+    code = models.CharField(max_length=32, unique=True)
     translations = TranslatedFields(label=models.CharField(max_length=255))
     created_at = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(

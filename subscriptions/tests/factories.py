@@ -9,7 +9,7 @@ from profiles.tests.factories import ProfileFactory
 
 
 class SubscriptionTypeCategoryFactory(factory.django.DjangoModelFactory):
-    code = "TEST_NOTIFICATION_CATEGORY"
+    code = factory.Sequence(lambda n: "TEST_NOTIFICATION_CATEGORY_%d" % n)
     label = "Test notification category"
 
     class Meta:
@@ -17,7 +17,7 @@ class SubscriptionTypeCategoryFactory(factory.django.DjangoModelFactory):
 
 
 class SubscriptionTypeFactory(factory.django.DjangoModelFactory):
-    code = "TEST_NOTIFICATION"
+    code = factory.Sequence(lambda n: "TEST_NOTIFICATION_%d" % n)
     label = "Test notification"
     subscription_type_category = factory.SubFactory(SubscriptionTypeCategoryFactory)
 
