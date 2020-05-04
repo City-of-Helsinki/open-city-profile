@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from faker import Faker
 
 from services.models import Service
+from subscriptions.utils import generate_subscription_types
 from utils.utils import (
     assign_permissions,
     generate_data_fields,
@@ -102,6 +103,8 @@ class Command(BaseCommand):
         services = generate_services()
         self.stdout.write("Generating groups...")
         groups = generate_groups_for_services(services=services)
+        self.stdout.write("Generating subscription types...")
+        generate_subscription_types()
 
         self.stdout.write(self.style.SUCCESS("Done - Profile data"))
 
