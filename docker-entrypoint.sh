@@ -18,6 +18,14 @@ if [[ "$APPLY_MIGRATIONS" = "1" ]]; then
     ./manage.py migrate --noinput
 fi
 
+if [[ "$APPLY_MIGRATIONS" = "1" ]] && [[ "$SEED_DEVELOPMENT_DATA" = "1" ]]; then
+    echo "Seeding initial development data..."
+    ./manage.py seed_data --development
+elif [[ "$APPLY_MIGRATIONS" = "1" ]]; then
+    echo "Seeding initial data..."
+    ./manage.py seed_data
+fi
+
 # Create superuser
 if [[ "$CREATE_SUPERUSER" = "1" ]]; then
     ./manage.py add_admin_user -u admin -p admin -e admin@example.com

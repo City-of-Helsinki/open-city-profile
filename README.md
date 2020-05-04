@@ -36,6 +36,8 @@ Prerequisites:
      * `CREATE_SUPERUSER`, creates a superuser with credentials `admin`:`admin` (admin@example.com)
      * `APPLY_MIGRATIONS`, applies migrations on startup
      * `ENABLE_GRAPHIQL`, enables GraphiQL interface for `/graphql/`
+     * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
+        fake development data (requires `APPLY_MIGRATIONS`)
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
 
 2. Run `docker-compose up`
