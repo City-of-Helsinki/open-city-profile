@@ -36,6 +36,11 @@ class Command(BaseCommand):
             action="store_true",
         )
         parser.add_argument(
+            "--no-clear",
+            help="Don't flush the DB before initializing the data",
+            action="store_true",
+        )
+        parser.add_argument(
             "-p",
             "--profilecount",
             type=int,
@@ -67,6 +72,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         clear = kwargs["clear"]
+        no_clear = kwargs["no_clear"]
         development = kwargs["development"]
         superuser = kwargs["superuser"]
         divisions = kwargs["divisions"]
@@ -75,7 +81,7 @@ class Command(BaseCommand):
         profile_count = kwargs["profilecount"]
         youth_profile_percentage = kwargs["youthprofilepercentage"]
 
-        if development or clear:
+        if not no_clear and (development or clear):
             self.stdout.write("Clearing data...")
             management.call_command("flush", verbosity=0, interactive=False)
             self.stdout.write(self.style.SUCCESS("Done - Data cleared"))

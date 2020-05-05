@@ -24,6 +24,7 @@ def test_command_seed_data_works_without_arguments():
 def test_command_seed_data_initializes_development_data():
     args = [
         "--development",
+        "--no-clear",  # Flushing not needed in tests + it caused test failures
         "--superuser",
     ]
     call_command("seed_data", *args)
@@ -43,6 +44,7 @@ def test_command_seed_data_initializes_development_data():
 def test_command_seed_data_works_withs_arguments():
     args = [
         "--development",
+        "--no-clear",  # Flushing not needed in tests + it caused test failures
         "--profilecount=20",
         "--youthprofilepercentage=0.5",
         "--locale=fi_FI",
