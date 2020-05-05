@@ -9,7 +9,7 @@ from open_city_profile.views import GraphQLView
 
 
 @pytest.fixture(autouse=True)
-def allow_global_access_to_test_db(transactional_db):
+def autouse_db(db):
     pass
 
 
