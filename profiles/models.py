@@ -11,6 +11,7 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
@@ -182,6 +183,10 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.emails.create(
                         email=email, email_type=EmailType.PERSONAL, primary=True
                     )
+                else:
+                    raise ProfileMustHaveOnePrimaryEmail(
+                        f"Profile must have exactly one primary email, index: {customer_index}"
+                    )
                 address = item.get("address", None)
                 if address:
                     profile.addresses.create(
@@ -203,6 +208,8 @@ class Profile(UUIDModel, SerializableMixin):
                     enabled=False,
                 )
                 result[item["customer_id"]] = profile.pk
+            except ProfileMustHaveOnePrimaryEmail:
+                raise
             except Exception as err:
                 msg = (
                     "Could not import customer_id: {}, index: {}".format(
@@ -262,6 +269,10 @@ class Email(Contact):
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
+
+    class Meta:
+        ordering = ["-primary"]
+
     serialize_fields = (
         {"name": "primary"},
         {"name": "email_type", "accessor": lambda x: getattr(x, "name")},

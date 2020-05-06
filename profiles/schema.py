@@ -29,6 +29,7 @@ from open_city_profile.exceptions import (
     APINotImplementedError,
     CannotDeleteProfileWhileServiceConnectedError,
     ProfileDoesNotExistError,
+    ProfileMustHaveOnePrimaryEmail,
     TokenExpiredError,
 )
 from profiles.decorators import staff_required
@@ -62,6 +63,13 @@ AllowedPhoneType = graphene.Enum.from_enum(
 AllowedAddressType = graphene.Enum.from_enum(
     AddressType, description=lambda e: e.label if e else ""
 )
+
+
+def validate_primary_email(profile):
+    if profile.emails.filter(primary=True).count() != 1:
+        raise ProfileMustHaveOnePrimaryEmail(
+            "Profile must have exactly one primary email"
+        )
 
 
 def get_claimable_profile(token=None):
@@ -100,6 +108,8 @@ def update_profile(profile, profile_data):
 
     for model, data in nested_to_delete:
         delete_nested(model, profile, data)
+
+    validate_primary_email(profile)
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -491,6 +501,8 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
                 root, info, youth_profile=youth_profile_data
             )
 
+        validate_primary_email(profile)
+
         return CreateMyProfileMutation(profile=profile)
 
 
@@ -543,6 +555,8 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         # create the service connection for the profile
         profile.service_connections.create(service=service)
+
+        validate_primary_email(profile)
 
         return CreateProfileMutation(profile=profile)
 

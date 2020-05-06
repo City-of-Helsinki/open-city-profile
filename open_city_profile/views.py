@@ -16,6 +16,7 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
+    PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     TOKEN_EXPIRED_ERROR,
 )
@@ -30,6 +31,7 @@ from open_city_profile.exceptions import (
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
+    ProfileMustHaveOnePrimaryEmail,
     ServiceAlreadyExistsError,
     TokenExpiredError,
 )
@@ -49,6 +51,7 @@ error_codes_profile = {
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
+    ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
 }
 
 error_codes_youth_profile = {

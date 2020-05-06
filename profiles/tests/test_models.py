@@ -1,11 +1,19 @@
 import pytest
 from django.contrib.auth import get_user_model
 
+from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.tests.factories import ServiceFactory
 
 from ..models import Profile
-from .factories import EmailFactory, ProfileFactory, SensitiveDataFactory, UserFactory
+from ..schema import validate_primary_email
+from .factories import (
+    EmailFactory,
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+    SensitiveDataFactory,
+    UserFactory,
+)
 
 User = get_user_model()
 
@@ -147,3 +155,44 @@ def test_import_customer_data_with_missing_customer_id():
         Profile.import_customer_data(data)
     assert str(e.value) == "Could not import unknown customer, index: 0"
     assert Profile.objects.count() == 0
+
+
+def test_import_customer_data_with_missing_email():
+    data = [
+        {
+            "customer_id": "321457",
+            "first_name": "Jukka",
+            "last_name": "Virtanen",
+            "ssn": "010190-001A",
+            "address": {
+                "address": "Mannerheimintie 1 A 11",
+                "postal_code": "00100",
+                "city": "Helsinki",
+            },
+            "phones": ["0412345678", "358 503334411", "755 1122 K"],
+        }
+    ]
+    assert Profile.objects.count() == 0
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail) as e:
+        Profile.import_customer_data(data)
+    assert str(e.value) == "Profile must have exactly one primary email, index: 0"
+    assert Profile.objects.count() == 0
+
+
+def test_validation_should_pass_with_one_primary_email():
+    profile = ProfileWithPrimaryEmailFactory()
+    validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_no_primary_email():
+    profile = ProfileFactory()
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
+        validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_multiple_primary_emails():
+    profile = ProfileFactory()
+    EmailFactory(profile=profile, primary=True)
+    EmailFactory(profile=profile, primary=True)
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
+        validate_primary_email(profile)

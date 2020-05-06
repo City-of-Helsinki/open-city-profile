@@ -1,4 +1,5 @@
 import json
+from functools import reduce
 
 from django import forms
 from django.contrib import admin, messages
@@ -70,8 +71,22 @@ class SensitiveDataAdminInline(admin.StackedInline):
     extra = 0
 
 
+class EmailFormSet(forms.models.BaseInlineFormSet):
+    def clean(self):
+        count = reduce(
+            lambda current, form: current + form.cleaned_data.get("primary"),
+            self.forms,
+            0,
+        )
+        if count != 1:
+            raise forms.ValidationError(
+                "Profile must have one exactly one primary email"
+            )
+
+
 class EmailAdminInline(admin.StackedInline):
     model = Email
+    formset = EmailFormSet
     extra = 0
 
 
