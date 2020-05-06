@@ -8,11 +8,6 @@ from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
-from subscriptions.models import Subscription
-from subscriptions.tests.factories import (
-    SubscriptionTypeCategoryFactory,
-    SubscriptionTypeFactory,
-)
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -26,6 +21,11 @@ from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Profile
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+from subscriptions.models import Subscription
+from subscriptions.tests.factories import (
+    SubscriptionTypeCategoryFactory,
+    SubscriptionTypeFactory,
+)
 from users.models import User
 from youths.tests.factories import YouthProfileFactory
 

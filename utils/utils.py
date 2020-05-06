@@ -3,6 +3,7 @@ import random
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
+from django.db import transaction
 from django.utils.timezone import get_current_timezone, make_aware
 from django_ilmoitin.models import NotificationTemplate
 from guardian.shortcuts import assign_perm
@@ -59,13 +60,20 @@ DATA_FIELD_VALUES = [
 ]
 
 
+@transaction.atomic
 def generate_data_fields():
+    """Create data fields if they don't exist."""
     for value in DATA_FIELD_VALUES:
-        data_field = AllowedDataField.objects.create(field_name=value.get("field_name"))
-        for translation in value.get("translations"):
-            data_field.set_current_language(translation["code"])
-            data_field.label = translation["label"]
-        data_field.save()
+        if not AllowedDataField.objects.filter(
+            field_name=value.get("field_name")
+        ).exists():
+            data_field = AllowedDataField.objects.create(
+                field_name=value.get("field_name")
+            )
+            for translation in value.get("translations"):
+                data_field.set_current_language(translation["code"])
+                data_field.label = translation["label"]
+            data_field.save()
 
 
 SERVICE_TRANSLATIONS = {
@@ -116,7 +124,12 @@ SERVICE_TRANSLATIONS = {
 }
 
 
+@transaction.atomic
 def generate_services():
+    """Create services unless they already exist.
+
+    Also assigns allowed data fields for each created service.
+    """
     services = []
     for service_type in ServiceType:
         service = Service.objects.filter(service_type=service_type).first()
@@ -142,13 +155,21 @@ def generate_services():
     return services
 
 
-def generate_groups_for_services(services=[]):
-    return Group.objects.bulk_create(
-        [Group(name=service.service_type.value) for service in services]
-    )
+@transaction.atomic
+def generate_groups_for_services(services=tuple()):
+    """Create groups for given services unless they already exist."""
+    groups = []
+    for service in services:
+        group, created = Group.objects.get_or_create(name=service.service_type.value)
+        groups.append(group)
+    return groups
 
 
-def assign_permissions(groups=[], services=[]):
+def assign_permissions(groups=tuple()):
+    """Assigns all service permissions for a group for development purposes.
+
+    Assumes that a Service exists with the same group name.
+    """
     available_permissions = [item[0] for item in Service._meta.permissions]
     for group in groups:
         service = Service.objects.get(service_type=group.name)
@@ -158,6 +179,8 @@ def assign_permissions(groups=[], services=[]):
 
 
 def create_user(username="", faker=None):
+    """Creates a fake user for development purposes."""
+
     def get_random_username():
         while True:
             name = faker.user_name()
@@ -180,7 +203,9 @@ def create_user(username="", faker=None):
     )
 
 
-def generate_group_admins(groups=[], faker=None):
+def generate_group_admins(groups=tuple(), faker=None):
+    """Creates fake development group admins for development purposes."""
+
     def create_user_and_add_to_group(group=None):
         user = create_user(username="{}_user".format(group.name.lower()), faker=faker)
         user.save()
@@ -191,6 +216,7 @@ def generate_group_admins(groups=[], faker=None):
 
 
 def generate_profiles(k=50, faker=None):
+    """Create fake profiles and users for development purposes."""
     for i in range(k):
         user = create_user(faker=faker)
         user.save()
@@ -228,6 +254,7 @@ def generate_profiles(k=50, faker=None):
 
 
 def generate_youth_profiles(percentage=0.2, faker=None):
+    """Create fake youth membership profiles for development purposes."""
     profiles = Profile.objects.all()
     youth_profile_profiles = profiles.order_by("?")[: int(len(profiles) * percentage)]
     for profile in youth_profile_profiles:
@@ -255,63 +282,76 @@ def generate_youth_profiles(percentage=0.2, faker=None):
         )
 
 
+@transaction.atomic
 def generate_notifications():
-    template = NotificationTemplate(
-        type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value
-    )
-    fi_subject = "Vahvista nuorisojäsenyys"
-    fi_html = (
-        "Hei {{ youth_profile.approver_first_name }},<br /><br />{{ youth_profile.profile.first_name }} on "
-        "pyytänyt sinua vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen tätä "
-        'linkkiä:<br /><br /><a href="https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}">'
-        "https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}</a><br /><br /><i>Tämä viesti "
-        "on lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei käsitellä.</i>"
-    )
-    fi_text = (
-        "Hei {{ youth_profile.approver_first_name }},\r\n\r\n{{ youth_profile.profile.first_name }} on pyytänyt sinua "
-        "vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen tätä linkkiä:\r\n\r\n"
-        "https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}\r\n\r\nTämä viesti on "
-        "lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei käsitellä."
-    )
-    template.set_current_language("fi")
-    template.subject = fi_subject
-    template.body_html = fi_html
-    template.body_text = fi_text
-    template.set_current_language("sv")
-    template.subject = fi_subject + " SV TRANSLATION NEEDED"
-    template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
-    template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
-    template.set_current_language("en")
-    template.subject = fi_subject + " EN TRANSLATION NEEDED"
-    template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
-    template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
-    template.save()
+    """Creates Youth Profile notifications if they don't already exist."""
 
-    template = NotificationTemplate(type=NotificationType.YOUTH_PROFILE_CONFIRMED.value)
-    fi_subject = "Nuorisojäsenyys vahvistettu"
-    fi_html = (
-        "Hei {{ youth_profile.profile.first_name }},\r\n<br /><br />\r\n{{ youth_profile.approver_first_name }} "
-        "on vahvistanut nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n<br /><br />\r\n"
-        '<a href="https://jassari.test.kuva.hel.ninja">https://jassari.test.kuva.hel.ninja</a>\r\n<br /><br />\r\n<i>'
-        "Tämä viesti on lähetetty järjestelmästä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei "
-        "käsitellä.</i>"
-    )
-    fi_text = (
-        "Hei {{ youth_profile.profile.first_name }},\r\n\r\n{{ youth_profile.approver_first_name }} on vahvistanut "
-        "nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n\r\nhttps://jassari.test.kuva.h"
-        "el.ninja\r\n\r\nTämä viesti on lähetetty järjestelmästä automaattisesti. Älä vastaa tähän viestiin, sillä "
-        "vastauksia ei käsitellä."
-    )
-    template.set_current_language("fi")
-    template.subject = fi_subject
-    template.body_html = fi_html
-    template.body_text = fi_text
-    template.set_current_language("sv")
-    template.subject = fi_subject + " SV TRANSLATION NEEDED"
-    template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
-    template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
-    template.set_current_language("en")
-    template.subject = fi_subject + " EN TRANSLATION NEEDED"
-    template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
-    template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
-    template.save()
+    if not NotificationTemplate.objects.filter(
+        type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value
+    ).exists():
+        template = NotificationTemplate(
+            type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value
+        )
+        fi_subject = "Vahvista nuorisojäsenyys"
+        fi_html = (
+            "Hei {{ youth_profile.approver_first_name }},<br /><br />{{ youth_profile.profile.first_name }} on "
+            "pyytänyt sinua vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen "
+            "tätä linkkiä:"
+            '<br /><br /><a href="https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}">'
+            "https://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}</a><br /><br /><i>Tämä "
+            "viesti on lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei "
+            "käsitellä.</i>"
+        )
+        fi_text = (
+            "Hei {{ youth_profile.approver_first_name }},\r\n\r\n{{ youth_profile.profile.first_name }} on pyytänyt "
+            "sinua vahvistamaan nuorisojäsenyytensä. Käy antamassa vahvistus Jässäri-palvelussa käyttäen tätä linkkiä:"
+            "\r\n\r\nhttps://jassari.test.kuva.hel.ninja/approve/{{ youth_profile.approval_token }}\r\n\r\nTämä viesti "
+            "on lähetetty järjestelmistä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia ei käsitellä."
+        )
+        template.set_current_language("fi")
+        template.subject = fi_subject
+        template.body_html = fi_html
+        template.body_text = fi_text
+        template.set_current_language("sv")
+        template.subject = fi_subject + " SV TRANSLATION NEEDED"
+        template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
+        template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
+        template.set_current_language("en")
+        template.subject = fi_subject + " EN TRANSLATION NEEDED"
+        template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
+        template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
+        template.save()
+
+    if not NotificationTemplate.objects.filter(
+        type=NotificationType.YOUTH_PROFILE_CONFIRMED.value
+    ).exists():
+        template = NotificationTemplate(
+            type=NotificationType.YOUTH_PROFILE_CONFIRMED.value
+        )
+        fi_subject = "Nuorisojäsenyys vahvistettu"
+        fi_html = (
+            "Hei {{ youth_profile.profile.first_name }},\r\n<br /><br />\r\n{{ youth_profile.approver_first_name }} on "
+            "vahvistanut nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n<br /><br />\r\n"
+            '<a href="https://jassari.test.kuva.hel.ninja">https://jassari.test.kuva.hel.ninja</a>\r\n<br /><br />\r\n'
+            "<i>Tämä viesti on lähetetty järjestelmästä automaattisesti. Älä vastaa tähän viestiin, sillä vastauksia "
+            "ei käsitellä.</i>"
+        )
+        fi_text = (
+            "Hei {{ youth_profile.profile.first_name }},\r\n\r\n{{ youth_profile.approver_first_name }} on vahvistanut "
+            "nuorisojäsenyytesi. Kirjaudu Jässäri-palveluun nähdäksesi omat tietosi:\r\n\r\n"
+            "https://jassari.test.kuva.hel.ninja\r\n\r\nTämä viesti on lähetetty järjestelmästä automaattisesti. Älä "
+            "vastaa tähän viestiin, sillä vastauksia ei käsitellä."
+        )
+        template.set_current_language("fi")
+        template.subject = fi_subject
+        template.body_html = fi_html
+        template.body_text = fi_text
+        template.set_current_language("sv")
+        template.subject = fi_subject + " SV TRANSLATION NEEDED"
+        template.body_html = fi_html + "<p>SV TRANSLATION NEEDED</p>"
+        template.body_text = fi_text + "<p>SV TRANSLATION NEEDED</p>"
+        template.set_current_language("en")
+        template.subject = fi_subject + " EN TRANSLATION NEEDED"
+        template.body_html = fi_html + "<p>EN TRANSLATION NEEDED</p>"
+        template.body_text = fi_text + "<p>EN TRANSLATION NEEDED</p>"
+        template.save()

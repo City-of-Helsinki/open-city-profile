@@ -1,7 +1,8 @@
 from django.db import transaction
+
 from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
 
-subscription_type_categories = (
+SUBSCRIPTION_TYPE_CATEGORIES = (
     {
         "code": "COVID_COMMUNICATION",
         "translations": (
@@ -78,18 +79,25 @@ subscription_type_categories = (
 
 @transaction.atomic
 def generate_subscription_types():
-    SubscriptionTypeCategory.objects.all().delete()
-    for cat in subscription_type_categories:
-        category = SubscriptionTypeCategory.objects.create(code=cat["code"])
-        for translation in cat["translations"]:
-            category.set_current_language(translation["locale"])
-            category.label = translation["value"]
-        category.save()
+    """Generates subscription types and categories if needed."""
+    for cat in SUBSCRIPTION_TYPE_CATEGORIES:
+        category = SubscriptionTypeCategory.objects.filter(code=cat["code"]).first()
+        if not category:
+            category = SubscriptionTypeCategory.objects.create(code=cat["code"])
+            for translation in cat["translations"]:
+                category.set_current_language(translation["locale"])
+                category.label = translation["value"]
+            category.save()
+
         for sub_type in cat["subscription_types"]:
-            subscription_type = SubscriptionType.objects.create(
-                subscription_type_category=category, code=sub_type["code"]
-            )
-            for translation in sub_type["translations"]:
-                subscription_type.set_current_language(translation["locale"])
-                subscription_type.label = translation["value"]
-            subscription_type.save()
+            subscription_type = SubscriptionType.objects.filter(
+                code=sub_type["code"]
+            ).first()
+            if not subscription_type:
+                subscription_type = SubscriptionType.objects.create(
+                    subscription_type_category=category, code=sub_type["code"]
+                )
+                for translation in sub_type["translations"]:
+                    subscription_type.set_current_language(translation["locale"])
+                    subscription_type.label = translation["value"]
+                subscription_type.save()
