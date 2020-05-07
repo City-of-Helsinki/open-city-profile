@@ -235,21 +235,26 @@ class UpdateYouthProfileInput(YouthProfileFields):
     )
 
 
-def update_youth_profile(input_data, profile):
+def update_youth_profile(input_data, profile, manage_permission=False):
+    """Create or update the youth profile for the given profile.
+
+    :param manage_permission: Calling user has manage permission on youth profile service.
+    """
     resend_request_notification = input_data.pop("resend_request_notification", False)
     youth_profile, created = YouthProfile.objects.get_or_create(
         profile=profile, defaults=input_data
     )
 
-    if "photo_usage_approved" in input_data:
-        # Disable setting photo usage by themselfs for youths under 15 years old
-        # Check for birth date given in input or birth date persisted in the db
+    if "photo_usage_approved" in input_data and not manage_permission:
+        # Disable setting photo usage by themselves for youths under 15 years old (allowed for staff).
+        # Check for birth date given in input or birth date persisted in the db.
         if (
             "birth_date" in input_data and calculate_age(input_data["birth_date"]) < 15
         ) or calculate_age(youth_profile.birth_date) < 15:
             raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
                 "Cannot set photo usage permission if under 15 years old"
             )
+
     if created:
         if calculate_age(youth_profile.birth_date) >= 18:
             youth_profile.approved_time = timezone.now()
@@ -285,7 +290,9 @@ class UpdateYouthProfileMutation(relay.ClientIDMutation):
             raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
 
         profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
-        youth_profile = update_youth_profile(input_data, profile)
+        youth_profile = update_youth_profile(
+            input_data, profile, manage_permission=True
+        )
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
 
 
