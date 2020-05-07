@@ -630,7 +630,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
 
-        return UpdateMyProfileMutation(profile=profile)
+        return UpdateProfileMutation(profile=profile)
 
 
 class ClaimProfileMutation(relay.ClientIDMutation):
