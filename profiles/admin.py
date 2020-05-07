@@ -11,7 +11,6 @@ from django.urls import path
 from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
-from subscriptions.admin import SubscriptionInline
 
 from profiles.models import (
     Address,
@@ -23,6 +22,7 @@ from profiles.models import (
     SensitiveData,
 )
 from services.admin import ServiceConnectionInline
+from subscriptions.admin import SubscriptionInline
 from youths.admin import YouthProfileAdminInline
 
 

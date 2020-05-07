@@ -17,6 +17,7 @@ def test_generate_services_from_enum():
     assert Service.objects.count() == len(ServiceType)
 
 
+@pytest.mark.django_db(transaction=True)
 def test_add_service_with_duplicate_service_type():
     ServiceFactory()
     assert Service.objects.count() == 1
@@ -25,6 +26,7 @@ def test_add_service_with_duplicate_service_type():
     assert Service.objects.count() == 1
 
 
+@pytest.mark.django_db(transaction=True)
 def test_connect_duplicate_service_for_profile():
     profile = ProfileFactory()
     service = ServiceFactory()

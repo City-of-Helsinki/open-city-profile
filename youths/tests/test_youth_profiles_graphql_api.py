@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from string import Template
 
 from django.utils import timezone
@@ -221,13 +221,12 @@ def test_normal_user_over_18_years_old_can_create_approved_youth_profile_mutatio
         }
         """
     )
+    birth_date = today.replace(year=today.year - 18) - timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
-        "birthDate": today.replace(year=today.year - 18, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -269,11 +268,10 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
         }
         """
     )
+    birth_date = today.replace(year=today.year - 18) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
-        "birthDate": today.replace(year=today.year - 18, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -316,15 +314,14 @@ def test_user_cannot_create_youth_profile_if_under_13_years_old(rf, user_gql_cli
         }
         """
     )
+    birth_date = today.replace(year=today.year - 13) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
         "language": YouthLanguage.FINNISH.name,
-        "birthDate": today.replace(year=today.year - 13, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -366,13 +363,12 @@ def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_o
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -417,13 +413,12 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -577,11 +572,10 @@ def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_o
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     creation_data = {
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -624,11 +618,10 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     creation_data = {
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -647,7 +640,7 @@ def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_o
 
     profile = ProfileFactory(user=user_gql_client.user)
     today = date.today()
-    birth_date = today.replace(year=today.year - 15, day=today.day - 1)
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     YouthProfileFactory(profile=profile, birth_date=birth_date)
 
     t = Template(
@@ -683,7 +676,7 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
 
     profile = ProfileFactory(user=user_gql_client.user)
     today = date.today()
-    birth_date = today.replace(year=today.year - 15, day=today.day + 1)
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     YouthProfileFactory(profile=profile, birth_date=birth_date)
 
     t = Template(
@@ -1237,12 +1230,10 @@ def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
     profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
-
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "school_name": "Koulu",
         "school_class": "2B",
         "language_at_home": YouthLanguage.ENGLISH.name,
@@ -1328,10 +1319,9 @@ def test_staff_user_can_create_youth_profile_for_under_13_years_old(
     request.user = user
 
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) + timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "approver_email": "jane.doe@example.com",
     }
 
@@ -1384,9 +1374,8 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
     request.user = user
 
     today = date.today()
-    birth_date = today.replace(year=today.year - 13, day=today.day - 1).strftime(
-        "%Y-%m-%d"
-    )
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
+    birth_date_string = birth_date.strftime("%Y-%m-%d")
 
     t = Template(
         """
@@ -1434,7 +1423,7 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
         service_type=ServiceType.YOUTH_MEMBERSHIP.name,
         first_name="John",
         last_name="Doe",
-        birth_date=birth_date,
+        birth_date=birth_date_string,
         approver_email="jane.doe@example.com",
         email="john.doe@example.com",
         email_type=EmailType.PERSONAL.name,
@@ -1445,7 +1434,7 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
                 "firstName": "John",
                 "lastName": "Doe",
                 "youthProfile": {
-                    "birthDate": birth_date,
+                    "birthDate": birth_date_string,
                     "approverEmail": "jane.doe@example.com",
                 },
                 "serviceConnections": {
@@ -1481,10 +1470,9 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     request.user = user
 
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "approver_email": "jane.doe@example.com",
     }
 
@@ -1530,10 +1518,9 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_clien
     request.user = user
 
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "approver_email": "jane.doe@example.com",
     }
 
@@ -1631,11 +1618,10 @@ def test_staff_user_can_cancel_youth_membership_on_selected_date(rf, user_gql_cl
     request.user = user
 
     today = date.today()
+    expiration_date = today + timedelta(days=1)
     youth_profile_data = {
         "profile_id": to_global_id(type="ProfileNode", id=profile.pk),
-        "expiration": today.replace(year=today.year, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "expiration": expiration_date.strftime("%Y-%m-%d"),
     }
 
     t = Template(
@@ -1718,7 +1704,8 @@ def test_normal_user_can_cancel_youth_membership(rf, user_gql_client):
     YouthProfileFactory(profile=profile, approved_time=datetime.now())
 
     today = date.today()
-    expiration = today.replace(year=today.year, day=today.day + 1).strftime("%Y-%m-%d")
+    expiration = today + timedelta(days=1)
+    expiration_string = expiration.strftime("%Y-%m-%d")
 
     t = Template(
         """
@@ -1737,10 +1724,10 @@ def test_normal_user_can_cancel_youth_membership(rf, user_gql_client):
         }
         """
     )
-    query = t.substitute(expiration=expiration)
+    query = t.substitute(expiration=expiration_string)
 
     expected_data = {
-        "youthProfile": {"expiration": expiration, "membershipStatus": "EXPIRED"}
+        "youthProfile": {"expiration": expiration_string, "membershipStatus": "EXPIRED"}
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]["cancelMyYouthProfile"]) == expected_data

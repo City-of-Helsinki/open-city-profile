@@ -1,7 +1,34 @@
+from subscriptions.models import (
+    Subscription,
+    SubscriptionType,
+    SubscriptionTypeCategory,
+)
 from subscriptions.tests.factories import (
+    SubscriptionFactory,
     SubscriptionTypeCategoryFactory,
     SubscriptionTypeFactory,
 )
+
+
+def test_subscription_type_category():
+    SubscriptionTypeCategoryFactory()
+
+    assert SubscriptionTypeCategory.objects.count() == 1
+
+
+def test_subscription_type():
+    SubscriptionTypeFactory()
+
+    assert SubscriptionTypeCategory.objects.count() == 1
+    assert SubscriptionType.objects.count() == 1
+
+
+def test_subscription():
+    SubscriptionFactory()
+
+    assert SubscriptionTypeCategory.objects.count() == 1
+    assert SubscriptionType.objects.count() == 1
+    assert Subscription.objects.count() == 1
 
 
 def test_subscription_type_category_auto_orders():

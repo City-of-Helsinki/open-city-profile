@@ -1,9 +1,9 @@
 import graphene
-import subscriptions.schema
 from graphene_federation import build_schema
 
 import profiles.schema
 import services.schema
+import subscriptions.schema
 import youths.schema
 
 

@@ -3,6 +3,7 @@
 [![status](https://travis-ci.com/City-of-Helsinki/open-city-profile.svg)](https://github.com/City-of-Helsinki/open-city-profile)
 [![codecov](https://codecov.io/gh/City-of-Helsinki/open-city-profile/branch/develop/graph/badge.svg)](https://codecov.io/gh/City-of-Helsinki/open-city-profile)
 
+
 ## Summary
 
 Open city profile is used to store common information (name, contact
@@ -21,6 +22,7 @@ functions of Venepaikka service.
 
 Open city profile is implemented using Django and it provides a GraphQL API.
 
+
 ## Development with [Docker](https://docs.docker.com/)
 
 Prerequisites:
@@ -35,32 +37,35 @@ Prerequisites:
    * Set entrypoint/startup variables according to taste.
      * `CREATE_SUPERUSER`, creates a superuser with credentials `admin`:`admin` (admin@example.com)
      * `APPLY_MIGRATIONS`, applies migrations on startup
+     * `ENABLE_GRAPHIQL`, enables GraphiQL interface for `/graphql/`
+     * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
+        fake development data (requires `APPLY_MIGRATIONS`)
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
 
 2. Run `docker-compose up`
     * The project is now running at [localhost:8080](http://localhost:8080)
 
-3. _Optional_ - Run migrations:
+**Optional steps**
+
+1. Run migrations:
     * Taken care by the example env
     * `docker exec profile-backend python manage.py migrate`
 
-4. _Optional_ - Create superuser:
+2. Seed data
+    * Taken care by the example env
+    * See also _Seed development data_ below
+    * `docker exec profile-backend python manage.py seed_data`
+
+3. Create superuser:
     * Taken care by the example env
     * `docker exec -it profile-backend python manage.py createsuperuser`
 
-5. Import administrative Helsinki divisions if needed:
+4. Import administrative Helsinki divisions if needed:
     * `docker exec profile-backend python manage.py geo_import finland --municipalities`
     * `docker exec profile-backend python manage.py geo_import helsinki --divisions`
     * `docker exec profile-backend python manage.py mark_divisions_of_interest`
 
-6. Generate services: (command doesn't overwrite existing services with same
-`service_type`)
-    * `docker exec profile-backend python manage.py generate_services`
-
-7. Generate notifications if needed:
-    * `docker exec profile-backend python manage.py generate_notifications`
-
-8. Set permissions for service staff members if needed:
+5. Set permissions for service staff members if needed:
    * Create group(s) (via Django admin) and add user(s) to the group
    * Create service permissions for group manually via Django admin or for example:
      * `docker exec profile-backend python manage.py add_object_permission BERTH
@@ -73,9 +78,10 @@ Prerequisites:
      * `docker exec profile-backend python manage.py remove_object_permission BERTH
      VeneAdmin can_view_profiles`
 
-9. Seed development data (optional). This command will flush the database.
+6. Seed development data
+    * **Note!** This command will flush the database.
     * Add all data with defaults: `docker exec profile-backend python manage.py
-    seed_data`
+    seed_data --development`
     * See `python manage.py help seed_data` for optional arguments
     * Command will generate:
       * All available services
@@ -98,10 +104,12 @@ Prerequisites:
 * PostGIS 2.5
 * Python 3.7
 
+
 ### Installing Python requirements
 
 * Run `pip install -r requirements.txt`
 * Run `pip install -r requirements-dev.txt` (development requirements)
+
 
 ### Database
 
@@ -120,6 +128,7 @@ Allow user to create test database
 
     sudo -u postgres psql -c "ALTER USER open_city_profile CREATEDB;"
 
+
 ### Import administrative divisions
 
 In order to have the relevant Helsinki regions run the following commands:
@@ -127,6 +136,7 @@ In order to have the relevant Helsinki regions run the following commands:
 * `python manage.py geo_import finland --municipalities`
 * `python manage.py geo_import helsinki --divisions`
 * `python manage.py mark_divisions_of_interest`
+
 
 ### Daily running
 
@@ -180,14 +190,17 @@ commit.
 * Set the `DEBUG` environment variable to `1`.
 * Run `pytest`.
 
+
 ## Issue tracking
 
 * [Github issue list](https://github.com/City-of-Helsinki/open-city-profile/issues)
 * [Jira issues](https://helsinkisolutionoffice.atlassian.net/projects/OM/issues/?filter=allissues)
 
+
 ## API documentation
 
 * [Generated GraphiQL documentation](https://profiili-api.test.kuva.hel.ninja/graphql/)
+
 
 ## Environments
 Test: https://profiili-api.test.kuva.hel.ninja/graphql/
@@ -201,6 +214,7 @@ for automated builds and deployment into the test environment.
 The test environment is built automatically from the `develop` branch.
 
 ## Dependent services
+
 For a complete service the following additional components are also required:
 * [tunnistamo](https://github.com/City-of-Helsinki/tunnistamo) is used as the authentication service
 * [open-city-profile-ui](https://github.com/City-of-Helsinki/open-city-profile-ui/) provides UI
