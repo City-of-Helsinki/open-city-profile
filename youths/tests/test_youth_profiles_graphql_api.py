@@ -707,6 +707,50 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
     )
 
 
+def test_staff_user_can_update_youth_profile_with_photo_usage_field_if_under_15_years_old(
+    rf, user_gql_client
+):
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # Under 15 years
+    profile = ProfileWithPrimaryEmailFactory()
+    today = date.today()
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
+    YouthProfileFactory(profile=profile, birth_date=birth_date)
+
+    t = Template(
+        """
+        mutation {
+            updateYouthProfile(input:{
+                serviceType: ${service_type},
+                profileId: \"${profile_id}\",
+                youthProfile: {
+                    photoUsageApproved: ${photo_usage_approved}
+                }
+            }) {
+                clientMutationId
+            }
+        }
+    """
+    )
+    mutation = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        photo_usage_approved="true",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+
+    profile.youth_profile.refresh_from_db()
+    assert "errors" not in executed
+    assert profile.youth_profile.photo_usage_approved
+
+
 def test_normal_user_can_update_youth_profile_through_my_profile_mutation(
     rf, user_gql_client
 ):
