@@ -15,8 +15,9 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
+from profiles.enums import EmailType
 from profiles.models import Profile
-from profiles.tests.factories import EmailFactory
+from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
 from services.tests.factories import ServiceFactory
 from youths.enums import YouthLanguage
@@ -429,7 +430,7 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
 
 
 def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
-    rf, user_gql_client
+    rf, user_gql_client, email_data
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -441,6 +442,11 @@ def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
                     input: {
                         profile: {
                             nickname: \"${nickname}\",
+                            addEmails: [{
+                                email: \"${email}\",
+                                emailType: ${email_type},
+                                primary: true,
+                            }],
                             youthProfile: {
                                 schoolClass: "${schoolClass}"
                                 schoolName: "${schoolName}"
@@ -472,6 +478,8 @@ def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
         "approverEmail": "hyvaksyja@ex.com",
         "language": YouthLanguage.FINNISH.name,
         "birthDate": "2004-04-11",
+        "email": email_data["email"],
+        "email_type": email_data["email_type"],
     }
 
     query = t.substitute(**creation_data)
@@ -705,7 +713,7 @@ def test_normal_user_can_update_youth_profile_through_my_profile_mutation(
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     youth_profile = YouthProfileFactory(profile=profile)
 
     t = Template(
@@ -765,7 +773,7 @@ def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
 
     t = Template(
         """
@@ -1378,6 +1386,11 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
                     profile: {
                         firstName: \"${first_name}\",
                         lastName: \"${last_name}\",
+                        addEmails: [{
+                            email: \"${email}\",
+                            emailType: ${email_type},
+                            primary: true
+                        }]
                         youthProfile: {
                             birthDate: \"${birth_date}\",
                             approverEmail: \"${approver_email}\",
@@ -1412,6 +1425,8 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
         last_name="Doe",
         birth_date=birth_date_string,
         approver_email="jane.doe@example.com",
+        email="john.doe@example.com",
+        email_type=EmailType.PERSONAL.name,
     )
     expected_data = {
         "createProfile": {

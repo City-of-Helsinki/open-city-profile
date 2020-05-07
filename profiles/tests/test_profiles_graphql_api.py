@@ -14,6 +14,7 @@ from open_city_profile.consts import (
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
+    PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
@@ -36,6 +37,7 @@ from .factories import (
     EmailFactory,
     PhoneFactory,
     ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
 )
 
@@ -103,9 +105,48 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_cannot_create_profile_with_no_primary_email(
+    rf, user_gql_client, email_data
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                createMyProfile(
+                    input: {
+                        profile: {
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ]
+                        }
+                    }
+                ) {
+                profile{
+                    id
+                }
+            }
+            }
+        """
+    )
+
+    mutation = t.substitute(
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(not email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert "code" in executed["errors"][0]["extensions"]
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL
+    )
+
+
 def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -177,7 +218,8 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
 
 
 def test_normal_user_can_add_email(rf, user_gql_client, email_data):
-    ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -216,11 +258,18 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                     "edges": [
                         {
                             "node": {
+                                "email": email.email,
+                                "emailType": email.email_type.name,
+                                "primary": email.primary,
+                            }
+                        },
+                        {
+                            "node": {
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
-                                "primary": email_data["primary"],
+                                "primary": not email_data["primary"],
                             }
-                        }
+                        },
                     ]
                 }
             }
@@ -230,14 +279,14 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     mutation = t.substitute(
         email=email_data["email"],
         email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
+        primary=str(not email_data["primary"]).lower(),
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -297,7 +346,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_add_address(rf, user_gql_client, address_data):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -373,7 +422,7 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_update_address(rf, user_gql_client, address_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -450,8 +499,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_update_email(rf, user_gql_client, email_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -519,7 +568,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
 
 
 def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -588,8 +637,9 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
+    primary_email = profile.emails.filter(primary=True).first()
+    email = profile.emails.filter(primary=False).first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -622,7 +672,26 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
         """
     )
 
-    expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(
+                                    type="EmailNode", id=primary_email.id
+                                ),
+                                "email": primary_email.email,
+                                "emailType": primary_email.email_type.name,
+                                "primary": primary_email.primary,
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
 
     mutation = t.substitute(
         email_id=to_global_id(type="EmailNode", id=email.id),
@@ -635,7 +704,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
 
 
 def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -682,7 +751,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -729,8 +798,8 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_query_emails(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     query = """
@@ -768,7 +837,7 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
 
 
 def test_normal_user_can_query_phones(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -807,7 +876,7 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
 
 
 def test_normal_user_can_query_addresses(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -1080,7 +1149,7 @@ def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     SensitiveDataFactory(profile=profile, ssn="010199-1234")
 
     t = Template(
@@ -1124,7 +1193,7 @@ def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
 
 
 def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     category = SubscriptionTypeCategoryFactory()
     type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
     type_2 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-2")
@@ -2081,6 +2150,11 @@ def test_staff_user_can_create_a_profile(
                     profile: {
                         firstName: \"${first_name}\",
                         lastName: \"${last_name}\",
+                        addEmails: [{
+                            emailType: ${email_type},
+                            email: \"${email}\",
+                            primary: true,
+                        }],
                         addPhones: [{
                             phoneType: ${phone_type},
                             phone: \"${phone}\",
@@ -2097,6 +2171,15 @@ def test_staff_user_can_create_a_profile(
                             node {
                                 phoneType
                                 phone
+                                primary
+                            }
+                        }
+                    }
+                    emails {
+                        edges {
+                            node {
+                                emailType
+                                email
                                 primary
                             }
                         }
@@ -2121,6 +2204,8 @@ def test_staff_user_can_create_a_profile(
         last_name="Doe",
         phone_type=phone_data["phone_type"],
         phone=phone_data["phone"],
+        email_type=email_data["email_type"],
+        email=email_data["email"],
     )
     expected_data = {
         "createProfile": {
@@ -2133,6 +2218,17 @@ def test_staff_user_can_create_a_profile(
                             "node": {
                                 "phoneType": phone_data["phone_type"],
                                 "phone": phone_data["phone"],
+                                "primary": True,
+                            }
+                        }
+                    ]
+                },
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "emailType": email_data["email_type"],
+                                "email": email_data["email"],
                                 "primary": True,
                             }
                         }
@@ -2219,7 +2315,7 @@ def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_
 
 
 def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_with_sensitive_data(
-    rf, user_gql_client
+    rf, user_gql_client, email_data
 ):
     service_berth = ServiceFactory(service_type=ServiceType.BERTH)
     group_berth = GroupFactory()
@@ -2239,6 +2335,11 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
                     serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
+                        addEmails: [{
+                            email: \"${email}\",
+                            emailType: ${email_type},
+                            primary: true
+                        }],
                         sensitivedata: {
                             ssn: \"${ssn}\"
                         }
@@ -2256,7 +2357,11 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
     """
     )
     query = t.substitute(
-        service_type=ServiceType.BERTH.name, first_name="John", ssn="121282-123E"
+        service_type=ServiceType.BERTH.name,
+        first_name="John",
+        ssn="121282-123E",
+        email=email_data["email"],
+        email_type=email_data["email_type"],
     )
 
     expected_data = {
@@ -2320,7 +2425,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
 
 
 def test_staff_user_can_update_a_profile(rf, user_gql_client):
-    profile = ProfileFactory(first_name="Joe")
+    profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
     YouthProfileFactory(profile=profile)
@@ -2339,7 +2444,7 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client):
         "email": {
             "email": "another@example.com",
             "email_type": EmailType.WORK.name,
-            "primary": True,
+            "primary": False,
         },
         "phone": "0407654321",
         "school_class": "5F",
@@ -2425,7 +2530,12 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client):
         "updateProfile": {
             "profile": {
                 "firstName": data["first_name"],
-                "emails": {"edges": [{"node": {"email": data["email"]["email"]}}]},
+                "emails": {
+                    "edges": [
+                        {"node": {"email": profile.emails.first().email}},
+                        {"node": {"email": data["email"]["email"]}},
+                    ]
+                },
                 "phones": {"edges": [{"node": {"phone": data["phone"]}}]},
                 "addresses": {"edges": []},
                 "youthProfile": {"schoolClass": data["school_class"]},
@@ -2440,7 +2550,7 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client):
 def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     rf, user_gql_client
 ):
-    profile = ProfileFactory(first_name="Joe")
+    profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -2999,7 +3109,9 @@ def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
 
 
 def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_client):
-    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    profile = ProfileWithPrimaryEmailFactory(
+        user=None, first_name="John", last_name="Doe"
+    )
     claim_token = ClaimTokenFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -3047,7 +3159,9 @@ def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_
 
 
 def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_client):
-    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    profile = ProfileWithPrimaryEmailFactory(
+        user=None, first_name="John", last_name="Doe"
+    )
     expired_claim_token = ClaimTokenFactory(
         profile=profile, expires_at=timezone.now() - timedelta(days=1)
     )
@@ -3084,7 +3198,7 @@ def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_clien
 
 
 def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_client):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
     expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
     request = rf.post("/graphql")
@@ -3120,7 +3234,8 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
 
 
 def test_user_can_download_profile(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    primary_email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -3138,7 +3253,22 @@ def test_user_can_download_profile(rf, user_gql_client):
                 {"key": "NICKNAME", "value": profile.nickname},
                 {"key": "LANGUAGE", "value": profile.language},
                 {"key": "CONTACT_METHOD", "value": profile.contact_method},
-                {"key": "EMAILS", "children": []},
+                {
+                    "key": "EMAILS",
+                    "children": [
+                        {
+                            "key": "EMAIL",
+                            "children": [
+                                {"key": "PRIMARY", "value": primary_email.primary},
+                                {
+                                    "key": "EMAIL_TYPE",
+                                    "value": primary_email.email_type.name,
+                                },
+                                {"key": "EMAIL", "value": primary_email.email},
+                            ],
+                        }
+                    ],
+                },
                 {"key": "PHONES", "children": []},
                 {"key": "ADDRESSES", "children": []},
                 {"key": "SERVICE_CONNECTIONS", "children": []},

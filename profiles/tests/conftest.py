@@ -29,7 +29,7 @@ def profile_data():
 
 
 @pytest.fixture
-def email_data(primary=False):
+def email_data(primary=True):
     return {
         "email": fake.email(),
         "email_type": EmailType.PERSONAL.name,
