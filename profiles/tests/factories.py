@@ -13,6 +13,10 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         model = Profile
 
 
+class ProfileDataDictFactory(factory.DictFactory):
+    nickname = factory.Faker("name")
+
+
 class ClaimTokenFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
 
@@ -28,6 +32,12 @@ class EmailFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Email
+
+
+class EmailDataDictFactory(factory.DictFactory):
+    email = factory.Faker("email")
+    email_type = EmailType.PERSONAL.name
+    primary = True
 
 
 class ProfileWithPrimaryEmailFactory(ProfileFactory):
@@ -51,6 +61,12 @@ class PhoneFactory(factory.django.DjangoModelFactory):
         model = Phone
 
 
+class PhoneDataDictFactory(factory.DictFactory):
+    phone = factory.Faker("phone_number")
+    phone_type = PhoneType.WORK.name
+    primary = False
+
+
 class AddressFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
     primary = False
@@ -62,6 +78,15 @@ class AddressFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Address
+
+
+class AddressDataDictFactory(factory.DictFactory):
+    address = factory.Faker("street_address")
+    postal_code = factory.Faker("postcode")
+    city = factory.Faker("city")
+    country_code = factory.Faker("country_code", representation="alpha-2")
+    address_type = AddressType.WORK.name
+    primary = False
 
 
 class VocabularyFactory(factory.django.DjangoModelFactory):

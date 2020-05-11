@@ -3,11 +3,9 @@ from django.forms.models import inlineformset_factory
 from ..admin import EmailFormSet
 from ..enums import EmailType
 from ..models import Email, Profile
-from .factories import ProfileFactory
 
 
-def test_profile_should_have_exactly_one_primary_email():
-    profile = ProfileFactory()
+def test_profile_should_have_exactly_one_primary_email(profile):
     email_formset = inlineformset_factory(
         Profile, Email, formset=EmailFormSet, fields=["email", "email_type", "primary"]
     )
@@ -23,8 +21,7 @@ def test_profile_should_have_exactly_one_primary_email():
     assert formset.is_valid()
 
 
-def test_profile_should_not_be_valid_with_no_primary_email():
-    profile = ProfileFactory()
+def test_profile_should_not_be_valid_with_no_primary_email(profile):
     email_formset = inlineformset_factory(
         Profile, Email, formset=EmailFormSet, fields=["email", "email_type", "primary"]
     )
@@ -40,8 +37,7 @@ def test_profile_should_not_be_valid_with_no_primary_email():
     assert not formset.is_valid()
 
 
-def test_profile_should_not_be_valid_with_two_or_more_primary_emails():
-    profile = ProfileFactory()
+def test_profile_should_not_be_valid_with_two_or_more_primary_emails(profile):
     email_formset = inlineformset_factory(
         Profile, Email, formset=EmailFormSet, fields=["email", "email_type", "primary"]
     )

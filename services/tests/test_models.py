@@ -38,12 +38,12 @@ def test_connect_duplicate_service_for_profile():
 
 
 def test_connect_same_service_with_different_profile():
+    number_of_connections = 2
     service = ServiceFactory()
-    profile = ProfileFactory()
-    ServiceConnectionFactory(profile=profile, service=service)
-    profile = ProfileFactory()
-    ServiceConnectionFactory(profile=profile, service=service)
-    assert ServiceConnection.objects.count() == 2
+    for i in range(number_of_connections):
+        profile = ProfileFactory()
+        ServiceConnectionFactory(profile=profile, service=service)
+    assert ServiceConnection.objects.count() == number_of_connections
 
 
 def test_connect_two_different_services_for_same_profile():

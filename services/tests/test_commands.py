@@ -4,7 +4,7 @@ import pytest
 from django.core.management import call_command
 from guardian.shortcuts import assign_perm
 
-from open_city_profile.tests.factories import GroupFactory, UserFactory
+from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 from services.models import Service
 
@@ -24,8 +24,7 @@ def test_command_generate_services_adds_only_missing_services():
     assert Service.objects.count() == len(ServiceType)
 
 
-def test_command_add_object_permissions_with_correct_arguments_output():
-    user = UserFactory()
+def test_command_add_object_permissions_with_correct_arguments_output(user):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -60,8 +59,9 @@ def test_command_add_object_permissions_with_correct_arguments_output():
     assert user.has_perm("can_manage_profiles", service)
 
 
-def test_command_add_object_permissions_throws_error_when_invalid_permission_given():
-    user = UserFactory()
+def test_command_add_object_permissions_throws_error_when_invalid_permission_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -76,8 +76,9 @@ def test_command_add_object_permissions_throws_error_when_invalid_permission_giv
     assert not user.has_perm("can_manage_profiles_invalid", service)
 
 
-def test_command_add_object_permissions_throws_error_when_invalid_group_name_given():
-    user = UserFactory()
+def test_command_add_object_permissions_throws_error_when_invalid_group_name_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -92,8 +93,9 @@ def test_command_add_object_permissions_throws_error_when_invalid_group_name_giv
     assert not user.has_perm("can_manage_profiles", service)
 
 
-def test_command_add_object_permissions_throws_error_when_invalid_service_type_given():
-    user = UserFactory()
+def test_command_add_object_permissions_throws_error_when_invalid_service_type_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -108,8 +110,7 @@ def test_command_add_object_permissions_throws_error_when_invalid_service_type_g
     assert not user.has_perm("can_manage_profiles", service)
 
 
-def test_command_remove_object_permissions_with_correct_arguments_output():
-    user = UserFactory()
+def test_command_remove_object_permissions_with_correct_arguments_output(user):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -146,8 +147,9 @@ def test_command_remove_object_permissions_with_correct_arguments_output():
     assert not user.has_perm("can_manage_profiles", service)
 
 
-def test_command_remove_object_permissions_throws_error_when_invalid_permission_given():
-    user = UserFactory()
+def test_command_remove_object_permissions_throws_error_when_invalid_permission_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -164,8 +166,9 @@ def test_command_remove_object_permissions_throws_error_when_invalid_permission_
     assert user.has_perm("can_manage_profiles", service)
 
 
-def test_command_remove_object_permissions_throws_error_when_invalid_group_name_given():
-    user = UserFactory()
+def test_command_remove_object_permissions_throws_error_when_invalid_group_name_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()
@@ -182,8 +185,9 @@ def test_command_remove_object_permissions_throws_error_when_invalid_group_name_
     assert user.has_perm("can_manage_profiles", service)
 
 
-def test_command_remove_object_permissions_throws_error_when_invalid_service_type_given():
-    user = UserFactory()
+def test_command_remove_object_permissions_throws_error_when_invalid_service_type_given(
+    user,
+):
     group = GroupFactory(name="{}Admin".format(ServiceType.BERTH.name.capitalize()))
     user.groups.add(group)
     service = ServiceFactory()

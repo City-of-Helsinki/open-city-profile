@@ -5,7 +5,7 @@ from django_ilmoitin.models import NotificationTemplate
 from faker import Faker
 from guardian.shortcuts import get_group_perms
 
-from open_city_profile.tests.factories import GroupFactory, UserFactory
+from open_city_profile.tests.factories import GroupFactory
 from profiles.models import Profile
 from services.enums import ServiceType
 from services.models import AllowedDataField, Service
@@ -48,12 +48,11 @@ def test_generate_group_for_service(times):
 
 
 @pytest.mark.parametrize("times", [1, 2])
-def test_assign_permissions(times):
+def test_assign_permissions(times, user):
     available_permissions = [item[0] for item in Service._meta.permissions]
     service = ServiceFactory()
     # assign_permissions expects a Group and a Service exist with the same name.
     group = GroupFactory(name=service.service_type)
-    user = UserFactory()
     user.groups.add(group)
 
     for permission in available_permissions:
