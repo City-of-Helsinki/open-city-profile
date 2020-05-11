@@ -608,6 +608,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     @staff_required(required_permission="manage")
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        service = Service.objects.get(service_type=input["service_type"])
         # serviceType passed on to the sub resolvers
         info.context.service_type = input["service_type"]
         profile_data = input.get("profile")
@@ -628,9 +629,14 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             )
 
         if sensitive_data:
-            update_sensitivedata(profile, sensitive_data)
+            if info.context.user.has_perm("can_manage_sensitivedata", service):
+                update_sensitivedata(profile, sensitive_data)
+            else:
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
 
-        return UpdateMyProfileMutation(profile=profile)
+        return UpdateProfileMutation(profile=profile)
 
 
 class ClaimProfileMutation(relay.ClientIDMutation):

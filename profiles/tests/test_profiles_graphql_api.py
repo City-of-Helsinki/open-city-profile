@@ -2547,6 +2547,57 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client):
     assert executed["data"] == expected_data
 
 
+def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
+    rf, user_gql_client
+):
+    """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
+    profile = ProfileWithPrimaryEmailFactory()
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        ssn="010199-1234",
+    )
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
 def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     rf, user_gql_client
 ):
