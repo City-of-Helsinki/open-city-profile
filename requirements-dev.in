@@ -13,6 +13,7 @@ pydocstyle
 pytest
 pytest-cov
 pytest-django
+pytest-factoryboy
 rope
 yapf
 factory_boy
