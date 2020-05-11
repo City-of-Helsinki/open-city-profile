@@ -20,7 +20,7 @@ def get_next_data_field_order():
 
 
 class AllowedDataField(TranslatableModel, SortableMixin):
-    field_name = models.CharField(max_length=30)
+    field_name = models.CharField(max_length=30, unique=True)
     translations = TranslatedFields(label=models.CharField(max_length=64))
     order = models.PositiveIntegerField(
         default=get_next_data_field_order, editable=False, db_index=True

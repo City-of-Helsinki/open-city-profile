@@ -8,30 +8,25 @@ from django.utils import timezone
 from django_ilmoitin.utils import send_notification
 from enumfields import EnumField
 
-from open_city_profile.exceptions import CannotCreateYouthProfileIfUnder13YearsOldError
 from profiles.models import Profile
 from utils.models import SerializableMixin
 
 from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
-from .utils import calculate_age
 
 
 def calculate_expiration(from_date=date.today()):
-    # Membership always expires at the end of the season (31.7.).
-    # Signups before May expire in the summer of the same year, others next year.
-    return date(
-        year=from_date.year + 1 if from_date.month > 4 else from_date.year,
-        month=7,
-        day=31,
+    """Calculates the expiration date for a youth membership based on the given date.
+
+    Membership always expires at the end of the season. Signups made before the long season start month
+    expire in the summer of the same year, others next year.
+    """
+    full_season_start = settings.YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH
+    expiration_day, expiration_month = settings.YOUTH_MEMBERSHIP_SEASON_END_DATE
+    expiration_year = (
+        from_date.year + 1 if from_date.month >= full_season_start else from_date.year
     )
-
-
-def validate_over_13_years_old(birth_date):
-    if calculate_age(birth_date) < 13:
-        raise CannotCreateYouthProfileIfUnder13YearsOldError(
-            "Under 13 years old cannot create youth profile"
-        )
+    return date(year=expiration_year, month=expiration_month, day=expiration_day)
 
 
 @reversion.register()
@@ -40,7 +35,9 @@ class YouthProfile(SerializableMixin):
     profile = models.OneToOneField(
         Profile, related_name="youth_profile", on_delete=models.CASCADE
     )
-    birth_date = models.DateField(validators=[validate_over_13_years_old])
+    # Post-save signal generates the membership number
+    membership_number = models.CharField(max_length=16, blank=True)
+    birth_date = models.DateField()
     school_name = models.CharField(max_length=128, blank=True)
     school_class = models.CharField(max_length=10, blank=True)
     expiration = models.DateField(default=calculate_expiration)
@@ -62,11 +59,6 @@ class YouthProfile(SerializableMixin):
     )
     approved_time = models.DateTimeField(null=True, blank=True, editable=False)
     photo_usage_approved = models.NullBooleanField()
-
-    @property
-    def membership_number(self):
-        num = 0 if self.pk is None else self.pk
-        return str(num).zfill(settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH)
 
     def make_approvable(self):
         self.approval_token = uuid.uuid4()

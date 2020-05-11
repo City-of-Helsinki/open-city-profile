@@ -22,12 +22,23 @@ class ClaimTokenFactory(factory.django.DjangoModelFactory):
 
 class EmailFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
-    primary = False
+    primary = True
     email_type = EmailType.NONE
     email = factory.Faker("email")
 
     class Meta:
         model = Email
+
+
+class ProfileWithPrimaryEmailFactory(ProfileFactory):
+    @factory.post_generation
+    def emails(self, create, extracted, **kwargs):
+        if not create:
+            return
+        number_of_emails = extracted if extracted else 1
+        EmailFactory(profile=self, primary=True)
+        for n in range(number_of_emails - 1):
+            EmailFactory(profile=self, primary=False)
 
 
 class PhoneFactory(factory.django.DjangoModelFactory):

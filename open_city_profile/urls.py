@@ -11,7 +11,12 @@ from youths.views import profiles
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path(
+        "graphql/",
+        csrf_exempt(
+            GraphQLView.as_view(graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG)
+        ),
+    ),
 ]
 
 if settings.GDPR_API_ENABLED:

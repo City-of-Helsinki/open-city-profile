@@ -14,12 +14,21 @@ from open_city_profile.consts import (
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
+    PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
+from profiles.enums import AddressType, EmailType, PhoneType
+from profiles.models import Profile
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+from subscriptions.models import Subscription
+from subscriptions.tests.factories import (
+    SubscriptionTypeCategoryFactory,
+    SubscriptionTypeFactory,
+)
 from users.models import User
+from youths.tests.factories import YouthProfileFactory
 
 from ..schema import ProfileNode
 from .factories import (
@@ -28,6 +37,7 @@ from .factories import (
     EmailFactory,
     PhoneFactory,
     ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
 )
 
@@ -95,9 +105,48 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_cannot_create_profile_with_no_primary_email(
+    rf, user_gql_client, email_data
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                createMyProfile(
+                    input: {
+                        profile: {
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ]
+                        }
+                    }
+                ) {
+                profile{
+                    id
+                }
+            }
+            }
+        """
+    )
+
+    mutation = t.substitute(
+        email=email_data["email"],
+        email_type=email_data["email_type"],
+        primary=str(not email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert "code" in executed["errors"][0]["extensions"]
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL
+    )
+
+
 def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -169,7 +218,8 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
 
 
 def test_normal_user_can_add_email(rf, user_gql_client, email_data):
-    ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -208,11 +258,18 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                     "edges": [
                         {
                             "node": {
+                                "email": email.email,
+                                "emailType": email.email_type.name,
+                                "primary": email.primary,
+                            }
+                        },
+                        {
+                            "node": {
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
-                                "primary": email_data["primary"],
+                                "primary": not email_data["primary"],
                             }
-                        }
+                        },
                     ]
                 }
             }
@@ -222,14 +279,14 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     mutation = t.substitute(
         email=email_data["email"],
         email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
+        primary=str(not email_data["primary"]).lower(),
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -289,7 +346,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_add_address(rf, user_gql_client, address_data):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -365,7 +422,7 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_update_address(rf, user_gql_client, address_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -442,8 +499,8 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_update_email(rf, user_gql_client, email_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -511,7 +568,7 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
 
 
 def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -580,8 +637,9 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
+    primary_email = profile.emails.filter(primary=True).first()
+    email = profile.emails.filter(primary=False).first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -614,7 +672,26 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
         """
     )
 
-    expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(
+                                    type="EmailNode", id=primary_email.id
+                                ),
+                                "email": primary_email.email,
+                                "emailType": primary_email.email_type.name,
+                                "primary": primary_email.primary,
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
 
     mutation = t.substitute(
         email_id=to_global_id(type="EmailNode", id=email.id),
@@ -627,7 +704,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
 
 
 def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -674,7 +751,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
 
 
 def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -721,8 +798,8 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
 
 
 def test_normal_user_can_query_emails(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     query = """
@@ -760,7 +837,7 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
 
 
 def test_normal_user_can_query_phones(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -799,7 +876,7 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
 
 
 def test_normal_user_can_query_addresses(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -1038,18 +1115,18 @@ def test_normal_user_can_update_primary_contact_details(
                     "edges": [
                         {
                             "node": {
-                                "id": to_global_id(type="EmailNode", id=email_2.id),
-                                "email": email_2.email,
-                                "emailType": email_2.email_type.name,
-                                "primary": False,
-                            }
-                        },
-                        {
-                            "node": {
                                 "id": to_global_id(type="EmailNode", id=email.id),
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": True,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailNode", id=email_2.id),
+                                "email": email_2.email,
+                                "emailType": email_2.email_type.name,
+                                "primary": False,
                             }
                         },
                     ]
@@ -1063,6 +1140,139 @@ def test_normal_user_can_update_primary_contact_details(
         email=email_data["email"],
         email_type=email_data["email_type"],
         primary="true",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    SensitiveDataFactory(profile=profile, ssn="010199-1234")
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: "${nickname}"
+                            sensitivedata: {
+                                ssn: "${ssn}"
+                            }
+                        }
+                    }
+                ) {
+                    profile {
+                        nickname
+                        sensitivedata {
+                            ssn
+                        }
+                    }
+                }
+            }
+        """
+    )
+
+    data = {"nickname": "Larry", "ssn": "010199-4321"}
+
+    query = t.substitute(**data)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "nickname": data["nickname"],
+                "sensitivedata": {"ssn": data["ssn"]},
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    category = SubscriptionTypeCategoryFactory()
+    type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
+    type_2 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-2")
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            updateMyProfile(
+                input: {
+                    profile: {
+                        subscriptions: [
+                            {
+                                subscriptionTypeId: \"${type_1_id}\",
+                                enabled: ${type_1_enabled}
+                            },
+                            {
+                                subscriptionTypeId: \"${type_2_id}\",
+                                enabled: ${type_2_enabled}
+                            }
+                        ]
+                    }
+                }
+            ) {
+                profile {
+                    subscriptions {
+                        edges {
+                            node {
+                                enabled
+                                subscriptionType {
+                                    code
+                                    subscriptionTypeCategory {
+                                        code
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+    )
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "subscriptions": {
+                    "edges": [
+                        {
+                            "node": {
+                                "enabled": True,
+                                "subscriptionType": {
+                                    "code": type_1.code,
+                                    "subscriptionTypeCategory": {"code": category.code},
+                                },
+                            }
+                        },
+                        {
+                            "node": {
+                                "enabled": False,
+                                "subscriptionType": {
+                                    "code": type_2.code,
+                                    "subscriptionTypeCategory": {"code": category.code},
+                                },
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    mutation = t.substitute(
+        type_1_id=to_global_id(type="SubscriptionTypeNode", id=type_1.id),
+        type_1_enabled="true",
+        type_2_id=to_global_id(type="SubscriptionTypeNode", id=type_2.id),
+        type_2_enabled="false",
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
@@ -1323,6 +1533,488 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_staff_user_can_filter_berth_profiles_by_emails(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    EmailFactory(profile=profile_1, primary=True, email_type=EmailType.PERSONAL)
+    email = EmailFactory(profile=profile_2, primary=False, email_type=EmailType.WORK)
+    EmailFactory(profile=profile_3, primary=False, email_type=EmailType.OTHER)
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by email
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $email: String){
+            profiles(serviceType: $serviceType, emails_Email: $email) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "email": email.email},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by email_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $emailType: String){
+            profiles(serviceType: $serviceType, emails_EmailType: $emailType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "emailType": email.email_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, emails_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_phones(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    PhoneFactory(profile=profile_1, primary=True, phone_type=PhoneType.HOME)
+    phone = PhoneFactory(profile=profile_2, primary=False, phone_type=PhoneType.WORK)
+    PhoneFactory(profile=profile_3, primary=False, phone_type=PhoneType.MOBILE)
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by phone
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $phone: String){
+            profiles(serviceType: $serviceType, phones_Phone: $phone) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "phone": phone.phone},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by phone_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $phoneType: String){
+            profiles(serviceType: $serviceType, phones_PhoneType: $phoneType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "phoneType": phone.phone_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, phones_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
+    profile_1, profile_2, profile_3 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    AddressFactory(
+        profile=profile_1,
+        postal_code="00100",
+        city="Helsinki",
+        country_code="FI",
+        primary=True,
+        address_type=AddressType.HOME,
+    )
+    address = AddressFactory(
+        profile=profile_2,
+        postal_code="00100",
+        city="Espoo",
+        country_code="FI",
+        primary=False,
+        address_type=AddressType.WORK,
+    )
+    AddressFactory(
+        profile=profile_3,
+        postal_code="00200",
+        city="Stockholm",
+        country_code="SE",
+        primary=False,
+        address_type=AddressType.OTHER,
+    )
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # filter by address
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $address: String){
+            profiles(serviceType: $serviceType, addresses_Address: $address) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "address": address.address},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by postal_code
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $postalCode: String){
+            profiles(serviceType: $serviceType, addresses_PostalCode: $postalCode) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "postalCode": address.postal_code,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by city
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $city: String){
+            profiles(serviceType: $serviceType, addresses_City: $city) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "city": address.city},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by country code
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $countryCode: String){
+            profiles(serviceType: $serviceType, addresses_CountryCode: $countryCode) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "countryCode": address.country_code,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by address_type
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $addressType: String){
+            profiles(serviceType: $serviceType, addresses_AddressType: $addressType) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "addressType": address.address_type.value,
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by primary
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
+            profiles(serviceType: $serviceType, addresses_Primary: $primary) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
+    rf, user_gql_client
+):
+    def generate_expected_data(profiles):
+        return {
+            "profiles": {
+                "edges": [
+                    {
+                        "node": {
+                            "emails": {
+                                "edges": [
+                                    {"node": {"email": profile.emails.first().email}}
+                                ]
+                            },
+                            "phones": {
+                                "edges": [
+                                    {"node": {"phone": profile.phones.first().phone}}
+                                ]
+                            },
+                        }
+                    }
+                    for profile in profiles
+                ]
+            }
+        }
+
+    profile_1, profile_2, profile_3, profile_4 = (
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+        ProfileFactory(),
+    )
+    PhoneFactory(profile=profile_1, phone="0401234561", primary=True)
+    PhoneFactory(profile=profile_2, phone="0401234562", primary=True)
+    PhoneFactory(profile=profile_3, phone="0401234563", primary=True)
+    PhoneFactory(profile=profile_4, phone="0401234564", primary=True)
+
+    EmailFactory(profile=profile_1, email="first@example.com", primary=True)
+    EmailFactory(profile=profile_2, email="second@example.com", primary=True)
+    EmailFactory(profile=profile_3, email="third@example.com", primary=True)
+    EmailFactory(profile=profile_4, email="fourth@example.com", primary=True)
+
+    AddressFactory(profile=profile_1, primary=True, postal_code="00100")
+    AddressFactory(profile=profile_2, postal_code="00100")
+    AddressFactory(profile=profile_3, postal_code="00100")
+    AddressFactory(profile=profile_4, postal_code="00200")
+
+    cat = SubscriptionTypeCategoryFactory(code="TEST-CATEGORY-1")
+    type_1 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-1")
+    type_2 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-2")
+
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_1, subscription_type=type_2, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_1, enabled=True
+    )
+    Subscription.objects.create(
+        profile=profile_2, subscription_type=type_2, enabled=False
+    )
+
+    Subscription.objects.create(
+        profile=profile_3, subscription_type=type_1, enabled=True
+    )
+
+    Subscription.objects.create(
+        profile=profile_4, subscription_type=type_2, enabled=True
+    )
+
+    service = ServiceFactory()
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    ServiceConnectionFactory(profile=profile_4, service=service)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $subscriptionType: String, $postalCode: String){
+            profiles(
+                serviceType: $serviceType,
+                enabledSubscriptions: $subscriptionType,
+                addresses_PostalCode: $postalCode
+            ) {
+                edges {
+                    node {
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                }
+                            }
+                        }
+                        phones {
+                            edges {
+                                node {
+                                    phone
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    # test for type 1 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_1.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data(
+        [profile_1, profile_2, profile_3]
+    )
+
+    # test for type 2 + postal code 00100
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "subscriptionType": type_2.code,
+            "postalCode": "00100",
+        },
+        context=request,
+    )
+    assert dict(executed["data"]) == generate_expected_data([profile_1])
+
+
 def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
@@ -1352,8 +2044,7 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
             }
         }
     """
-    # )
-    # query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
     executed = user_gql_client.execute(query, context=request)
     assert "data" in executed
@@ -1459,6 +2150,11 @@ def test_staff_user_can_create_a_profile(
                     profile: {
                         firstName: \"${first_name}\",
                         lastName: \"${last_name}\",
+                        addEmails: [{
+                            emailType: ${email_type},
+                            email: \"${email}\",
+                            primary: true,
+                        }],
                         addPhones: [{
                             phoneType: ${phone_type},
                             phone: \"${phone}\",
@@ -1475,6 +2171,15 @@ def test_staff_user_can_create_a_profile(
                             node {
                                 phoneType
                                 phone
+                                primary
+                            }
+                        }
+                    }
+                    emails {
+                        edges {
+                            node {
+                                emailType
+                                email
                                 primary
                             }
                         }
@@ -1499,6 +2204,8 @@ def test_staff_user_can_create_a_profile(
         last_name="Doe",
         phone_type=phone_data["phone_type"],
         phone=phone_data["phone"],
+        email_type=email_data["email_type"],
+        email=email_data["email"],
     )
     expected_data = {
         "createProfile": {
@@ -1511,6 +2218,17 @@ def test_staff_user_can_create_a_profile(
                             "node": {
                                 "phoneType": phone_data["phone_type"],
                                 "phone": phone_data["phone"],
+                                "primary": True,
+                            }
+                        }
+                    ]
+                },
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "emailType": email_data["email_type"],
+                                "email": email_data["email"],
                                 "primary": True,
                             }
                         }
@@ -1597,7 +2315,7 @@ def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_
 
 
 def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_with_sensitive_data(
-    rf, user_gql_client
+    rf, user_gql_client, email_data
 ):
     service_berth = ServiceFactory(service_type=ServiceType.BERTH)
     group_berth = GroupFactory()
@@ -1617,6 +2335,11 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
                     serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
+                        addEmails: [{
+                            email: \"${email}\",
+                            emailType: ${email_type},
+                            primary: true
+                        }],
                         sensitivedata: {
                             ssn: \"${ssn}\"
                         }
@@ -1634,7 +2357,11 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
     """
     )
     query = t.substitute(
-        service_type=ServiceType.BERTH.name, first_name="John", ssn="121282-123E"
+        service_type=ServiceType.BERTH.name,
+        first_name="John",
+        ssn="121282-123E",
+        email=email_data["email"],
+        email_type=email_data["email_type"],
     )
 
     expected_data = {
@@ -1697,6 +2424,220 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     )
 
 
+def test_staff_user_can_update_a_profile(rf, user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
+    phone = PhoneFactory(profile=profile)
+    address = AddressFactory(profile=profile)
+    YouthProfileFactory(profile=profile)
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+    assign_perm("can_manage_sensitivedata", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    data = {
+        "first_name": "John",
+        "email": {
+            "email": "another@example.com",
+            "email_type": EmailType.WORK.name,
+            "primary": False,
+        },
+        "phone": "0407654321",
+        "school_class": "5F",
+        "ssn": "010199-1234",
+    }
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        firstName: \"${first_name}\",
+                        addEmails: [{
+                            email: \"${email}\"
+                            emailType: ${email_type}
+                            primary: ${primary}
+                        }],
+                        updatePhones: [{
+                            id: \"${phone_id}\",
+                            phone: \"${phone}\",
+                        }],
+                        removeAddresses: [\"${address_id}\"],
+                        youthProfile: {
+                            schoolClass: \"${school_class}\"
+                        },
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                    emails {
+                        edges {
+                            node {
+                                email
+                            }
+                        }
+                    }
+                    phones {
+                        edges {
+                            node {
+                                phone
+                            }
+                        }
+                    }
+                    addresses {
+                        edges {
+                            node {
+                                address
+                            }
+                        }
+                    }
+                    youthProfile {
+                        schoolClass
+                    }
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        first_name=data["first_name"],
+        phone_id=to_global_id("PhoneNode", phone.pk),
+        email=data["email"]["email"],
+        email_type=data["email"]["email_type"],
+        primary=str(data["email"]["primary"]).lower(),
+        phone=data["phone"],
+        address_id=to_global_id(type="AddressNode", id=address.pk),
+        school_class=data["school_class"],
+        ssn=data["ssn"],
+    )
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "firstName": data["first_name"],
+                "emails": {
+                    "edges": [
+                        {"node": {"email": profile.emails.first().email}},
+                        {"node": {"email": data["email"]["email"]}},
+                    ]
+                },
+                "phones": {"edges": [{"node": {"phone": data["phone"]}}]},
+                "addresses": {"edges": []},
+                "youthProfile": {"schoolClass": data["school_class"]},
+                "sensitivedata": {"ssn": data["ssn"]},
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
+    rf, user_gql_client
+):
+    """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
+    profile = ProfileWithPrimaryEmailFactory()
+    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory()
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        sensitivedata: {
+                            ssn: \"${ssn}\"
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        ssn="010199-1234",
+    )
+    executed = user_gql_client.execute(query, context=request)
+
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+
+
+def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
+    rf, user_gql_client
+):
+    profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
+    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+        mutation {
+            updateProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profile: {
+                        id: \"${id}\",
+                        firstName: \"${first_name}\",
+                    }
+                }
+            ) {
+                profile {
+                    firstName
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        id=to_global_id("ProfileNode", profile.pk),
+        first_name="John",
+    )
+    executed = user_gql_client.execute(query, context=request)
+    assert "errors" in executed
+    assert executed["errors"][0]["message"] == _(
+        "You do not have permission to perform this action."
+    )
+    assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
+
+
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     request = rf.post("/graphql")
@@ -1735,6 +2676,89 @@ def test_normal_user_can_query_his_own_profiles_sensitivedata(rf, user_gql_clien
         "myProfile": {
             "firstName": profile.first_name,
             "sensitivedata": {"ssn": sensitive_data.ssn},
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    cat = SubscriptionTypeCategoryFactory(
+        code="TEST-CATEGORY-1", label="Test Category 1"
+    )
+    type_1 = SubscriptionTypeFactory(
+        subscription_type_category=cat, code="TEST-1", label="Test 1"
+    )
+    type_2 = SubscriptionTypeFactory(
+        subscription_type_category=cat, code="TEST-2", label="Test 2"
+    )
+    Subscription.objects.create(profile=profile, subscription_type=type_1, enabled=True)
+    Subscription.objects.create(
+        profile=profile, subscription_type=type_2, enabled=False
+    )
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                subscriptions {
+                    edges {
+                        node {
+                            enabled
+                            subscriptionType {
+                                order
+                                code
+                                label
+                                subscriptionTypeCategory {
+                                    code
+                                    label
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+            "subscriptions": {
+                "edges": [
+                    {
+                        "node": {
+                            "enabled": True,
+                            "subscriptionType": {
+                                "order": 1,
+                                "code": "TEST-1",
+                                "label": "Test 1",
+                                "subscriptionTypeCategory": {
+                                    "code": "TEST-CATEGORY-1",
+                                    "label": "Test Category 1",
+                                },
+                            },
+                        }
+                    },
+                    {
+                        "node": {
+                            "enabled": False,
+                            "subscriptionType": {
+                                "order": 2,
+                                "code": "TEST-2",
+                                "label": "Test 2",
+                                "subscriptionTypeCategory": {
+                                    "code": "TEST-CATEGORY-1",
+                                    "label": "Test Category 1",
+                                },
+                            },
+                        }
+                    },
+                ]
+            },
         }
     }
     executed = user_gql_client.execute(query, context=request)
@@ -2136,7 +3160,9 @@ def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
 
 
 def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_client):
-    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    profile = ProfileWithPrimaryEmailFactory(
+        user=None, first_name="John", last_name="Doe"
+    )
     claim_token = ClaimTokenFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -2184,7 +3210,9 @@ def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_
 
 
 def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_client):
-    profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
+    profile = ProfileWithPrimaryEmailFactory(
+        user=None, first_name="John", last_name="Doe"
+    )
     expired_claim_token = ClaimTokenFactory(
         profile=profile, expires_at=timezone.now() - timedelta(days=1)
     )
@@ -2221,7 +3249,7 @@ def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_clien
 
 
 def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_client):
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
     expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
     request = rf.post("/graphql")
@@ -2257,7 +3285,8 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
 
 
 def test_user_can_download_profile(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    primary_email = profile.emails.first()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -2278,10 +3307,29 @@ def test_user_can_download_profile(rf, user_gql_client):
                         {"key": "NICKNAME", "value": profile.nickname},
                         {"key": "LANGUAGE", "value": profile.language},
                         {"key": "CONTACT_METHOD", "value": profile.contact_method},
-                        {"key": "EMAILS", "children": []},
+                        {
+                            "key": "EMAILS",
+                            "children": [
+                                {
+                                    "key": "EMAIL",
+                                    "children": [
+                                        {
+                                            "key": "PRIMARY",
+                                            "value": primary_email.primary,
+                                        },
+                                        {
+                                            "key": "EMAIL_TYPE",
+                                            "value": primary_email.email_type.name,
+                                        },
+                                        {"key": "EMAIL", "value": primary_email.email},
+                                    ],
+                                }
+                            ],
+                        },
                         {"key": "PHONES", "children": []},
                         {"key": "ADDRESSES", "children": []},
                         {"key": "SERVICE_CONNECTIONS", "children": []},
+                        {"key": "SUBSCRIPTIONS", "children": []},
                     ],
                 }
             ],

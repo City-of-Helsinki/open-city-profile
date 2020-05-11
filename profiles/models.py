@@ -11,6 +11,7 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
@@ -70,9 +71,9 @@ class LegalRelationship(models.Model):
 @reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
-    first_name = models.CharField(max_length=255, blank=True)
-    last_name = models.CharField(max_length=255, blank=True)
-    nickname = models.CharField(max_length=32, blank=True)
+    first_name = models.CharField(max_length=255, blank=True, db_index=True)
+    last_name = models.CharField(max_length=255, blank=True, db_index=True)
+    nickname = models.CharField(max_length=32, blank=True, db_index=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
         storage=OverwriteStorage(),
@@ -80,7 +81,10 @@ class Profile(UUIDModel, SerializableMixin):
         blank=True,
     )
     language = models.CharField(
-        max_length=2, choices=settings.LANGUAGES, default=settings.LANGUAGES[0][0]
+        max_length=2,
+        choices=settings.LANGUAGES,
+        default=settings.LANGUAGES[0][0],
+        db_index=True,
     )
     contact_method = models.CharField(
         max_length=30,
@@ -104,11 +108,24 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "phones"},
         {"name": "addresses"},
         {"name": "service_connections"},
+        {"name": "subscriptions"},
     )
     audit_log = True
 
     def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
+
+    def get_primary_email_value(self):
+        try:
+            return self.get_primary_email().email
+        except Email.DoesNotExist:
+            return None
+
+    def get_primary_phone_value(self):
+        try:
+            return self.phones.get(primary=True).phone
+        except Phone.DoesNotExist:
+            return None
 
     def save(self, *args, **kwargs):
         if (
@@ -174,6 +191,10 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.emails.create(
                         email=email, email_type=EmailType.PERSONAL, primary=True
                     )
+                else:
+                    raise ProfileMustHaveOnePrimaryEmail(
+                        f"Profile must have exactly one primary email, index: {customer_index}"
+                    )
                 address = item.get("address", None)
                 if address:
                     profile.addresses.create(
@@ -195,6 +216,8 @@ class Profile(UUIDModel, SerializableMixin):
                     enabled=False,
                 )
                 result[item["customer_id"]] = profile.pk
+            except ProfileMustHaveOnePrimaryEmail:
+                raise
             except Exception as err:
                 msg = (
                     "Could not import customer_id: {}, index: {}".format(
@@ -235,7 +258,7 @@ class Phone(Contact):
     profile = models.ForeignKey(
         Profile, related_name="phones", on_delete=models.CASCADE
     )
-    phone = models.CharField(max_length=255, null=True, blank=False)
+    phone = models.CharField(max_length=255, null=True, blank=False, db_index=True)
     phone_type = EnumField(
         PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
     )
@@ -250,10 +273,14 @@ class Email(Contact):
     profile = models.ForeignKey(
         Profile, related_name="emails", on_delete=models.CASCADE
     )
-    email = models.EmailField(max_length=254, blank=False)
+    email = models.EmailField(max_length=254, blank=False, db_index=True)
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
+
+    class Meta:
+        ordering = ["-primary"]
+
     serialize_fields = (
         {"name": "primary"},
         {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
@@ -266,7 +293,7 @@ class Address(Contact):
         Profile, related_name="addresses", on_delete=models.CASCADE
     )
     address = models.CharField(max_length=128, blank=False)
-    postal_code = models.CharField(max_length=5, blank=False)
+    postal_code = models.CharField(max_length=32, blank=False)
     city = models.CharField(max_length=64, blank=False)
     country_code = models.CharField(max_length=2, blank=False)
     address_type = EnumField(

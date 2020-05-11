@@ -14,6 +14,7 @@ from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
     ApproverEmailCannotBeEmptyForMinorsError,
+    CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotPerformThisActionWithGivenServiceType,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
@@ -51,6 +52,35 @@ def create_youth_profile(data, profile):
     return youth_profile
 
 
+def cancel_youth_profile(youth_profile, input):
+    expiration = input.get("expiration")
+
+    youth_profile.expiration = expiration or date.today()
+    youth_profile.save()
+
+    return youth_profile
+
+
+def renew_youth_profile(profile):
+    youth_profile = YouthProfile.objects.get(profile=profile)
+
+    next_expiration = calculate_expiration(date.today())
+    if youth_profile.expiration == next_expiration:
+        raise CannotRenewYouthProfileError(
+            "Cannot renew youth profile. Either youth profile is already renewed or not yet in the next "
+            "renew window."
+        )
+    youth_profile.expiration = next_expiration
+
+    if calculate_age(youth_profile.birth_date) >= 18:
+        youth_profile.approved_time = timezone.now()
+    else:
+        youth_profile.make_approvable()
+
+    youth_profile.save()
+    return youth_profile
+
+
 class MembershipStatus(graphene.Enum):
     ACTIVE = "active"
     PENDING = "pending"
@@ -83,17 +113,20 @@ class YouthProfileType(DjangoObjectType):
         return self.expiration != calculate_expiration(date.today())
 
     def resolve_membership_status(self, info, **kwargs):
-        if self.expiration and self.expiration <= date.today():
+        if self.expiration <= date.today():
             return MembershipStatus.EXPIRED
         elif self.approved_time and self.approved_time <= timezone.now():
             # Status RENEWING implemented naively. Calculates the expiration for the existing approval time and checks
-            # if it matches the current expiration date. If dates are different one of following will apply:
+            # if expiration is set explicitly => status == EXPIRED. If expiration is greater than calculated expiration
+            # for the current period, do one of the following:
             #
             # 1. If calculated expiration for approval time is in the past, membership is considered expired
             # 2. Otherwise status of the youth profile is RENEWING
             approved_period_expiration = calculate_expiration(self.approved_time.date())
-            if not approved_period_expiration == self.expiration:
-                if date.today() < approved_period_expiration:
+            if self.expiration < approved_period_expiration:
+                return MembershipStatus.EXPIRED
+            elif self.expiration > approved_period_expiration:
+                if date.today() <= approved_period_expiration:
                     return MembershipStatus.RENEWING
                 else:
                     return MembershipStatus.EXPIRED
@@ -177,6 +210,11 @@ class CreateMyYouthProfileMutation(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **input):
         input_data = input.get("youth_profile")
 
+        if calculate_age(input_data["birth_date"]) < 13:
+            raise CannotCreateYouthProfileIfUnder13YearsOldError(
+                "Under 13 years old cannot create youth profile"
+            )
+
         if "photo_usage_approved" in input_data:
             # Disable setting photo usage by themselfs for youths under 15 years old
             if calculate_age(input_data["birth_date"]) < 15:
@@ -197,6 +235,67 @@ class UpdateYouthProfileInput(YouthProfileFields):
     )
 
 
+def update_youth_profile(input_data, profile, manage_permission=False):
+    """Create or update the youth profile for the given profile.
+
+    :param manage_permission: Calling user has manage permission on youth profile service.
+    """
+    resend_request_notification = input_data.pop("resend_request_notification", False)
+    youth_profile, created = YouthProfile.objects.get_or_create(
+        profile=profile, defaults=input_data
+    )
+
+    if "photo_usage_approved" in input_data and not manage_permission:
+        # Disable setting photo usage by themselves for youths under 15 years old (allowed for staff).
+        # Check for birth date given in input or birth date persisted in the db.
+        if (
+            "birth_date" in input_data and calculate_age(input_data["birth_date"]) < 15
+        ) or calculate_age(youth_profile.birth_date) < 15:
+            raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
+                "Cannot set photo usage permission if under 15 years old"
+            )
+
+    if created:
+        if calculate_age(youth_profile.birth_date) >= 18:
+            youth_profile.approved_time = timezone.now()
+        else:
+            if not input_data.get("approver_email"):
+                raise ApproverEmailCannotBeEmptyForMinorsError(
+                    "Approver email is required for youth under 18 years old"
+                )
+            youth_profile.make_approvable()
+    else:
+        for field, value in input_data.items():
+            setattr(youth_profile, field, value)
+        if resend_request_notification:
+            youth_profile.make_approvable()
+
+    youth_profile.save()
+    return youth_profile
+
+
+class UpdateYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(graphene.ID, required=True)
+        youth_profile = UpdateYouthProfileInput(required=True)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        input_data = input.get("youth_profile")
+
+        if input.get("service_type") != ServiceType.YOUTH_MEMBERSHIP.value:
+            raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
+
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = update_youth_profile(
+            input_data, profile, manage_permission=True
+        )
+        return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
+
+
 class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
     class Input:
         youth_profile = UpdateYouthProfileInput(required=True)
@@ -208,33 +307,29 @@ class UpdateMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         input_data = input.get("youth_profile")
-        resend_request_notification = input_data.pop(
-            "resend_request_notification", False
-        )
-
         profile = Profile.objects.get(user=info.context.user)
-        youth_profile, created = YouthProfile.objects.get_or_create(profile=profile)
-
-        if "photo_usage_approved" in input_data:
-            # Disable setting photo usage by themselfs for youths under 15 years old
-            # Check for birth date given in input or birth date persisted in the db
-            if (
-                "birth_date" in input_data
-                and calculate_age(input_data["birth_date"]) < 15
-            ) or calculate_age(youth_profile.birth_date) < 15:
-                raise CannotSetPhotoUsagePermissionIfUnder15YearsError(
-                    "Cannot set photo usage permission if under 15 years old"
-                )
-
-        for field, value in input_data.items():
-            setattr(youth_profile, field, value)
-        youth_profile.save()
-
-        if resend_request_notification:
-            youth_profile.make_approvable()
-            youth_profile.save()
-
+        youth_profile = update_youth_profile(input_data, profile)
         return UpdateMyYouthProfileMutation(youth_profile=youth_profile)
+
+
+class RenewYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(graphene.ID, required=True)
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        if input.get("service_type") != ServiceType.YOUTH_MEMBERSHIP.value:
+            raise CannotPerformThisActionWithGivenServiceType("Incorrect service type")
+
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = renew_youth_profile(profile)
+
+        return RenewYouthProfileMutation(youth_profile=youth_profile)
 
 
 class RenewMyYouthProfileMutation(relay.ClientIDMutation):
@@ -245,21 +340,7 @@ class RenewMyYouthProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         profile = Profile.objects.get(user=info.context.user)
-        youth_profile = YouthProfile.objects.get(profile=profile)
-
-        next_expiration = calculate_expiration(date.today())
-        if youth_profile.expiration == next_expiration:
-            raise CannotRenewYouthProfileError(
-                "Cannot renew youth profile. Either youth profile is already renewed or not yet in the next "
-                "renew window."
-            )
-        youth_profile.expiration = next_expiration
-        if calculate_age(youth_profile.birth_date) >= 18:
-            youth_profile.approved_time = timezone.now()
-        else:
-            youth_profile.make_approvable()
-        youth_profile.save()
-
+        youth_profile = renew_youth_profile(profile)
         return RenewMyYouthProfileMutation(youth_profile=youth_profile)
 
 
@@ -306,6 +387,50 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
         return ApproveYouthProfileMutation(youth_profile=youth_profile)
 
 
+class CancelYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        service_type = graphene.Argument(AllowedServiceType, required=True)
+        profile_id = graphene.Argument(
+            graphene.ID, required=True, description="Profile id of the youth profile"
+        )
+        expiration = graphene.Date(
+            description="Optional value for expiration. If missing or blank, current date will be used"
+        )
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @staff_required(required_permission="manage")
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        profile = Profile.objects.get(pk=from_global_id(input.get("profile_id"))[1])
+        youth_profile = cancel_youth_profile(profile.youth_profile, input)
+
+        return CancelYouthProfileMutation(youth_profile=youth_profile)
+
+
+class CancelMyYouthProfileMutation(relay.ClientIDMutation):
+    class Input:
+        expiration = graphene.Date(
+            description="Optional value for expiration. If missing or blank, current date will be used"
+        )
+
+    youth_profile = graphene.Field(YouthProfileType)
+
+    @classmethod
+    @login_required
+    @transaction.atomic
+    def mutate_and_get_payload(cls, root, info, **input):
+        youth_profile = cancel_youth_profile(
+            YouthProfile.objects.get(
+                profile=Profile.objects.get(user=info.context.user)
+            ),
+            input,
+        )
+
+        return CancelMyYouthProfileMutation(youth_profile=youth_profile)
+
+
 class Query(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     youth_profile = graphene.Field(
@@ -342,7 +467,10 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     # TODO: Complete the description
     create_youth_profile = CreateYouthProfileMutation.Field(
-        description="Admin mutation for creating a youth profile `TODO`"
+        description="Creates a new youth profile and links it to the profile specified with profile_id argument.\n\n"
+        "When the youth profile has been created, a notification is sent to the youth profile's approver "
+        "whose contact information is given in the input.\n\nRequires elevated privileges.\n\nPossible error "
+        "codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
     create_my_youth_profile = CreateMyYouthProfileMutation.Field(
@@ -352,11 +480,25 @@ class Mutation(graphene.ObjectType):
         "codes:\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
+    update_youth_profile = UpdateYouthProfileMutation.Field(
+        description="Updates the youth profile which belongs to the profile specified in profile_id argument.\n\n"
+        "The `resend_request_notification` parameter may be used to send a notification to the youth "
+        "profile's approver whose contact information is in the youth profile.\n\nRequires elevated privileges."
+        "\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Add the complete list of error codes
     update_my_youth_profile = UpdateMyYouthProfileMutation.Field(
         description="Updates the youth profile which belongs to the profile of the currently authenticated user.\n\n"
         "The `resend_request_notification` parameter may be used to send a notification to the youth "
         "profile's approver whose contact information is in the youth profile.\n\nRequires authentication."
         "\n\nPossible error codes:\n\n* `TODO`"
+    )
+    # TODO: Update the description when we support the draft/published model for the youth profiles
+    # TODO: Add the complete list of error codes
+    renew_youth_profile = RenewYouthProfileMutation.Field(
+        description="Renews the youth profile. Renewing can only be done once per season.\n\nRequires Authentication."
+        "\n\nPossible error codes:\n\n* `CANNOT_RENEW_YOUTH_PROFILE_ERROR`: Returned if the youth profile is already "
+        "renewed or not in the renew window\n\n* `TODO`"
     )
     # TODO: Update the description when we support the draft/published model for the youth profiles
     # TODO: Add the complete list of error codes
@@ -373,4 +515,10 @@ class Mutation(graphene.ObjectType):
         "it's been used to approve the youth profile.\n\nRequires authentication.\n\nPossible error "
         "codes:\n\n* `PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR`: Returned if the youth profile doesn't have a "
         "primary email address.\n\n* `TODO`"
+    )
+    cancel_youth_profile = CancelYouthProfileMutation.Field(
+        description="Cancels youth profile of given profile\n\nRequires Authentication."
+    )
+    cancel_my_youth_profile = CancelMyYouthProfileMutation.Field(
+        description="Cancels youth profile for current user\n\nRequires Authentication."
     )

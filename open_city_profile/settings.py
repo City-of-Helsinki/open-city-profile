@@ -45,6 +45,7 @@ env = environ.Env(
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
     GDPR_API_ENABLED=(bool, False),
+    ENABLE_GRAPHIQL=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -62,6 +63,8 @@ sentry_sdk.init(
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
+
+sentry_sdk.integrations.logging.ignore_logger("graphql.execution.utils")
 
 BASE_DIR = str(checkout_dir)
 DEBUG = env.bool("DEBUG")
@@ -96,6 +99,8 @@ TIME_ZONE = "Europe/Helsinki"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+# Set to True to enable GraphiQL interface, this will overriden to True if DEBUG=True
+ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
     "helusers",
@@ -129,6 +134,8 @@ INSTALLED_APPS = [
     "guardian",
     "encrypted_fields",
     "adminsortable",
+    "subscriptions",
+    "import_export",
 ]
 
 MIDDLEWARE = [
@@ -187,6 +194,8 @@ OIDC_API_TOKEN_AUTH = {
     "ISSUER": env.str("TOKEN_AUTH_AUTHSERVER_URL"),
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
+
+OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
@@ -261,6 +270,13 @@ if "SECRET_KEY" not in locals():
 # This value tells what length the number will be padded to.
 # For example, PK 123, length 6 --> 000123.
 YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
+
+# Date (day, month) for when the memberships are set to expire
+YOUTH_MEMBERSHIP_SEASON_END_DATE = 31, 8
+
+# Month from which on the membership will last until the next year, instead of ending in the current year
+YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
+
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 LOGGING = {
