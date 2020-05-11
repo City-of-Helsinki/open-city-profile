@@ -86,7 +86,6 @@ class YouthProfile(SerializableMixin):
         {"name": "birth_date", "accessor": lambda x: x.strftime("%Y-%m-%d")},
         {"name": "school_name"},
         {"name": "school_class"},
-        {"name": "expiration", "accessor": lambda x: x.strftime("%Y-%m-%d")},
         {"name": "language_at_home", "accessor": lambda x: x.value},
         {"name": "approver_first_name"},
         {"name": "approver_last_name"},

@@ -11,7 +11,6 @@ def youth_profile_response():
             {"key": "BIRTH_DATE", "value": "2004-12-08"},
             {"key": "SCHOOL_NAME", "value": "Testikoulu"},
             {"key": "SCHOOL_CLASS", "value": "2B"},
-            {"key": "EXPIRATION", "value": "2021-08-31"},
             {"key": "LANGUAGE_AT_HOME", "value": "fi"},
             {"key": "APPROVER_FIRST_NAME", "value": "Teppo"},
             {"key": "APPROVER_LAST_NAME", "value": "Testi"},
