@@ -25,7 +25,7 @@ class ServiceConnectionFactory(factory.django.DjangoModelFactory):
 
 class AllowedDataFieldFactory(factory.django.DjangoModelFactory):
     field_name = factory.Sequence(lambda n: "name %d" % n)
-    label = "Name"
+    label = factory.Sequence(lambda n: "Label %d" % n)
 
     class Meta:
         model = AllowedDataField

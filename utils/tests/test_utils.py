@@ -9,7 +9,6 @@ from open_city_profile.tests.factories import GroupFactory
 from profiles.models import Profile
 from services.enums import ServiceType
 from services.models import AllowedDataField, Service
-from services.tests.factories import ServiceFactory
 from users.models import User
 from utils.utils import (
     assign_permissions,
@@ -37,9 +36,9 @@ def test_generate_services(times):
 
 
 @pytest.mark.parametrize("times", [1, 2])
-def test_generate_group_for_service(times):
-    """Test groups for services are genereted and that function can be run multiple times."""
-    services = [ServiceFactory()]
+def test_generate_group_for_service(times, service):
+    """Test groups for services are generated and that function can be run multiple times."""
+    services = [service]
     assert Group.objects.count() == 0
     for i in range(times):
         groups = generate_groups_for_services(services)
@@ -48,9 +47,8 @@ def test_generate_group_for_service(times):
 
 
 @pytest.mark.parametrize("times", [1, 2])
-def test_assign_permissions(times, user):
+def test_assign_permissions(times, user, service):
     available_permissions = [item[0] for item in Service._meta.permissions]
-    service = ServiceFactory()
     # assign_permissions expects a Group and a Service exist with the same name.
     group = GroupFactory(name=service.service_type)
     user.groups.add(group)
@@ -107,15 +105,15 @@ def test_generates_group_admins():
     assert group.user_set.count() == 1
 
 
-def test_generates_profiles():
-    ServiceFactory()
+def test_generates_profiles(service_factory):
+    service_factory()
     assert Profile.objects.count() == 0
     generate_profiles(k=10, faker=Faker())
     assert Profile.objects.count() == 10
 
 
-def test_generates_default_amount_of_profiles():
-    ServiceFactory()
+def test_generates_default_amount_of_profiles(service_factory):
+    service_factory()
     assert Profile.objects.count() == 0
     generate_profiles(faker=Faker())
     assert Profile.objects.count() == 50

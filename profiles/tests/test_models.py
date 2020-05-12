@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 
 from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
 
 from ..models import Profile
 from ..schema import validate_primary_email
@@ -82,8 +81,8 @@ def test_serialize_profile(profile):
     assert expected_sensitive_data in serialized_profile.get("children")
 
 
-def test_import_customer_data_with_valid_data_set():
-    ServiceFactory()
+def test_import_customer_data_with_valid_data_set(service_factory):
+    service_factory()
     data = [
         {
             "customer_id": "321456",

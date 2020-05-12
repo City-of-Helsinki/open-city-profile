@@ -1,4 +1,5 @@
 import pytest
+from pytest_factoryboy import register
 
 from open_city_profile.tests.conftest import *  # noqa
 from profiles.tests.factories import (
@@ -10,6 +11,8 @@ from profiles.tests.factories import (
     ProfileFactory,
     VocabularyFactory,
 )
+from services.enums import ServiceType
+from services.tests.factories import ServiceFactory
 
 
 @pytest.fixture
@@ -45,3 +48,13 @@ def phone_data(primary=False):
 @pytest.fixture
 def address_data(primary=False):
     return AddressDataDictFactory(primary=primary)
+
+
+# Register factory fixtures
+register(ServiceFactory)
+
+
+@pytest.fixture
+def service__service_type():
+    """Service fixture has berth type by default."""
+    return ServiceType.BERTH

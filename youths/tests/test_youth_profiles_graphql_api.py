@@ -19,7 +19,6 @@ from profiles.enums import EmailType
 from profiles.models import Profile
 from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -708,9 +707,8 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
 
 
 def test_staff_user_can_update_youth_profile_with_photo_usage_field_if_under_15_years_old(
-    rf, user_gql_client, group
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1149,9 +1147,8 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
 
 
 def test_youth_profile_expiration_should_be_renewable_by_staff_user(
-    rf, user_gql_client, anon_user_gql_client, profile, group
+    rf, user_gql_client, anon_user_gql_client, profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1261,9 +1258,8 @@ def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_
 
 
 def test_staff_user_can_create_youth_profile(
-    rf, user_gql_client, phone_data, profile, group
+    rf, user_gql_client, phone_data, profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1346,9 +1342,8 @@ def test_staff_user_can_create_youth_profile(
 
 
 def test_staff_user_can_create_youth_profile_for_under_13_years_old(
-    rf, user_gql_client, phone_data, profile, group
+    rf, user_gql_client, phone_data, profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1402,9 +1397,8 @@ def test_staff_user_can_create_youth_profile_for_under_13_years_old(
 
 
 def test_staff_user_can_create_youth_profile_via_create_profile(
-    rf, user_gql_client, group
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1492,10 +1486,10 @@ def test_staff_user_can_create_youth_profile_via_create_profile(
 
 
 def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
-    rf, user_gql_client, profile
+    rf, user_gql_client, profile, service_factory
 ):
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
     group_youth = GroupFactory(name="Youth")
     group_berth = GroupFactory(name="Berth")
     user = user_gql_client.user
@@ -1548,9 +1542,8 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
 
 
 def test_normal_user_cannot_use_create_youth_profile_mutation(
-    rf, user_gql_client, profile
+    rf, user_gql_client, profile, service
 ):
-    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     request = rf.post("/graphql")
     request.user = user
@@ -1596,9 +1589,8 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(
 
 
 def test_nested_youth_profile_create_failure_also_fails_profile_creation(
-    rf, user_gql_client, group
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1644,9 +1636,8 @@ def test_nested_youth_profile_create_failure_also_fails_profile_creation(
 
 
 def test_staff_user_can_cancel_youth_membership_on_selected_date(
-    rf, user_gql_client, youth_profile, group
+    rf, user_gql_client, youth_profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1692,9 +1683,8 @@ def test_staff_user_can_cancel_youth_membership_on_selected_date(
 
 
 def test_staff_user_can_cancel_youth_membership_now(
-    rf, user_gql_client, youth_profile, group
+    rf, user_gql_client, youth_profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
