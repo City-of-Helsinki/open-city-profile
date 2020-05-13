@@ -101,5 +101,4 @@ def test_download_gdpr_data_with_invalid_url(requests_mock):
     )
 
     response = service_connection.download_gdpr_data()
-    assert response.status_code == 404
-    assert response.json() == {}
+    assert response == {}

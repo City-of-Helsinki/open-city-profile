@@ -13,4 +13,4 @@ def profiles(request, *args, **kwargs):
         else:
             return HttpResponse(status=405)
     else:
-        return HttpResponse(status=503)
+        return HttpResponse(status=404)

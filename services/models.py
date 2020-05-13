@@ -91,7 +91,9 @@ class ServiceConnection(SerializableMixin):
         if self.service.gdpr_url:
             url = urllib.parse.urljoin(self.service.gdpr_url, str(self.profile.pk))
             try:
-                return requests.get(url)
+                response = requests.get(url, timeout=5)
+                response.raise_for_status()
+                return response
             except requests.exceptions.RequestException:
                 return {}
         return {}
