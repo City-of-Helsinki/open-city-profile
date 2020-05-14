@@ -73,6 +73,7 @@ if DEBUG and not SECRET_KEY:
     SECRET_KEY = "xxx"
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+SESSION_COOKIE_SECURE = False if DEBUG else True
 
 DATABASES = {"default": env.db()}
 # Ensure postgis engine
