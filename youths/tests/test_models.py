@@ -1,8 +1,4 @@
-from youths.tests.factories import YouthProfileFactory
-
-
-def test_membership_number_is_generated_for_new_profile(settings):
-    youth_profile = YouthProfileFactory()
+def test_membership_number_is_generated_for_new_profile(settings, youth_profile):
     expected_number = str(youth_profile.pk).zfill(
         settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH
     )
@@ -15,9 +11,8 @@ def test_membership_number_is_generated_for_new_profile(settings):
     assert youth_profile.membership_number == expected_number
 
 
-def test_membership_number_is_generated_for_existing_profile(settings):
+def test_membership_number_is_generated_for_existing_profile(settings, youth_profile):
     """If membership number is empty, it will be generated."""
-    youth_profile = YouthProfileFactory()
     expected_number = str(youth_profile.pk).zfill(
         settings.YOUTH_MEMBERSHIP_NUMBER_LENGTH
     )
@@ -28,9 +23,8 @@ def test_membership_number_is_generated_for_existing_profile(settings):
     assert youth_profile.membership_number == expected_number
 
 
-def test_membership_number_is_not_changed_when_saving():
+def test_membership_number_is_not_changed_when_saving(youth_profile):
     expected_number = "MEMBER123"
-    youth_profile = YouthProfileFactory()
 
     youth_profile.membership_number = expected_number
     youth_profile.save()

@@ -1,11 +1,18 @@
 import pytest
-from faker import Faker
+from pytest_factoryboy import register
 
 from open_city_profile.tests.conftest import *  # noqa
-from profiles.enums import AddressType, EmailType, PhoneType
-from profiles.tests.factories import ConceptFactory, ProfileFactory, VocabularyFactory
-
-fake = Faker()
+from profiles.tests.factories import (
+    AddressDataDictFactory,
+    ConceptFactory,
+    EmailDataDictFactory,
+    PhoneDataDictFactory,
+    ProfileDataDictFactory,
+    ProfileFactory,
+    VocabularyFactory,
+)
+from services.enums import ServiceType
+from services.tests.factories import ServiceFactory
 
 
 @pytest.fixture
@@ -25,34 +32,29 @@ def concept(vocabulary):
 
 @pytest.fixture
 def profile_data():
-    return {"nickname": fake.name()}
+    return ProfileDataDictFactory()
 
 
 @pytest.fixture
 def email_data(primary=True):
-    return {
-        "email": fake.email(),
-        "email_type": EmailType.PERSONAL.name,
-        "primary": primary,
-    }
+    return EmailDataDictFactory(primary=primary)
 
 
 @pytest.fixture
 def phone_data(primary=False):
-    return {
-        "phone": fake.phone_number(),
-        "phone_type": PhoneType.WORK.name,
-        "primary": primary,
-    }
+    return PhoneDataDictFactory(primary=primary)
 
 
 @pytest.fixture
 def address_data(primary=False):
-    return {
-        "address": fake.street_address(),
-        "postal_code": fake.postalcode(),
-        "city": fake.city(),
-        "country_code": fake.country_code(representation="alpha-2"),
-        "address_type": AddressType.WORK.name,
-        "primary": primary,
-    }
+    return AddressDataDictFactory(primary=primary)
+
+
+# Register factory fixtures
+register(ServiceFactory)
+
+
+@pytest.fixture
+def service__service_type():
+    """Service fixture has berth type by default."""
+    return ServiceType.BERTH

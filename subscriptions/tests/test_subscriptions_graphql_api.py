@@ -1,15 +1,12 @@
-from subscriptions.tests.factories import (
-    SubscriptionTypeCategoryFactory,
-    SubscriptionTypeFactory,
-)
-
-
-def test_normal_user_can_query_subscription_types_grouped_by_categories(
-    rf, user_gql_client
+def test_normal_user_can_query_subscription_types_grouped_by_categories(  # noqa: E302
+    rf, user_gql_client, subscription_type_factory, subscription_type_category
 ):
-    cat = SubscriptionTypeCategoryFactory(code="TEST-CATEGORY-1")
-    type_1 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-1")
-    type_2 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-2")
+    type_1 = subscription_type_factory(
+        subscription_type_category=subscription_type_category
+    )
+    type_2 = subscription_type_factory(
+        subscription_type_category=subscription_type_category
+    )
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -41,8 +38,8 @@ def test_normal_user_can_query_subscription_types_grouped_by_categories(
                 {
                     "node": {
                         "order": 1,
-                        "code": cat.code,
-                        "label": cat.label,
+                        "code": subscription_type_category.code,
+                        "label": subscription_type_category.label,
                         "subscriptionTypes": {
                             "edges": [
                                 {

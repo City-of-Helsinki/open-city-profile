@@ -3,12 +3,7 @@ from django.db.utils import IntegrityError
 
 from ..enums import ServiceType
 from ..models import Service, ServiceConnection
-from .factories import (
-    AllowedDataFieldFactory,
-    ProfileFactory,
-    ServiceConnectionFactory,
-    ServiceFactory,
-)
+from .factories import ProfileFactory, ServiceConnectionFactory
 
 
 def test_generate_services_from_enum():
@@ -18,18 +13,17 @@ def test_generate_services_from_enum():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_add_service_with_duplicate_service_type():
-    ServiceFactory()
+def test_add_service_with_duplicate_service_type(service_factory):
+    service_factory()
     assert Service.objects.count() == 1
     with pytest.raises(IntegrityError):
-        ServiceFactory()
+        service_factory()
     assert Service.objects.count() == 1
 
 
 @pytest.mark.django_db(transaction=True)
-def test_connect_duplicate_service_for_profile():
+def test_connect_duplicate_service_for_profile(service):
     profile = ProfileFactory()
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile, service=service)
     assert ServiceConnection.objects.count() == 1
     with pytest.raises(IntegrityError):
@@ -37,37 +31,35 @@ def test_connect_duplicate_service_for_profile():
     assert ServiceConnection.objects.count() == 1
 
 
-def test_connect_same_service_with_different_profile():
-    service = ServiceFactory()
-    profile = ProfileFactory()
-    ServiceConnectionFactory(profile=profile, service=service)
-    profile = ProfileFactory()
-    ServiceConnectionFactory(profile=profile, service=service)
-    assert ServiceConnection.objects.count() == 2
+def test_connect_same_service_with_different_profile(service):
+    number_of_connections = 2
+    for i in range(number_of_connections):
+        profile = ProfileFactory()
+        ServiceConnectionFactory(profile=profile, service=service)
+    assert ServiceConnection.objects.count() == number_of_connections
 
 
-def test_connect_two_different_services_for_same_profile():
+def test_connect_two_different_services_for_same_profile(service_factory):
     profile = ProfileFactory()
-    service_1 = ServiceFactory(service_type=ServiceType.BERTH)
-    service_2 = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_1 = service_factory(service_type=ServiceType.BERTH)
+    service_2 = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
     assert ServiceConnection.objects.count() == 2
 
 
-def test_allowed_data_fields_get_correct_orders():
-    first_data_field = AllowedDataFieldFactory()
+def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
+    first_data_field = allowed_data_field_factory()
     assert first_data_field.order == 1
-    second_data_field = AllowedDataFieldFactory()
+    second_data_field = allowed_data_field_factory()
     assert second_data_field.order == 2
 
 
 def test_download_gdpr_data_with_valid_service_and_url(
-    requests_mock, youth_profile_response
+    requests_mock, youth_profile_response, service_factory, profile
 ):
     # setup models
-    profile = ProfileFactory()
-    service = ServiceFactory(gdpr_url="http://valid-gdpr-url.com/profiles/")
+    service = service_factory(gdpr_url="http://valid-gdpr-url.com/profiles/")
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
     # mock request
     requests_mock.get(
@@ -78,10 +70,10 @@ def test_download_gdpr_data_with_valid_service_and_url(
     assert response.json() == youth_profile_response
 
 
-def test_download_gdpr_data_with_invalid_service(requests_mock):
+def test_download_gdpr_data_with_invalid_service(
+    requests_mock, service_factory, profile, service
+):
     # setup models
-    profile = ProfileFactory()
-    service = ServiceFactory()
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
     # mock request
     requests_mock.get(f"http://valid-gdpr-url.com/profiles/{profile.pk}", json={})
@@ -90,10 +82,9 @@ def test_download_gdpr_data_with_invalid_service(requests_mock):
     assert response == {}
 
 
-def test_download_gdpr_data_with_invalid_url(requests_mock):
+def test_download_gdpr_data_with_invalid_url(requests_mock, profile, service_factory):
     # setup models
-    profile = ProfileFactory()
-    service = ServiceFactory(gdpr_url="http://invalid-gdpr-url.com/profiles/")
+    service = service_factory(gdpr_url="http://invalid-gdpr-url.com/profiles/")
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
     # mock request
     requests_mock.get(

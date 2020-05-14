@@ -4,7 +4,11 @@ from django.contrib.auth.models import AnonymousUser
 from graphene.test import Client as GraphQLClient
 
 from open_city_profile.schema import schema
-from open_city_profile.tests.factories import SuperuserFactory, UserFactory
+from open_city_profile.tests.factories import (
+    GroupFactory,
+    SuperuserFactory,
+    UserFactory,
+)
 from open_city_profile.views import GraphQLView
 
 
@@ -36,6 +40,11 @@ def anon_user():
 @pytest.fixture
 def superuser():
     return SuperuserFactory()
+
+
+@pytest.fixture
+def group():
+    return GroupFactory()
 
 
 def get_gql_client_with_error_formating():

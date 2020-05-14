@@ -15,6 +15,7 @@ pytest-cov
 pytest-django
 pytest-mock
 requests-mock
+pytest-factoryboy
 rope
 yapf
 factory_boy
