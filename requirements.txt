@@ -7,7 +7,7 @@
 --no-binary psycopg2
 
 aniso8601==6.0.0          # via graphene
-certifi==2019.6.16        # via requests, sentry-sdk
+certifi==2020.4.5.1        # via requests, sentry-sdk
 chardet==3.0.4            # via requests
 coreapi==2.3.3            # via -r requirements.in
 coreschema==0.0.4         # via coreapi
@@ -45,7 +45,7 @@ graphene-federation==0.0.4  # via -r requirements.in
 graphene==2.1.8           # via graphene-django, graphene-federation
 graphql-core==2.2.1       # via django-graphql-jwt, graphene, graphene-django, graphql-relay
 graphql-relay==2.0.0      # via graphene
-idna==2.8                 # via requests
+idna==2.9                 # via requests
 isodate==0.6.0            # via rdflib
 itypes==1.1.0             # via coreapi
 jdcal==1.4.1              # via openpyxl
@@ -72,7 +72,7 @@ pyyaml==5.3.1             # via -r requirements.in, django-munigeo, tablib
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.5.0     # via django-munigeo
 requests-oauthlib==1.2.0  # via django-allauth
-requests==2.22.0          # via coreapi, django-allauth, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
+requests==2.23.0
 rsa==4.0                  # via python-jose
 rx==1.6.1                 # via graphql-core
 sentry-sdk==0.10.2        # via -r requirements.in
@@ -81,6 +81,6 @@ six==1.14.0               # via django-anymail, django-munigeo, graphene, graphe
 sqlparse==0.3.0           # via django
 tablib[html,ods,xls,xlsx,yaml]==1.1.0  # via django-import-export
 uritemplate==3.0.0        # via coreapi
-urllib3==1.25.3           # via requests, sentry-sdk
+urllib3==1.25.9           # via requests, sentry-sdk
 xlrd==1.2.0               # via tablib
 xlwt==1.3.0               # via tablib

@@ -3244,33 +3244,41 @@ def test_user_can_download_profile(rf, user_gql_client):
     """
     expected_json = json.dumps(
         {
-            "key": "PROFILE",
+            "key": "DATA",
             "children": [
-                {"key": "FIRST_NAME", "value": profile.first_name},
-                {"key": "LAST_NAME", "value": profile.last_name},
-                {"key": "NICKNAME", "value": profile.nickname},
-                {"key": "LANGUAGE", "value": profile.language},
-                {"key": "CONTACT_METHOD", "value": profile.contact_method},
                 {
-                    "key": "EMAILS",
+                    "key": "PROFILE",
                     "children": [
+                        {"key": "FIRST_NAME", "value": profile.first_name},
+                        {"key": "LAST_NAME", "value": profile.last_name},
+                        {"key": "NICKNAME", "value": profile.nickname},
+                        {"key": "LANGUAGE", "value": profile.language},
+                        {"key": "CONTACT_METHOD", "value": profile.contact_method},
                         {
-                            "key": "EMAIL",
+                            "key": "EMAILS",
                             "children": [
-                                {"key": "PRIMARY", "value": primary_email.primary},
                                 {
-                                    "key": "EMAIL_TYPE",
-                                    "value": primary_email.email_type.name,
-                                },
-                                {"key": "EMAIL", "value": primary_email.email},
+                                    "key": "EMAIL",
+                                    "children": [
+                                        {
+                                            "key": "PRIMARY",
+                                            "value": primary_email.primary,
+                                        },
+                                        {
+                                            "key": "EMAIL_TYPE",
+                                            "value": primary_email.email_type.name,
+                                        },
+                                        {"key": "EMAIL", "value": primary_email.email},
+                                    ],
+                                }
                             ],
-                        }
+                        },
+                        {"key": "PHONES", "children": []},
+                        {"key": "ADDRESSES", "children": []},
+                        {"key": "SERVICE_CONNECTIONS", "children": []},
+                        {"key": "SUBSCRIPTIONS", "children": []},
                     ],
-                },
-                {"key": "PHONES", "children": []},
-                {"key": "ADDRESSES", "children": []},
-                {"key": "SERVICE_CONNECTIONS", "children": []},
-                {"key": "SUBSCRIPTIONS", "children": []},
+                }
             ],
         }
     )

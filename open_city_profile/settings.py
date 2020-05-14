@@ -44,6 +44,7 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
+    GDPR_API_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
 )
 if os.path.exists(env_file):
@@ -292,3 +293,5 @@ LOGGING = {
     },
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
+
+GDPR_API_ENABLED = env.bool("GDPR_API_ENABLED")
