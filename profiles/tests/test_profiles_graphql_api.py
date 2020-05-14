@@ -21,7 +21,7 @@ from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Profile
 from services.enums import ServiceType
-from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+from services.tests.factories import ServiceConnectionFactory
 from subscriptions.models import Subscription
 from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
@@ -1278,9 +1278,9 @@ def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_delete_his_profile(rf, user_gql_client):
+@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
+def test_normal_user_can_delete_his_profile(rf, user_gql_client, service):
     profile = ProfileFactory(user=user_gql_client.user)
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -1305,10 +1305,9 @@ def test_normal_user_can_delete_his_profile(rf, user_gql_client):
 
 
 def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
-    rf, user_gql_client
+    rf, user_gql_client, service
 ):
     profile = ProfileFactory(user=user_gql_client.user)
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -1361,8 +1360,8 @@ def test_normal_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_
     assert executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
 
 
-def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
-    ServiceFactory()
+def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service_factory):
+    service_factory()
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -1388,9 +1387,9 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client):
     )
 
 
-def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
-    profile = ProfileFactory()
-    service = ServiceFactory()
+def test_admin_user_can_query_berth_profiles(
+    rf, superuser_gql_client, profile, service
+):
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
@@ -1428,11 +1427,10 @@ def test_admin_user_can_query_berth_profiles(rf, superuser_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_client):
-    profile = ProfileFactory()
-    service = ServiceFactory()
+def test_staff_user_with_group_access_can_query_berth_profiles(
+    rf, user_gql_client, profile, group, service
+):
     ServiceConnectionFactory(profile=profile, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1460,12 +1458,10 @@ def test_staff_user_with_group_access_can_query_berth_profiles(rf, user_gql_clie
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles(rf, user_gql_client):
-    profile_1, profile_2 = ProfileFactory(), ProfileFactory()
-    service = ServiceFactory()
+def test_staff_user_can_filter_berth_profiles(rf, user_gql_client, group, service):
+    profile_1, profile_2 = ProfileFactory.create_batch(2)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1495,15 +1491,13 @@ def test_staff_user_can_filter_berth_profiles(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
+def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
     )
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1533,20 +1527,16 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_emails(rf, user_gql_client):
-    profile_1, profile_2, profile_3 = (
-        ProfileFactory(),
-        ProfileFactory(),
-        ProfileFactory(),
-    )
+def test_staff_user_can_filter_berth_profiles_by_emails(
+    rf, user_gql_client, group, service
+):
+    profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     EmailFactory(profile=profile_1, primary=True, email_type=EmailType.PERSONAL)
     email = EmailFactory(profile=profile_2, primary=False, email_type=EmailType.WORK)
     EmailFactory(profile=profile_3, primary=False, email_type=EmailType.OTHER)
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     ServiceConnectionFactory(profile=profile_3, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1617,20 +1607,16 @@ def test_staff_user_can_filter_berth_profiles_by_emails(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_phones(rf, user_gql_client):
-    profile_1, profile_2, profile_3 = (
-        ProfileFactory(),
-        ProfileFactory(),
-        ProfileFactory(),
-    )
+def test_staff_user_can_filter_berth_profiles_by_phones(
+    rf, user_gql_client, group, service
+):
+    profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     PhoneFactory(profile=profile_1, primary=True, phone_type=PhoneType.HOME)
     phone = PhoneFactory(profile=profile_2, primary=False, phone_type=PhoneType.WORK)
     PhoneFactory(profile=profile_3, primary=False, phone_type=PhoneType.MOBILE)
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     ServiceConnectionFactory(profile=profile_3, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1701,12 +1687,10 @@ def test_staff_user_can_filter_berth_profiles_by_phones(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
-    profile_1, profile_2, profile_3 = (
-        ProfileFactory(),
-        ProfileFactory(),
-        ProfileFactory(),
-    )
+def test_staff_user_can_filter_berth_profiles_by_addresses(
+    rf, user_gql_client, group, service
+):
+    profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     AddressFactory(
         profile=profile_1,
         postal_code="00100",
@@ -1731,11 +1715,9 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
         primary=False,
         address_type=AddressType.OTHER,
     )
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     ServiceConnectionFactory(profile=profile_3, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -1873,7 +1855,7 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(rf, user_gql_client):
 
 
 def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
-    rf, user_gql_client
+    rf, user_gql_client, group, service
 ):
     def generate_expected_data(profiles):
         return {
@@ -1898,12 +1880,7 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
             }
         }
 
-    profile_1, profile_2, profile_3, profile_4 = (
-        ProfileFactory(),
-        ProfileFactory(),
-        ProfileFactory(),
-        ProfileFactory(),
-    )
+    profile_1, profile_2, profile_3, profile_4 = ProfileFactory.create_batch(4)
     PhoneFactory(profile=profile_1, phone="0401234561", primary=True)
     PhoneFactory(profile=profile_2, phone="0401234562", primary=True)
     PhoneFactory(profile=profile_3, phone="0401234563", primary=True)
@@ -1945,12 +1922,10 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
         profile=profile_4, subscription_type=type_2, enabled=True
     )
 
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     ServiceConnectionFactory(profile=profile_3, service=service)
     ServiceConnectionFactory(profile=profile_4, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -2015,15 +1990,13 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
     assert dict(executed["data"]) == generate_expected_data([profile_1])
 
 
-def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
+def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
     )
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -2074,18 +2047,17 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client):
 
 
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
-    rf, user_gql_client
+    rf, user_gql_client, group, service_factory
 ):
     profile_berth = ProfileFactory()
     profile_youth = ProfileFactory()
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile_berth, service=service_berth)
     ServiceConnectionFactory(profile=profile_youth, service=service_youth)
-    group_berth = GroupFactory()
     user = user_gql_client.user
-    user.groups.add(group_berth)
-    assign_perm("can_view_profiles", group_berth, service_berth)
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service_berth)
     request = rf.post("/graphql")
     request.user = user
 
@@ -2131,13 +2103,11 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 
 
 def test_staff_user_can_create_a_profile(
-    rf, user_gql_client, email_data, phone_data, address_data
+    rf, user_gql_client, email_data, phone_data, address_data, group, service
 ):
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
-    group_berth = GroupFactory()
     user = user_gql_client.user
-    user.groups.add(group_berth)
-    assign_perm("can_manage_profiles", group_berth, service_berth)
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
 
@@ -2245,9 +2215,9 @@ def test_staff_user_can_create_a_profile(
 
 
 def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
-    rf, user_gql_client
+    rf, user_gql_client, service_factory
 ):
-    ServiceFactory(service_type=ServiceType.BERTH)
+    service_factory()
     user = user_gql_client.user
     request = rf.post("/graphql")
     request.user = user
@@ -2278,13 +2248,15 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
     )
 
 
-def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_client):
-    ServiceFactory(service_type=ServiceType.BERTH)
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group_youth = GroupFactory(name="youth_membership")
+def test_staff_user_cannot_create_a_profile_without_service_access(
+    rf, user_gql_client, service_factory
+):
+    service_factory(service_type=ServiceType.BERTH)
+    service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group = GroupFactory(name="youth_membership")
     user = user_gql_client.user
-    user.groups.add(group_youth)
-    assign_perm("can_manage_profiles", group_youth, service_youth)
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
 
@@ -2315,15 +2287,13 @@ def test_staff_user_cannot_create_a_profile_without_service_access(rf, user_gql_
 
 
 def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_with_sensitive_data(
-    rf, user_gql_client, email_data
+    rf, user_gql_client, email_data, group, service
 ):
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
-    group_berth = GroupFactory()
     user = user_gql_client.user
-    user.groups.add(group_berth)
-    assign_perm("can_manage_profiles", group_berth, service_berth)
-    assign_perm("can_manage_sensitivedata", group_berth, service_berth)
-    assign_perm("can_view_sensitivedata", group_berth, service_berth)
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_manage_sensitivedata", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user
 
@@ -2374,11 +2344,11 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
 
 
 def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
-    rf, user_gql_client
+    rf, user_gql_client, service_factory
 ):
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group_berth = GroupFactory()
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    group_berth = GroupFactory(name=ServiceType.BERTH.value)
     group_youth = GroupFactory(name="youth_membership")
     user = user_gql_client.user
     user.groups.add(group_berth)
@@ -2424,13 +2394,12 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     )
 
 
-def test_staff_user_can_update_a_profile(rf, user_gql_client):
+@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
+def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
     YouthProfileFactory(profile=profile)
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -2547,13 +2516,12 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client):
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
-    rf, user_gql_client
+    rf, user_gql_client, group, service
 ):
     """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
     profile = ProfileWithPrimaryEmailFactory()
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -2599,10 +2567,10 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
 
 
 def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
-    rf, user_gql_client
+    rf, user_gql_client, service_factory
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
-    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -2765,9 +2733,7 @@ def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_c
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
-    profile = ProfileFactory()
-    service = ServiceFactory()
+def test_normal_user_cannot_query_a_profile(rf, user_gql_client, profile, service):
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -2795,12 +2761,9 @@ def test_normal_user_cannot_query_a_profile(rf, user_gql_client):
 
 
 def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
-    rf, user_gql_client
+    rf, user_gql_client, profile, group, service
 ):
-    profile = ProfileFactory()
-    service = ServiceFactory()
     ServiceConnectionFactory(profile=profile, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -2822,7 +2785,6 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
         service_type=ServiceType.BERTH.name,
     )
-    executed = user_gql_client.execute(query, context=request)
     expected_data = {
         "profile": {"firstName": profile.first_name, "lastName": profile.last_name}
     }
@@ -2830,11 +2792,10 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_cannot_query_a_profile_without_id(rf, user_gql_client):
-    profile = ProfileFactory()
-    service = ServiceFactory()
+def test_staff_user_cannot_query_a_profile_without_id(
+    rf, user_gql_client, profile, group, service
+):
     ServiceConnectionFactory(profile=profile, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -2854,15 +2815,13 @@ def test_staff_user_cannot_query_a_profile_without_id(rf, user_gql_client):
 
     query = t.substitute(service_type=ServiceType.BERTH.name)
     executed = user_gql_client.execute(query, context=request)
-    executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
 
 
-def test_staff_user_cannot_query_a_profile_without_service_type(rf, user_gql_client):
-    profile = ProfileFactory()
-    service = ServiceFactory()
+def test_staff_user_cannot_query_a_profile_without_service_type(
+    rf, user_gql_client, profile, group, service
+):
     ServiceConnectionFactory(profile=profile, service=service)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -2882,18 +2841,15 @@ def test_staff_user_cannot_query_a_profile_without_service_type(rf, user_gql_cli
 
     query = t.substitute(id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id))
     executed = user_gql_client.execute(query, context=request)
-    executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
 
 
 def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connected(
-    rf, user_gql_client
+    rf, user_gql_client, profile, group, service_factory
 ):
-    profile = ProfileFactory()
-    service_berth = ServiceFactory()
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory()
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service_berth)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service_youth)
@@ -2922,13 +2878,11 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
 
 
 def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admin_of(
-    rf, user_gql_client
+    rf, user_gql_client, profile, group, service_factory
 ):
-    profile = ProfileFactory()
-    service_berth = ServiceFactory()
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory()
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service_berth)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service_youth)
@@ -2951,7 +2905,6 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
         service_type=ServiceType.BERTH.name,
     )
     executed = user_gql_client.execute(query, context=request)
-    executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -2959,16 +2912,13 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
 
 
 def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
-    rf, user_gql_client
+    rf, user_gql_client, profile, group, service
 ):
-    profile = ProfileFactory()
     SensitiveDataFactory(profile=profile)
-    service_berth = ServiceFactory()
-    ServiceConnectionFactory(profile=profile, service=service_berth)
-    group = GroupFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
+    assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -2995,17 +2945,14 @@ def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
 
 
 def test_staff_user_can_query_sensitive_data_with_given_permissions(
-    rf, user_gql_client
+    rf, user_gql_client, profile, group, service
 ):
-    profile = ProfileFactory()
     sensitive_data = SensitiveDataFactory(profile=profile)
-    service_berth = ServiceFactory()
-    ServiceConnectionFactory(profile=profile, service=service_berth)
-    group = GroupFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
-    assign_perm("can_view_sensitivedata", group, service_berth)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -3031,15 +2978,14 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_receives_null_sensitive_data_if_it_does_not_exist(rf, user_gql_client):
-    profile = ProfileFactory()
-    service_berth = ServiceFactory()
-    ServiceConnectionFactory(profile=profile, service=service_berth)
-    group = GroupFactory()
+def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
+    rf, user_gql_client, profile, group, service
+):
+    ServiceConnectionFactory(profile=profile, service=service)
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
-    assign_perm("can_view_sensitivedata", group, service_berth)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -3114,8 +3060,9 @@ def test_can_query_claimable_profile_with_token(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_cannot_query_claimable_profile_with_user_already_attached(rf, user_gql_client):
-    profile = ProfileFactory()
+def test_cannot_query_claimable_profile_with_user_already_attached(
+    rf, user_gql_client, profile
+):
     claim_token = ClaimTokenFactory(profile=profile)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
