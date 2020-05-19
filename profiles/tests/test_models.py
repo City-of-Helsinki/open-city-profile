@@ -1,12 +1,13 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 
-from ..models import Profile
+from ..models import Email, Profile
 from ..schema import validate_primary_email
 from .factories import (
     EmailFactory,
@@ -224,3 +225,9 @@ def test_validation_should_fail_with_multiple_primary_emails(profile):
     EmailFactory(profile=profile, primary=True)
     with pytest.raises(ProfileMustHaveOnePrimaryEmail):
         validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_invalid_email():
+    e = Email("!dsdsd{}{}{}{}{}{")
+    with pytest.raises(ValidationError):
+        e.save()

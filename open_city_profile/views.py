@@ -12,6 +12,7 @@ from open_city_profile.consts import (
     CANNOT_RENEW_YOUTH_PROFILE_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
     GENERAL_ERROR,
+    INVALID_EMAIL_FORMAT_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
@@ -28,6 +29,7 @@ from open_city_profile.exceptions import (
     CannotPerformThisActionWithGivenServiceType,
     CannotRenewYouthProfileError,
     CannotSetPhotoUsagePermissionIfUnder15YearsError,
+    InvalidEmailFormatError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
@@ -52,6 +54,7 @@ error_codes_profile = {
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
+    InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
 
 error_codes_youth_profile = {

@@ -1,7 +1,10 @@
 import threading
 from typing import TYPE_CHECKING
 
+from django.core.exceptions import ValidationError
 from graphql_relay.node.node import from_global_id
+
+from open_city_profile.exceptions import InvalidEmailFormatError
 
 if TYPE_CHECKING:
     import profiles.models
@@ -19,7 +22,13 @@ def create_nested(model, profile, data):
                 if field == "primary" and value is True:
                     model.objects.filter(profile=profile).update(primary=False)
                 setattr(item, field, value)
-            item.save()
+            try:
+                item.save()
+            except ValidationError:
+                if model.__name__ == "Email":
+                    raise InvalidEmailFormatError("Email must be in valid email format")
+                else:
+                    raise
 
 
 def update_nested(model, profile, data):
@@ -31,7 +40,13 @@ def update_nested(model, profile, data):
                 if field == "primary" and value is True:
                     model.objects.filter(profile=profile).update(primary=False)
                 setattr(item, field, value)
-            item.save()
+            try:
+                item.save()
+            except ValidationError:
+                if model.__name__ == "Email":
+                    raise InvalidEmailFormatError("Email must be in valid email format")
+                else:
+                    raise
 
 
 def delete_nested(model, profile, data):
