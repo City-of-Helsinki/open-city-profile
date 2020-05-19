@@ -19,7 +19,6 @@ from profiles.enums import EmailType
 from profiles.models import Profile
 from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -708,10 +707,8 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
 
 
 def test_staff_user_can_update_youth_profile_with_photo_usage_field_if_under_15_years_old(
-    rf, user_gql_client
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -891,10 +888,8 @@ def test_anon_user_query_with_token(rf, youth_profile, anon_user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_anon_user_can_approve_with_token(rf, anon_user_gql_client):
-    profile = ProfileFactory()
-    EmailFactory(primary=True, profile=profile)
-    youth_profile = YouthProfileFactory(profile=profile)
+def test_anon_user_can_approve_with_token(rf, anon_user_gql_client, youth_profile):
+    EmailFactory(primary=True, profile=youth_profile.profile)
 
     request = rf.post("/graphql")
     request.user = anon_user_gql_client.user
@@ -1152,14 +1147,11 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
 
 
 def test_youth_profile_expiration_should_be_renewable_by_staff_user(
-    rf, user_gql_client, anon_user_gql_client
+    rf, user_gql_client, anon_user_gql_client, profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
     EmailFactory(primary=True, profile=profile)
@@ -1265,13 +1257,12 @@ def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_
         assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_create_youth_profile(
+    rf, user_gql_client, phone_data, profile, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
     today = date.today()
@@ -1351,14 +1342,11 @@ def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
 
 
 def test_staff_user_can_create_youth_profile_for_under_13_years_old(
-    rf, user_gql_client, phone_data
+    rf, user_gql_client, phone_data, profile, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
 
@@ -1408,9 +1396,9 @@ def test_staff_user_can_create_youth_profile_for_under_13_years_old(
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_client):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_create_youth_profile_via_create_profile(
+    rf, user_gql_client, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1498,10 +1486,10 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
 
 
 def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
-    rf, user_gql_client
+    rf, user_gql_client, profile, service_factory
 ):
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
     group_youth = GroupFactory(name="Youth")
     group_berth = GroupFactory(name="Berth")
     user = user_gql_client.user
@@ -1509,7 +1497,6 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     user.groups.add(group_berth)
     assign_perm("can_manage_profiles", group_youth, service_youth)
     assign_perm("can_manage_profiles", group_berth, service_berth)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
 
@@ -1554,10 +1541,10 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     )
 
 
-def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_client):
-    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+def test_normal_user_cannot_use_create_youth_profile_mutation(
+    rf, user_gql_client, profile, service
+):
     user = user_gql_client.user
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
 
@@ -1602,10 +1589,8 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_clien
 
 
 def test_nested_youth_profile_create_failure_also_fails_profile_creation(
-    rf, user_gql_client
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1650,11 +1635,9 @@ def test_nested_youth_profile_create_failure_also_fails_profile_creation(
     assert Profile.objects.count() == 0
 
 
-def test_staff_user_can_cancel_youth_membership_on_selected_date(rf, user_gql_client):
-    profile = ProfileFactory()
-    YouthProfileFactory(profile=profile)
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_cancel_youth_membership_on_selected_date(
+    rf, user_gql_client, youth_profile, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1664,7 +1647,7 @@ def test_staff_user_can_cancel_youth_membership_on_selected_date(rf, user_gql_cl
     today = date.today()
     expiration_date = today + timedelta(days=1)
     youth_profile_data = {
-        "profile_id": to_global_id(type="ProfileNode", id=profile.pk),
+        "profile_id": to_global_id(type="ProfileNode", id=youth_profile.profile.pk),
         "expiration": expiration_date.strftime("%Y-%m-%d"),
     }
 
@@ -1699,18 +1682,18 @@ def test_staff_user_can_cancel_youth_membership_on_selected_date(rf, user_gql_cl
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_cancel_youth_membership_now(rf, user_gql_client):
-    profile = ProfileFactory()
-    YouthProfileFactory(profile=profile)
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_cancel_youth_membership_now(
+    rf, user_gql_client, youth_profile, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
 
-    youth_profile_data = {"profile_id": to_global_id(type="ProfileNode", id=profile.pk)}
+    youth_profile_data = {
+        "profile_id": to_global_id(type="ProfileNode", id=youth_profile.profile.pk)
+    }
 
     t = Template(
         """

@@ -6,12 +6,11 @@ from subscriptions.models import (
     SubscriptionType,
     SubscriptionTypeCategory,
 )
-from subscriptions.tests.factories import SubscriptionFactory
 from subscriptions.utils import generate_subscription_types
 
 
 @pytest.mark.parametrize("times", [1, 2])
-def test_generate_subscription_types(times):
+def test_generate_subscription_types(times, subscription_factory):
     SubscriptionTypeCategoryTranslation = apps.get_model(  # noqa: N806
         "subscriptions", "SubscriptionTypeCategoryTranslation"
     )
@@ -23,7 +22,7 @@ def test_generate_subscription_types(times):
         generate_subscription_types()
         st = SubscriptionType.objects.first()
         # subscription should not get deleted when types are re-generated
-        SubscriptionFactory(subscription_type=st)
+        subscription_factory(subscription_type=st)
 
     assert Subscription.objects.count() == times
     assert SubscriptionType.objects.count() == 3
