@@ -287,6 +287,10 @@ class Email(Contact):
         {"name": "email"},
     )
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 class Address(Contact):
     profile = models.ForeignKey(

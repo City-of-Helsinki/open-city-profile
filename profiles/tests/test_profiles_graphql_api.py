@@ -12,6 +12,7 @@ from guardian.shortcuts import assign_perm
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
     CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
+    INVALID_EMAIL_FORMAT_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
@@ -283,6 +284,97 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_cannot_add_invalid_email(rf, user_gql_client, email_data):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            addEmails:[
+                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                            ]
+                        }
+                    }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    mutation = t.substitute(
+        email="!dsdsd{}{}{}{}{}{",
+        email_type=email_data["email_type"],
+        primary=str(not email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
+
+
+def test_normal_user_cannot_update_email_to_invalid_format(
+    rf, user_gql_client, email_data
+):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        updateEmails:[
+                            {
+                                id: \"${email_id}\",
+                                emailType: ${email_type},
+                                email:\"${email}\",
+                                primary: ${primary}
+                            }
+                        ]
+                    }
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    mutation = t.substitute(
+        email_id=to_global_id(type="EmailNode", id=email.id),
+        email="!dsdsd{}{}{}{}{}{",
+        email_type=email_data["email_type"],
+        primary=str(email_data["primary"]).lower(),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert "code" in executed["errors"][0]["extensions"]
+    assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
 def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
