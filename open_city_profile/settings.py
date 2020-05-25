@@ -46,6 +46,7 @@ env = environ.Env(
     AUDIT_LOGGING_ENABLED=(bool, False),
     GDPR_API_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
+    FORCE_SCRIPT_NAME=(str, ""),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -92,6 +93,9 @@ FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
 
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
+
+if env.str("FORCE_SCRIPT_NAME"):
+    FORCE_SCRIPT_NAME = env.str("FORCE_SCRIPT_NAME")
 
 LANGUAGES = (("fi", "Finnish"), ("en", "English"), ("sv", "Swedish"))
 
