@@ -60,3 +60,4 @@ production:
         K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
         K8S_SECRET_FIELD_ENCRYPTION_KEYS: "$GL_STABLE_FIELD_ENCRYPTION_KEYS"
+        FORCE_SCRIPT_NAME: "/profiili"
