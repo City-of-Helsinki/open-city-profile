@@ -11,6 +11,7 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
@@ -107,11 +108,24 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "phones"},
         {"name": "addresses"},
         {"name": "service_connections"},
+        {"name": "subscriptions"},
     )
     audit_log = True
 
     def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
+
+    def get_primary_email_value(self):
+        try:
+            return self.get_primary_email().email
+        except Email.DoesNotExist:
+            return None
+
+    def get_primary_phone_value(self):
+        try:
+            return self.phones.get(primary=True).phone
+        except Phone.DoesNotExist:
+            return None
 
     def save(self, *args, **kwargs):
         if (
@@ -130,6 +144,14 @@ class Profile(UUIDModel, SerializableMixin):
             return "{} {}".format(self.first_name, self.last_name)
         else:
             return str(self.id)
+
+    def get_service_gdpr_data(self):
+        """Download gdpr data for each connected service"""
+        data = map(
+            lambda service_connection: service_connection.download_gdpr_data(),
+            self.service_connections.all(),
+        )
+        return [item for item in list(data) if item]
 
     @classmethod
     @transaction.atomic
@@ -169,6 +191,10 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.emails.create(
                         email=email, email_type=EmailType.PERSONAL, primary=True
                     )
+                else:
+                    raise ProfileMustHaveOnePrimaryEmail(
+                        f"Profile must have exactly one primary email, index: {customer_index}"
+                    )
                 address = item.get("address", None)
                 if address:
                     profile.addresses.create(
@@ -190,6 +216,8 @@ class Profile(UUIDModel, SerializableMixin):
                     enabled=False,
                 )
                 result[item["customer_id"]] = profile.pk
+            except ProfileMustHaveOnePrimaryEmail:
+                raise
             except Exception as err:
                 msg = (
                     "Could not import customer_id: {}, index: {}".format(
@@ -249,11 +277,19 @@ class Email(Contact):
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
+
+    class Meta:
+        ordering = ["-primary"]
+
     serialize_fields = (
         {"name": "primary"},
         {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
         {"name": "email"},
     )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 class Address(Contact):

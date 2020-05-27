@@ -44,6 +44,9 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
+    GDPR_API_ENABLED=(bool, False),
+    ENABLE_GRAPHIQL=(bool, False),
+    FORCE_SCRIPT_NAME=(str, ""),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -72,6 +75,7 @@ if DEBUG and not SECRET_KEY:
     SECRET_KEY = "xxx"
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+SESSION_COOKIE_SECURE = False if DEBUG else True
 
 DATABASES = {"default": env.db()}
 # Ensure postgis engine
@@ -90,6 +94,9 @@ FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
 
+if env.str("FORCE_SCRIPT_NAME"):
+    FORCE_SCRIPT_NAME = env.str("FORCE_SCRIPT_NAME")
+
 LANGUAGES = (("fi", "Finnish"), ("en", "English"), ("sv", "Swedish"))
 
 LANGUAGE_CODE = "fi"
@@ -97,6 +104,8 @@ TIME_ZONE = "Europe/Helsinki"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+# Set to True to enable GraphiQL interface, this will overriden to True if DEBUG=True
+ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
     "helusers",
@@ -130,6 +139,8 @@ INSTALLED_APPS = [
     "guardian",
     "encrypted_fields",
     "adminsortable",
+    "subscriptions",
+    "import_export",
 ]
 
 MIDDLEWARE = [
@@ -188,6 +199,8 @@ OIDC_API_TOKEN_AUTH = {
     "ISSUER": env.str("TOKEN_AUTH_AUTHSERVER_URL"),
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
+
+OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
@@ -263,6 +276,13 @@ if "SECRET_KEY" not in locals():
 # For example, PK 123, length 6 --> 000123.
 YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
 
+# Date (day, month) for when the memberships are set to expire
+YOUTH_MEMBERSHIP_SEASON_END_DATE = 31, 8
+
+# Month from which on the membership will last until the next year, instead of ending in the current year
+YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
+
+
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 LOGGING = {
     "version": 1,
@@ -278,3 +298,5 @@ LOGGING = {
     },
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
+
+GDPR_API_ENABLED = env.bool("GDPR_API_ENABLED")

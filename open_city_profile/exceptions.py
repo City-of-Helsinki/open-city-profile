@@ -47,3 +47,11 @@ class ApproverEmailCannotBeEmptyForMinorsError(ProfileGraphQLError):
 
 class CannotCreateYouthProfileIfUnder13YearsOldError(ProfileGraphQLError):
     """Under 13 years old cannot create youth profile"""
+
+
+class ProfileMustHaveOnePrimaryEmail(ProfileGraphQLError):
+    """Profile must have exactly one primary email"""
+
+
+class InvalidEmailFormatError(ProfileGraphQLError):
+    """Email must be in valid email format"""

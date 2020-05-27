@@ -2,24 +2,20 @@ from string import Template
 
 from open_city_profile.consts import SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
 from services.enums import ServiceType
-from services.tests.factories import (
-    AllowedDataFieldFactory,
-    ProfileFactory,
-    ServiceConnectionFactory,
-    ServiceFactory,
-)
+from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
-def test_normal_user_can_query_own_services(rf, user_gql_client):
+def test_normal_user_can_query_own_services(
+    rf, user_gql_client, service, allowed_data_field_factory
+):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
-    name_field = AllowedDataFieldFactory(field_name="name", label="Name")
-    address_field = AllowedDataFieldFactory(field_name="address", label="Address")
-    AllowedDataFieldFactory(field_name="ssn", label="SSN")
-    service = ServiceFactory()
-    service.allowed_data_fields.add(name_field)
-    service.allowed_data_fields.add(address_field)
+    first_field = allowed_data_field_factory()
+    second_field = allowed_data_field_factory()
+    allowed_data_field_factory()
+    service.allowed_data_fields.add(first_field)
+    service.allowed_data_fields.add(second_field)
     ServiceConnectionFactory(profile=profile, service=service)
 
     query = """
@@ -61,14 +57,14 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
                                     "edges": [
                                         {
                                             "node": {
-                                                "fieldName": name_field.field_name,
-                                                "label": name_field.label,
+                                                "fieldName": first_field.field_name,
+                                                "label": first_field.label,
                                             }
                                         },
                                         {
                                             "node": {
-                                                "fieldName": address_field.field_name,
-                                                "label": address_field.label,
+                                                "fieldName": second_field.field_name,
+                                                "label": second_field.label,
                                             }
                                         },
                                     ]
@@ -84,11 +80,11 @@ def test_normal_user_can_query_own_services(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_add_service_mutation(rf, user_gql_client):
+def test_normal_user_can_add_service_mutation(rf, user_gql_client, service_factory):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    ServiceFactory()
+    service_factory()
 
     t = Template(
         """
@@ -124,11 +120,13 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_cannot_add_service_multiple_times_mutation(rf, user_gql_client):
+def test_normal_user_cannot_add_service_multiple_times_mutation(
+    rf, user_gql_client, service_factory
+):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    ServiceFactory()
+    service_factory()
 
     t = Template(
         """

@@ -13,6 +13,10 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         model = Profile
 
 
+class ProfileDataDictFactory(factory.DictFactory):
+    nickname = factory.Faker("name")
+
+
 class ClaimTokenFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
 
@@ -22,12 +26,29 @@ class ClaimTokenFactory(factory.django.DjangoModelFactory):
 
 class EmailFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
-    primary = False
+    primary = True
     email_type = EmailType.NONE
     email = factory.Faker("email")
 
     class Meta:
         model = Email
+
+
+class EmailDataDictFactory(factory.DictFactory):
+    email = factory.Faker("email")
+    email_type = EmailType.PERSONAL.name
+    primary = True
+
+
+class ProfileWithPrimaryEmailFactory(ProfileFactory):
+    @factory.post_generation
+    def emails(self, create, extracted, **kwargs):
+        if not create:
+            return
+        number_of_emails = extracted if extracted else 1
+        EmailFactory(profile=self, primary=True)
+        for n in range(number_of_emails - 1):
+            EmailFactory(profile=self, primary=False)
 
 
 class PhoneFactory(factory.django.DjangoModelFactory):
@@ -38,6 +59,12 @@ class PhoneFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Phone
+
+
+class PhoneDataDictFactory(factory.DictFactory):
+    phone = factory.Faker("phone_number")
+    phone_type = PhoneType.WORK.name
+    primary = False
 
 
 class AddressFactory(factory.django.DjangoModelFactory):
@@ -51,6 +78,15 @@ class AddressFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Address
+
+
+class AddressDataDictFactory(factory.DictFactory):
+    address = factory.Faker("street_address")
+    postal_code = factory.Faker("postcode")
+    city = factory.Faker("city")
+    country_code = factory.Faker("country_code", representation="alpha-2")
+    address_type = AddressType.WORK.name
+    primary = False
 
 
 class VocabularyFactory(factory.django.DjangoModelFactory):

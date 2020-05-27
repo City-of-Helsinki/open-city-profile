@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from string import Template
 
 from django.utils import timezone
@@ -15,10 +15,10 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
+from profiles.enums import EmailType
 from profiles.models import Profile
-from profiles.tests.factories import EmailFactory
+from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
 from youths.enums import YouthLanguage
 from youths.tests.factories import ProfileFactory, YouthProfileFactory
 
@@ -220,13 +220,12 @@ def test_normal_user_over_18_years_old_can_create_approved_youth_profile_mutatio
         }
         """
     )
+    birth_date = today.replace(year=today.year - 18) - timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
-        "birthDate": today.replace(year=today.year - 18, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -268,11 +267,10 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
         }
         """
     )
+    birth_date = today.replace(year=today.year - 18) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
-        "birthDate": today.replace(year=today.year - 18, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -315,15 +313,14 @@ def test_user_cannot_create_youth_profile_if_under_13_years_old(rf, user_gql_cli
         }
         """
     )
+    birth_date = today.replace(year=today.year - 13) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
         "language": YouthLanguage.FINNISH.name,
-        "birthDate": today.replace(year=today.year - 13, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -365,13 +362,12 @@ def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_o
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -416,13 +412,12 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     creation_data = {
         "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -434,7 +429,7 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
 
 
 def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
-    rf, user_gql_client
+    rf, user_gql_client, email_data
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -446,6 +441,11 @@ def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
                     input: {
                         profile: {
                             nickname: \"${nickname}\",
+                            addEmails: [{
+                                email: \"${email}\",
+                                emailType: ${email_type},
+                                primary: true,
+                            }],
                             youthProfile: {
                                 schoolClass: "${schoolClass}"
                                 schoolName: "${schoolName}"
@@ -477,6 +477,8 @@ def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
         "approverEmail": "hyvaksyja@ex.com",
         "language": YouthLanguage.FINNISH.name,
         "birthDate": "2004-04-11",
+        "email": email_data["email"],
+        "email_type": email_data["email_type"],
     }
 
     query = t.substitute(**creation_data)
@@ -569,11 +571,10 @@ def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_o
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     creation_data = {
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     expected_data = {
@@ -616,11 +617,10 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
         }
         """
     )
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     creation_data = {
         "photoUsageApproved": "true",
-        "birthDate": today.replace(year=today.year - 15, day=today.day + 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
     executed = user_gql_client.execute(query, context=request)
@@ -639,7 +639,7 @@ def test_user_can_update_youth_profile_with_photo_usage_field_if_over_15_years_o
 
     profile = ProfileFactory(user=user_gql_client.user)
     today = date.today()
-    birth_date = today.replace(year=today.year - 15, day=today.day - 1)
+    birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     YouthProfileFactory(profile=profile, birth_date=birth_date)
 
     t = Template(
@@ -675,7 +675,7 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
 
     profile = ProfileFactory(user=user_gql_client.user)
     today = date.today()
-    birth_date = today.replace(year=today.year - 15, day=today.day + 1)
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     YouthProfileFactory(profile=profile, birth_date=birth_date)
 
     t = Template(
@@ -706,13 +706,55 @@ def test_user_cannot_update_youth_profile_with_photo_usage_field_if_under_15_yea
     )
 
 
+def test_staff_user_can_update_youth_profile_with_photo_usage_field_if_under_15_years_old(
+    rf, user_gql_client, group, service
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    # Under 15 years
+    profile = ProfileWithPrimaryEmailFactory()
+    today = date.today()
+    birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
+    YouthProfileFactory(profile=profile, birth_date=birth_date)
+
+    t = Template(
+        """
+        mutation {
+            updateYouthProfile(input:{
+                serviceType: ${service_type},
+                profileId: \"${profile_id}\",
+                youthProfile: {
+                    photoUsageApproved: ${photo_usage_approved}
+                }
+            }) {
+                clientMutationId
+            }
+        }
+    """
+    )
+    mutation = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        photo_usage_approved="true",
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+
+    profile.youth_profile.refresh_from_db()
+    assert "errors" not in executed
+    assert profile.youth_profile.photo_usage_approved
+
+
 def test_normal_user_can_update_youth_profile_through_my_profile_mutation(
     rf, user_gql_client
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    profile = ProfileFactory(user=user_gql_client.user)
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     youth_profile = YouthProfileFactory(profile=profile)
 
     t = Template(
@@ -772,7 +814,7 @@ def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    ProfileFactory(user=user_gql_client.user)
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
 
     t = Template(
         """
@@ -846,10 +888,8 @@ def test_anon_user_query_with_token(rf, youth_profile, anon_user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_anon_user_can_approve_with_token(rf, anon_user_gql_client):
-    profile = ProfileFactory()
-    EmailFactory(primary=True, profile=profile)
-    youth_profile = YouthProfileFactory(profile=profile)
+def test_anon_user_can_approve_with_token(rf, anon_user_gql_client, youth_profile):
+    EmailFactory(primary=True, profile=youth_profile.profile)
 
     request = rf.post("/graphql")
     request.user = anon_user_gql_client.user
@@ -995,7 +1035,7 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
     """
 
     with freeze_time("2020-05-01"):
-        youth_profile.expiration = date(2020, 7, 31)
+        youth_profile.expiration = date(2020, 8, 31)
         youth_profile.approved_time = date(2019, 8, 1)
         youth_profile.save()
         expected_data = {
@@ -1004,8 +1044,8 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
-    with freeze_time("2020-08-01"):
-        youth_profile.expiration = date(2021, 7, 31)
+    with freeze_time("2020-09-01"):
+        youth_profile.expiration = date(2021, 8, 31)
         youth_profile.approved_time = date(2020, 4, 30)
         youth_profile.save()
         expected_data = {
@@ -1014,15 +1054,18 @@ def test_youth_profile_should_show_correct_membership_status(rf, user_gql_client
         executed = user_gql_client.execute(query, context=request)
         assert dict(executed["data"]) == expected_data
 
-    with freeze_time("2020-05-01"):
         youth_profile.approved_time = timezone.datetime(2020, 1, 1)
-        youth_profile.expiration = date(2021, 7, 31)
+        youth_profile.expiration = date(2021, 8, 31)
         youth_profile.save()
         expected_data = {
             "youthProfile": {"membershipStatus": "RENEWING", "renewable": False}
         }
-        executed = user_gql_client.execute(query, context=request)
-        assert dict(executed["data"]) == expected_data
+        with freeze_time("2020-05-01"):
+            executed = user_gql_client.execute(query, context=request)
+            assert dict(executed["data"]) == expected_data
+        with freeze_time("2020-08-31"):
+            executed = user_gql_client.execute(query, context=request)
+            assert dict(executed["data"]) == expected_data
 
 
 def test_youth_profile_expiration_should_renew_and_be_approvable(
@@ -1060,7 +1103,7 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
         assert dict(executed["data"]) == expected_data
 
     # Later in the year 2021, let's check our membership status
-    with freeze_time("2021-08-01"):
+    with freeze_time("2021-09-01"):
         query = """
             {
                 youthProfile {
@@ -1070,6 +1113,83 @@ def test_youth_profile_expiration_should_renew_and_be_approvable(
         """
         expected_data = {"youthProfile": {"membershipStatus": "EXPIRED"}}
         executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+    # Let's go back in time a few months and re-approve the membership
+    with freeze_time("2021-05-02"):
+        request.user = anon_user_gql_client.user
+
+        t = Template(
+            """
+            mutation{
+                approveYouthProfile(
+                    input: {
+                        approvalToken: "${token}",
+                        approvalData: {}
+                    }
+                )
+                {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+            """
+        )
+        youth_profile.refresh_from_db()
+        approval_data = {"token": youth_profile.approval_token}
+        query = t.substitute(**approval_data)
+        expected_data = {
+            "approveYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
+        }
+        executed = anon_user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+
+def test_youth_profile_expiration_should_be_renewable_by_staff_user(
+    rf, user_gql_client, anon_user_gql_client, profile, group, service
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+    EmailFactory(primary=True, profile=profile)
+
+    # Let's create a youth profile in the 2020
+    with freeze_time("2020-05-02"):
+        today = date.today()
+        youth_profile = YouthProfileFactory(
+            profile=profile,
+            approved_time=datetime.today(),
+            birth_date=today.replace(year=today.year - 15),
+        )
+
+    # In the year 2021, let's renew it
+    with freeze_time("2021-05-01"):
+        t = Template(
+            """
+            mutation {
+                renewYouthProfile(input:{
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\"
+                }) {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+        """
+        )
+        mutation = t.substitute(
+            service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+            profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        )
+
+        executed = user_gql_client.execute(mutation, context=request)
+        expected_data = {
+            "renewYouthProfile": {"youthProfile": {"membershipStatus": "RENEWING"}}
+        }
         assert dict(executed["data"]) == expected_data
 
     # Let's go back in time a few months and re-approve the membership
@@ -1137,21 +1257,18 @@ def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_
         assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_create_youth_profile(
+    rf, user_gql_client, phone_data, profile, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
-
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "school_name": "Koulu",
         "school_class": "2B",
         "language_at_home": YouthLanguage.ENGLISH.name,
@@ -1224,9 +1341,9 @@ def test_staff_user_can_create_youth_profile(rf, user_gql_client, phone_data):
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_client):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
+def test_staff_user_can_create_youth_profile_for_under_13_years_old(
+    rf, user_gql_client, phone_data, profile, group, service
+):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1234,9 +1351,63 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
     request.user = user
 
     today = date.today()
-    birth_date = today.replace(year=today.year - 13, day=today.day - 1).strftime(
-        "%Y-%m-%d"
+    birth_date = today.replace(year=today.year - 13) + timedelta(days=1)
+    youth_profile_data = {
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
+        "approver_email": "jane.doe@example.com",
+    }
+
+    t = Template(
+        """
+        mutation {
+            createYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    youthProfile: {
+                        birthDate: \"${birth_date}\",
+                        approverEmail: \"${approver_email}\",
+                    }
+                }
+            ) {
+                youthProfile {
+                    birthDate
+                    approverEmail
+                }
+            }
+        }
+    """
     )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=to_global_id(type="ProfileNode", id=profile.pk),
+        birth_date=youth_profile_data["birth_date"],
+        approver_email=youth_profile_data["approver_email"],
+    )
+    expected_data = {
+        "createYouthProfile": {
+            "youthProfile": {
+                "birthDate": youth_profile_data["birth_date"],
+                "approverEmail": youth_profile_data["approver_email"],
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_can_create_youth_profile_via_create_profile(
+    rf, user_gql_client, group, service
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
+    birth_date_string = birth_date.strftime("%Y-%m-%d")
 
     t = Template(
         """
@@ -1247,6 +1418,11 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
                     profile: {
                         firstName: \"${first_name}\",
                         lastName: \"${last_name}\",
+                        addEmails: [{
+                            email: \"${email}\",
+                            emailType: ${email_type},
+                            primary: true
+                        }]
                         youthProfile: {
                             birthDate: \"${birth_date}\",
                             approverEmail: \"${approver_email}\",
@@ -1279,8 +1455,10 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
         service_type=ServiceType.YOUTH_MEMBERSHIP.name,
         first_name="John",
         last_name="Doe",
-        birth_date=birth_date,
+        birth_date=birth_date_string,
         approver_email="jane.doe@example.com",
+        email="john.doe@example.com",
+        email_type=EmailType.PERSONAL.name,
     )
     expected_data = {
         "createProfile": {
@@ -1288,7 +1466,7 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
                 "firstName": "John",
                 "lastName": "Doe",
                 "youthProfile": {
-                    "birthDate": birth_date,
+                    "birthDate": birth_date_string,
                     "approverEmail": "jane.doe@example.com",
                 },
                 "serviceConnections": {
@@ -1308,10 +1486,10 @@ def test_staff_user_can_create_youth_profile_via_create_profile(rf, user_gql_cli
 
 
 def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
-    rf, user_gql_client
+    rf, user_gql_client, profile, service_factory
 ):
-    service_youth = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    service_berth = ServiceFactory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
     group_youth = GroupFactory(name="Youth")
     group_berth = GroupFactory(name="Berth")
     user = user_gql_client.user
@@ -1319,15 +1497,13 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     user.groups.add(group_berth)
     assign_perm("can_manage_profiles", group_youth, service_youth)
     assign_perm("can_manage_profiles", group_berth, service_berth)
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
 
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "approver_email": "jane.doe@example.com",
     }
 
@@ -1365,18 +1541,17 @@ def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     )
 
 
-def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_client):
-    ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+def test_normal_user_cannot_use_create_youth_profile_mutation(
+    rf, user_gql_client, profile, service
+):
     user = user_gql_client.user
-    profile = ProfileFactory()
     request = rf.post("/graphql")
     request.user = user
 
     today = date.today()
+    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
     youth_profile_data = {
-        "birth_date": today.replace(year=today.year - 13, day=today.day - 1).strftime(
-            "%Y-%m-%d"
-        ),
+        "birth_date": birth_date.strftime("%Y-%m-%d"),
         "approver_email": "jane.doe@example.com",
     }
 
@@ -1414,10 +1589,8 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(rf, user_gql_clien
 
 
 def test_nested_youth_profile_create_failure_also_fails_profile_creation(
-    rf, user_gql_client
+    rf, user_gql_client, group, service
 ):
-    service = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory()
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -1460,3 +1633,158 @@ def test_nested_youth_profile_create_failure_also_fails_profile_creation(
     user_gql_client.execute(query, context=request)
     # Nested CreateYouthProfile mutation failed and CreateProfile should also fail
     assert Profile.objects.count() == 0
+
+
+def test_staff_user_can_cancel_youth_membership_on_selected_date(
+    rf, user_gql_client, youth_profile, group, service
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    today = date.today()
+    expiration_date = today + timedelta(days=1)
+    youth_profile_data = {
+        "profile_id": to_global_id(type="ProfileNode", id=youth_profile.profile.pk),
+        "expiration": expiration_date.strftime("%Y-%m-%d"),
+    }
+
+    t = Template(
+        """
+        mutation {
+            cancelYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                    expiration: \"${expiration}\"
+                }
+            ) {
+                youthProfile {
+                    expiration
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=youth_profile_data["profile_id"],
+        expiration=youth_profile_data["expiration"],
+    )
+    expected_data = {
+        "cancelYouthProfile": {
+            "youthProfile": {"expiration": youth_profile_data["expiration"]}
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_staff_user_can_cancel_youth_membership_now(
+    rf, user_gql_client, youth_profile, group, service
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    youth_profile_data = {
+        "profile_id": to_global_id(type="ProfileNode", id=youth_profile.profile.pk)
+    }
+
+    t = Template(
+        """
+        mutation {
+            cancelYouthProfile(
+                input: {
+                    serviceType: ${service_type},
+                    profileId: \"${profile_id}\",
+                }
+            ) {
+                youthProfile {
+                    expiration
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
+        profile_id=youth_profile_data["profile_id"],
+    )
+    expected_data = {
+        "cancelYouthProfile": {
+            "youthProfile": {"expiration": date.today().strftime("%Y-%m-%d")}
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_can_cancel_youth_membership(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile, approved_time=datetime.now())
+
+    today = date.today()
+    expiration = today + timedelta(days=1)
+    expiration_string = expiration.strftime("%Y-%m-%d")
+
+    t = Template(
+        """
+        mutation{
+            cancelMyYouthProfile(
+                input: {
+                    expiration: \"${expiration}\"
+                }
+            )
+            {
+                youthProfile {
+                    expiration
+                    membershipStatus
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(expiration=expiration_string)
+
+    expected_data = {
+        "youthProfile": {"expiration": expiration_string, "membershipStatus": "EXPIRED"}
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["cancelMyYouthProfile"]) == expected_data
+
+
+def test_normal_user_can_cancel_youth_membership_now(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+    YouthProfileFactory(profile=profile, approved_time=datetime.now())
+
+    query = """
+        mutation{
+            cancelMyYouthProfile(
+                input: {}
+            )
+            {
+                youthProfile {
+                    expiration
+                    membershipStatus
+                }
+            }
+        }
+    """
+    expected_data = {
+        "youthProfile": {
+            "expiration": date.today().strftime("%Y-%m-%d"),
+            "membershipStatus": "EXPIRED",
+        }
+    }
+
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]["cancelMyYouthProfile"]) == expected_data

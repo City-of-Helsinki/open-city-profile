@@ -1,11 +1,14 @@
+import pytest
+from django.apps import apps
 from django.contrib.auth.models import Group
+from django_ilmoitin.models import NotificationTemplate
 from faker import Faker
+from guardian.shortcuts import get_group_perms
 
-from open_city_profile.tests.factories import GroupFactory, UserFactory
+from open_city_profile.tests.factories import GroupFactory
 from profiles.models import Profile
 from services.enums import ServiceType
 from services.models import AllowedDataField, Service
-from services.tests.factories import ServiceFactory
 from users.models import User
 from utils.utils import (
     assign_permissions,
@@ -14,6 +17,7 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
+    generate_notifications,
     generate_profiles,
     generate_services,
     generate_youth_profiles,
@@ -21,32 +25,59 @@ from utils.utils import (
 from youths.models import YouthProfile
 
 
-def test_generates_services():
+@pytest.mark.parametrize("times", [1, 2])
+def test_generate_services(times):
+    """Test services are generated and that function can be run multiple times."""
     assert Service.objects.count() == 0
-    services = generate_services()
+    for i in range(times):
+        services = generate_services()
     assert len(services) == len(ServiceType)
     assert Service.objects.count() == len(ServiceType)
 
 
-def test_generates_group_for_service():
-    services = [ServiceFactory()]
+@pytest.mark.parametrize("times", [1, 2])
+def test_generate_group_for_service(times, service):
+    """Test groups for services are generated and that function can be run multiple times."""
+    services = [service]
     assert Group.objects.count() == 0
-    groups = generate_groups_for_services(services)
+    for i in range(times):
+        groups = generate_groups_for_services(services)
     assert len(groups) == len(services)
     assert Group.objects.count() == len(services)
 
 
-def test_assigns_permissions():
+@pytest.mark.parametrize("times", [1, 2])
+def test_assign_permissions(times, user, service):
     available_permissions = [item[0] for item in Service._meta.permissions]
-    service = ServiceFactory()
+    # assign_permissions expects a Group and a Service exist with the same name.
     group = GroupFactory(name=service.service_type)
-    user = UserFactory()
     user.groups.add(group)
+
     for permission in available_permissions:
         assert not user.has_perm(permission, service)
-    assign_permissions([group], [service])
+        assert permission not in get_group_perms(group, service)
+
+    for i in range(times):
+        assign_permissions([group])
+
     for permission in available_permissions:
         assert user.has_perm(permission, service)
+        assert permission in get_group_perms(group, service)
+
+
+@pytest.mark.parametrize("times", [1, 2])
+def test_generate_notifications(times):
+    """Test notifications are generated and that function can be run multiple times."""
+
+    NotificationTemplateTranslation = apps.get_model(  # noqa: N806
+        "django_ilmoitin", "NotificationTemplateTranslation"
+    )
+
+    for i in range(times):
+        generate_notifications()
+
+    assert NotificationTemplate.objects.count() == 2
+    assert NotificationTemplateTranslation.objects.count() == 6
 
 
 def test_creates_random_user():
@@ -74,15 +105,15 @@ def test_generates_group_admins():
     assert group.user_set.count() == 1
 
 
-def test_generates_profiles():
-    ServiceFactory()
+def test_generates_profiles(service_factory):
+    service_factory()
     assert Profile.objects.count() == 0
     generate_profiles(k=10, faker=Faker())
     assert Profile.objects.count() == 10
 
 
-def test_generates_default_amount_of_profiles():
-    ServiceFactory()
+def test_generates_default_amount_of_profiles(service_factory):
+    service_factory()
     assert Profile.objects.count() == 0
     generate_profiles(faker=Faker())
     assert Profile.objects.count() == 50
@@ -109,9 +140,12 @@ def test_cant_generate_youth_profiles_without_profiles():
     assert YouthProfile.objects.count() == 0
 
 
-def test_generate_data_fields():
+@pytest.mark.parametrize("times", [1, 2])
+def test_generate_data_fields(times):
+    """Test data fields are generated and that function can be run multiple times."""
     assert AllowedDataField.objects.count() == 0
-    generate_data_fields()
+    for i in range(times):
+        generate_data_fields()
     allowed_data_fields = AllowedDataField.objects.all()
     assert len(allowed_data_fields) == 5
 

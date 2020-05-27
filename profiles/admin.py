@@ -1,4 +1,5 @@
 import json
+from functools import reduce
 
 from django import forms
 from django.contrib import admin, messages
@@ -11,8 +12,17 @@ from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
 from reversion.admin import VersionAdmin
 
-from profiles.models import ClaimToken, LegalRelationship, Profile, SensitiveData
+from profiles.models import (
+    Address,
+    ClaimToken,
+    Email,
+    LegalRelationship,
+    Phone,
+    Profile,
+    SensitiveData,
+)
 from services.admin import ServiceConnectionInline
+from subscriptions.admin import SubscriptionInline
 from youths.admin import YouthProfileAdminInline
 
 
@@ -61,6 +71,35 @@ class SensitiveDataAdminInline(admin.StackedInline):
     extra = 0
 
 
+class EmailFormSet(forms.models.BaseInlineFormSet):
+    def clean(self):
+        count = reduce(
+            lambda current, form: current + form.cleaned_data.get("primary"),
+            self.forms,
+            0,
+        )
+        if count != 1:
+            raise forms.ValidationError(
+                "Profile must have one exactly one primary email"
+            )
+
+
+class EmailAdminInline(admin.StackedInline):
+    model = Email
+    formset = EmailFormSet
+    extra = 0
+
+
+class PhoneAdminInline(admin.StackedInline):
+    model = Phone
+    extra = 0
+
+
+class AddressAdminInline(admin.StackedInline):
+    model = Address
+    extra = 0
+
+
 class ImportProfilesFromJsonForm(forms.Form):
     json_file = forms.FileField(required=True, label="Please select a json file")
 
@@ -73,9 +112,14 @@ class ExtendedProfileAdmin(VersionAdmin):
         RepresentativeAdmin,
         YouthProfileAdminInline,
         ServiceConnectionInline,
+        SubscriptionInline,
         ClaimTokenInline,
+        EmailAdminInline,
+        PhoneAdminInline,
+        AddressAdminInline,
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
+    list_filter = ("service_connections__service",)
 
     def get_urls(self):
         urls = super().get_urls()

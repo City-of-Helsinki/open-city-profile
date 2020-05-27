@@ -1,17 +1,24 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
+from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
+from services.models import ServiceConnection
+from services.tests.factories import ServiceConnectionFactory
 
-from ..models import Profile
-from .factories import EmailFactory, ProfileFactory, SensitiveDataFactory, UserFactory
+from ..models import Email, Profile
+from ..schema import validate_primary_email
+from .factories import (
+    EmailFactory,
+    ProfileWithPrimaryEmailFactory,
+    SensitiveDataFactory,
+)
 
 User = get_user_model()
 
 
-def test_new_profile_with_default_name():
-    user = UserFactory()
+def test_new_profile_with_default_name(user):
     profile = Profile.objects.create(user=user)
     assert profile.first_name == user.first_name
     assert profile.last_name == user.last_name
@@ -24,8 +31,7 @@ def test_new_profile_without_default_name():
     assert profile.last_name == ""
 
 
-def test_new_profile_with_existing_name_and_default_name():
-    user = UserFactory()
+def test_new_profile_with_existing_name_and_default_name(user):
     profile = Profile.objects.create(
         first_name="Existingfirstname", last_name="Existinglastname", user=user
     )
@@ -33,15 +39,13 @@ def test_new_profile_with_existing_name_and_default_name():
     assert profile.last_name == "Existinglastname"
 
 
-def test_new_profile_with_non_existing_name_and_default_name():
-    user = UserFactory()
+def test_new_profile_with_non_existing_name_and_default_name(user):
     profile = Profile.objects.create(first_name="", last_name="", user=user)
     assert profile.first_name
     assert profile.last_name
 
 
-def test_serialize_profile():
-    profile = ProfileFactory()
+def test_serialize_profile(profile):
     email_2 = EmailFactory(profile=profile)
     email_1 = EmailFactory(profile=profile)
     sensitive_data = SensitiveDataFactory(profile=profile)
@@ -80,8 +84,43 @@ def test_serialize_profile():
     assert expected_sensitive_data in serialized_profile.get("children")
 
 
-def test_import_customer_data_with_valid_data_set():
-    ServiceFactory()
+def test_get_service_gdpr_data(monkeypatch, service_factory, profile):
+    def mock_download_gdpr_data(self):
+        if self.service.service_type == ServiceType.BERTH:
+            return {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
+        elif self.service.service_type == ServiceType.YOUTH_MEMBERSHIP:
+            return {
+                "key": "YOUTHPROFILE",
+                "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
+            }
+        else:
+            return {}
+
+    # Setup the data
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_kukkuu = service_factory(service_type=ServiceType.GODCHILDREN_OF_CULTURE)
+    ServiceConnectionFactory(profile=profile, service=service_berth)
+    ServiceConnectionFactory(profile=profile, service=service_youth)
+    ServiceConnectionFactory(profile=profile, service=service_kukkuu)
+
+    # Let's monkeypatch the method in ServiceConnection to mock the http requests
+    monkeypatch.setattr(
+        ServiceConnection, "download_gdpr_data", mock_download_gdpr_data
+    )
+
+    response = profile.get_service_gdpr_data()
+    assert response == [
+        {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]},
+        {
+            "key": "YOUTHPROFILE",
+            "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
+        },
+    ]
+
+
+def test_import_customer_data_with_valid_data_set(service_factory):
+    service_factory()
     data = [
         {
             "customer_id": "321456",
@@ -147,3 +186,48 @@ def test_import_customer_data_with_missing_customer_id():
         Profile.import_customer_data(data)
     assert str(e.value) == "Could not import unknown customer, index: 0"
     assert Profile.objects.count() == 0
+
+
+def test_import_customer_data_with_missing_email():
+    data = [
+        {
+            "customer_id": "321457",
+            "first_name": "Jukka",
+            "last_name": "Virtanen",
+            "ssn": "010190-001A",
+            "address": {
+                "address": "Mannerheimintie 1 A 11",
+                "postal_code": "00100",
+                "city": "Helsinki",
+            },
+            "phones": ["0412345678", "358 503334411", "755 1122 K"],
+        }
+    ]
+    assert Profile.objects.count() == 0
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail) as e:
+        Profile.import_customer_data(data)
+    assert str(e.value) == "Profile must have exactly one primary email, index: 0"
+    assert Profile.objects.count() == 0
+
+
+def test_validation_should_pass_with_one_primary_email():
+    profile = ProfileWithPrimaryEmailFactory()
+    validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_no_primary_email(profile):
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
+        validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_multiple_primary_emails(profile):
+    EmailFactory(profile=profile, primary=True)
+    EmailFactory(profile=profile, primary=True)
+    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
+        validate_primary_email(profile)
+
+
+def test_validation_should_fail_with_invalid_email():
+    e = Email("!dsdsd{}{}{}{}{}{")
+    with pytest.raises(ValidationError):
+        e.save()

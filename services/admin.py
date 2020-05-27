@@ -18,5 +18,5 @@ class AllowedDataFieldAdmin(TranslatableAdmin, SortableAdmin):
 
 class ServiceConnectionInline(admin.StackedInline):
     model = ServiceConnection
-    extra = 1
+    extra = 0
     fk_name = "profile"
