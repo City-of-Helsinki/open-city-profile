@@ -7,7 +7,7 @@
 --no-binary psycopg2
 
 aniso8601==6.0.0          # via graphene
-certifi==2020.4.5.1        # via requests, sentry-sdk
+certifi==2020.4.5.1       # via requests, sentry-sdk
 chardet==3.0.4            # via requests
 coreapi==2.3.3            # via -r requirements.in
 coreschema==0.0.4         # via coreapi
@@ -35,7 +35,7 @@ django-reversion==3.0.4   # via -r requirements.in
 django-searchable-encrypted-fields==0.1.3  # via -r requirements.in
 django-thesaurus==0.0.2   # via -r requirements.in
 django==2.2.10            # via -r requirements.in, django-admin-sortable, django-allauth, django-anymail, django-cors-headers, django-filter, django-graphql-jwt, django-helusers, django-ilmoitin, django-import-export, django-mailer, django-mptt, django-munigeo, django-reversion, django-searchable-encrypted-fields, django-thesaurus, drf-oidc-auth, graphene-django
-djangorestframework==3.10.1  # via django-parler-rest, drf-oidc-auth
+djangorestframework==3.10.1  # via -r requirements.in, django-parler-rest, drf-oidc-auth
 drf-oidc-auth==0.9        # via django-helusers
 ecdsa==0.13.3             # via python-jose
 et-xmlfile==1.0.1         # via openpyxl
@@ -72,7 +72,7 @@ pyyaml==5.3.1             # via -r requirements.in, django-munigeo, tablib
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.5.0     # via django-munigeo
 requests-oauthlib==1.2.0  # via django-allauth
-requests==2.23.0
+requests==2.23.0          # via -r requirements.in, coreapi, django-allauth, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
 rsa==4.0                  # via python-jose
 rx==1.6.1                 # via graphql-core
 sentry-sdk==0.10.2        # via -r requirements.in
