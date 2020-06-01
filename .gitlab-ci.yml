@@ -16,6 +16,10 @@ review:
         K8S_SECRET_DEBUG: 1
         K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
         K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
+        K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
+        K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
+        K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.test.kuva.hel.ninja/openid"
+        K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: "True"
 
 staging:
     only:
