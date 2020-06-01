@@ -10,6 +10,7 @@ class ServiceFactory(factory.django.DjangoModelFactory):
     service_type = ServiceType.BERTH
     title = "Berth"
     description = "Service for Berth Reservations"
+    gdpr_url = ""
 
     class Meta:
         model = Service
