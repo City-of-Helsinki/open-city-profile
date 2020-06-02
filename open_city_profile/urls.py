@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -39,4 +41,20 @@ def readiness(*args, **kwargs):
     return HttpResponse(status=200)
 
 
-urlpatterns += [path("healthz", healthz), path("readiness", readiness)]
+def thisisthemostsecretsettingsprintendpointandyoushouldnothavefoundit(*args, **kwargs):
+    context = {}
+    for setting in dir(settings):
+        if setting.isupper():
+            context[setting] = getattr(settings, setting)
+
+    return HttpResponse(json.dumps(context, indent=4), content_type="application/json")
+
+
+urlpatterns += [
+    path("healthz", healthz),
+    path("readiness", readiness),
+    path(
+        "thisisthemostsecretsettingsprintendpointandyoushouldnothavefoundit",
+        thisisthemostsecretsettingsprintendpointandyoushouldnothavefoundit,
+    ),
+]
