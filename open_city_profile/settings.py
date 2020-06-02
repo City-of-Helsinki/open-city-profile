@@ -47,6 +47,12 @@ env = environ.Env(
     GDPR_API_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
+    CSRF_COOKIE_NAME=(str, ""),
+    CSRF_COOKIE_PATH=(str, ""),
+    CSRF_COOKIE_SECURE=(bool, None),
+    SESSION_COOKIE_NAME=(str, ""),
+    SESSION_COOKIE_PATH=(str, ""),
+    SESSION_COOKIE_SECURE=(bool, None),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -75,7 +81,24 @@ if DEBUG and not SECRET_KEY:
     SECRET_KEY = "xxx"
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
-SESSION_COOKIE_SECURE = False if DEBUG else True
+
+if env("CSRF_COOKIE_NAME"):
+    CSRF_COOKIE_NAME = env.str("CSRF_COOKIE_NAME")
+
+if env("CSRF_COOKIE_PATH"):
+    CSRF_COOKIE_PATH = env.str("CSRF_COOKIE_PATH")
+
+if env("CSRF_COOKIE_SECURE") is not None:
+    CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE")
+
+if env("SESSION_COOKIE_NAME"):
+    SESSION_COOKIE_NAME = env.str("SESSION_COOKIE_NAME")
+
+if env("SESSION_COOKIE_PATH"):
+    SESSION_COOKIE_PATH = env.str("SESSION_COOKIE_PATH")
+
+if env("SESSION_COOKIE_SECURE") is not None:
+    SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE")
 
 DATABASES = {"default": env.db()}
 # Ensure postgis engine
