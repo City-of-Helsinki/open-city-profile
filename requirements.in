@@ -16,6 +16,7 @@ django-parler
 django-reversion
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
+djangorestframework
 graphene-django
 graphene-federation
 pillow
