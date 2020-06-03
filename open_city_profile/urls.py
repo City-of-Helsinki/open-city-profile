@@ -44,7 +44,29 @@ def readiness(*args, **kwargs):
 def thisisthemostsecretsettingsprintendpointandyoushouldnothavefoundit(*args, **kwargs):
     context = {}
     for setting in dir(settings):
-        if setting.isupper():
+        if setting.isupper() and setting in (
+            "ALLOWED_HOSTS",
+            "DEBUG",
+            "SENTRY_DSN",
+            "SENTRY_ENVIRONMENT",
+            "SKIP_DATABASE_CHECK",
+            "TOKEN_AUTH_ACCEPTED_AUDIENCE",
+            "TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX",
+            "TOKEN_AUTH_AUTHSERVER_URL",
+            "TOKEN_AUTH_REQUIRE_SCOPE",
+            "VERSION",
+            "DEFAULT_FROM_EMAIL",
+            "FORCE_SCRIPT_NAME",
+            "MEDIA_URL",
+            "STATIC_URL",
+            "CSRF_COOKIE_NAME",
+            "CSRF_COOKIE_PATH",
+            "CSRF_COOKIE_SECURE",
+            "SESSION_COOKIE_NAME",
+            "SESSION_COOKIE_PATH",
+            "SESSION_COOKIE_SECURE",
+            "USE_X_FORWARDED_HOST",
+        ):
             context[setting] = getattr(settings, setting)
 
     return HttpResponse(json.dumps(context, indent=4), content_type="application/json")
