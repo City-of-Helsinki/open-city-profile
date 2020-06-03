@@ -112,6 +112,9 @@ class Profile(UUIDModel, SerializableMixin):
     )
     audit_log = True
 
+    def resolve_profile(self):
+        return self
+
     def get_primary_email(self):
         return Email.objects.get(profile=self, primary=True)
 
@@ -245,6 +248,9 @@ class SensitiveData(SerializableMixin):
     ssn = fields.EncryptedCharField(max_length=11)
     serialize_fields = ({"name": "ssn"},)
     audit_log = True
+
+    def resolve_profile(self):
+        return self.profile if self.pk else None
 
 
 class Contact(SerializableMixin):

@@ -58,3 +58,8 @@ register(ServiceFactory)
 def service__service_type():
     """Service fixture has berth type by default."""
     return ServiceType.BERTH
+
+
+@pytest.fixture(autouse=True)
+def setup_audit_log(settings):
+    settings.AUDIT_LOGGING_ENABLED = False
