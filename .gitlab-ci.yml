@@ -70,3 +70,5 @@ production:
         K8S_SECRET_SESSION_COOKIE_NAME: "profiili-prod-sessionid"
         K8S_SECRET_SESSION_COOKIE_PATH: "/profiili/"
         K8S_SECRET_SESSION_COOKIE_SECURE: 1
+        K8S_SECRET_USE_X_FORWARDED_HOST: 1
+        K8S_SECRET_CSRF_TRUSTED_ORIGINS: "api.hel.fi"

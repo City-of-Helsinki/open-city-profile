@@ -53,6 +53,8 @@ env = environ.Env(
     SESSION_COOKIE_NAME=(str, ""),
     SESSION_COOKIE_PATH=(str, ""),
     SESSION_COOKIE_SECURE=(bool, None),
+    USE_X_FORWARDED_HOST=(bool, None),
+    CSRF_TRUSTED_ORIGINS=(list, []),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -99,6 +101,12 @@ if env("SESSION_COOKIE_PATH"):
 
 if env("SESSION_COOKIE_SECURE") is not None:
     SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE")
+
+if env("USE_X_FORWARDED_HOST") is not None:
+    USE_X_FORWARDED_HOST = env.bool("USE_X_FORWARDED_HOST")
+
+if env("CSRF_TRUSTED_ORIGINS"):
+    CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 DATABASES = {"default": env.db()}
 # Ensure postgis engine
