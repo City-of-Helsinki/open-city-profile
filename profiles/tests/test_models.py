@@ -1,9 +1,11 @@
 import pytest
+import requests
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
+from services.exceptions import MissingGDPRUrlException
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 
@@ -16,6 +18,8 @@ from .factories import (
 )
 
 User = get_user_model()
+
+GDPR_URL = "https://example.com/"
 
 
 def test_new_profile_with_default_name(user):
@@ -117,6 +121,40 @@ def test_get_service_gdpr_data(monkeypatch, service_factory, profile):
             "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
         },
     ]
+
+
+def test_remove_service_gdpr_data_no_url(profile, service):
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    with pytest.raises(MissingGDPRUrlException):
+        service_connection.delete_gdpr_data(dry_run=True)
+    with pytest.raises(MissingGDPRUrlException):
+        service_connection.delete_gdpr_data()
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
+    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    dry_run = service_connection.delete_gdpr_data(dry_run=True)
+    real = service_connection.delete_gdpr_data()
+
+    assert dry_run.status_code == 204
+    assert real.status_code == 204
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
+    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=405)
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    with pytest.raises(requests.RequestException):
+        service_connection.delete_gdpr_data(dry_run=True)
+    with pytest.raises(requests.RequestException):
+        service_connection.delete_gdpr_data()
 
 
 def test_import_customer_data_with_valid_data_set(service_factory):
