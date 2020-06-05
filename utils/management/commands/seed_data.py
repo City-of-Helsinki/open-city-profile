@@ -12,6 +12,7 @@ from utils.utils import (
     generate_groups_for_services,
     generate_notifications,
     generate_profiles,
+    generate_service_connections,
     generate_services,
     generate_youth_profiles,
 )
@@ -128,9 +129,11 @@ class Command(BaseCommand):
             with factory.Faker.override_default_locale(locale):
                 self.stdout.write("Generating group admins...")
                 generate_group_admins(groups=groups, faker=faker)
-                self.stdout.write("Generating profiles ({})...".format(profile_count))
+                self.stdout.write(f"Generating profiles ({profile_count})...")
                 generate_profiles(profile_count, faker=faker)
+                self.stdout.write("Generating service connections...")
+                generate_service_connections(youth_profile_percentage)
                 self.stdout.write("Generating youth profiles...")
-                generate_youth_profiles(youth_profile_percentage, faker=faker)
+                generate_youth_profiles(faker=faker)
 
             self.stdout.write(self.style.SUCCESS("Done - Development fake data"))
