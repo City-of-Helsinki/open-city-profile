@@ -19,3 +19,4 @@ pytest-factoryboy
 rope
 yapf
 factory_boy
+snapshottest

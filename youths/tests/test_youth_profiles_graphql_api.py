@@ -11,6 +11,7 @@ from open_city_profile.consts import (
     APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
     CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
     CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
+    CANNOT_RENEW_YOUTH_PROFILE_ERROR,
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
     PERMISSION_DENIED_ERROR,
 )
@@ -1255,6 +1256,57 @@ def test_youth_profile_expiration_for_over_18_years_old_should_renew_and_change_
             "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
         }
         assert dict(executed["data"]) == expected_data
+
+
+def test_should_not_be_able_to_renew_pending_youth_profile(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+
+    with freeze_time("2020-04-30"):
+        today = date.today()
+        YouthProfileFactory(
+            profile=profile,
+            birth_date=today.replace(year=today.year - 18, day=today.day - 1),
+        )
+
+    with freeze_time("2020-06-02"):
+
+        # test query
+
+        query = """
+            {
+                youthProfile {
+                    membershipStatus
+                    renewable
+                }
+            }
+        """
+        expected_data = {
+            "youthProfile": {"membershipStatus": "PENDING", "renewable": False}
+        }
+        executed = user_gql_client.execute(query, context=request)
+        assert dict(executed["data"]) == expected_data
+
+        # test mutation
+
+        mutation = """
+            mutation {
+                renewMyYouthProfile(input:{}) {
+                    youthProfile {
+                        membershipStatus
+                    }
+                }
+            }
+        """
+        executed = user_gql_client.execute(mutation, context=request)
+        expected_data = {
+            "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
+        }
+        assert (
+            executed["errors"][0].get("extensions").get("code")
+            == CANNOT_RENEW_YOUTH_PROFILE_ERROR
+        )
 
 
 def test_staff_user_can_create_youth_profile(

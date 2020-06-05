@@ -31,7 +31,7 @@ staging:
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
         K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.test.kuva.hel.ninja/openid"
-        K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: "True"
+        K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
         K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
         K8S_SECRET_MAIL_MAILGUN_KEY: "$GL_MAILGUN_API_KEY"
         K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
@@ -40,6 +40,7 @@ staging:
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
         K8S_SECRET_FIELD_ENCRYPTION_KEYS: "$GL_QA_FIELD_ENCRYPTION_KEYS"
         K8S_SECRET_ENABLE_GRAPHIQL: 1
+        K8S_SECRET_SESSION_COOKIE_SECURE: 1
 
 production:
     variables:
@@ -52,7 +53,7 @@ production:
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
         K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso/openid"
-        K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: "True"
+        K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
         K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
         K8S_SECRET_MAIL_MAILGUN_KEY: "$GL_MAILGUN_API_KEY"
         K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
@@ -60,3 +61,12 @@ production:
         K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
         K8S_SECRET_FIELD_ENCRYPTION_KEYS: "$GL_STABLE_FIELD_ENCRYPTION_KEYS"
+        K8S_SECRET_FORCE_SCRIPT_NAME: "/profiili"
+        K8S_SECRET_MEDIA_URL: "/profiili/media/"
+        K8S_SECRET_STATIC_URL: "/profiili/static/"
+        K8S_SECRET_CSRF_COOKIE_NAME: "profiili-prod-csrftoken"
+        K8S_SECRET_CSRF_COOKIE_PATH: "/profiili/"
+        K8S_SECRET_CSRF_COOKIE_SECURE: 1
+        K8S_SECRET_SESSION_COOKIE_NAME: "profiili-prod-sessionid"
+        K8S_SECRET_SESSION_COOKIE_PATH: "/profiili/"
+        K8S_SECRET_SESSION_COOKIE_SECURE: 1
