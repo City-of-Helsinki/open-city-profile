@@ -1,8 +1,11 @@
+from itertools import chain
+
 import graphene
 import requests
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -14,6 +17,7 @@ from django_filters import (
     OrderingFilter,
 )
 from graphene import relay
+from graphene.utils.str_converters import to_snake_case
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
@@ -174,6 +178,62 @@ class ProfilesConnection(graphene.Connection):
         return self.iterable.model.objects.count()
 
 
+class PrimaryContactInfoOrderingFilter(OrderingFilter):
+    """Custom ordering filter
+
+    This filter enables ordering profiles by primary contact info fields, for example by city of primary address.
+    """
+
+    # custom field definitions:
+    # 0. custom field name (camel case format)
+    # 1. field display text
+    # 2. model with foreign key profile_id
+    # 3. field name of the related model
+
+    FIELDS = (
+        ("primaryCity", "Primary City", Address, "city"),
+        ("primaryPostalCode", "Primary Postal Code", Address, "postal_code"),
+        ("primaryAddress", "Primary Address", Address, "address"),
+        ("primaryCountryCode", "Primary Country Code", Address, "country_code"),
+        ("primaryEmail", "Primary Email", Email, "email"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # add ascending and descending custom orderings
+        self.extra["choices"] += [(item[0], item[1]) for item in self.FIELDS]
+        self.extra["choices"] += [
+            (f"-{item[0]}", f"{item[1]} (Descending)") for item in self.FIELDS
+        ]
+
+    def filter(self, qs, values):
+        def _get_field_data_by_field(fields, field):
+            for f in fields:
+                if f[0] == field:
+                    return f
+            return None
+
+        # collect all the ascending/descending options and flatten the list
+        options = chain(*[[item[0], f"-{item[0]}"] for item in self.FIELDS])
+
+        for value in values or []:
+            # match with all of our custom ascending and descending orderings
+            if value in options:
+                # get rid of leading "-" if ordering is descending
+                field_name = value.replace("-", "")
+                field_data = _get_field_data_by_field(self.FIELDS, field_name)
+                # annotate the query with extra field and return the queryset
+                annotation = {
+                    to_snake_case(field_name): Subquery(
+                        field_data[2]
+                        .objects.filter(profile_id=OuterRef("id"), primary=True)
+                        .values(field_data[3])
+                    )
+                }
+                return qs.annotate(**annotation).order_by(to_snake_case(value))
+        return super().filter(qs, values)
+
+
 class ProfileFilter(FilterSet):
     class Meta:
         model = Profile
@@ -214,7 +274,7 @@ class ProfileFilter(FilterSet):
     addresses__primary = BooleanFilter()
     language = CharFilter()
     enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
-    order_by = OrderingFilter(
+    order_by = PrimaryContactInfoOrderingFilter(
         fields=(
             ("first_name", "firstName"),
             ("last_name", "lastName"),

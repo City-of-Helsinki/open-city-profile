@@ -1533,6 +1533,81 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service)
     assert dict(executed["data"]) == expected_data
 
 
+@pytest.mark.parametrize(
+    "order_by",
+    [
+        "primaryAddress",
+        "primaryCity",
+        "primaryPostalCode",
+        "primaryCountryCode",
+        "primaryEmail",
+    ],
+)
+def test_staff_user_can_sort_berth_profiles_by_custom_fields(
+    rf, user_gql_client, group, service, order_by
+):
+    profile_1, profile_2 = (
+        ProfileFactory(first_name="Adam", last_name="Tester"),
+        ProfileFactory(first_name="Bryan", last_name="Tester"),
+    )
+    AddressFactory(
+        profile=profile_1,
+        city="Akaa",
+        address="Autotie 1",
+        postal_code="00100",
+        country_code="FI",
+        primary=True,
+    ),
+    AddressFactory(
+        profile=profile_2,
+        city="Ypäjä",
+        address="Yrjönkatu 99",
+        postal_code="99999",
+        country_code="SE",
+        primary=True,
+    ),
+    EmailFactory(profile=profile_1, email="adam.tester@example.com", primary=True,),
+    EmailFactory(profile=profile_2, email="bryan.tester@example.com", primary=True,),
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        query getBerthProfiles {
+            profiles(serviceType: ${service_type}, orderBy: \"${order_by}\") {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=order_by)
+    expected_data = {
+        "profiles": {
+            "edges": [{"node": {"firstName": "Adam"}}, {"node": {"firstName": "Bryan"}}]
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=f"-{order_by}")
+    expected_data = {
+        "profiles": {
+            "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
 def test_staff_user_can_filter_berth_profiles_by_emails(
     rf, user_gql_client, group, service
 ):
