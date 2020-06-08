@@ -246,18 +246,34 @@ def generate_profiles(k=50, faker=None):
             country_code=faker.country_code(),
             address_type=AddressType.NONE,
         )
-        services = Service.objects.all()
-        if services.exists():
+
+
+def generate_service_connections(youth_profile_percentage=0.2):
+    """Create fake service connections for development purposes."""
+    profiles = Profile.objects.all()
+    number_of_youth_profiles_to_generate = int(
+        profiles.count() * youth_profile_percentage
+    )
+
+    youth_service = Service.objects.get(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    other_services = Service.objects.exclude(pk=youth_service.pk)
+
+    for index, profile in enumerate(profiles):
+        if index < number_of_youth_profiles_to_generate:
+            ServiceConnection.objects.create(profile=profile, service=youth_service)
+        else:
             ServiceConnection.objects.create(
-                profile=profile, service=random.choice(services)
+                profile=profile, service=random.choice(other_services)
             )
 
 
-def generate_youth_profiles(percentage=0.2, faker=None):
+def generate_youth_profiles(faker=None):
     """Create fake youth membership profiles for development purposes."""
-    profiles = Profile.objects.all()
-    youth_profile_profiles = profiles.order_by("?")[: int(len(profiles) * percentage)]
-    for profile in youth_profile_profiles:
+    profiles = Profile.objects.filter(
+        service_connections__service__service_type=ServiceType.YOUTH_MEMBERSHIP
+    )
+
+    for profile in profiles:
         approved = bool(random.getrandbits(1))
         YouthProfile.objects.create(
             profile=profile,

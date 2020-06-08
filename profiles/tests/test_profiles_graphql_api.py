@@ -1,4 +1,3 @@
-import json
 from datetime import timedelta
 from string import Template
 
@@ -11,10 +10,8 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
-    CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
-    PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
@@ -28,7 +25,6 @@ from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
     SubscriptionTypeFactory,
 )
-from users.models import User
 from youths.tests.factories import YouthProfileFactory
 
 from ..schema import ProfileNode
@@ -1370,88 +1366,6 @@ def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
-def test_normal_user_can_delete_his_profile(rf, user_gql_client, service):
-    profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-            mutation {
-                deleteMyProfile(input: {}) {
-                    clientMutationId
-                }
-            }
-        """
-    )
-
-    expected_data = {"deleteMyProfile": {"clientMutationId": None}}
-
-    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
-    executed = user_gql_client.execute(mutation, context=request)
-    assert dict(executed["data"]) == expected_data
-    with pytest.raises(User.DoesNotExist):
-        user_gql_client.user.refresh_from_db()
-
-
-def test_normal_user_cannot_delete_his_profile_if_service_berth_connected(
-    rf, user_gql_client, service
-):
-    profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-            mutation {
-                deleteMyProfile(input: {}) {
-                    clientMutationId
-                }
-            }
-        """
-    )
-
-    expected_data = {"deleteMyProfile": None}
-
-    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=profile.id))
-    executed = user_gql_client.execute(mutation, context=request)
-    assert dict(executed["data"]) == expected_data
-    assert "code" in executed["errors"][0]["extensions"]
-    assert (
-        executed["errors"][0]["extensions"]["code"]
-        == CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR
-    )
-
-
-def test_normal_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
-    id = profile.id
-    profile.delete()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-            mutation {
-                deleteMyProfile(input: {}) {
-                    clientMutationId
-                }
-            }
-        """
-    )
-
-    expected_data = {"deleteMyProfile": None}
-
-    mutation = t.substitute(id=to_global_id(type="ProfileNode", id=id))
-    executed = user_gql_client.execute(mutation, context=request)
-    assert dict(executed["data"]) == expected_data
-    assert "code" in executed["errors"][0]["extensions"]
-    assert executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
-
-
 def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service_factory):
     service_factory()
     request = rf.post("/graphql")
@@ -1610,6 +1524,81 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service)
     """
     )
     query = t.substitute(service_type=ServiceType.BERTH.name)
+    expected_data = {
+        "profiles": {
+            "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+
+@pytest.mark.parametrize(
+    "order_by",
+    [
+        "primaryAddress",
+        "primaryCity",
+        "primaryPostalCode",
+        "primaryCountryCode",
+        "primaryEmail",
+    ],
+)
+def test_staff_user_can_sort_berth_profiles_by_custom_fields(
+    rf, user_gql_client, group, service, order_by
+):
+    profile_1, profile_2 = (
+        ProfileFactory(first_name="Adam", last_name="Tester"),
+        ProfileFactory(first_name="Bryan", last_name="Tester"),
+    )
+    AddressFactory(
+        profile=profile_1,
+        city="Akaa",
+        address="Autotie 1",
+        postal_code="00100",
+        country_code="FI",
+        primary=True,
+    ),
+    AddressFactory(
+        profile=profile_2,
+        city="Ypäjä",
+        address="Yrjönkatu 99",
+        postal_code="99999",
+        country_code="SE",
+        primary=True,
+    ),
+    EmailFactory(profile=profile_1, email="adam.tester@example.com", primary=True,),
+    EmailFactory(profile=profile_2, email="bryan.tester@example.com", primary=True,),
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    t = Template(
+        """
+        query getBerthProfiles {
+            profiles(serviceType: ${service_type}, orderBy: \"${order_by}\") {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=order_by)
+    expected_data = {
+        "profiles": {
+            "edges": [{"node": {"firstName": "Adam"}}, {"node": {"firstName": "Bryan"}}]
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert dict(executed["data"]) == expected_data
+
+    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=f"-{order_by}")
     expected_data = {
         "profiles": {
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
@@ -3321,58 +3310,3 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
-
-
-def test_user_can_download_profile(rf, user_gql_client):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    primary_email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    query = """
-        {
-            downloadMyProfile
-        }
-    """
-    expected_json = json.dumps(
-        {
-            "key": "DATA",
-            "children": [
-                {
-                    "key": "PROFILE",
-                    "children": [
-                        {"key": "FIRST_NAME", "value": profile.first_name},
-                        {"key": "LAST_NAME", "value": profile.last_name},
-                        {"key": "NICKNAME", "value": profile.nickname},
-                        {"key": "LANGUAGE", "value": profile.language},
-                        {"key": "CONTACT_METHOD", "value": profile.contact_method},
-                        {
-                            "key": "EMAILS",
-                            "children": [
-                                {
-                                    "key": "EMAIL",
-                                    "children": [
-                                        {
-                                            "key": "PRIMARY",
-                                            "value": primary_email.primary,
-                                        },
-                                        {
-                                            "key": "EMAIL_TYPE",
-                                            "value": primary_email.email_type.name,
-                                        },
-                                        {"key": "EMAIL", "value": primary_email.email},
-                                    ],
-                                }
-                            ],
-                        },
-                        {"key": "PHONES", "children": []},
-                        {"key": "ADDRESSES", "children": []},
-                        {"key": "SERVICE_CONNECTIONS", "children": []},
-                        {"key": "SUBSCRIPTIONS", "children": []},
-                    ],
-                }
-            ],
-        }
-    )
-    executed = user_gql_client.execute(query, context=request)
-    assert expected_json == executed["data"]["downloadMyProfile"]

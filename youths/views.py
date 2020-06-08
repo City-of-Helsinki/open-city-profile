@@ -57,6 +57,9 @@ class YouthProfileGDPRAPIView(APIView):
 
         Deletes all data related to the given profile id, or just checks if the data can be deleted,
         depending on the `dry_run` parameter. Raises DeletionNotAllowed if the item
+
+        Dry run delete is expected to always give the same end result as the proper delete i.e. if
+        dry run indicated deleting is OK, the proper delete should be OK too.
         """
         try:
             with transaction.atomic():
