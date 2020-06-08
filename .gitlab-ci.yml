@@ -30,7 +30,7 @@ staging:
         K8S_SECRET_SKIP_DATABASE_CHECK: 1
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
         K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
-        K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.test.kuva.hel.ninja/openid"
+        K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso-test/openid"
         K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
         K8S_SECRET_VERSION: "$CI_COMMIT_SHORT_SHA"
         K8S_SECRET_MAIL_MAILGUN_KEY: "$GL_MAILGUN_API_KEY"
@@ -70,3 +70,5 @@ production:
         K8S_SECRET_SESSION_COOKIE_NAME: "profiili-prod-sessionid"
         K8S_SECRET_SESSION_COOKIE_PATH: "/profiili/"
         K8S_SECRET_SESSION_COOKIE_SECURE: 1
+        K8S_SECRET_USE_X_FORWARDED_HOST: 1
+        K8S_SECRET_CSRF_TRUSTED_ORIGINS: "api.hel.fi"

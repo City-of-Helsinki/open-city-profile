@@ -1,6 +1,7 @@
 from itertools import chain
 
 import graphene
+import requests
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -26,13 +27,14 @@ from thesaurus.models import Concept
 
 from open_city_profile.exceptions import (
     APINotImplementedError,
-    CannotDeleteProfileWhileServiceConnectedError,
+    ConnectedServiceDeletionFailedError,
+    ConnectedServiceDeletionNotAllowedError,
     ProfileDoesNotExistError,
     ProfileMustHaveOnePrimaryEmail,
     TokenExpiredError,
 )
 from profiles.decorators import staff_required
-from services.enums import ServiceType
+from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from subscriptions.schema import (
@@ -730,28 +732,42 @@ class ClaimProfileMutation(relay.ClientIDMutation):
 class DeleteMyProfileMutation(relay.ClientIDMutation):
     @classmethod
     @login_required
-    @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
             raise ProfileDoesNotExistError("Profile does not exist")
 
-        # TODO: Here we should check whether profile can be
-        #       actually removed. Waiting for spec for this.
-        #       For now just check if user has BERTH.
-        #
-        #       More info:
-        #       https://helsinkisolutionoffice.atlassian.net/browse/OM-248
-        if profile.service_connections.filter(
-            service__service_type=ServiceType.BERTH
-        ).exists():
-            raise CannotDeleteProfileWhileServiceConnectedError(
-                "Cannot delete profile while service BERTH still connected"
-            )
+        cls.delete_service_connections_for_profile(profile, dry_run=True)
+        cls.delete_service_connections_for_profile(profile, dry_run=False)
+
         profile.delete()
         info.context.user.delete()
         return DeleteMyProfileMutation()
+
+    @staticmethod
+    def delete_service_connections_for_profile(profile, dry_run=False):
+        failed_services = []
+
+        for service_connection in profile.service_connections.all():
+            try:
+                service_connection.delete_gdpr_data(dry_run=dry_run)
+                if not dry_run:
+                    service_connection.delete()
+            except (requests.RequestException, MissingGDPRUrlException):
+                service_name = service_connection.service.service_type.name
+                failed_services.append(service_name)
+
+        if failed_services:
+            failed_services_string = ", ".join(failed_services)
+            if dry_run:
+                raise ConnectedServiceDeletionNotAllowedError(
+                    f"Connected services: {failed_services_string} did not allow deleting the profile."
+                )
+
+            raise ConnectedServiceDeletionFailedError(
+                f"Deletion failed for the following connected services: {failed_services_string}."
+            )
 
 
 class Query(graphene.ObjectType):
