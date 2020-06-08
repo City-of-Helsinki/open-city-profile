@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.exceptions import APIException
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -29,6 +30,7 @@ class YouthProfileGDPRAPIView(APIView):
     # TODO: Add authentication and security
 
     model = YouthProfile
+    renderer_classes = [JSONRenderer]
 
     def dispatch(self, request, *args, **kwargs):
         if not settings.GDPR_API_ENABLED:
