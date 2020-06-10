@@ -110,7 +110,9 @@ class YouthProfileType(DjangoObjectType):
         exclude = ("id", "approval_token", "language_at_home")
 
     def resolve_renewable(self, info, **kwargs):
-        return self.expiration != calculate_expiration(date.today())
+        return bool(self.approved_time) and self.expiration != calculate_expiration(
+            date.today()
+        )
 
     def resolve_membership_status(self, info, **kwargs):
         if self.expiration <= date.today():
