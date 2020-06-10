@@ -244,6 +244,7 @@ class ProfileFilter(FilterSet):
             "emails__email",
             "emails__email_type",
             "emails__primary",
+            "emails__verified",
             "phones__phone",
             "phones__phone_type",
             "phones__primary",
@@ -263,6 +264,7 @@ class ProfileFilter(FilterSet):
     emails__email = CharFilter(lookup_expr="icontains")
     emails__email_type = ChoiceFilter(choices=EmailType.choices())
     emails__primary = BooleanFilter()
+    emails__verified = BooleanFilter()
     phones__phone = CharFilter(lookup_expr="icontains")
     phones__phone_type = ChoiceFilter(choices=PhoneType.choices())
     phones__primary = BooleanFilter()
@@ -305,7 +307,7 @@ class EmailNode(ContactNode):
 
     class Meta:
         model = Email
-        fields = ("id", "email_type", "primary", "email")
+        fields = ("id", "email_type", "primary", "email", "verified")
         filter_fields = []
         interfaces = (relay.Node,)
 
