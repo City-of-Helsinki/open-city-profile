@@ -165,3 +165,57 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
         executed["errors"][0]["extensions"]["code"]
         == SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
     )
+
+
+def test_normal_user_can_query_own_services_gdpr_api_scopes(
+    rf, user_gql_client, service_factory,
+):
+    query_scope = "query_scope"
+    delete_scope = "delete_scope"
+    service = service_factory(
+        gdpr_query_scope=query_scope, gdpr_delete_scope=delete_scope
+    )
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    profile = ProfileFactory(user=user_gql_client.user)
+
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                type
+                                gdprQueryScope
+                                gdprDeleteScope
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    expected_data = {
+        "myProfile": {
+            "serviceConnections": {
+                "edges": [
+                    {
+                        "node": {
+                            "service": {
+                                "type": service.service_type.name,
+                                "gdprQueryScope": query_scope,
+                                "gdprDeleteScope": delete_scope,
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, context=request)
+
+    assert dict(executed["data"]) == expected_data
