@@ -21,7 +21,7 @@ GDPR_URL = "https://example.com/"
 
 DELETE_MY_PROFILE_MUTATION = """
     mutation {
-        deleteMyProfile(input: {}) {
+        deleteMyProfile(input: {authorizationCode: "code123"}) {
             clientMutationId
         }
     }
@@ -36,7 +36,7 @@ def test_user_can_download_profile(rf, user_gql_client):
 
     query = """
         {
-            downloadMyProfile
+            downloadMyProfile(authorizationCode: "code123")
         }
     """
     expected_json = json.dumps(
