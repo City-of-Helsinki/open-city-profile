@@ -64,6 +64,7 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
                             email,
                             emailType,
                             primary,
+                            verified
                         }
                         }
                     }
@@ -84,6 +85,7 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
+                                "verified": False,
                             }
                         }
                     ]
@@ -174,6 +176,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                                 email
                                 emailType
                                 primary
+                                verified
                             }
                             }
                         }
@@ -195,6 +198,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
+                                "verified": False,
                             }
                         }
                     ]
@@ -239,6 +243,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                             email
                             emailType
                             primary
+                            verified
                         }
                         }
                     }
@@ -258,6 +263,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                                 "email": email.email,
                                 "emailType": email.email_type.name,
                                 "primary": email.primary,
+                                "verified": False,
                             }
                         },
                         {
@@ -265,6 +271,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": not email_data["primary"],
+                                "verified": False,
                             }
                         },
                     ]
@@ -1612,7 +1619,9 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     rf, user_gql_client, group, service
 ):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
-    EmailFactory(profile=profile_1, primary=True, email_type=EmailType.PERSONAL)
+    EmailFactory(
+        profile=profile_1, primary=True, email_type=EmailType.PERSONAL, verified=True
+    )
     email = EmailFactory(profile=profile_2, primary=False, email_type=EmailType.WORK)
     EmailFactory(profile=profile_3, primary=False, email_type=EmailType.OTHER)
     ServiceConnectionFactory(profile=profile_1, service=service)
@@ -1683,6 +1692,26 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     executed = user_gql_client.execute(
         query,
         variables={"serviceType": ServiceType.BERTH.name, "primary": False},
+        context=request,
+    )
+    assert dict(executed["data"]) == expected_data
+
+    # filter by verified
+
+    query = """
+        query getBerthProfiles($serviceType: ServiceType!, $verified: Boolean){
+            profiles(serviceType: $serviceType, emails_Verified: $verified) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 1, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={"serviceType": ServiceType.BERTH.name, "verified": True},
         context=request,
     )
     assert dict(executed["data"]) == expected_data
