@@ -18,6 +18,7 @@ snapshots["test_get_profile_information_from_gdpr_api 1"] = {
         {"key": "APPROVER_EMAIL", "value": "patricia30@adams.com"},
         {"key": "EXPIRATION", "value": "2021-08-31 00:00"},
         {"key": "PHOTO_USAGE_APPROVED", "value": None},
+        {"children": [], "key": "ADDITIONAL_CONTACT_PERSONS"},
     ],
     "key": "YOUTHPROFILE",
 }
