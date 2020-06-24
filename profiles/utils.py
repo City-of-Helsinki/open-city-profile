@@ -15,42 +15,40 @@ _thread_locals = threading.local()
 
 
 def create_nested(model, profile, data):
-    for add_input in data:
-        if add_input:
-            item = model(profile=profile)
-            for field, value in add_input.items():
-                if field == "primary" and value is True:
-                    model.objects.filter(profile=profile).update(primary=False)
-                setattr(item, field, value)
-            try:
-                item.save()
-            except ValidationError:
-                if model.__name__ == "Email":
-                    raise InvalidEmailFormatError("Email must be in valid email format")
-                else:
-                    raise
+    for add_input in filter(None, data):
+        item = model(profile=profile)
+        for field, value in add_input.items():
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+        try:
+            item.save()
+        except ValidationError:
+            if model.__name__ == "Email":
+                raise InvalidEmailFormatError("Email must be in valid email format")
+            else:
+                raise
 
 
 def update_nested(model, profile, data):
-    for update_input in data:
-        if update_input:
-            id = update_input.pop("id")
-            item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
-            for field, value in update_input.items():
-                if field == "primary" and value is True:
-                    model.objects.filter(profile=profile).update(primary=False)
-                setattr(item, field, value)
-            try:
-                item.save()
-            except ValidationError:
-                if model.__name__ == "Email":
-                    raise InvalidEmailFormatError("Email must be in valid email format")
-                else:
-                    raise
+    for update_input in filter(None, data):
+        id = update_input.pop("id")
+        item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
+        for field, value in update_input.items():
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+        try:
+            item.save()
+        except ValidationError:
+            if model.__name__ == "Email":
+                raise InvalidEmailFormatError("Email must be in valid email format")
+            else:
+                raise
 
 
 def delete_nested(model, profile, data):
-    for remove_id in data:
+    for remove_id in filter(None, data):
         model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
 
 
