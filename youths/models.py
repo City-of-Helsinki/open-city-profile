@@ -93,4 +93,31 @@ class YouthProfile(SerializableMixin):
         {"name": "approver_email"},
         {"name": "expiration", "accessor": lambda x: x.strftime("%Y-%m-%d %H:%M")},
         {"name": "photo_usage_approved"},
+        {"name": "additional_contact_persons"},
     )
+
+
+class AdditionalContactPerson(SerializableMixin):
+    youth_profile = models.ForeignKey(
+        YouthProfile,
+        on_delete=models.CASCADE,
+        related_name="additional_contact_persons",
+    )
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=50)
+    email = models.EmailField(max_length=254)
+
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "phone"},
+        {"name": "email"},
+    )
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.pk})"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)

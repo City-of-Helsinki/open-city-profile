@@ -1,7 +1,7 @@
 import factory
 
 from profiles.tests.factories import ProfileFactory
-from youths.models import YouthProfile
+from youths.models import AdditionalContactPerson, YouthProfile
 
 
 class YouthProfileFactory(factory.django.DjangoModelFactory):
@@ -13,3 +13,21 @@ class YouthProfileFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = YouthProfile
+
+
+class AdditionalContactPersonDictFactory(factory.DictFactory):
+    firstName = factory.Faker("first_name")  # noqa: N815
+    lastName = factory.Faker("last_name")  # noqa: N815
+    phone = factory.Faker("phone_number")
+    email = factory.Faker("email")
+
+
+class AdditionalContactPersonFactory(factory.django.DjangoModelFactory):
+    youth_profile = factory.SubFactory(YouthProfileFactory)
+    first_name = factory.Faker("first_name")
+    last_name = factory.Faker("last_name")
+    phone = factory.Faker("phone_number")
+    email = factory.Faker("email")
+
+    class Meta:
+        model = AdditionalContactPerson
