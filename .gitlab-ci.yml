@@ -28,6 +28,7 @@ review:
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
         K8S_SECRET_ENABLE_GRAPHIQL: 1
         K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
+        K8S_SECRET_GDPR_API_ENABLED: 1
 
 staging:
     only:

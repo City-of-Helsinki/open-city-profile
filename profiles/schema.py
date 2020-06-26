@@ -732,6 +732,15 @@ class ClaimProfileMutation(relay.ClientIDMutation):
 
 
 class DeleteMyProfileMutation(relay.ClientIDMutation):
+    class Input:
+        authorization_code = graphene.String(
+            required=True,
+            description=(
+                "OAuth/OIDC authoziation code. When obtaining the code, it is required to use "
+                "service and operation specific GDPR API scopes."
+            ),
+        )
+
     @classmethod
     @login_required
     def mutate_and_get_payload(cls, root, info, **input):
@@ -791,8 +800,15 @@ class Query(graphene.ObjectType):
     # TODO: Change the description when the download API is implemented to fetch data from services as well
     # TODO: Add the complete list of error codes
     download_my_profile = graphene.JSONString(
+        authorization_code=graphene.String(
+            required=True,
+            description=(
+                "OAuth/OIDC authoziation code. When obtaining the code, it is required to use "
+                "service and operation specific GDPR API scopes."
+            ),
+        ),
         description="Get the user information stored in the profile as machine readable JSON.\n\nRequires "
-        "authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "authentication.\n\nPossible error codes:\n\n* `TODO`",
     )
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
