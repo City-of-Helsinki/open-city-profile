@@ -5,11 +5,7 @@ from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
-    APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
-    CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
     CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
-    CANNOT_RENEW_YOUTH_PROFILE_ERROR,
-    CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
@@ -24,11 +20,7 @@ from open_city_profile.consts import (
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
-    ApproverEmailCannotBeEmptyForMinorsError,
-    CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotPerformThisActionWithGivenServiceType,
-    CannotRenewYouthProfileError,
-    CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
@@ -40,6 +32,18 @@ from open_city_profile.exceptions import (
     TokenExpiredError,
 )
 from profiles.models import Profile
+from youths.consts import (
+    APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
+    CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
+    CANNOT_RENEW_YOUTH_PROFILE_ERROR,
+    CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
+)
+from youths.exceptions import (
+    ApproverEmailCannotBeEmptyForMinorsError,
+    CannotCreateYouthProfileIfUnder13YearsOldError,
+    CannotRenewYouthProfileError,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError,
+)
 
 error_codes_shared = {
     Exception: GENERAL_ERROR,

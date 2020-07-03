@@ -13,11 +13,7 @@ from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
-    ApproverEmailCannotBeEmptyForMinorsError,
-    CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotPerformThisActionWithGivenServiceType,
-    CannotRenewYouthProfileError,
-    CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileHasNoPrimaryEmailError,
 )
 from profiles.decorators import staff_required
@@ -26,6 +22,12 @@ from services.enums import ServiceType
 from services.schema import AllowedServiceType
 
 from .enums import NotificationType, YouthLanguage
+from .exceptions import (
+    ApproverEmailCannotBeEmptyForMinorsError,
+    CannotCreateYouthProfileIfUnder13YearsOldError,
+    CannotRenewYouthProfileError,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError,
+)
 from .models import AdditionalContactPerson, calculate_expiration, YouthProfile
 from .utils import (
     calculate_age,
