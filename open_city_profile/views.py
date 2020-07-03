@@ -53,7 +53,9 @@ error_codes_shared = {
     JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
+    InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
+
 error_codes_profile = {
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
@@ -61,7 +63,6 @@ error_codes_profile = {
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
-    InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
 
 error_codes_youth_profile = {
