@@ -1265,7 +1265,7 @@ def test_should_not_be_able_to_renew_pending_youth_profile(rf, user_gql_client):
     request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
 
-    with freeze_time("2020-04-30"):
+    with freeze_time("2020-05-15"):
         today = date.today()
         YouthProfileFactory(
             profile=profile,
@@ -1302,9 +1302,6 @@ def test_should_not_be_able_to_renew_pending_youth_profile(rf, user_gql_client):
             }
         """
         executed = user_gql_client.execute(mutation, context=request)
-        expected_data = {
-            "renewMyYouthProfile": {"youthProfile": {"membershipStatus": "ACTIVE"}}
-        }
         assert (
             executed["errors"][0].get("extensions").get("code")
             == CANNOT_RENEW_YOUTH_PROFILE_ERROR
