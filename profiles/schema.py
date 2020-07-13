@@ -168,8 +168,8 @@ class ProfilesConnection(graphene.Connection):
     class Meta:
         abstract = True
 
-    count = graphene.Int()
-    total_count = graphene.Int()
+    count = graphene.Int(required=True)
+    total_count = graphene.Int(required=True)
 
     def resolve_count(self, info):
         return self.length

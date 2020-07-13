@@ -3139,6 +3139,25 @@ def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_clien
     )
 
 
+def test_profile_connection_schema_matches_federated_schema(rf, anon_user_gql_client):
+    request = rf.post("/graphql")
+
+    query = """
+        query {
+            _service {
+                sdl
+            }
+        }
+    """
+
+    executed = anon_user_gql_client.execute(query, context=request)
+    assert (
+        "type ProfileNodeConnection {   pageInfo: PageInfo!   "
+        "edges: [ProfileNodeEdge]!   count: Int!   totalCount: Int! }"
+        in executed["data"]["_service"]["sdl"]
+    )
+
+
 def test_can_query_claimable_profile_with_token(rf, user_gql_client):
     profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
     claim_token = ClaimTokenFactory(profile=profile)
