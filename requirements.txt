@@ -41,7 +41,7 @@ ecdsa==0.13.3             # via python-jose
 et-xmlfile==1.0.1         # via openpyxl
 future==0.17.1            # via pyjwkest, python-jose
 graphene-django==2.10.1   # via -r requirements.in, django-graphql-jwt
-graphene-federation==0.0.4  # via -r requirements.in
+graphene-federation==0.1.0  # via -r requirements.in
 graphene==2.1.8           # via graphene-django, graphene-federation
 graphql-core==2.2.1       # via django-graphql-jwt, graphene, graphene-django, graphql-relay
 graphql-relay==2.0.0      # via graphene
