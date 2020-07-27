@@ -15,12 +15,15 @@ from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
 
 
-def calculate_expiration(from_date=date.today()):
+def calculate_expiration(from_date=None):
     """Calculates the expiration date for a youth membership based on the given date.
 
     Membership always expires at the end of the season. Signups made before the long season start month
     expire in the summer of the same year, others next year.
     """
+    if from_date is None:
+        from_date = date.today()
+
     full_season_start = settings.YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH
     expiration_day, expiration_month = settings.YOUTH_MEMBERSHIP_SEASON_END_DATE
     expiration_year = (
