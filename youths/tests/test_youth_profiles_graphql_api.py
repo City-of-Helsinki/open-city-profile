@@ -12,8 +12,6 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
-from profiles.enums import EmailType
-from profiles.models import Profile
 from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
 from services.enums import ServiceType
 from youths.consts import (
@@ -82,36 +80,6 @@ def test_normal_user_can_query_own_youth_profile(rf, user_gql_client):
         "youthProfile": {
             "schoolClass": youth_profile.school_class,
             "membershipNumber": youth_profile.membership_number,
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
-
-
-def test_normal_user_can_query_own_youth_profile_through_my_profile(
-    rf, user_gql_client
-):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
-    youth_profile = YouthProfileFactory(profile=profile)
-
-    query = """
-        {
-            myProfile{
-                youthProfile {
-                    schoolClass
-                    membershipNumber
-                }
-            }
-        }
-    """
-    expected_data = {
-        "myProfile": {
-            "youthProfile": {
-                "schoolClass": youth_profile.school_class,
-                "membershipNumber": youth_profile.membership_number,
-            }
         }
     }
     executed = user_gql_client.execute(query, context=request)
@@ -431,78 +399,6 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
     )
 
 
-def test_normal_user_can_create_youth_profile_through_my_profile_mutation(
-    rf, user_gql_client, email_data
-):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-            mutation {
-                createMyProfile(
-                    input: {
-                        profile: {
-                            nickname: \"${nickname}\",
-                            addEmails: [{
-                                email: \"${email}\",
-                                emailType: ${email_type},
-                                primary: true,
-                            }],
-                            youthProfile: {
-                                schoolClass: "${schoolClass}"
-                                schoolName: "${schoolName}"
-                                languageAtHome: ${language}
-                                approverEmail: "${approverEmail}"
-                                birthDate: "${birthDate}"
-                            }
-                        }
-                    }
-                ) {
-                profile{
-                    nickname,
-                    youthProfile {
-                        schoolClass
-                        schoolName
-                        approverEmail
-                        birthDate
-                    }
-                }
-            }
-            }
-        """
-    )
-
-    creation_data = {
-        "nickname": "Larry",
-        "schoolClass": "2A",
-        "schoolName": "Alakoulu",
-        "approverEmail": "hyvaksyja@ex.com",
-        "language": YouthLanguage.FINNISH.name,
-        "birthDate": "2004-04-11",
-        "email": email_data["email"],
-        "email_type": email_data["email_type"],
-    }
-
-    query = t.substitute(**creation_data)
-
-    expected_data = {
-        "createMyProfile": {
-            "profile": {
-                "nickname": "Larry",
-                "youthProfile": {
-                    "schoolClass": creation_data["schoolClass"],
-                    "schoolName": creation_data["schoolName"],
-                    "approverEmail": creation_data["approverEmail"],
-                    "birthDate": creation_data["birthDate"],
-                },
-            }
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
-
-
 def test_normal_user_can_update_youth_profile_mutation(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
@@ -749,125 +645,6 @@ def test_staff_user_can_update_youth_profile_with_photo_usage_field_if_under_15_
     profile.youth_profile.refresh_from_db()
     assert "errors" not in executed
     assert profile.youth_profile.photo_usage_approved
-
-
-def test_normal_user_can_update_youth_profile_through_my_profile_mutation(
-    rf, user_gql_client
-):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    youth_profile = YouthProfileFactory(profile=profile)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            nickname: \"${nickname}\",
-                            youthProfile: {
-                                schoolClass: "${schoolClass}"
-                                birthDate: "${birthDate}"
-                            }
-                        }
-                    }
-                ) {
-                profile{
-                    nickname,
-                    youthProfile {
-                        schoolClass
-                        schoolName
-                        birthDate
-                    }
-                }
-            }
-            }
-        """
-    )
-
-    creation_data = {
-        "nickname": "Larry",
-        "schoolClass": "2A",
-        "birthDate": "2002-02-02",
-    }
-
-    query = t.substitute(**creation_data)
-
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "nickname": "Larry",
-                "youthProfile": {
-                    "schoolClass": creation_data["schoolClass"],
-                    "schoolName": youth_profile.school_name,
-                    "birthDate": creation_data["birthDate"],
-                },
-            }
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
-
-
-def test_normal_user_can_add_youth_profile_through_update_my_profile_mutation(
-    rf, user_gql_client
-):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            nickname: \"${nickname}\",
-                            youthProfile: {
-                                schoolClass: "${schoolClass}"
-                                birthDate: "${birthDate}"
-                            }
-                        }
-                    }
-                ) {
-                profile{
-                    nickname,
-                    youthProfile {
-                        schoolClass
-                        birthDate
-                        membershipStatus
-                    }
-                }
-            }
-            }
-        """
-    )
-
-    creation_data = {
-        "nickname": "Larry",
-        "schoolClass": "2A",
-        "birthDate": "2002-02-02",
-    }
-
-    query = t.substitute(**creation_data)
-
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "nickname": "Larry",
-                "youthProfile": {
-                    "schoolClass": creation_data["schoolClass"],
-                    "birthDate": creation_data["birthDate"],
-                    "membershipStatus": "ACTIVE",
-                },
-            }
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
 
 
 def test_anon_user_query_with_token(rf, youth_profile, anon_user_gql_client):
@@ -1447,95 +1224,6 @@ def test_staff_user_can_create_youth_profile_for_under_13_years_old(
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_create_youth_profile_via_create_profile(
-    rf, user_gql_client, group, service
-):
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-
-    today = date.today()
-    birth_date = today.replace(year=today.year - 13) - timedelta(days=1)
-    birth_date_string = birth_date.strftime("%Y-%m-%d")
-
-    t = Template(
-        """
-        mutation {
-            createProfile(
-                input: {
-                    serviceType: ${service_type},
-                    profile: {
-                        firstName: \"${first_name}\",
-                        lastName: \"${last_name}\",
-                        addEmails: [{
-                            email: \"${email}\",
-                            emailType: ${email_type},
-                            primary: true
-                        }]
-                        youthProfile: {
-                            birthDate: \"${birth_date}\",
-                            approverEmail: \"${approver_email}\",
-                        }
-                    }
-                }
-            ) {
-                profile {
-                    firstName
-                    lastName
-                    youthProfile {
-                        birthDate
-                        approverEmail
-                    }
-                    serviceConnections {
-                        edges {
-                            node {
-                                service {
-                                    type
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
-        first_name="John",
-        last_name="Doe",
-        birth_date=birth_date_string,
-        approver_email="jane.doe@example.com",
-        email="john.doe@example.com",
-        email_type=EmailType.PERSONAL.name,
-    )
-    expected_data = {
-        "createProfile": {
-            "profile": {
-                "firstName": "John",
-                "lastName": "Doe",
-                "youthProfile": {
-                    "birthDate": birth_date_string,
-                    "approverEmail": "jane.doe@example.com",
-                },
-                "serviceConnections": {
-                    "edges": [
-                        {
-                            "node": {
-                                "service": {"type": ServiceType.YOUTH_MEMBERSHIP.name}
-                            }
-                        }
-                    ]
-                },
-            }
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-    assert executed["data"] == expected_data
-
-
 def test_staff_user_cannot_create_youth_profile_with_invalid_service_type(
     rf, user_gql_client, profile, service_factory
 ):
@@ -1637,53 +1325,6 @@ def test_normal_user_cannot_use_create_youth_profile_mutation(
     assert (
         executed["errors"][0].get("extensions").get("code") == PERMISSION_DENIED_ERROR
     )
-
-
-def test_nested_youth_profile_create_failure_also_fails_profile_creation(
-    rf, user_gql_client, group, service
-):
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-
-    t = Template(
-        """
-        mutation {
-            createProfile(
-                input: {
-                    serviceType: ${service_type},
-                    profile: {
-                        firstName: \"${first_name}\",
-                        lastName: \"${last_name}\",
-                        youthProfile: {
-                            approverEmail: \"${approver_email}\",
-                        }
-                    }
-                }
-            ) {
-                profile {
-                    firstName
-                    youthProfile {
-                        birthDate
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
-        first_name="John",
-        last_name="Doe",
-        approver_email="jane.doe@example.com",
-    )
-
-    assert Profile.objects.count() == 0
-    user_gql_client.execute(query, context=request)
-    # Nested CreateYouthProfile mutation failed and CreateProfile should also fail
-    assert Profile.objects.count() == 0
 
 
 def test_staff_user_can_cancel_youth_membership_on_selected_date(
