@@ -12,7 +12,11 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
 )
 from open_city_profile.tests.factories import GroupFactory
-from profiles.tests.factories import EmailFactory, ProfileWithPrimaryEmailFactory
+from profiles.tests.factories import (
+    EmailFactory,
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+)
 from services.enums import ServiceType
 from youths.consts import (
     APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
@@ -21,7 +25,7 @@ from youths.consts import (
     CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 )
 from youths.enums import YouthLanguage
-from youths.tests.factories import ProfileFactory, YouthProfileFactory
+from youths.tests.factories import YouthProfileFactory
 
 
 def test_anon_user_query_should_fail(rf, youth_profile, anon_user_gql_client):
@@ -110,7 +114,7 @@ def test_superuser_can_query_by_id(rf, youth_profile, superuser_gql_client):
 def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
 
     t = Template(
         """
@@ -139,7 +143,6 @@ def test_normal_user_can_create_youth_profile_mutation(rf, user_gql_client):
         """
     )
     creation_data = {
-        "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
@@ -164,7 +167,7 @@ def test_normal_user_over_18_years_old_can_create_approved_youth_profile_mutatio
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
     today = date.today()
 
     t = Template(
@@ -193,7 +196,6 @@ def test_normal_user_over_18_years_old_can_create_approved_youth_profile_mutatio
     )
     birth_date = today.replace(year=today.year - 18) - timedelta(days=1)
     creation_data = {
-        "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "birthDate": birth_date.strftime("%Y-%m-%d"),
@@ -216,7 +218,7 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
     today = date.today()
 
     t = Template(
@@ -240,7 +242,6 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
     )
     birth_date = today.replace(year=today.year - 18) + timedelta(days=1)
     creation_data = {
-        "profileId": profile.pk,
         "birthDate": birth_date.strftime("%Y-%m-%d"),
     }
     query = t.substitute(**creation_data)
@@ -255,7 +256,7 @@ def test_user_cannot_create_youth_profile_without_approver_email_field_if_under_
 def test_user_cannot_create_youth_profile_if_under_13_years_old(rf, user_gql_client):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
     today = date.today()
 
     t = Template(
@@ -286,7 +287,6 @@ def test_user_cannot_create_youth_profile_if_under_13_years_old(rf, user_gql_cli
     )
     birth_date = today.replace(year=today.year - 13) + timedelta(days=1)
     creation_data = {
-        "profileId": profile.pk,
         "schoolClass": "2A",
         "schoolName": "Alakoulu",
         "approverEmail": "hyvaksyja@ex.com",
@@ -307,7 +307,7 @@ def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_o
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
     today = date.today()
 
     t = Template(
@@ -335,7 +335,6 @@ def test_user_can_create_youth_profile_with_photo_usage_field_if_over_15_years_o
     )
     birth_date = today.replace(year=today.year - 15) - timedelta(days=1)
     creation_data = {
-        "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
         "birthDate": birth_date.strftime("%Y-%m-%d"),
@@ -357,7 +356,7 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
-    profile = ProfileFactory(user=user_gql_client.user)
+    ProfileFactory(user=user_gql_client.user)
     today = date.today()
 
     t = Template(
@@ -385,7 +384,6 @@ def test_user_cannot_create_youth_profile_with_photo_usage_field_if_under_15_yea
     )
     birth_date = today.replace(year=today.year - 15) + timedelta(days=1)
     creation_data = {
-        "profileId": profile.pk,
         "approverEmail": "hyvaksyja@ex.com",
         "photoUsageApproved": "true",
         "birthDate": birth_date.strftime("%Y-%m-%d"),
