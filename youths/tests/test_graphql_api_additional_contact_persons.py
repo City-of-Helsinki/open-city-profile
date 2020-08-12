@@ -84,7 +84,13 @@ def test_normal_user_can_remove_additional_contact_persons(
     request.user = user_gql_client.user
 
     variables = {
-        "input": {"youthProfile": {"removeAdditionalContactPersons": [str(acp.id)]}}
+        "input": {
+            "youthProfile": {
+                "removeAdditionalContactPersons": [
+                    to_global_id(type="AdditionalContactPersonNode", id=acp.pk)
+                ]
+            }
+        }
     }
     executed = user_gql_client.execute(
         UPDATE_MUTATION, context=request, variables=variables
@@ -111,7 +117,14 @@ def test_normal_user_can_update_additional_contact_persons(
     variables = {
         "input": {
             "youthProfile": {
-                "updateAdditionalContactPersons": [{"id": str(acp.id), **new_values}],
+                "updateAdditionalContactPersons": [
+                    {
+                        "id": to_global_id(
+                            type="AdditionalContactPersonNode", id=acp.pk
+                        ),
+                        **new_values,
+                    }
+                ],
             }
         }
     }

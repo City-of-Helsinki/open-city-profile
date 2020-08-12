@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.core.exceptions import ValidationError
+from graphql_relay import from_global_id
 
 from open_city_profile.exceptions import InvalidEmailFormatError
 from youths.models import AdditionalContactPerson, YouthProfile
@@ -17,9 +18,10 @@ def calculate_age(birth_date):
 
 def create_or_update_contact_persons(youth_profile: YouthProfile, data):
     for data_input in filter(None, data):
-        acp_id = data_input.pop("id", None)
-        if acp_id:
+        acp_global_id = data_input.pop("id", None)
+        if acp_global_id:
             # id is required on update input
+            acp_id = from_global_id(acp_global_id)[1]
             item = AdditionalContactPerson.objects.get(
                 youth_profile=youth_profile, pk=acp_id
             )
@@ -39,7 +41,8 @@ def create_or_update_contact_persons(youth_profile: YouthProfile, data):
 
 
 def delete_contact_persons(youth_profile: YouthProfile, data):
-    for remove_id in filter(None, data):
+    for remove_global_id in filter(None, data):
+        remove_id = from_global_id(remove_global_id)[1]
         AdditionalContactPerson.objects.get(
             youth_profile=youth_profile, pk=remove_id
         ).delete()
