@@ -14,18 +14,29 @@ def enable_audit_log():
     settings.AUDIT_LOGGING_ENABLED = True
 
 
+@pytest.fixture()
+def enable_audit_log_username():
+    settings.AUDIT_LOG_USERNAME = True
+
+
+def assert_common_fields(log_message):
+    assert log_message["audit_event"]["origin"] == "PROFILE-BE"
+    assert log_message["audit_event"]["status"] == "SUCCESS"
+    assert log_message["audit_event"]["actor"]["role"] == "SYSTEM"
+    assert log_message["audit_event"]["date_time_epoch"] is not None
+    assert log_message["audit_event"]["date_time"] is not None
+
+
 def test_audit_log_read(user, enable_audit_log):
     ProfileFactory()
     with patch_logger("audit", "info") as cm:
         profile = Profile.objects.first()
         assert len(cm) == 1
         log_message = json.loads(cm[0])
-        assert log_message["profile_event"]["status"] == "SUCCESS"
-        assert log_message["profile_event"]["actor_user"]["role"] == "system"
-        assert not log_message["profile_event"]["actor_user"]["user_id"]
-        assert log_message["profile_event"]["operation"] == "read"
-        assert log_message["profile_event"]["target_profile"] == {
-            "user_id": profile.user_id,
+        assert_common_fields(log_message)
+        assert log_message["audit_event"]["operation"] == "READ"
+        assert log_message["audit_event"]["target"] == {
+            "user_id": str(profile.user.uuid),
             "profile_id": str(profile.pk),
             "profile_part": "base profile",
         }
@@ -37,12 +48,10 @@ def test_audit_log_update(user, enable_audit_log, profile):
         profile.save()
         assert len(cm) == 1
         log_message = json.loads(cm[0])
-        assert log_message["profile_event"]["status"] == "SUCCESS"
-        assert log_message["profile_event"]["actor_user"]["role"] == "system"
-        assert not log_message["profile_event"]["actor_user"]["user_id"]
-        assert log_message["profile_event"]["operation"] == "update"
-        assert log_message["profile_event"]["target_profile"] == {
-            "user_id": profile.user_id,
+        assert_common_fields(log_message)
+        assert log_message["audit_event"]["operation"] == "UPDATE"
+        assert log_message["audit_event"]["target"] == {
+            "user_id": str(profile.user.uuid),
             "profile_id": str(profile.pk),
             "profile_part": "base profile",
         }
@@ -53,23 +62,20 @@ def test_audit_log_delete(user, enable_audit_log, profile):
         profile.delete()
         assert len(cm) == 1
         log_message = json.loads(cm[0])
-        assert log_message["profile_event"]["status"] == "SUCCESS"
-        assert log_message["profile_event"]["actor_user"]["role"] == "system"
-        assert not log_message["profile_event"]["actor_user"]["user_id"]
-        assert log_message["profile_event"]["operation"] == "delete"
+        assert_common_fields(log_message)
+        assert log_message["audit_event"]["operation"] == "DELETE"
 
 
-def test_audit_log_create(user, enable_audit_log):
+def test_audit_log_create(user, enable_audit_log, enable_audit_log_username):
     with patch_logger("audit", "info") as cm:
         profile = ProfileFactory()
         assert len(cm) == 2  # profile is accessed here as well, thus the 2 log entries
         log_message = json.loads(cm[1])
-        assert log_message["profile_event"]["status"] == "SUCCESS"
-        assert log_message["profile_event"]["actor_user"]["role"] == "system"
-        assert not log_message["profile_event"]["actor_user"]["user_id"]
-        assert log_message["profile_event"]["operation"] == "create"
-        assert log_message["profile_event"]["target_profile"] == {
-            "user_id": profile.user_id,
+        assert_common_fields(log_message)
+        assert log_message["audit_event"]["operation"] == "CREATE"
+        assert log_message["audit_event"]["target"] == {
+            "user_id": str(profile.user.uuid),
+            "user_name": profile.user.username,
             "profile_id": str(profile.pk),
             "profile_part": "base profile",
         }

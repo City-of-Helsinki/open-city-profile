@@ -45,6 +45,7 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
+    AUDIT_LOG_USERNAME=(bool, False),
     GDPR_API_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
@@ -284,6 +285,7 @@ YOUTH_MEMBERSHIP_SEASON_END_DATE = 31, 8
 YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
+AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
