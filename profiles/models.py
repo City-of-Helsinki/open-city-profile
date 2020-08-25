@@ -283,6 +283,7 @@ class Email(Contact):
     email_type = EnumField(
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
+    verified = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-primary"]

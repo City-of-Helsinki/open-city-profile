@@ -6,7 +6,6 @@ from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 
 from open_city_profile.views import GraphQLView
-from youths.views import profiles
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -17,12 +16,9 @@ urlpatterns = [
             GraphQLView.as_view(graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG)
         ),
     ),
+    path("profiles/", include("youths.urls")),
 ]
 
-if settings.GDPR_API_ENABLED:
-    urlpatterns += [
-        path("profiles/<uuid:id>", profiles)
-    ]  # TODO: This will go to youth backend
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
