@@ -34,14 +34,14 @@ django-parler==1.9.2      # via -r requirements.in, django-ilmoitin, django-muni
 django-reversion==3.0.4   # via -r requirements.in
 django-searchable-encrypted-fields==0.1.3  # via -r requirements.in
 django-thesaurus==0.0.2   # via -r requirements.in
-django==2.2.10            # via -r requirements.in, django-admin-sortable, django-allauth, django-anymail, django-cors-headers, django-filter, django-graphql-jwt, django-helusers, django-ilmoitin, django-import-export, django-mailer, django-mptt, django-munigeo, django-reversion, django-searchable-encrypted-fields, django-thesaurus, drf-oidc-auth, graphene-django
+django==2.2.13            # via -r requirements.in, django-admin-sortable, django-allauth, django-anymail, django-cors-headers, django-filter, django-graphql-jwt, django-helusers, django-ilmoitin, django-import-export, django-mailer, django-mptt, django-munigeo, django-reversion, django-searchable-encrypted-fields, django-thesaurus, drf-oidc-auth, graphene-django
 djangorestframework==3.10.1  # via -r requirements.in, django-parler-rest, drf-oidc-auth
 drf-oidc-auth==0.9        # via django-helusers
 ecdsa==0.13.3             # via python-jose
 et-xmlfile==1.0.1         # via openpyxl
 future==0.17.1            # via pyjwkest, python-jose
 graphene-django==2.10.1   # via -r requirements.in, django-graphql-jwt
-graphene-federation==0.0.4  # via -r requirements.in
+graphene-federation==0.1.0  # via -r requirements.in
 graphene==2.1.8           # via graphene-django, graphene-federation
 graphql-core==2.2.1       # via django-graphql-jwt, graphene, graphene-django, graphql-relay
 graphql-relay==2.0.0      # via graphene
