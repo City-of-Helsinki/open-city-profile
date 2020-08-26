@@ -13,11 +13,7 @@ from graphql_jwt.decorators import login_required
 from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import (
-    ApproverEmailCannotBeEmptyForMinorsError,
-    CannotCreateYouthProfileIfUnder13YearsOldError,
     CannotPerformThisActionWithGivenServiceType,
-    CannotRenewYouthProfileError,
-    CannotSetPhotoUsagePermissionIfUnder15YearsError,
     ProfileHasNoPrimaryEmailError,
 )
 from profiles.decorators import staff_required
@@ -26,8 +22,18 @@ from services.enums import ServiceType
 from services.schema import AllowedServiceType
 
 from .enums import NotificationType, YouthLanguage
-from .models import calculate_expiration, YouthProfile
-from .utils import calculate_age
+from .exceptions import (
+    ApproverEmailCannotBeEmptyForMinorsError,
+    CannotCreateYouthProfileIfUnder13YearsOldError,
+    CannotRenewYouthProfileError,
+    CannotSetPhotoUsagePermissionIfUnder15YearsError,
+)
+from .models import AdditionalContactPerson, calculate_expiration, YouthProfile
+from .utils import (
+    calculate_age,
+    create_or_update_contact_persons,
+    delete_contact_persons,
+)
 
 with override("en"):
     LanguageAtHome = graphene.Enum.from_enum(
@@ -36,6 +42,8 @@ with override("en"):
 
 
 def create_youth_profile(data, profile):
+    contact_persons_to_create = data.pop("add_additional_contact_persons", [])
+
     youth_profile, created = YouthProfile.objects.get_or_create(
         profile=profile, defaults=data
     )
@@ -49,6 +57,9 @@ def create_youth_profile(data, profile):
             )
         youth_profile.make_approvable()
     youth_profile.save()
+
+    create_or_update_contact_persons(youth_profile, contact_persons_to_create)
+
     return youth_profile
 
 
@@ -136,6 +147,27 @@ class YouthProfileType(DjangoObjectType):
         return MembershipStatus.PENDING
 
 
+class AdditionalContactPersonNode(DjangoObjectType):
+    class Meta:
+        model = AdditionalContactPerson
+        interfaces = (relay.Node,)
+
+
+class CreateAdditionalContactPersonInput(graphene.InputObjectType):
+    first_name = graphene.String(description="First name.", required=True)
+    last_name = graphene.String(description="Last name.", required=True)
+    phone = graphene.String(description="Phone number.", required=True)
+    email = graphene.String(description="Email address.", required=True)
+
+
+class UpdateAdditionalContactPersonInput(graphene.InputObjectType):
+    id = graphene.ID(required=True)
+    first_name = graphene.String(description="First name.")
+    last_name = graphene.String(description="Last name.")
+    phone = graphene.String(description="Phone number.")
+    email = graphene.String(description="Email address.")
+
+
 # Abstract base fields
 class YouthProfileFields(graphene.InputObjectType):
     school_name = graphene.String(description="The youth's school name.")
@@ -167,6 +199,17 @@ class YouthProfileFields(graphene.InputObjectType):
             "`true` if the youth is allowed to be photographed. Only youth over 15 years old can set this."
             "For youth under 15 years old this is set by the (supposed) guardian in the approval phase"
         )
+    )
+    add_additional_contact_persons = graphene.List(
+        CreateAdditionalContactPersonInput,
+        description="Add additional contact persons to youth profile.",
+    )
+    update_additional_contact_persons = graphene.List(
+        UpdateAdditionalContactPersonInput,
+        description="Update youth profile's additional contact persons.",
+    )
+    remove_additional_contact_persons = graphene.List(
+        graphene.ID, description="Remove additional contact persons from youth profile."
     )
 
 
@@ -242,6 +285,10 @@ def update_youth_profile(input_data, profile, manage_permission=False):
 
     :param manage_permission: Calling user has manage permission on youth profile service.
     """
+    contact_persons_to_create = input_data.pop("add_additional_contact_persons", [])
+    contact_persons_to_update = input_data.pop("update_additional_contact_persons", [])
+    contact_persons_to_delete = input_data.pop("remove_additional_contact_persons", [])
+
     resend_request_notification = input_data.pop("resend_request_notification", False)
     youth_profile, created = YouthProfile.objects.get_or_create(
         profile=profile, defaults=input_data
@@ -273,6 +320,11 @@ def update_youth_profile(input_data, profile, manage_permission=False):
             youth_profile.make_approvable()
 
     youth_profile.save()
+
+    create_or_update_contact_persons(youth_profile, contact_persons_to_create)
+    create_or_update_contact_persons(youth_profile, contact_persons_to_update)
+    delete_contact_persons(youth_profile, contact_persons_to_delete)
+
     return youth_profile
 
 

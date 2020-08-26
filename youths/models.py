@@ -15,12 +15,15 @@ from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
 
 
-def calculate_expiration(from_date=date.today()):
+def calculate_expiration(from_date=None):
     """Calculates the expiration date for a youth membership based on the given date.
 
     Membership always expires at the end of the season. Signups made before the long season start month
     expire in the summer of the same year, others next year.
     """
+    if from_date is None:
+        from_date = date.today()
+
     full_season_start = settings.YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH
     expiration_day, expiration_month = settings.YOUTH_MEMBERSHIP_SEASON_END_DATE
     expiration_year = (
@@ -93,4 +96,31 @@ class YouthProfile(SerializableMixin):
         {"name": "approver_email"},
         {"name": "expiration", "accessor": lambda x: x.strftime("%Y-%m-%d %H:%M")},
         {"name": "photo_usage_approved"},
+        {"name": "additional_contact_persons"},
     )
+
+
+class AdditionalContactPerson(SerializableMixin):
+    youth_profile = models.ForeignKey(
+        YouthProfile,
+        on_delete=models.CASCADE,
+        related_name="additional_contact_persons",
+    )
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=50)
+    email = models.EmailField(max_length=254)
+
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "phone"},
+        {"name": "email"},
+    )
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.pk})"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
