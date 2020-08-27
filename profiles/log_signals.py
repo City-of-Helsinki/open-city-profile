@@ -58,14 +58,22 @@ def log(action, instance):
         }
 
         if current_user:
-            message["audit_event"]["actor"]["user_id"] = str(current_user.uuid)
+            message["audit_event"]["actor"]["user_id"] = (
+                str(current_user.uuid) if hasattr(current_user, "uuid") else None
+            )
             if settings.AUDIT_LOG_USERNAME:
-                message["audit_event"]["actor"]["user_name"] = current_user.username
+                message["audit_event"]["actor"]["user_name"] = (
+                    current_user.username if hasattr(current_user, "username") else None
+                )
 
         if target_user:
-            message["audit_event"]["target"]["user_id"] = str(target_user.uuid)
+            message["audit_event"]["target"]["user_id"] = (
+                str(target_user.uuid) if hasattr(target_user, "uuid") else None
+            )
             if settings.AUDIT_LOG_USERNAME:
-                message["audit_event"]["target"]["user_name"] = target_user.username
+                message["audit_event"]["target"]["user_name"] = (
+                    target_user.username if hasattr(target_user, "username") else None
+                )
 
         service = get_current_service()
         if service:
