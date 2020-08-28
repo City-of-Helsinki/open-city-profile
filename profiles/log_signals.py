@@ -77,7 +77,7 @@ def log(action, instance):
 
         service = get_current_service()
         if service:
-            message["profile_event"]["actor_service"] = {
+            message["audit_event"]["actor_service"] = {
                 "id": str(service.name),
                 "name": str(service.label),
             }
