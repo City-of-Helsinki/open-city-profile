@@ -138,11 +138,11 @@ def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
 
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
-    dry_run = service_connection.delete_gdpr_data(dry_run=True)
-    real = service_connection.delete_gdpr_data()
+    dry_run_ok = service_connection.delete_gdpr_data(dry_run=True)
+    real_ok = service_connection.delete_gdpr_data()
 
-    assert dry_run.status_code == 204
-    assert real.status_code == 204
+    assert dry_run_ok
+    assert real_ok
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
