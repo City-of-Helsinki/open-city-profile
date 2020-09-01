@@ -12,6 +12,7 @@ from services.enums import ServiceType
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
+from youths.tests.factories import YouthProfileFactory
 
 from ..models import Profile
 from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
@@ -91,6 +92,32 @@ def test_user_can_delete_his_profile(
     service = service_factory(gdpr_url=GDPR_URL)
     requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
     ServiceConnectionFactory(profile=profile, service=service)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+
+    expected_data = {"deleteMyProfile": {"clientMutationId": None}}
+    assert dict(executed["data"]) == expected_data
+    with pytest.raises(Profile.DoesNotExist):
+        profile.refresh_from_db()
+    with pytest.raises(User.DoesNotExist):
+        user_gql_client.user.refresh_from_db()
+
+
+def test_youth_profile_can_be_deleted_when_gdpr_api_disabled(
+    rf, user_gql_client, service_factory, settings
+):
+    """Deletion is allowed when youth profile is connected, GDPR URL is not set and GDPR API for youth profile
+    is disabled.
+    """
+    settings.GDPR_API_ENABLED = False
+    youth_profile = YouthProfileFactory(profile__user=user_gql_client.user)
+    profile = youth_profile.profile
+    youth_service = service_factory(
+        service_type=ServiceType.YOUTH_MEMBERSHIP, gdpr_url=""
+    )
+    ServiceConnectionFactory(profile=profile, service=youth_service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
