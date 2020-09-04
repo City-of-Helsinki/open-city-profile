@@ -2,6 +2,7 @@ import urllib.parse
 
 import requests
 from adminsortable.models import SortableMixin
+from django.conf import settings
 from django.db import models
 from django.db.models import Max
 from enumfields import EnumField
@@ -116,11 +117,21 @@ class ServiceConnection(SerializableMixin):
         if dry_run:
             data["dry_run"] = True
 
+        if (
+            not self.service.gdpr_url
+            and self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
+            and not settings.GDPR_API_ENABLED
+        ):
+            # TODO Remove once youth profile is separated from profile OM-278
+            # If GDPR API for youth profile is disabled, we can still go ahead and
+            # say it's deletable. Youth profile is deleted when the profile is deleted.
+            return True
+
         if self.service.gdpr_url:
             url = urllib.parse.urljoin(self.service.gdpr_url, str(self.profile.pk))
             response = requests.delete(url, timeout=5, data=data)
             response.raise_for_status()
-            return response
+            return True
 
         raise MissingGDPRUrlException(
             f"Service {self.service.service_type.name} does not define an URL for GDPR removal."
