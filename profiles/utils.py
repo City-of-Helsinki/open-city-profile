@@ -56,6 +56,10 @@ def set_current_user(user):
     _thread_locals.user = user
 
 
+def clear_thread_locals():
+    _thread_locals.__dict__.clear()
+
+
 def set_current_service(service):
     _thread_locals.service = service
 
