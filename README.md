@@ -188,8 +188,10 @@ commit.
 
 ## Running tests
 
-* Set the `DEBUG` environment variable to `1`.
-* Run `pytest`.
+The tests require a Postgres database to which to connect to. Here's one way to run the tests:
+
+* Bring the service up with `docker-compose up`. This also brings up the required Postgres server.
+* Run tests within the Django container: `docker-compose exec django pytest`.
 
 
 ## Issue tracking
