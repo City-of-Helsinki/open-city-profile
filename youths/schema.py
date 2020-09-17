@@ -417,10 +417,23 @@ class ApproveYouthProfileMutation(relay.ClientIDMutation):
         youth_data = input.get("approval_data")
         token = input.get("approval_token")
 
+        contact_persons_to_create = youth_data.pop("add_additional_contact_persons", [])
+        contact_persons_to_update = youth_data.pop(
+            "update_additional_contact_persons", []
+        )
+        contact_persons_to_delete = youth_data.pop(
+            "remove_additional_contact_persons", []
+        )
+
         youth_profile = YouthProfile.objects.get(approval_token=token)
 
         for field, value in youth_data.items():
             setattr(youth_profile, field, value)
+
+        # Additional contact persons
+        create_or_update_contact_persons(youth_profile, contact_persons_to_create)
+        create_or_update_contact_persons(youth_profile, contact_persons_to_update)
+        delete_contact_persons(youth_profile, contact_persons_to_delete)
 
         try:
             email = youth_profile.profile.get_primary_email()
