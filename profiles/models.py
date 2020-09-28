@@ -1,11 +1,13 @@
 import os
 import shutil
 import uuid
+from datetime import timedelta
 
 import reversion
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
+from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
@@ -328,3 +330,24 @@ class ClaimToken(models.Model):
         max_length=36, blank=True, default=uuid.uuid4, editable=False
     )
     expires_at = models.DateTimeField(null=True, blank=True)
+
+
+def _default_temporary_read_access_token_validity_duration():
+    return timedelta(days=2)
+
+
+class TemporaryReadAccessToken(models.Model):
+    profile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="read_access_tokens"
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now, blank=False)
+    validity_duration = models.DurationField(
+        default=_default_temporary_read_access_token_validity_duration, blank=False
+    )
+
+    def expires_at(self):
+        return self.created_at + self.validity_duration
+
+    def __str__(self):
+        return f"{self.token} ({self.expires_at()})"

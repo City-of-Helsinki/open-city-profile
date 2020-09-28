@@ -52,7 +52,16 @@ from youths.schema import (
 )
 
 from .enums import AddressType, EmailType, PhoneType
-from .models import Address, ClaimToken, Contact, Email, Phone, Profile, SensitiveData
+from .models import (
+    Address,
+    ClaimToken,
+    Contact,
+    Email,
+    Phone,
+    Profile,
+    SensitiveData,
+    TemporaryReadAccessToken,
+)
 from .utils import (
     create_nested,
     delete_nested,
@@ -447,6 +456,17 @@ class ProfileNode(DjangoObjectType):
             )
 
 
+class TemporaryReadAccessTokenNode(DjangoObjectType):
+    class Meta:
+        model = TemporaryReadAccessToken
+        fields = ("token",)
+
+    expires_at = graphene.DateTime()
+
+    def resolve_expires_at(self, info, **kwargs):
+        return self.expires_at()
+
+
 class EmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
 
@@ -781,6 +801,20 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
             )
 
 
+class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
+    temporary_read_access_token = graphene.Field(TemporaryReadAccessTokenNode)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info):
+        profile = Profile.objects.get(user=info.context.user)
+
+        token = TemporaryReadAccessToken.objects.create(profile=profile)
+
+        return CreateMyProfileTemporaryReadAccessTokenMutation(
+            temporary_read_access_token=token
+        )
+
+
 class Query(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     profile = graphene.Field(
@@ -905,4 +939,11 @@ class Mutation(graphene.ObjectType):
         " completely. If the authenticated user already has a profile, this mutation will respond with "
         "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently "
         "authenticated user already has a profile.\n\n* `TODO`"
+    )
+
+    create_my_profile_temporary_read_access_token = CreateMyProfileTemporaryReadAccessTokenMutation.Field(
+        description="Creates and returns an access token for the profile which is linked to the currently "
+        "authenticated user. The access token gives read access for this profile for any user, including anonymous, "
+        "unauthenticated users. The token has an expiration time after which it can no longer be used.\n\n"
+        "Requires authentication."
     )

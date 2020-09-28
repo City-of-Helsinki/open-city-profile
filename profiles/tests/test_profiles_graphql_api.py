@@ -1,4 +1,5 @@
-from datetime import timedelta
+import uuid
+from datetime import datetime, timedelta
 from string import Template
 
 import pytest
@@ -15,6 +16,7 @@ from open_city_profile.consts import (
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
+from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Profile
@@ -3358,3 +3360,36 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
+
+
+def test_normal_user_can_create_temporary_read_access_token_for_profile(
+    rf, user_gql_client
+):
+    ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    query = """
+        mutation {
+            createMyProfileTemporaryReadAccessToken(input: { }) {
+                temporaryReadAccessToken {
+                    token
+                    expiresAt
+                }
+            }
+        }
+    """
+
+    executed = user_gql_client.execute(query, context=request)
+
+    token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
+        "temporaryReadAccessToken"
+    ]
+
+    uuid.UUID(token_data["token"])  # Check that an UUID can be parsed from the token
+
+    actual_expiration_time = datetime.fromisoformat(token_data["expiresAt"])
+    expected_expiration_time = timezone.now() + timedelta(days=2)
+    assert_almost_equal(
+        actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
+    )
