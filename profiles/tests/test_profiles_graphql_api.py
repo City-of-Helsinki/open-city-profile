@@ -3363,13 +3363,7 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
 
 
-def test_normal_user_can_create_temporary_read_access_token_for_profile(
-    rf, user_gql_client
-):
-    ProfileFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
+class TestTemporaryProfileReadAccessTokenCreation:
     query = """
         mutation {
             createMyProfileTemporaryReadAccessToken(input: { }) {
@@ -3381,37 +3375,34 @@ def test_normal_user_can_create_temporary_read_access_token_for_profile(
         }
     """
 
-    executed = user_gql_client.execute(query, context=request)
+    def test_normal_user_can_create_temporary_read_access_token_for_profile(
+        self, rf, user_gql_client
+    ):
+        ProfileFactory(user=user_gql_client.user)
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
 
-    token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
-        "temporaryReadAccessToken"
-    ]
+        executed = user_gql_client.execute(self.query, context=request)
 
-    uuid.UUID(token_data["token"])  # Check that an UUID can be parsed from the token
+        token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
+            "temporaryReadAccessToken"
+        ]
 
-    actual_expiration_time = datetime.fromisoformat(token_data["expiresAt"])
-    expected_expiration_time = timezone.now() + timedelta(days=2)
-    assert_almost_equal(
-        actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
-    )
+        # Check that an UUID can be parsed from the token
+        uuid.UUID(token_data["token"])
 
+        actual_expiration_time = datetime.fromisoformat(token_data["expiresAt"])
+        expected_expiration_time = timezone.now() + timedelta(days=2)
+        assert_almost_equal(
+            actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
+        )
 
-def test_anonymous_user_cannot_create_any_temporary_read_access_token_for_profile(
-    rf, anon_user_gql_client
-):
-    request = rf.post("/graphql")
-    request.user = anon_user_gql_client.user
+    def test_anonymous_user_cannot_create_any_temporary_read_access_token_for_profile(
+        self, rf, anon_user_gql_client
+    ):
+        request = rf.post("/graphql")
+        request.user = anon_user_gql_client.user
 
-    query = """
-        mutation {
-            createMyProfileTemporaryReadAccessToken(input: { }) {
-                temporaryReadAccessToken {
-                    token
-                    expiresAt
-                }
-            }
-        }
-    """
-    executed = anon_user_gql_client.execute(query, context=request)
+        executed = anon_user_gql_client.execute(self.query, context=request)
 
-    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+        assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
