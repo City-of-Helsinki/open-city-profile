@@ -805,6 +805,7 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
     temporary_read_access_token = graphene.Field(TemporaryReadAccessTokenNode)
 
     @classmethod
+    @login_required
     def mutate_and_get_payload(cls, root, info):
         profile = Profile.objects.get(user=info.context.user)
 
@@ -945,5 +946,6 @@ class Mutation(graphene.ObjectType):
         description="Creates and returns an access token for the profile which is linked to the currently "
         "authenticated user. The access token gives read access for this profile for any user, including anonymous, "
         "unauthenticated users. The token has an expiration time after which it can no longer be used.\n\n"
-        "Requires authentication."
+        "Requires authentication.\n\n"
+        "Possible error codes:\n\n* `PERMISSION_DENIED_ERROR`"
     )

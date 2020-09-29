@@ -13,6 +13,7 @@ from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
+    PERMISSION_DENIED_ERROR,
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
@@ -3393,3 +3394,24 @@ def test_normal_user_can_create_temporary_read_access_token_for_profile(
     assert_almost_equal(
         actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
     )
+
+
+def test_anonymous_user_cannot_create_any_temporary_read_access_token_for_profile(
+    rf, anon_user_gql_client
+):
+    request = rf.post("/graphql")
+    request.user = anon_user_gql_client.user
+
+    query = """
+        mutation {
+            createMyProfileTemporaryReadAccessToken(input: { }) {
+                temporaryReadAccessToken {
+                    token
+                    expiresAt
+                }
+            }
+        }
+    """
+    executed = anon_user_gql_client.execute(query, context=request)
+
+    assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
