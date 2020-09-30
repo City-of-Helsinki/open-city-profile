@@ -863,6 +863,18 @@ class Query(graphene.ObjectType):
         "Possible error codes:\n\n* `TODO`",
     )
 
+    profile_with_access_token = graphene.Field(
+        ProfileNode,
+        token=graphene.Argument(
+            graphene.UUID,
+            required=True,
+            description="The UUID token in a string representation, "
+            "for example `bd96c5b1-d9ba-4ad8-8c53-140578555f29`",
+        ),
+        description="Get a profile by using a temporary read access `token`. The `token` is the only authorization "
+        "technique with this endpoint so this can also be used unauthenticated.",
+    )
+
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
         service = Service.objects.get(service_type=kwargs["service_type"])
@@ -899,6 +911,10 @@ class Query(graphene.ObjectType):
                 *map(lambda item: item.json(), profile.get_service_gdpr_data()),
             ],
         }
+
+    def resolve_profile_with_access_token(self, info, **kwargs):
+        token = kwargs["token"]
+        return TemporaryReadAccessToken.objects.get(token=token).profile
 
 
 class Mutation(graphene.ObjectType):

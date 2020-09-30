@@ -39,6 +39,7 @@ from .factories import (
     ProfileFactory,
     ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
+    TemporaryReadAccessTokenFactory,
 )
 
 
@@ -3406,3 +3407,37 @@ class TestTemporaryProfileReadAccessTokenCreation:
         executed = anon_user_gql_client.execute(self.query, context=request)
 
         assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
+
+
+class TestTemporaryProfileReadAccessToken:
+    def query(self, token):
+        return Template(
+            """
+            {
+                profileWithAccessToken(token: "${token}") {
+                    firstName
+                    lastName
+                }
+            }
+        """
+        ).substitute(token=token)
+
+    def test_anonymous_user_can_retrieve_a_profile_with_temporary_read_access_token(
+        self, rf, user_gql_client, anon_user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        token = TemporaryReadAccessTokenFactory(profile=profile)
+
+        request = rf.post("/graphql")
+        request.user = anon_user_gql_client.user
+
+        executed = anon_user_gql_client.execute(
+            self.query(token.token), context=request
+        )
+
+        assert "errors" not in executed
+        actual_profile = executed["data"]["profileWithAccessToken"]
+        assert actual_profile == {
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+        }
