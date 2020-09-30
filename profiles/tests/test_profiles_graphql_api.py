@@ -14,6 +14,7 @@ from open_city_profile.consts import (
     INVALID_EMAIL_FORMAT_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
+    PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
@@ -3441,3 +3442,17 @@ class TestTemporaryProfileReadAccessToken:
             "firstName": profile.first_name,
             "lastName": profile.last_name,
         }
+
+    def test_using_non_existing_token_reports_profile_not_found_error(
+        self, rf, user_gql_client, anon_user_gql_client
+    ):
+        request = rf.post("/graphql")
+        request.user = anon_user_gql_client.user
+
+        executed = anon_user_gql_client.execute(
+            self.query(uuid.uuid4()), context=request
+        )
+
+        assert (
+            executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
+        )

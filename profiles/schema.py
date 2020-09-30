@@ -872,7 +872,9 @@ class Query(graphene.ObjectType):
             "for example `bd96c5b1-d9ba-4ad8-8c53-140578555f29`",
         ),
         description="Get a profile by using a temporary read access `token`. The `token` is the only authorization "
-        "technique with this endpoint so this can also be used unauthenticated.",
+        "technique with this endpoint so this can also be used unauthenticated.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`",
     )
 
     @staff_required(required_permission="view")
@@ -913,8 +915,11 @@ class Query(graphene.ObjectType):
         }
 
     def resolve_profile_with_access_token(self, info, **kwargs):
-        token = kwargs["token"]
-        return TemporaryReadAccessToken.objects.get(token=token).profile
+        try:
+            token = TemporaryReadAccessToken.objects.get(token=kwargs["token"])
+            return token.profile
+        except TemporaryReadAccessToken.DoesNotExist:
+            raise ProfileDoesNotExistError("Profile does not exist")
 
 
 class Mutation(graphene.ObjectType):
