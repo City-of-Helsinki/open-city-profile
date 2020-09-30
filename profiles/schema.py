@@ -874,7 +874,8 @@ class Query(graphene.ObjectType):
         description="Get a profile by using a temporary read access `token`. The `token` is the only authorization "
         "technique with this endpoint so this can also be used unauthenticated.\n\n"
         "Possible error codes:\n\n"
-        "* `PROFILE_DOES_NOT_EXIST_ERROR`",
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`\n"
+        "* `TOKEN_EXPIRED_ERROR`",
     )
 
     @staff_required(required_permission="view")
@@ -915,11 +916,16 @@ class Query(graphene.ObjectType):
         }
 
     def resolve_profile_with_access_token(self, info, **kwargs):
+        token = None
         try:
             token = TemporaryReadAccessToken.objects.get(token=kwargs["token"])
-            return token.profile
         except TemporaryReadAccessToken.DoesNotExist:
             raise ProfileDoesNotExistError("Profile does not exist")
+
+        if token.expires_at() < timezone.now():
+            raise TokenExpiredError("The access token has expired")
+
+        return token.profile
 
 
 class Mutation(graphene.ObjectType):

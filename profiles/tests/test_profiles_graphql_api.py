@@ -21,7 +21,10 @@ from open_city_profile.consts import (
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
-from profiles.models import Profile
+from profiles.models import (
+    _default_temporary_read_access_token_validity_duration,
+    Profile,
+)
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 from subscriptions.models import Subscription
@@ -3456,3 +3459,24 @@ class TestTemporaryProfileReadAccessToken:
         assert (
             executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
         )
+
+    def test_using_an_expired_token_reports_token_expired_error(
+        self, rf, user_gql_client, anon_user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        over_default_validity_duration = _default_temporary_read_access_token_validity_duration() + timedelta(
+            seconds=1
+        )
+        expired_token_creation_time = timezone.now() - over_default_validity_duration
+        token = TemporaryReadAccessTokenFactory(
+            profile=profile, created_at=expired_token_creation_time
+        )
+
+        request = rf.post("/graphql")
+        request.user = anon_user_gql_client.user
+
+        executed = anon_user_gql_client.execute(
+            self.query(token.token), context=request
+        )
+
+        assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
