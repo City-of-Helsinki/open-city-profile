@@ -20,6 +20,7 @@ from profiles.models import (
     Phone,
     Profile,
     SensitiveData,
+    TemporaryReadAccessToken,
 )
 from services.admin import ServiceConnectionInline
 from subscriptions.admin import SubscriptionInline
@@ -62,6 +63,13 @@ class ClaimTokenInline(admin.StackedInline):
     extra = 0
     fk_name = "profile"
     readonly_fields = ("token",)
+    form = AlwaysChangedModelForm
+
+
+class TemporaryReadAccessTokenInline(admin.StackedInline):
+    model = TemporaryReadAccessToken
+    extra = 0
+    readonly_fields = ("created_at", "validity_duration", "token")
     form = AlwaysChangedModelForm
 
 
@@ -114,6 +122,7 @@ class ExtendedProfileAdmin(VersionAdmin):
         ServiceConnectionInline,
         SubscriptionInline,
         ClaimTokenInline,
+        TemporaryReadAccessTokenInline,
         EmailAdminInline,
         PhoneAdminInline,
         AddressAdminInline,
