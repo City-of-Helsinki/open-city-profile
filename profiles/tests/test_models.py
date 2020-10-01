@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 import pytest
 import requests
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 
 from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
@@ -9,7 +12,7 @@ from services.exceptions import MissingGDPRUrlException
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 
-from ..models import Email, Profile
+from ..models import Email, Profile, TemporaryReadAccessToken
 from ..schema import validate_primary_email
 from .factories import (
     EmailFactory,
@@ -269,3 +272,14 @@ def test_validation_should_fail_with_invalid_email():
     e = Email("!dsdsd{}{}{}{}{}{")
     with pytest.raises(ValidationError):
         e.save()
+
+
+class TestTemporaryReadAccessTokenValidityDuration:
+    def test_by_default_validity_duration_is_two_days(self):
+        token = TemporaryReadAccessToken()
+        assert token.validity_duration == timedelta(days=2)
+
+    @override_settings(TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=60)
+    def test_validity_duration_can_be_controlled_with_a_setting(self):
+        token = TemporaryReadAccessToken()
+        assert token.validity_duration == timedelta(minutes=60)

@@ -57,6 +57,7 @@ env = environ.Env(
     SESSION_COOKIE_SECURE=(bool, None),
     USE_X_FORWARDED_HOST=(bool, None),
     CSRF_TRUSTED_ORIGINS=(list, []),
+    TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -244,6 +245,10 @@ AUTHENTICATION_BACKENDS = [
 # Profiles related settings
 
 CONTACT_METHODS = (("email", "Email"), ("sms", "SMS"))
+
+TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES = env.int(
+    "TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES"
+)
 
 # Django-parler
 

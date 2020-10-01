@@ -333,7 +333,9 @@ class ClaimToken(models.Model):
 
 
 def _default_temporary_read_access_token_validity_duration():
-    return timedelta(days=2)
+    return timedelta(
+        minutes=settings.TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES
+    )
 
 
 class TemporaryReadAccessToken(models.Model):
