@@ -360,14 +360,11 @@ class SensitiveDataFields(graphene.InputObjectType):
     ssn = graphene.String(description="Social security number.")
 
 
-@key(fields="id")
-class ProfileNode(DjangoObjectType):
+class RestrictedProfileNode(DjangoObjectType):
     class Meta:
         model = Profile
         fields = ("first_name", "last_name", "nickname", "image", "language")
         interfaces = (relay.Node,)
-        connection_class = ProfilesConnection
-        filterset_class = ProfileFilter
 
     primary_email = graphene.Field(
         EmailNode,
@@ -390,22 +387,8 @@ class ProfileNode(DjangoObjectType):
     addresses = DjangoFilterConnectionField(
         AddressNode, description="List of addresses of the profile."
     )
-    sensitivedata = graphene.Field(
-        SensitiveDataNode,
-        description="Data that is consider to be sensitive e.g. social security number",
-    )
     language = Language()
     contact_method = ContactMethod()
-    service_connections = DjangoFilterConnectionField(
-        ServiceConnectionType, description="List of the profile's connected services."
-    )
-    youth_profile = graphene.Field(
-        YouthProfileType, description="The Youth membership data of the profile."
-    )
-    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
-
-    def resolve_service_connections(self, info, **kwargs):
-        return ServiceConnection.objects.filter(profile=self)
 
     def resolve_primary_email(self, info, **kwargs):
         return Email.objects.filter(profile=self, primary=True).first()
@@ -424,6 +407,31 @@ class ProfileNode(DjangoObjectType):
 
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.filter(profile=self)
+
+
+@key(fields="id")
+class ProfileNode(RestrictedProfileNode):
+    class Meta:
+        model = Profile
+        fields = ("first_name", "last_name", "nickname", "image", "language")
+        interfaces = (relay.Node,)
+        connection_class = ProfilesConnection
+        filterset_class = ProfileFilter
+
+    sensitivedata = graphene.Field(
+        SensitiveDataNode,
+        description="Data that is consider to be sensitive e.g. social security number",
+    )
+    service_connections = DjangoFilterConnectionField(
+        ServiceConnectionType, description="List of the profile's connected services."
+    )
+    youth_profile = graphene.Field(
+        YouthProfileType, description="The Youth membership data of the profile."
+    )
+    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
+
+    def resolve_service_connections(self, info, **kwargs):
+        return ServiceConnection.objects.filter(profile=self)
 
     def resolve_sensitivedata(self, info, **kwargs):
         service = (
@@ -864,7 +872,7 @@ class Query(graphene.ObjectType):
     )
 
     profile_with_access_token = graphene.Field(
-        ProfileNode,
+        RestrictedProfileNode,
         token=graphene.Argument(
             graphene.UUID,
             required=True,
