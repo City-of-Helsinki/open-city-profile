@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import OuterRef, Subquery
+from django.db.models import F, OuterRef, Subquery
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -816,6 +816,10 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
     @login_required
     def mutate_and_get_payload(cls, root, info):
         profile = Profile.objects.get(user=info.context.user)
+
+        TemporaryReadAccessToken.objects.filter(
+            created_at__gt=timezone.now() - F("validity_duration")
+        ).delete()
 
         token = TemporaryReadAccessToken.objects.create(profile=profile)
 

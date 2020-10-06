@@ -24,6 +24,7 @@ from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import (
     _default_temporary_read_access_token_validity_duration,
     Profile,
+    TemporaryReadAccessToken,
 )
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
@@ -3368,7 +3369,21 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
 
 
-class TestTemporaryProfileReadAccessTokenCreation:
+class TemporaryProfileReadAccessTokenTestBase:
+    def create_expired_token(self, profile):
+        over_default_validity_duration = _default_temporary_read_access_token_validity_duration() + timedelta(
+            seconds=1
+        )
+        expired_token_creation_time = timezone.now() - over_default_validity_duration
+        token = TemporaryReadAccessTokenFactory(
+            profile=profile, created_at=expired_token_creation_time
+        )
+        return token
+
+
+class TestTemporaryProfileReadAccessTokenCreation(
+    TemporaryProfileReadAccessTokenTestBase
+):
     query = """
         mutation {
             createMyProfileTemporaryReadAccessToken(input: { }) {
@@ -3412,8 +3427,34 @@ class TestTemporaryProfileReadAccessTokenCreation:
 
         assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
 
+    def test_other_valid_tokens_are_deleted_when_a_new_token_is_created(
+        self, rf, user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
 
-class TestTemporaryProfileReadAccessToken:
+        valid_token1 = TemporaryReadAccessTokenFactory(profile=profile)
+        valid_token2 = TemporaryReadAccessTokenFactory(profile=profile)
+        expired_token = self.create_expired_token(profile)
+
+        executed = user_gql_client.execute(self.query, context=request)
+        token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
+            "temporaryReadAccessToken"
+        ]
+        new_token_uuid = uuid.UUID(token_data["token"])
+
+        def token_exists(token):
+            token = token if isinstance(token, uuid.UUID) else token.token
+            return TemporaryReadAccessToken.objects.filter(token=token).exists()
+
+        assert not token_exists(valid_token1)
+        assert not token_exists(valid_token2)
+        assert token_exists(expired_token)
+        assert token_exists(new_token_uuid)
+
+
+class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBase):
     def query(self, token):
         return Template(
             """
@@ -3489,13 +3530,7 @@ class TestTemporaryProfileReadAccessToken:
         self, rf, user_gql_client, anon_user_gql_client
     ):
         profile = ProfileFactory(user=user_gql_client.user)
-        over_default_validity_duration = _default_temporary_read_access_token_validity_duration() + timedelta(
-            seconds=1
-        )
-        expired_token_creation_time = timezone.now() - over_default_validity_duration
-        token = TemporaryReadAccessTokenFactory(
-            profile=profile, created_at=expired_token_creation_time
-        )
+        token = self.create_expired_token(profile)
 
         request = rf.post("/graphql")
         request.user = anon_user_gql_client.user
