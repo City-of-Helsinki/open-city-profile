@@ -80,7 +80,7 @@ def user_has_staff_perms_to_view_profile(
     for any service connected to the passed profile.
     """
 
-    service_conns = profile.service_connections.filter(enabled=True)
+    service_conns = profile.service_connections.all()
     return any(
         [
             user.has_perm("can_view_profiles", service_conn.service)
