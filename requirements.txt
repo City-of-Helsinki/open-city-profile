@@ -95,7 +95,7 @@ djangorestframework==3.10.1
     #   -r requirements.in
     #   django-parler-rest
     #   drf-oidc-auth
-drf-oidc-auth==0.9
+drf-oidc-auth==0.10.0
     # via -r requirements.in
 ecdsa==0.13.3
     # via python-jose
