@@ -10,7 +10,6 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
-    generate_notifications,
     generate_profiles,
     generate_service_connections,
     generate_services,
@@ -114,12 +113,6 @@ class Command(BaseCommand):
         generate_subscription_types()
 
         self.stdout.write(self.style.SUCCESS("Done - Profile data"))
-
-        # Initial youth profile data
-        self.stdout.write("Generating youth membership notifications...")
-        generate_notifications()
-
-        self.stdout.write(self.style.SUCCESS("Done - Youth Profile data"))
 
         # Development
         if development:

@@ -1,7 +1,5 @@
 import pytest
-from django.apps import apps
 from django.contrib.auth.models import Group
-from django_ilmoitin.models import NotificationTemplate
 from faker import Faker
 from guardian.shortcuts import get_group_perms
 
@@ -17,7 +15,6 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
-    generate_notifications,
     generate_profiles,
     generate_service_connections,
     generate_services,
@@ -64,21 +61,6 @@ def test_assign_permissions(times, user, service):
     for permission in available_permissions:
         assert user.has_perm(permission, service)
         assert permission in get_group_perms(group, service)
-
-
-@pytest.mark.parametrize("times", [1, 2])
-def test_generate_notifications(times):
-    """Test notifications are generated and that function can be run multiple times."""
-
-    NotificationTemplateTranslation = apps.get_model(  # noqa: N806
-        "django_ilmoitin", "NotificationTemplateTranslation"
-    )
-
-    for i in range(times):
-        generate_notifications()
-
-    assert NotificationTemplate.objects.count() == 2
-    assert NotificationTemplateTranslation.objects.count() == 6
 
 
 def test_creates_random_user():

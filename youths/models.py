@@ -5,13 +5,11 @@ import reversion
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django_ilmoitin.utils import send_notification
 from enumfields import EnumField
 
 from profiles.models import Profile
 from utils.models import SerializableMixin
 
-from .enums import NotificationType
 from .enums import YouthLanguage as LanguageAtHome
 
 
@@ -65,12 +63,6 @@ class YouthProfile(SerializableMixin):
 
     def make_approvable(self):
         self.approval_token = uuid.uuid4()
-        send_notification(
-            email=self.approver_email,
-            notification_type=NotificationType.YOUTH_PROFILE_CONFIRMATION_NEEDED.value,
-            context={"youth_profile": self},
-            language=self.language_at_home.value,
-        )
         self.approval_notification_timestamp = timezone.now()
 
     def __str__(self):
