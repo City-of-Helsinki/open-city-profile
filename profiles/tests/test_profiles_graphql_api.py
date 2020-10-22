@@ -3436,6 +3436,7 @@ class TestTemporaryProfileReadAccessTokenCreation(
 
         valid_token1 = TemporaryReadAccessTokenFactory(profile=profile)
         valid_token2 = TemporaryReadAccessTokenFactory(profile=profile)
+        valid_token_for_another_profile = TemporaryReadAccessTokenFactory()
         expired_token = self.create_expired_token(profile)
 
         executed = user_gql_client.execute(self.query, context=request)
@@ -3452,6 +3453,7 @@ class TestTemporaryProfileReadAccessTokenCreation(
         assert not token_exists(valid_token2)
         assert token_exists(expired_token)
         assert token_exists(new_token_uuid)
+        assert token_exists(valid_token_for_another_profile)
 
 
 class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBase):

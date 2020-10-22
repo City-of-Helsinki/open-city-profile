@@ -818,7 +818,7 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
         profile = Profile.objects.get(user=info.context.user)
 
         TemporaryReadAccessToken.objects.filter(
-            created_at__gt=timezone.now() - F("validity_duration")
+            profile=profile, created_at__gt=timezone.now() - F("validity_duration")
         ).delete()
 
         token = TemporaryReadAccessToken.objects.create(profile=profile)
