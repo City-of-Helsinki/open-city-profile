@@ -525,7 +525,7 @@ class UpdateAddressInput(AddressInput):
     address_type = AllowedAddressType(description="Address type.")
 
 
-class ProfileInput(graphene.InputObjectType):
+class ProfileInputBase(graphene.InputObjectType):
     first_name = graphene.String(description="First name.")
     last_name = graphene.String(description="Last name.")
     nickname = graphene.String(description="Nickname.")
@@ -533,14 +533,23 @@ class ProfileInput(graphene.InputObjectType):
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
     add_emails = graphene.List(CreateEmailInput, description="Add emails to profile.")
+    add_phones = graphene.List(
+        CreatePhoneInput, description="Add phone numbers to profile."
+    )
+    add_addresses = graphene.List(
+        CreateAddressInput, description="Add addresses to profile."
+    )
+    subscriptions = graphene.List(SubscriptionInputType)
+    youth_profile = graphene.InputField(YouthProfileFields)
+    sensitivedata = graphene.InputField(SensitiveDataFields)
+
+
+class ProfileInput(ProfileInputBase):
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
     )
     remove_emails = graphene.List(
         graphene.ID, description="Remove emails from profile."
-    )
-    add_phones = graphene.List(
-        CreatePhoneInput, description="Add phone numbers to profile."
     )
     update_phones = graphene.List(
         UpdatePhoneInput, description="Update profile phone numbers."
@@ -548,18 +557,12 @@ class ProfileInput(graphene.InputObjectType):
     remove_phones = graphene.List(
         graphene.ID, description="Remove phone numbers from profile."
     )
-    add_addresses = graphene.List(
-        CreateAddressInput, description="Add addresses to profile."
-    )
     update_addresses = graphene.List(
         UpdateAddressInput, description="Update profile addresses."
     )
     remove_addresses = graphene.List(
         graphene.ID, description="Remove addresses from profile."
     )
-    subscriptions = graphene.List(SubscriptionInputType)
-    youth_profile = graphene.InputField(YouthProfileFields)
-    sensitivedata = graphene.InputField(SensitiveDataFields)
 
 
 class CreateMyProfileMutation(relay.ClientIDMutation):
@@ -598,10 +601,42 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         return CreateMyProfileMutation(profile=profile)
 
 
+class CreateProfileInput(ProfileInputBase):
+    """The following fields are deprecated:
+
+* `update_emails`
+* `remove_emails`
+* `update_phones`
+* `remove_phones`
+* `update_addresses`
+* `remove_addresses`
+
+There's no replacement for these as these fields have never had any effect in the first place."""
+
+    update_emails = graphene.List(
+        UpdateEmailInput, description="DEPRECATED. Update profile emails."
+    )
+    remove_emails = graphene.List(
+        graphene.ID, description="DEPRECATED. Remove emails from profile."
+    )
+    update_phones = graphene.List(
+        UpdatePhoneInput, description="DEPRECATED. Update profile phone numbers."
+    )
+    remove_phones = graphene.List(
+        graphene.ID, description="DEPRECATED. Remove phone numbers from profile."
+    )
+    update_addresses = graphene.List(
+        UpdateAddressInput, description="DEPRECATED. Update profile addresses."
+    )
+    remove_addresses = graphene.List(
+        graphene.ID, description="DEPRECATED. Remove addresses from profile."
+    )
+
+
 class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(AllowedServiceType, required=True)
-        profile = ProfileInput(required=True)
+        profile = CreateProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
 
@@ -685,8 +720,26 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
         return UpdateMyProfileMutation(profile=profile)
 
 
-class UpdateProfileInput(ProfileInput):
+class UpdateProfileInput(ProfileInputBase):
     id = graphene.Argument(graphene.ID, required=True)
+    update_emails = graphene.List(
+        UpdateEmailInput, description="Update profile emails."
+    )
+    remove_emails = graphene.List(
+        graphene.ID, description="Remove emails from profile."
+    )
+    update_phones = graphene.List(
+        UpdatePhoneInput, description="Update profile phone numbers."
+    )
+    remove_phones = graphene.List(
+        graphene.ID, description="Remove phone numbers from profile."
+    )
+    update_addresses = graphene.List(
+        UpdateAddressInput, description="Update profile addresses."
+    )
+    remove_addresses = graphene.List(
+        graphene.ID, description="Remove addresses from profile."
+    )
 
 
 class UpdateProfileMutation(relay.ClientIDMutation):
