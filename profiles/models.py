@@ -237,6 +237,13 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
+class VerifiedPersonalInformation(models.Model):
+    profile = models.OneToOneField(
+        Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
+    )
+    first_name = fields.EncryptedCharField(max_length=1024, blank=True)
+
+
 class DivisionOfInterest(models.Model):
     division = models.OneToOneField(
         AdministrativeDivision,

@@ -6,7 +6,7 @@ import pytest
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from graphene import relay
-from graphql_relay.node.node import to_global_id
+from graphql_relay.node.node import from_global_id, to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import (
@@ -2713,6 +2713,36 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
         "You do not have permission to perform this action."
     )
     assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
+
+
+def test_profile_with_verified_personal_information_can_be_created(rf, user_gql_client):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    query = """
+    mutation {
+        prof: createOrUpdateProfileWithVerifiedPersonalInformation(
+            input: {
+                profile: {
+                    verifiedPersonalInformation: {
+                        firstName: "John",
+                    },
+                },
+            }
+        ) {
+            profile {
+                id,
+            }
+        }
+    }
+    """
+
+    executed = user_gql_client.execute(query, context=request)
+    global_profile_id = executed["data"]["prof"]["profile"]["id"]
+    profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
+
+    profile = Profile.objects.get(pk=profile_id)
+    assert profile.verified_personal_information.first_name == "John"
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

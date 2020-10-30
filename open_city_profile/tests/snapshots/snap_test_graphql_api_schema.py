@@ -117,6 +117,14 @@ type CreateMyProfileTemporaryReadAccessTokenMutationPayload {
   clientMutationId: String
 }
 
+input CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput {
+  profile: ProfileWithVerifiedPersonalInformationInput!
+}
+
+type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
+  profile: ProfileWithVerifiedPersonalInformationNode
+}
+
 input CreatePhoneInput {
   primary: Boolean
   phone: String!
@@ -203,6 +211,7 @@ type Mutation {
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
   createProfile(input: CreateProfileMutationInput!): CreateProfileMutationPayload
+  createOrUpdateProfileWithVerifiedPersonalInformation(input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!): CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
   updateMyProfile(input: UpdateMyProfileMutationInput!): UpdateMyProfileMutationPayload
   updateProfile(input: UpdateProfileMutationInput!): UpdateProfileMutationPayload
   deleteMyProfile(input: DeleteMyProfileMutationInput!): DeleteMyProfileMutationPayload
@@ -295,6 +304,14 @@ type ProfileNodeConnection {
 type ProfileNodeEdge {
   node: ProfileNode
   cursor: String!
+}
+
+input ProfileWithVerifiedPersonalInformationInput {
+  verifiedPersonalInformation: VerifiedPersonalInformationInput!
+}
+
+type ProfileWithVerifiedPersonalInformationNode implements Node {
+  id: ID!
 }
 
 type Query {
@@ -540,6 +557,10 @@ input UpdateProfileMutationInput {
 type UpdateProfileMutationPayload {
   profile: ProfileNode
   clientMutationId: String
+}
+
+input VerifiedPersonalInformationInput {
+  firstName: String
 }
 
 scalar _Any

@@ -53,6 +53,7 @@ from .models import (
     Profile,
     SensitiveData,
     TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
 )
 from .utils import (
     create_nested,
@@ -660,6 +661,60 @@ class CreateProfileMutation(relay.ClientIDMutation):
         return CreateProfileMutation(profile=profile)
 
 
+class VerifiedPersonalInformationInput(graphene.InputObjectType):
+    first_name = graphene.String(description="First name(s).")
+
+
+class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
+    verified_personal_information = graphene.InputField(
+        VerifiedPersonalInformationInput, required=True
+    )
+
+
+class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
+    graphene.InputObjectType
+):
+    profile = graphene.InputField(
+        ProfileWithVerifiedPersonalInformationInput, required=True
+    )
+
+
+class ProfileWithVerifiedPersonalInformationNode(graphene.ObjectType):
+    class Meta:
+        interfaces = (relay.Node,)
+
+
+class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
+    graphene.ObjectType
+):
+    profile = graphene.Field(ProfileWithVerifiedPersonalInformationNode)
+
+
+class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
+    class Arguments:
+        input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
+            required=True
+        )
+
+    Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+
+    @staticmethod
+    def mutate(parent, info, input):
+        profile_input = input.pop("profile")
+        verified_personal_information = profile_input.pop(
+            "verified_personal_information"
+        )
+
+        profile = Profile.objects.create()
+        VerifiedPersonalInformation.objects.create(
+            profile=profile, **verified_personal_information
+        )
+
+        return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
+            profile=profile
+        )
+
+
 class UpdateMyProfileMutation(relay.ClientIDMutation):
     class Input:
         profile = ProfileInput(required=True)
@@ -958,6 +1013,11 @@ class Mutation(graphene.ObjectType):
         "* Address\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
     )
     create_profile = CreateProfileMutation.Field()
+
+    create_or_update_profile_with_verified_personal_information = (
+        CreateOrUpdateProfileWithVerifiedPersonalInformationMutation.Field()
+    )
+
     # TODO: Add the complete list of error codes
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
