@@ -11,6 +11,7 @@ from profiles.models import (
     Profile,
     SensitiveData,
     TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
 )
 
 
@@ -23,6 +24,13 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
 class ProfileDataDictFactory(factory.DictFactory):
     nickname = factory.Faker("name")
+
+
+class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+
+    class Meta:
+        model = VerifiedPersonalInformation
 
 
 class ClaimTokenFactory(factory.django.DjangoModelFactory):

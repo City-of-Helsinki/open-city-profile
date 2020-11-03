@@ -9,6 +9,7 @@ from profiles.tests.factories import (
     PhoneDataDictFactory,
     ProfileDataDictFactory,
     ProfileFactory,
+    VerifiedPersonalInformationFactory,
     VocabularyFactory,
 )
 from services.enums import ServiceType
@@ -18,6 +19,11 @@ from services.tests.factories import ServiceFactory
 @pytest.fixture
 def profile(user):
     return ProfileFactory(user=user)
+
+
+@pytest.fixture
+def profile_with_verified_personal_information():
+    return VerifiedPersonalInformationFactory().profile
 
 
 @pytest.fixture

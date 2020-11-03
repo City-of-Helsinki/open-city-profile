@@ -2767,6 +2767,13 @@ class TestProfileWithVerifiedPersonalInformation:
             profile.user.uuid, rf, user_gql_client
         )
 
+    def test_existing_profile_with_verified_personal_information_is_updated(
+        self, profile_with_verified_personal_information, rf, user_gql_client
+    ):
+        self.execute_successful_profile_creation_test(
+            profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
+        )
+
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
