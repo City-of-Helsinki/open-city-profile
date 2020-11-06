@@ -262,6 +262,9 @@ class EncryptedAddress(models.Model, UpdateMixin):
     class Meta:
         abstract = True
 
+    def is_empty(self):
+        return not (self.street_address or self.postal_code or self.post_office)
+
 
 class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
     verified_personal_information = models.OneToOneField(

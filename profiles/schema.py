@@ -752,9 +752,11 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                 permanent_address = information.permanent_address
                 permanent_address.update(permanent_address_input)
             except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
-                VerifiedPersonalInformationPermanentAddress.objects.create(
+                permanent_address = VerifiedPersonalInformationPermanentAddress.objects.create(
                     verified_personal_information=information, **permanent_address_input
                 )
+            if permanent_address.is_empty():
+                permanent_address.delete()
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile

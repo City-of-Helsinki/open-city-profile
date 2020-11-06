@@ -2842,6 +2842,33 @@ class TestProfileWithVerifiedPersonalInformation:
         assert permanent_address.postal_code == existing_address.postal_code
         assert permanent_address.post_office == existing_address.post_office
 
+    def test_delete_the_permanent_address_if_it_no_longer_has_any_data(
+        self, profile_with_verified_personal_information, rf, user_gql_client,
+    ):
+        user_id = profile_with_verified_personal_information.user.uuid
+
+        t = Template(
+            """
+        {
+            userId: "${user_id}",
+            profile: {
+                verifiedPersonalInformation: {
+                    permanentAddress: {
+                        streetAddress: "",
+                        postalCode: "",
+                        postOffice: "",
+                    },
+                },
+            },
+        }
+        """
+        )
+        input_data = t.substitute(user_id=user_id)
+
+        profile = self.execute_mutation(input_data, rf, user_gql_client)
+
+        assert not hasattr(profile.verified_personal_information, "permanent_address")
+
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
