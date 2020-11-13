@@ -22,7 +22,7 @@ from graphene.utils.str_converters import to_snake_case
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
-from graphql_jwt.decorators import login_required
+from graphql_jwt.decorators import login_required, permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
@@ -745,6 +745,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
     Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
 
     @staticmethod
+    @permission_required("profiles.manage_verified_personal_information")
     def mutate(parent, info, input):
         user_id_input = input.pop("user_id")
         profile_input = input.pop("profile")

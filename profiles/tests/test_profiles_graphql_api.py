@@ -2719,8 +2719,12 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
 class TestProfileWithVerifiedPersonalInformation:
     @staticmethod
     def execute_mutation(input_data, rf, gql_client):
+        user = gql_client.user
+
+        assign_perm("profiles.manage_verified_personal_information", user)
+
         request = rf.post("/graphql")
-        request.user = gql_client.user
+        request.user = user
 
         t = Template(
             """
@@ -2815,6 +2819,33 @@ class TestProfileWithVerifiedPersonalInformation:
         self, rf, user_gql_client
     ):
         self.execute_successful_profile_creation_test(uuid.uuid1(), rf, user_gql_client)
+
+    def test_manage_verified_personal_information_permission_is_needed(
+        self, rf, user_gql_client
+    ):
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
+
+        query = """
+        mutation {
+            createOrUpdateProfileWithVerifiedPersonalInformation(
+                input: {
+                    userId: "03117666-117D-4F6B-80B1-A3A92B389711",
+                    profile: {
+                        verifiedPersonalInformation: {
+                        }
+                    }
+                }
+            ) {
+                profile {
+                    id,
+                }
+            }
+        }
+        """
+
+        executed = user_gql_client.execute(query, context=request)
+        assert executed["errors"][0]["extensions"]["code"] == "PERMISSION_DENIED_ERROR"
 
     def test_existing_user_is_used(self, user, rf, user_gql_client):
         self.execute_successful_profile_creation_test(user.uuid, rf, user_gql_client)

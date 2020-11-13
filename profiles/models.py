@@ -253,6 +253,14 @@ class VerifiedPersonalInformation(models.Model):
         max_length=4, blank=True
     )
 
+    class Meta:
+        permissions = [
+            (
+                "manage_verified_personal_information",
+                "Can manage verified personal information",
+            ),
+        ]
+
 
 class EncryptedAddress(models.Model, UpdateMixin):
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)
