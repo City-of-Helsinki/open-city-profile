@@ -26,6 +26,7 @@ review:
         K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
         K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
         K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
+        K8S_SECRET_FIELD_ENCRYPTION_KEYS: "$GL_REVIEW_FIELD_ENCRYPTION_KEYS"
         K8S_SECRET_ENABLE_GRAPHIQL: 1
         K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
         K8S_SECRET_GDPR_API_ENABLED: 1
