@@ -1,0 +1,16 @@
+= Permissions in the GraphQL API
+
+The Django permission system is used for access control also in the GraphQL API. This allows changing the access controls conveniently in the Django admin UI.
+
+Django creates automatically a lot of permission types. These are very granular, actually four different permission types (view, add, change, delete) for each model. These are mostly meant to be used for access control in the Django admin UI and the admin UI actually obeys these permissions automatically, adjusting the UI according to the permissions.
+
+It's possible to create more permission types into one's Django server. What the permissions mean and how they are used is up to the developer.
+
+Since a GraphQL mutation for example can modify half a dozen different models, using the Django default permission types can quikly lead to an unmaintainable chaos. For that reason a dedicated permission type is usually created to be used in the GraphQL API. In most cases a single permission type is enough: either access is granted to a GraphQL operation, or not.
+
+== Defined permissions and their purpose
+
+[%hardbreaks]
+*In admin UI:* profiles | verified personal information | Can manage verified personal information
+*In code:* `profiles.manage_verified_personal_information`
+*Purpose:* Needed to access the `createOrUpdateProfileWithVerifiedPersonalInformation` mutation.
