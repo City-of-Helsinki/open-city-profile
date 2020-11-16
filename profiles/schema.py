@@ -1091,9 +1091,18 @@ class Mutation(graphene.ObjectType):
     )
     create_profile = CreateProfileMutation.Field()
 
+    # fmt: off
     create_or_update_profile_with_verified_personal_information = (
-        CreateOrUpdateProfileWithVerifiedPersonalInformationMutation.Field()
+        CreateOrUpdateProfileWithVerifiedPersonalInformationMutation.Field(
+            description="Creates a new or updates an existing profile with its "
+            "_verified personal information_ section for the specified user.\n\n"
+            "Requires elevated privileges.\n\n"
+            "Possible error codes:\n\n"
+            "* `PERMISSION_DENIED_ERROR`: "
+            "The current user doesn't have the reguired permissions to perform this action."
+        )
     )
+    # fmt: on
 
     # TODO: Add the complete list of error codes
     update_my_profile = UpdateMyProfileMutation.Field(
