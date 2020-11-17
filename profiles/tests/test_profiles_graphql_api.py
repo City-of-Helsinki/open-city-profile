@@ -2715,42 +2715,50 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
 
 
-def test_profile_with_verified_personal_information_can_be_created(rf, user_gql_client):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+class TestProfileWithVerifiedPersonalInformation:
+    @staticmethod
+    def execute_successful_profile_creation_test(user_id, rf, gql_client):
+        request = rf.post("/graphql")
+        request.user = gql_client.user
 
-    user_id = uuid.uuid4()
-
-    t = Template(
-        """
-    mutation {
-        prof: createOrUpdateProfileWithVerifiedPersonalInformation(
-            input: {
-                userId: \"${user_id}\",
-                profile: {
-                    verifiedPersonalInformation: {
-                        firstName: "John",
+        t = Template(
+            """
+        mutation {
+            prof: createOrUpdateProfileWithVerifiedPersonalInformation(
+                input: {
+                    userId: \"${user_id}\",
+                    profile: {
+                        verifiedPersonalInformation: {
+                            firstName: "John",
+                        },
                     },
-                },
-            }
-        ) {
-            profile {
-                id,
+                }
+            ) {
+                profile {
+                    id,
+                }
             }
         }
-    }
-    """
-    )
-    query = t.substitute(user_id=user_id)
+        """
+        )
+        query = t.substitute(user_id=user_id)
 
-    executed = user_gql_client.execute(query, context=request)
-    global_profile_id = executed["data"]["prof"]["profile"]["id"]
-    profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
+        executed = gql_client.execute(query, context=request)
+        global_profile_id = executed["data"]["prof"]["profile"]["id"]
+        profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
-    profile = Profile.objects.get(pk=profile_id)
+        profile = Profile.objects.get(pk=profile_id)
 
-    assert profile.user.uuid == user_id
-    assert profile.verified_personal_information.first_name == "John"
+        assert profile.user.uuid == user_id
+        assert profile.verified_personal_information.first_name == "John"
+
+    def test_profile_with_verified_personal_information_can_be_created(
+        self, rf, user_gql_client
+    ):
+        self.execute_successful_profile_creation_test(uuid.uuid1(), rf, user_gql_client)
+
+    def test_existing_user_is_used(self, user, rf, user_gql_client):
+        self.execute_successful_profile_creation_test(user.uuid, rf, user_gql_client)
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

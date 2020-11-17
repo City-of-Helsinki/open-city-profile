@@ -713,7 +713,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             "verified_personal_information"
         )
 
-        user = User.objects.create(uuid=user_id)
+        user, created = User.objects.get_or_create(uuid=user_id)
 
         profile = Profile.objects.create(user=user)
         VerifiedPersonalInformation.objects.create(
