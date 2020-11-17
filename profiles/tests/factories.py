@@ -7,12 +7,14 @@ from profiles.models import (
     Address,
     ClaimToken,
     Email,
+    EncryptedAddress,
     Phone,
     Profile,
     SensitiveData,
     TemporaryReadAccessToken,
     VerifiedPersonalInformation,
     VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationTemporaryAddress,
 )
 
 
@@ -27,21 +29,34 @@ class ProfileDataDictFactory(factory.DictFactory):
     nickname = factory.Faker("name")
 
 
-class VerifiedPersonalInformationPermanentAddressFactory(
-    factory.django.DjangoModelFactory
-):
+class EncryptedAddressFactory(factory.django.DjangoModelFactory):
     street_address = factory.Faker("street_address")
     postal_code = factory.Faker("postcode")
     post_office = factory.Faker("city")
 
     class Meta:
+        model = EncryptedAddress
+        abstract = True
+
+
+class VerifiedPersonalInformationPermanentAddressFactory(EncryptedAddressFactory):
+    class Meta:
         model = VerifiedPersonalInformationPermanentAddress
+
+
+class VerifiedPersonalInformationTemporaryAddressFactory(EncryptedAddressFactory):
+    class Meta:
+        model = VerifiedPersonalInformationTemporaryAddress
 
 
 class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
     permanent_address = factory.RelatedFactory(
         VerifiedPersonalInformationPermanentAddressFactory,
+        factory_related_name="verified_personal_information",
+    )
+    temporary_address = factory.RelatedFactory(
+        VerifiedPersonalInformationTemporaryAddressFactory,
         factory_related_name="verified_personal_information",
     )
 

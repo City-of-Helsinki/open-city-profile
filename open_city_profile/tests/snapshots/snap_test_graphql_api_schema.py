@@ -575,6 +575,7 @@ input VerifiedPersonalInformationInput {
   municipalityOfResidence: String
   municipalityOfResidenceNumber: String
   permanentAddress: VerifiedPersonalInformationAddressInput
+  temporaryAddress: VerifiedPersonalInformationAddressInput
 }
 
 scalar _Any

@@ -2762,6 +2762,11 @@ class TestProfileWithVerifiedPersonalInformation:
                         postalCode: "12345",
                         postOffice: "Permanent City",
                     },
+                    temporaryAddress: {
+                        streetAddress: "Temporary Street 2",
+                        postalCode: "98765",
+                        postOffice: "Temporary City",
+                    },
                 },
             },
         }
@@ -2789,6 +2794,10 @@ class TestProfileWithVerifiedPersonalInformation:
         assert permanent_address.street_address == "Permanent Street 1"
         assert permanent_address.postal_code == "12345"
         assert permanent_address.post_office == "Permanent City"
+        temporary_address = verified_personal_information.temporary_address
+        assert temporary_address.street_address == "Temporary Street 2"
+        assert temporary_address.postal_code == "98765"
+        assert temporary_address.post_office == "Temporary City"
 
     def test_profile_with_verified_personal_information_can_be_created(
         self, rf, user_gql_client
@@ -2812,11 +2821,17 @@ class TestProfileWithVerifiedPersonalInformation:
             profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
         )
 
-    def test_do_not_touch_the_permanent_address_if_it_is_not_included_in_the_mutation(
-        self, profile_with_verified_personal_information, rf, user_gql_client,
+    @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+    def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
+        self,
+        profile_with_verified_personal_information,
+        address_type,
+        rf,
+        user_gql_client,
     ):
-        existing_address = (
-            profile_with_verified_personal_information.verified_personal_information.permanent_address
+        existing_address = getattr(
+            profile_with_verified_personal_information.verified_personal_information,
+            address_type,
         )
 
         user_id = profile_with_verified_personal_information.user.uuid
@@ -2837,13 +2852,18 @@ class TestProfileWithVerifiedPersonalInformation:
         profile = self.execute_mutation(input_data, rf, user_gql_client)
 
         verified_personal_information = profile.verified_personal_information
-        permanent_address = verified_personal_information.permanent_address
-        assert permanent_address.street_address == existing_address.street_address
-        assert permanent_address.postal_code == existing_address.postal_code
-        assert permanent_address.post_office == existing_address.post_office
+        address = getattr(verified_personal_information, address_type)
+        assert address.street_address == existing_address.street_address
+        assert address.postal_code == existing_address.postal_code
+        assert address.post_office == existing_address.post_office
 
-    def test_delete_the_permanent_address_if_it_no_longer_has_any_data(
-        self, profile_with_verified_personal_information, rf, user_gql_client,
+    @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+    def test_delete_an_address_if_it_no_longer_has_any_data(
+        self,
+        profile_with_verified_personal_information,
+        address_type,
+        rf,
+        user_gql_client,
     ):
         user_id = profile_with_verified_personal_information.user.uuid
 
@@ -2853,7 +2873,7 @@ class TestProfileWithVerifiedPersonalInformation:
             userId: "${user_id}",
             profile: {
                 verifiedPersonalInformation: {
-                    permanentAddress: {
+                    ${address_type}: {
                         streetAddress: "",
                         postalCode: "",
                         postOffice: "",
@@ -2863,11 +2883,12 @@ class TestProfileWithVerifiedPersonalInformation:
         }
         """
         )
-        input_data = t.substitute(user_id=user_id)
+        camel_case_address_type = address_type.replace("_a", "A")
+        input_data = t.substitute(user_id=user_id, address_type=camel_case_address_type)
 
         profile = self.execute_mutation(input_data, rf, user_gql_client)
 
-        assert not hasattr(profile.verified_personal_information, "permanent_address")
+        assert not hasattr(profile.verified_personal_information, address_type)
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

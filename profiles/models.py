@@ -267,10 +267,22 @@ class EncryptedAddress(models.Model, UpdateMixin):
 
 
 class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
+    RELATED_NAME = "permanent_address"
+
     verified_personal_information = models.OneToOneField(
         VerifiedPersonalInformation,
         on_delete=models.CASCADE,
-        related_name="permanent_address",
+        related_name=RELATED_NAME,
+    )
+
+
+class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
+    RELATED_NAME = "temporary_address"
+
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name=RELATED_NAME,
     )
 
 

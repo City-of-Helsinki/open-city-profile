@@ -56,6 +56,7 @@ from .models import (
     TemporaryReadAccessToken,
     VerifiedPersonalInformation,
     VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationTemporaryAddress,
 )
 from .utils import (
     create_nested,
@@ -689,6 +690,10 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
         VerifiedPersonalInformationAddressInput,
         description="The permanent residency address in Finland.",
     )
+    temporary_address = graphene.InputField(
+        VerifiedPersonalInformationAddressInput,
+        description="The temporary residency address in Finland.",
+    )
 
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
@@ -735,9 +740,16 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
         verified_personal_information_input = profile_input.pop(
             "verified_personal_information"
         )
-        permanent_address_input = verified_personal_information_input.pop(
-            "permanent_address", None
-        )
+
+        address_types = [
+            {"model": VerifiedPersonalInformationPermanentAddress},
+            {"model": VerifiedPersonalInformationTemporaryAddress},
+        ]
+        for address_type in address_types:
+            address_type["name"] = address_type["model"].RELATED_NAME
+            address_type["input"] = verified_personal_information_input.pop(
+                address_type["name"], None
+            )
 
         user, created = User.objects.get_or_create(uuid=user_id_input)
 
@@ -747,16 +759,20 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             profile=profile, defaults=verified_personal_information_input
         )
 
-        if permanent_address_input:
-            try:
-                permanent_address = information.permanent_address
-                permanent_address.update(permanent_address_input)
-            except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
-                permanent_address = VerifiedPersonalInformationPermanentAddress.objects.create(
-                    verified_personal_information=information, **permanent_address_input
-                )
-            if permanent_address.is_empty():
-                permanent_address.delete()
+        for address_type in address_types:
+            address_input = address_type["input"]
+            if address_input:
+                address_name = address_type["name"]
+                address_model = address_type["model"]
+                try:
+                    address = getattr(information, address_name)
+                    address.update(address_input)
+                except address_model.DoesNotExist:
+                    address = address_model.objects.create(
+                        verified_personal_information=information, **address_input
+                    )
+                if address.is_empty():
+                    address.delete()
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile
