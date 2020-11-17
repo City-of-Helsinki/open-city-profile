@@ -55,6 +55,7 @@ from .models import (
     SensitiveData,
     TemporaryReadAccessToken,
     VerifiedPersonalInformation,
+    VerifiedPersonalInformationPermanentAddress,
 )
 from .utils import (
     create_nested,
@@ -664,6 +665,12 @@ class CreateProfileMutation(relay.ClientIDMutation):
         return CreateProfileMutation(profile=profile)
 
 
+class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
+    street_address = graphene.String()
+    postal_code = graphene.String()
+    post_office = graphene.String()
+
+
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
     first_name = graphene.String(description="First name(s).")
     last_name = graphene.String(description="Last name.")
@@ -677,6 +684,10 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     )
     municipality_of_residence_number = graphene.String(
         description="Official municipality of residence in Finland as an official number."
+    )
+    permanent_address = graphene.InputField(
+        VerifiedPersonalInformationAddressInput,
+        description="The permanent residency address in Finland.",
     )
 
 
@@ -719,19 +730,30 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
     @staticmethod
     def mutate(parent, info, input):
-        user_id = input.pop("user_id")
+        user_id_input = input.pop("user_id")
         profile_input = input.pop("profile")
-        verified_personal_information = profile_input.pop(
+        verified_personal_information_input = profile_input.pop(
             "verified_personal_information"
         )
+        permanent_address_input = verified_personal_information_input.pop(
+            "permanent_address"
+        )
 
-        user, created = User.objects.get_or_create(uuid=user_id)
+        user, created = User.objects.get_or_create(uuid=user_id_input)
 
         profile, created = Profile.objects.get_or_create(user=user)
 
-        VerifiedPersonalInformation.objects.update_or_create(
-            profile=profile, defaults=verified_personal_information
+        information, created = VerifiedPersonalInformation.objects.update_or_create(
+            profile=profile, defaults=verified_personal_information_input
         )
+
+        try:
+            permanent_address = information.permanent_address
+            permanent_address.update(permanent_address_input)
+        except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
+            VerifiedPersonalInformationPermanentAddress.objects.create(
+                verified_personal_information=information, **permanent_address_input
+            )
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile

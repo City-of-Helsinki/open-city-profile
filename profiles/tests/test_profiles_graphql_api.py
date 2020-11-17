@@ -2736,6 +2736,11 @@ class TestProfileWithVerifiedPersonalInformation:
                             email: "john.smith@domain.example",
                             municipalityOfResidence: "Helsinki",
                             municipalityOfResidenceNumber: "091",
+                            permanentAddress: {
+                                streetAddress: "Permanent Street 1",
+                                postalCode: "12345",
+                                postOffice: "Permanent City",
+                            },
                         },
                     },
                 }
@@ -2767,6 +2772,10 @@ class TestProfileWithVerifiedPersonalInformation:
         assert verified_personal_information.email == "john.smith@domain.example"
         assert verified_personal_information.municipality_of_residence == "Helsinki"
         assert verified_personal_information.municipality_of_residence_number == "091"
+        permanent_address = verified_personal_information.permanent_address
+        assert permanent_address.street_address == "Permanent Street 1"
+        assert permanent_address.postal_code == "12345"
+        assert permanent_address.post_office == "Permanent City"
 
     def test_profile_with_verified_personal_information_can_be_created(
         self, rf, user_gql_client

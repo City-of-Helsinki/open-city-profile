@@ -17,7 +17,7 @@ from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
-from utils.models import SerializableMixin, UUIDModel
+from utils.models import SerializableMixin, UpdateMixin, UUIDModel
 
 from .enums import (
     AddressType,
@@ -251,6 +251,23 @@ class VerifiedPersonalInformation(models.Model):
     municipality_of_residence = fields.EncryptedCharField(max_length=1024, blank=True)
     municipality_of_residence_number = fields.EncryptedCharField(
         max_length=4, blank=True
+    )
+
+
+class EncryptedAddress(models.Model, UpdateMixin):
+    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
+    postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
+    post_office = fields.EncryptedCharField(max_length=1024, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name="permanent_address",
     )
 
 

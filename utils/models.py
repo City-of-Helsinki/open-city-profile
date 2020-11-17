@@ -126,3 +126,10 @@ class SerializableMixin(models.Model):
                 if self._resolve_field(self, field) is not None
             ],
         }
+
+
+class UpdateMixin:
+    def update(self, data):
+        for field, value in data.items():
+            setattr(self, field, value)
+        self.save(update_fields=data.keys())

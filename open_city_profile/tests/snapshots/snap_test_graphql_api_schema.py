@@ -560,6 +560,12 @@ type UpdateProfileMutationPayload {
   clientMutationId: String
 }
 
+input VerifiedPersonalInformationAddressInput {
+  streetAddress: String
+  postalCode: String
+  postOffice: String
+}
+
 input VerifiedPersonalInformationInput {
   firstName: String
   lastName: String
@@ -568,6 +574,7 @@ input VerifiedPersonalInformationInput {
   email: String
   municipalityOfResidence: String
   municipalityOfResidenceNumber: String
+  permanentAddress: VerifiedPersonalInformationAddressInput
 }
 
 scalar _Any
