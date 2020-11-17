@@ -562,6 +562,12 @@ type UpdateProfileMutationPayload {
 
 input VerifiedPersonalInformationInput {
   firstName: String
+  lastName: String
+  givenName: String
+  nationalIdentificationNumber: String
+  email: String
+  municipalityOfResidence: String
+  municipalityOfResidenceNumber: String
 }
 
 scalar _Any

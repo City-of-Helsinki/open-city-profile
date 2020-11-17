@@ -242,6 +242,16 @@ class VerifiedPersonalInformation(models.Model):
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
     first_name = fields.EncryptedCharField(max_length=1024, blank=True)
+    last_name = fields.EncryptedCharField(max_length=1024, blank=True)
+    given_name = fields.EncryptedCharField(max_length=1024, blank=True)
+    national_identification_number = fields.EncryptedCharField(
+        max_length=1024, blank=True
+    )
+    email = fields.EncryptedCharField(max_length=1024, blank=True)
+    municipality_of_residence = fields.EncryptedCharField(max_length=1024, blank=True)
+    municipality_of_residence_number = fields.EncryptedCharField(
+        max_length=4, blank=True
+    )
 
 
 class DivisionOfInterest(models.Model):

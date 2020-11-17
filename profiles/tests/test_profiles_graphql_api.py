@@ -2730,6 +2730,12 @@ class TestProfileWithVerifiedPersonalInformation:
                     profile: {
                         verifiedPersonalInformation: {
                             firstName: "John",
+                            lastName: "Smith",
+                            givenName: "Johnny",
+                            nationalIdentificationNumber: "220202A1234",
+                            email: "john.smith@domain.example",
+                            municipalityOfResidence: "Helsinki",
+                            municipalityOfResidenceNumber: "091",
                         },
                     },
                 }
@@ -2750,7 +2756,17 @@ class TestProfileWithVerifiedPersonalInformation:
         profile = Profile.objects.get(pk=profile_id)
 
         assert profile.user.uuid == user_id
-        assert profile.verified_personal_information.first_name == "John"
+        verified_personal_information = profile.verified_personal_information
+        assert verified_personal_information.first_name == "John"
+        assert verified_personal_information.last_name == "Smith"
+        assert verified_personal_information.given_name == "Johnny"
+        assert (
+            verified_personal_information.national_identification_number
+            == "220202A1234"
+        )
+        assert verified_personal_information.email == "john.smith@domain.example"
+        assert verified_personal_information.municipality_of_residence == "Helsinki"
+        assert verified_personal_information.municipality_of_residence_number == "091"
 
     def test_profile_with_verified_personal_information_can_be_created(
         self, rf, user_gql_client

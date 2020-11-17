@@ -666,6 +666,18 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
     first_name = graphene.String(description="First name(s).")
+    last_name = graphene.String(description="Last name.")
+    given_name = graphene.String(description="The name the person is called with.")
+    national_identification_number = graphene.String(
+        description="Can be social security number or other identifier."
+    )
+    email = graphene.String()
+    municipality_of_residence = graphene.String(
+        description="Official municipality of residence in Finland as a free form text."
+    )
+    municipality_of_residence_number = graphene.String(
+        description="Official municipality of residence in Finland as an official number."
+    )
 
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
