@@ -3,6 +3,7 @@ from itertools import chain
 import graphene
 import requests
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import F, OuterRef, Subquery
@@ -61,6 +62,8 @@ from .utils import (
     update_nested,
     user_has_staff_perms_to_view_profile,
 )
+
+User = get_user_model()
 
 AllowedEmailType = graphene.Enum.from_enum(
     EmailType, description=lambda e: e.label if e else ""
@@ -674,6 +677,10 @@ class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
     graphene.InputObjectType
 ):
+    user_id = graphene.UUID(
+        required=True,
+        description="The **user id** of the user the Profile is or will be associated with.",
+    )
     profile = graphene.InputField(
         ProfileWithVerifiedPersonalInformationInput, required=True
     )
@@ -700,12 +707,15 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
     @staticmethod
     def mutate(parent, info, input):
+        user_id = input.pop("user_id")
         profile_input = input.pop("profile")
         verified_personal_information = profile_input.pop(
             "verified_personal_information"
         )
 
-        profile = Profile.objects.create()
+        user = User.objects.create(uuid=user_id)
+
+        profile = Profile.objects.create(user=user)
         VerifiedPersonalInformation.objects.create(
             profile=profile, **verified_personal_information
         )

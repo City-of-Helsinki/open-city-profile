@@ -2719,10 +2719,14 @@ def test_profile_with_verified_personal_information_can_be_created(rf, user_gql_
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    query = """
+    user_id = uuid.uuid4()
+
+    t = Template(
+        """
     mutation {
         prof: createOrUpdateProfileWithVerifiedPersonalInformation(
             input: {
+                userId: \"${user_id}\",
                 profile: {
                     verifiedPersonalInformation: {
                         firstName: "John",
@@ -2736,12 +2740,16 @@ def test_profile_with_verified_personal_information_can_be_created(rf, user_gql_
         }
     }
     """
+    )
+    query = t.substitute(user_id=user_id)
 
     executed = user_gql_client.execute(query, context=request)
     global_profile_id = executed["data"]["prof"]["profile"]["id"]
     profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
     profile = Profile.objects.get(pk=profile_id)
+
+    assert profile.user.uuid == user_id
     assert profile.verified_personal_information.first_name == "John"
 
 
