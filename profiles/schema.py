@@ -736,7 +736,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             "verified_personal_information"
         )
         permanent_address_input = verified_personal_information_input.pop(
-            "permanent_address"
+            "permanent_address", None
         )
 
         user, created = User.objects.get_or_create(uuid=user_id_input)
@@ -747,13 +747,14 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             profile=profile, defaults=verified_personal_information_input
         )
 
-        try:
-            permanent_address = information.permanent_address
-            permanent_address.update(permanent_address_input)
-        except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
-            VerifiedPersonalInformationPermanentAddress.objects.create(
-                verified_personal_information=information, **permanent_address_input
-            )
+        if permanent_address_input:
+            try:
+                permanent_address = information.permanent_address
+                permanent_address.update(permanent_address_input)
+            except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
+                VerifiedPersonalInformationPermanentAddress.objects.create(
+                    verified_personal_information=information, **permanent_address_input
+                )
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile

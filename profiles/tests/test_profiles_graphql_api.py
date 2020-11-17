@@ -2717,7 +2717,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
 
 class TestProfileWithVerifiedPersonalInformation:
     @staticmethod
-    def execute_successful_profile_creation_test(user_id, rf, gql_client):
+    def execute_mutation(input_data, rf, gql_client):
         request = rf.post("/graphql")
         request.user = gql_client.user
 
@@ -2725,25 +2725,7 @@ class TestProfileWithVerifiedPersonalInformation:
             """
         mutation {
             prof: createOrUpdateProfileWithVerifiedPersonalInformation(
-                input: {
-                    userId: \"${user_id}\",
-                    profile: {
-                        verifiedPersonalInformation: {
-                            firstName: "John",
-                            lastName: "Smith",
-                            givenName: "Johnny",
-                            nationalIdentificationNumber: "220202A1234",
-                            email: "john.smith@domain.example",
-                            municipalityOfResidence: "Helsinki",
-                            municipalityOfResidenceNumber: "091",
-                            permanentAddress: {
-                                streetAddress: "Permanent Street 1",
-                                postalCode: "12345",
-                                postOffice: "Permanent City",
-                            },
-                        },
-                    },
-                }
+                input: ${input_data}
             ) {
                 profile {
                     id,
@@ -2752,13 +2734,44 @@ class TestProfileWithVerifiedPersonalInformation:
         }
         """
         )
-        query = t.substitute(user_id=user_id)
+        query = t.substitute(input_data=input_data)
 
         executed = gql_client.execute(query, context=request)
         global_profile_id = executed["data"]["prof"]["profile"]["id"]
         profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
-        profile = Profile.objects.get(pk=profile_id)
+        return Profile.objects.get(pk=profile_id)
+
+    @staticmethod
+    def execute_successful_profile_creation_test(user_id, rf, gql_client):
+        t = Template(
+            """
+        {
+            userId: "${user_id}",
+            profile: {
+                verifiedPersonalInformation: {
+                    firstName: "John",
+                    lastName: "Smith",
+                    givenName: "Johnny",
+                    nationalIdentificationNumber: "220202A1234",
+                    email: "john.smith@domain.example",
+                    municipalityOfResidence: "Helsinki",
+                    municipalityOfResidenceNumber: "091",
+                    permanentAddress: {
+                        streetAddress: "Permanent Street 1",
+                        postalCode: "12345",
+                        postOffice: "Permanent City",
+                    },
+                },
+            },
+        }
+        """
+        )
+        input_data = t.substitute(user_id=user_id)
+
+        profile = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+            input_data, rf, gql_client
+        )
 
         assert profile.user.uuid == user_id
         verified_personal_information = profile.verified_personal_information
@@ -2798,6 +2811,36 @@ class TestProfileWithVerifiedPersonalInformation:
         self.execute_successful_profile_creation_test(
             profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
         )
+
+    def test_do_not_touch_the_permanent_address_if_it_is_not_included_in_the_mutation(
+        self, profile_with_verified_personal_information, rf, user_gql_client,
+    ):
+        existing_address = (
+            profile_with_verified_personal_information.verified_personal_information.permanent_address
+        )
+
+        user_id = profile_with_verified_personal_information.user.uuid
+
+        t = Template(
+            """
+        {
+            userId: "${user_id}",
+            profile: {
+                verifiedPersonalInformation: {
+                },
+            },
+        }
+        """
+        )
+        input_data = t.substitute(user_id=user_id)
+
+        profile = self.execute_mutation(input_data, rf, user_gql_client)
+
+        verified_personal_information = profile.verified_personal_information
+        permanent_address = verified_personal_information.permanent_address
+        assert permanent_address.street_address == existing_address.street_address
+        assert permanent_address.postal_code == existing_address.postal_code
+        assert permanent_address.post_office == existing_address.post_office
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
