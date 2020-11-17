@@ -286,6 +286,23 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
     )
 
 
+class VerifiedPersonalInformationPermanentForeignAddress(models.Model, UpdateMixin):
+    RELATED_NAME = "permanent_foreign_address"
+
+    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
+    additional_address = fields.EncryptedCharField(max_length=1024, blank=True)
+    country_code = fields.EncryptedCharField(max_length=3, blank=True)
+
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name=RELATED_NAME,
+    )
+
+    def is_empty(self):
+        return not (self.street_address or self.additional_address or self.country_code)
+
+
 class DivisionOfInterest(models.Model):
     division = models.OneToOneField(
         AdministrativeDivision,

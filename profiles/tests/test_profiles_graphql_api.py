@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from string import Template
 
+import inflection
 import pytest
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -2767,6 +2768,11 @@ class TestProfileWithVerifiedPersonalInformation:
                         postalCode: "98765",
                         postOffice: "Temporary City",
                     },
+                    permanentForeignAddress: {
+                        streetAddress: "〒100-8994",
+                        additionalAddress: "東京都中央区八重洲1-5-3",
+                        countryCode: "JP",
+                    },
                 },
             },
         }
@@ -2798,6 +2804,12 @@ class TestProfileWithVerifiedPersonalInformation:
         assert temporary_address.street_address == "Temporary Street 2"
         assert temporary_address.postal_code == "98765"
         assert temporary_address.post_office == "Temporary City"
+        permanent_foreign_address = (
+            verified_personal_information.permanent_foreign_address
+        )
+        assert permanent_foreign_address.street_address == "〒100-8994"
+        assert permanent_foreign_address.additional_address == "東京都中央区八重洲1-5-3"
+        assert permanent_foreign_address.country_code == "JP"
 
     def test_profile_with_verified_personal_information_can_be_created(
         self, rf, user_gql_client
@@ -2821,7 +2833,10 @@ class TestProfileWithVerifiedPersonalInformation:
             profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
         )
 
-    @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+    @pytest.mark.parametrize(
+        "address_type",
+        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+    )
     def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
         self,
         profile_with_verified_personal_information,
@@ -2853,9 +2868,50 @@ class TestProfileWithVerifiedPersonalInformation:
 
         verified_personal_information = profile.verified_personal_information
         address = getattr(verified_personal_information, address_type)
+
         assert address.street_address == existing_address.street_address
-        assert address.postal_code == existing_address.postal_code
-        assert address.post_office == existing_address.post_office
+        if address_type == "permanent_foreign_address":
+            assert address.additional_address == existing_address.additional_address
+            assert address.country_code == existing_address.country_code
+        else:
+            assert address.postal_code == existing_address.postal_code
+            assert address.post_office == existing_address.post_office
+
+    @staticmethod
+    def execute_address_clearing_test(
+        address_type, address_field_names, profile, rf, gql_client
+    ):
+        user_id = profile.user.uuid
+
+        t = Template(
+            """
+        {
+            userId: "${user_id}",
+            profile: {
+                verifiedPersonalInformation: {
+                    ${address_type}: {
+                        ${address_fields}
+                    },
+                },
+            },
+        }
+        """
+        )
+
+        camel_case_address_type = inflection.camelize(address_type, False)
+        address_fields = "\n".join(f'{name}: "",' for name in address_field_names)
+
+        input_data = t.substitute(
+            user_id=user_id,
+            address_type=camel_case_address_type,
+            address_fields=address_fields,
+        )
+
+        profile = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+            input_data, rf, gql_client
+        )
+
+        assert not hasattr(profile.verified_personal_information, address_type)
 
     @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
     def test_delete_an_address_if_it_no_longer_has_any_data(
@@ -2865,30 +2921,28 @@ class TestProfileWithVerifiedPersonalInformation:
         rf,
         user_gql_client,
     ):
-        user_id = profile_with_verified_personal_information.user.uuid
+        address_field_names = ["streetAddress", "postalCode", "postOffice"]
 
-        t = Template(
-            """
-        {
-            userId: "${user_id}",
-            profile: {
-                verifiedPersonalInformation: {
-                    ${address_type}: {
-                        streetAddress: "",
-                        postalCode: "",
-                        postOffice: "",
-                    },
-                },
-            },
-        }
-        """
+        self.execute_address_clearing_test(
+            address_type,
+            address_field_names,
+            profile_with_verified_personal_information,
+            rf,
+            user_gql_client,
         )
-        camel_case_address_type = address_type.replace("_a", "A")
-        input_data = t.substitute(user_id=user_id, address_type=camel_case_address_type)
 
-        profile = self.execute_mutation(input_data, rf, user_gql_client)
+    def test_delete_permanent_foreign_address_if_it_no_longer_has_any_data(
+        self, profile_with_verified_personal_information, rf, user_gql_client,
+    ):
+        address_field_names = ["streetAddress", "additionalAddress", "countryCode"]
 
-        assert not hasattr(profile.verified_personal_information, address_type)
+        self.execute_address_clearing_test(
+            "permanent_foreign_address",
+            address_field_names,
+            profile_with_verified_personal_information,
+            rf,
+            user_gql_client,
+        )
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

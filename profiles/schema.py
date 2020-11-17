@@ -56,6 +56,7 @@ from .models import (
     TemporaryReadAccessToken,
     VerifiedPersonalInformation,
     VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
 from .utils import (
@@ -672,6 +673,12 @@ class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
     post_office = graphene.String()
 
 
+class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
+    street_address = graphene.String()
+    additional_address = graphene.String()
+    country_code = graphene.String()
+
+
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
     first_name = graphene.String(description="First name(s).")
     last_name = graphene.String(description="Last name.")
@@ -693,6 +700,10 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     temporary_address = graphene.InputField(
         VerifiedPersonalInformationAddressInput,
         description="The temporary residency address in Finland.",
+    )
+    permanent_foreign_address = graphene.InputField(
+        VerifiedPersonalInformationForeignAddressInput,
+        description="The temporary foreign (i.e. not in Finland) residency address.",
     )
 
 
@@ -744,6 +755,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
         address_types = [
             {"model": VerifiedPersonalInformationPermanentAddress},
             {"model": VerifiedPersonalInformationTemporaryAddress},
+            {"model": VerifiedPersonalInformationPermanentForeignAddress},
         ]
         for address_type in address_types:
             address_type["name"] = address_type["model"].RELATED_NAME

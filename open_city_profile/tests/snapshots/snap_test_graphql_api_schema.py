@@ -566,6 +566,12 @@ input VerifiedPersonalInformationAddressInput {
   postOffice: String
 }
 
+input VerifiedPersonalInformationForeignAddressInput {
+  streetAddress: String
+  additionalAddress: String
+  countryCode: String
+}
+
 input VerifiedPersonalInformationInput {
   firstName: String
   lastName: String
@@ -576,6 +582,7 @@ input VerifiedPersonalInformationInput {
   municipalityOfResidenceNumber: String
   permanentAddress: VerifiedPersonalInformationAddressInput
   temporaryAddress: VerifiedPersonalInformationAddressInput
+  permanentForeignAddress: VerifiedPersonalInformationForeignAddressInput
 }
 
 scalar _Any

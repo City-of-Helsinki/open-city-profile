@@ -4,6 +4,7 @@ black
 flake8
 freezegun
 importmagic
+inflection
 ipython
 isort
 jedi

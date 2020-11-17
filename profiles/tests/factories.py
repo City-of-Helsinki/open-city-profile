@@ -14,6 +14,7 @@ from profiles.models import (
     TemporaryReadAccessToken,
     VerifiedPersonalInformation,
     VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
 
@@ -49,6 +50,17 @@ class VerifiedPersonalInformationTemporaryAddressFactory(EncryptedAddressFactory
         model = VerifiedPersonalInformationTemporaryAddress
 
 
+class VerifiedPersonalInformationPermanentForeignAddressFactory(
+    factory.django.DjangoModelFactory
+):
+    street_address = factory.Faker("street_address", locale="jp_JP")
+    additional_address = factory.Faker("address", locale="jp_JP")
+    country_code = factory.Faker("country_code", representation="alpha-2")
+
+    class Meta:
+        model = VerifiedPersonalInformationPermanentForeignAddress
+
+
 class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
     permanent_address = factory.RelatedFactory(
@@ -57,6 +69,10 @@ class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
     )
     temporary_address = factory.RelatedFactory(
         VerifiedPersonalInformationTemporaryAddressFactory,
+        factory_related_name="verified_personal_information",
+    )
+    permanent_foreign_address = factory.RelatedFactory(
+        VerifiedPersonalInformationPermanentForeignAddressFactory,
         factory_related_name="verified_personal_information",
     )
 
