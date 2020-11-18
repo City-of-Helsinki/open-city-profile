@@ -41,7 +41,6 @@ Prerequisites:
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
-     * `GDPR_API_ENABLED`, enable the GDPR API for youth profiles
 
 2. Run `docker-compose up`
     * The project is now running at [localhost:8080](http://localhost:8080)

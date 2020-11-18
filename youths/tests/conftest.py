@@ -25,11 +25,6 @@ def setup_youth_membership_dates(settings):
     settings.YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
 
 
-@pytest.fixture(autouse=True)
-def setup_gdpr_api(settings):
-    settings.GDPR_API_ENABLED = True
-
-
 # Register factory fixtures
 register(ServiceFactory)
 
