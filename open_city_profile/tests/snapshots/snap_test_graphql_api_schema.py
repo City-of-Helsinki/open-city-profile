@@ -22,25 +22,6 @@ type AddServiceConnectionMutationPayload {
   clientMutationId: String
 }
 
-type AdditionalContactPersonNode implements Node {
-  id: ID!
-  youthProfile: YouthProfileType!
-  firstName: String!
-  lastName: String!
-  phone: String!
-  email: String!
-}
-
-type AdditionalContactPersonNodeConnection {
-  pageInfo: PageInfo!
-  edges: [AdditionalContactPersonNodeEdge]!
-}
-
-type AdditionalContactPersonNodeEdge {
-  node: AdditionalContactPersonNode
-  cursor: String!
-}
-
 type AddressNode implements Node {
   primary: Boolean!
   id: ID!
@@ -86,39 +67,6 @@ type AllowedDataFieldNodeEdge {
   cursor: String!
 }
 
-input ApproveYouthProfileMutationInput {
-  approvalToken: String!
-  approvalData: YouthProfileFields!
-  clientMutationId: String
-}
-
-type ApproveYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
-input CancelMyYouthProfileMutationInput {
-  expiration: Date
-  clientMutationId: String
-}
-
-type CancelMyYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
-input CancelYouthProfileMutationInput {
-  serviceType: ServiceType!
-  profileId: ID!
-  expiration: Date
-  clientMutationId: String
-}
-
-type CancelYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
 input ClaimProfileMutationInput {
   token: UUID!
   profile: ProfileInput
@@ -133,13 +81,6 @@ type ClaimProfileMutationPayload {
 enum ContactMethod {
   EMAIL
   SMS
-}
-
-input CreateAdditionalContactPersonInput {
-  firstName: String!
-  lastName: String!
-  phone: String!
-  email: String!
 }
 
 input CreateAddressInput {
@@ -176,31 +117,6 @@ type CreateMyProfileTemporaryReadAccessTokenMutationPayload {
   clientMutationId: String
 }
 
-input CreateMyYouthProfileInput {
-  schoolName: String
-  schoolClass: String
-  languageAtHome: YouthLanguage
-  approverFirstName: String
-  approverLastName: String
-  approverPhone: String
-  approverEmail: String
-  birthDate: Date!
-  photoUsageApproved: Boolean
-  addAdditionalContactPersons: [CreateAdditionalContactPersonInput]
-  updateAdditionalContactPersons: [UpdateAdditionalContactPersonInput]
-  removeAdditionalContactPersons: [ID]
-}
-
-input CreateMyYouthProfileMutationInput {
-  youthProfile: CreateMyYouthProfileInput!
-  clientMutationId: String
-}
-
-type CreateMyYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
 input CreatePhoneInput {
   primary: Boolean
   phone: String!
@@ -218,7 +134,6 @@ input CreateProfileInput {
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
   subscriptions: [SubscriptionInputType]
-  youthProfile: YouthProfileFields
   sensitivedata: SensitiveDataFields
   updateEmails: [UpdateEmailInput]
   removeEmails: [ID]
@@ -238,20 +153,6 @@ type CreateProfileMutationPayload {
   profile: ProfileNode
   clientMutationId: String
 }
-
-input CreateYouthProfileMutationInput {
-  serviceType: ServiceType!
-  profileId: ID!
-  youthProfile: CreateMyYouthProfileInput!
-  clientMutationId: String
-}
-
-type CreateYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
-scalar Date
 
 scalar DateTime
 
@@ -297,23 +198,7 @@ enum Language {
   SWEDISH
 }
 
-enum MembershipStatus {
-  ACTIVE
-  PENDING
-  EXPIRED
-  RENEWING
-}
-
 type Mutation {
-  createYouthProfile(input: CreateYouthProfileMutationInput!): CreateYouthProfileMutationPayload
-  createMyYouthProfile(input: CreateMyYouthProfileMutationInput!): CreateMyYouthProfileMutationPayload
-  updateYouthProfile(input: UpdateYouthProfileMutationInput!): UpdateYouthProfileMutationPayload
-  updateMyYouthProfile(input: UpdateMyYouthProfileMutationInput!): UpdateMyYouthProfileMutationPayload
-  renewYouthProfile(input: RenewYouthProfileMutationInput!): RenewYouthProfileMutationPayload
-  renewMyYouthProfile(input: RenewMyYouthProfileMutationInput!): RenewMyYouthProfileMutationPayload
-  approveYouthProfile(input: ApproveYouthProfileMutationInput!): ApproveYouthProfileMutationPayload
-  cancelYouthProfile(input: CancelYouthProfileMutationInput!): CancelYouthProfileMutationPayload
-  cancelMyYouthProfile(input: CancelMyYouthProfileMutationInput!): CancelMyYouthProfileMutationPayload
   updateMySubscription(input: UpdateMySubscriptionMutationInput!): UpdateMySubscriptionMutationPayload
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
@@ -372,7 +257,6 @@ input ProfileInput {
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
   subscriptions: [SubscriptionInputType]
-  youthProfile: YouthProfileFields
   sensitivedata: SensitiveDataFields
   updateEmails: [UpdateEmailInput]
   removeEmails: [ID]
@@ -398,7 +282,6 @@ type ProfileNode implements Node {
   contactMethod: ContactMethod
   sensitivedata: SensitiveDataNode
   serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
-  youthProfile: YouthProfileType
   subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection
 }
 
@@ -416,8 +299,6 @@ type ProfileNodeEdge {
 
 type Query {
   subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection
-  youthProfile(profileId: ID): YouthProfileType
-  youthProfileByApprovalToken(token: String): YouthProfileType
   profile(id: ID!, serviceType: ServiceType!): ProfileNode
   myProfile: ProfileNode
   downloadMyProfile(authorizationCode: String!): JSONString
@@ -426,26 +307,6 @@ type Query {
   profileWithAccessToken(token: UUID!): RestrictedProfileNode
   _entities(representations: [_Any]): [_Entity]
   _service: _Service
-}
-
-input RenewMyYouthProfileMutationInput {
-  clientMutationId: String
-}
-
-type RenewMyYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
-input RenewYouthProfileMutationInput {
-  serviceType: ServiceType!
-  profileId: ID!
-  clientMutationId: String
-}
-
-type RenewYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
 }
 
 type RestrictedProfileNode implements Node {
@@ -605,14 +466,6 @@ type TemporaryReadAccessTokenNode {
 
 scalar UUID
 
-input UpdateAdditionalContactPersonInput {
-  id: ID!
-  firstName: String
-  lastName: String
-  phone: String
-  email: String
-}
-
 input UpdateAddressInput {
   countryCode: String
   primary: Boolean
@@ -650,16 +503,6 @@ type UpdateMySubscriptionMutationPayload {
   clientMutationId: String
 }
 
-input UpdateMyYouthProfileMutationInput {
-  youthProfile: UpdateYouthProfileInput!
-  clientMutationId: String
-}
-
-type UpdateMyYouthProfileMutationPayload {
-  youthProfile: YouthProfileType
-  clientMutationId: String
-}
-
 input UpdatePhoneInput {
   primary: Boolean
   id: ID!
@@ -678,7 +521,6 @@ input UpdateProfileInput {
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
   subscriptions: [SubscriptionInputType]
-  youthProfile: YouthProfileFields
   sensitivedata: SensitiveDataFields
   id: ID!
   updateEmails: [UpdateEmailInput]
@@ -698,78 +540,6 @@ input UpdateProfileMutationInput {
 type UpdateProfileMutationPayload {
   profile: ProfileNode
   clientMutationId: String
-}
-
-input UpdateYouthProfileInput {
-  schoolName: String
-  schoolClass: String
-  languageAtHome: YouthLanguage
-  approverFirstName: String
-  approverLastName: String
-  approverPhone: String
-  approverEmail: String
-  birthDate: Date
-  photoUsageApproved: Boolean
-  addAdditionalContactPersons: [CreateAdditionalContactPersonInput]
-  updateAdditionalContactPersons: [UpdateAdditionalContactPersonInput]
-  removeAdditionalContactPersons: [ID]
-  resendRequestNotification: Boolean
-}
-
-input UpdateYouthProfileMutationInput {
-  serviceType: ServiceType!
-  profileId: ID!
-  youthProfile: UpdateYouthProfileInput!
-  clientMutationId: String
-}
-
-type UpdateYouthProfileMutationPayload {
-  clientMutationId: String
-}
-
-enum YouthLanguage {
-  FINNISH
-  ENGLISH
-  SWEDISH
-  SOMALI
-  ARABIC
-  ESTONIAN
-  RUSSIAN
-}
-
-input YouthProfileFields {
-  schoolName: String
-  schoolClass: String
-  languageAtHome: YouthLanguage
-  approverFirstName: String
-  approverLastName: String
-  approverPhone: String
-  approverEmail: String
-  birthDate: Date
-  photoUsageApproved: Boolean
-  addAdditionalContactPersons: [CreateAdditionalContactPersonInput]
-  updateAdditionalContactPersons: [UpdateAdditionalContactPersonInput]
-  removeAdditionalContactPersons: [ID]
-}
-
-type YouthProfileType {
-  profile: ProfileNode!
-  membershipNumber: String
-  birthDate: Date!
-  schoolName: String!
-  schoolClass: String!
-  expiration: Date!
-  approverFirstName: String!
-  approverLastName: String!
-  approverPhone: String!
-  approverEmail: String!
-  approvalNotificationTimestamp: DateTime
-  approvedTime: DateTime
-  photoUsageApproved: Boolean
-  additionalContactPersons(before: String, after: String, first: Int, last: Int): AdditionalContactPersonNodeConnection!
-  languageAtHome: YouthLanguage
-  membershipStatus: MembershipStatus
-  renewable: Boolean
 }
 
 scalar _Any

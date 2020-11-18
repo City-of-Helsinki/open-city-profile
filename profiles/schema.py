@@ -42,14 +42,6 @@ from subscriptions.schema import (
     SubscriptionNode,
     UpdateMySubscriptionMutation,
 )
-from youths.schema import (
-    CreateMyYouthProfileMutation,
-    CreateYouthProfileMutation,
-    UpdateMyYouthProfileMutation,
-    UpdateYouthProfileMutation,
-    YouthProfileFields,
-    YouthProfileType,
-)
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import (
@@ -425,9 +417,6 @@ class ProfileNode(RestrictedProfileNode):
     service_connections = DjangoFilterConnectionField(
         ServiceConnectionType, description="List of the profile's connected services."
     )
-    youth_profile = graphene.Field(
-        YouthProfileType, description="The Youth membership data of the profile."
-    )
     subscriptions = DjangoFilterConnectionField(SubscriptionNode)
 
     def resolve_service_connections(self, info, **kwargs):
@@ -540,7 +529,6 @@ class ProfileInputBase(graphene.InputObjectType):
         CreateAddressInput, description="Add addresses to profile."
     )
     subscriptions = graphene.List(SubscriptionInputType)
-    youth_profile = graphene.InputField(YouthProfileFields)
     sensitivedata = graphene.InputField(SensitiveDataFields)
 
 
@@ -576,7 +564,6 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         profile_data = input.pop("profile")
-        youth_profile_data = profile_data.pop("youth_profile", None)
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
             (Phone, profile_data.pop("add_phones", [])),
@@ -590,11 +577,6 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         for model, data in nested_to_create:
             create_nested(model, profile, data)
-
-        if youth_profile_data:
-            CreateMyYouthProfileMutation().mutate_and_get_payload(
-                root, info, youth_profile=youth_profile_data
-            )
 
         validate_primary_email(profile)
 
@@ -648,7 +630,6 @@ class CreateProfileMutation(relay.ClientIDMutation):
         # serviceType passed on to the sub resolvers
         info.context.service_type = input["service_type"]
         profile_data = input.pop("profile")
-        youth_profile_data = profile_data.pop("youth_profile", None)
         sensitivedata = profile_data.pop("sensitivedata", None)
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
@@ -671,15 +652,6 @@ class CreateProfileMutation(relay.ClientIDMutation):
                     _("You do not have permission to perform this action.")
                 )
 
-        if youth_profile_data:
-            CreateYouthProfileMutation().mutate_and_get_payload(
-                root,
-                info,
-                youth_profile=youth_profile_data,
-                service_type=input["service_type"],
-                profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.pk),
-            )
-
         # create the service connection for the profile
         profile.service_connections.create(service=service)
 
@@ -699,16 +671,11 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         profile_data = input.pop("profile")
-        youth_profile_data = profile_data.pop("youth_profile", None)
         sensitive_data = profile_data.pop("sensitivedata", None)
         subscription_data = profile_data.pop("subscriptions", [])
         profile = Profile.objects.get(user=info.context.user)
         update_profile(profile, profile_data)
 
-        if youth_profile_data:
-            UpdateMyYouthProfileMutation().mutate_and_get_payload(
-                root, info, youth_profile=youth_profile_data
-            )
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
 
@@ -760,18 +727,8 @@ class UpdateProfileMutation(relay.ClientIDMutation):
         profile = graphene.Node.get_node_from_global_id(
             info, profile_data.pop("id"), only_type=ProfileNode
         )
-        youth_profile_data = profile_data.pop("youth_profile", None)
         sensitive_data = profile_data.pop("sensitivedata", None)
         update_profile(profile, profile_data)
-
-        if youth_profile_data:
-            UpdateYouthProfileMutation().mutate_and_get_payload(
-                root,
-                info,
-                youth_profile=youth_profile_data,
-                service_type=input["service_type"],
-                profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.pk),
-            )
 
         if sensitive_data:
             if info.context.user.has_perm("can_manage_sensitivedata", service):
@@ -998,22 +955,19 @@ class Mutation(graphene.ObjectType):
     create_my_profile = CreateMyProfileMutation.Field(
         description="Creates a new profile based on the given data. The new profile is linked to the currently "
         "authenticated user.\n\nOne or several of the following is possible to add:\n\n* Email\n"
-        "* Address\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
-        "to the profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "* Address\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
     )
     create_profile = CreateProfileMutation.Field()
     # TODO: Add the complete list of error codes
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
-        "\n* Phone\n\nIf youth data is given, a youth profile will also be created and linked "
-        "to the profile **or** the existing youth profile will be updated if the profile is already "
-        "linked to a youth profile.\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
     )
     update_profile = UpdateProfileMutation.Field(
         description="Updates the profile with id given as an argument based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
-        "\n* Phone\n\nIf youth data or sensitive data is given, associated data will also be created "
+        "\n* Phone\n\nIf sensitive data is given, associated data will also be created "
         "and linked to the profile **or** the existing data set will be updated if the profile is "
         "already linked to it.\n\nRequires elevated privileges.\n\nPossible error codes:\n\n* `TODO`"
     )
