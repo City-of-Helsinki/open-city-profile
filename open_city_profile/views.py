@@ -1,5 +1,5 @@
 import sentry_sdk
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
@@ -17,6 +17,7 @@ from open_city_profile.consts import (
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     TOKEN_EXPIRED_ERROR,
+    VALIDATION_ERROR,
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
@@ -40,6 +41,7 @@ error_codes_shared = {
     PermissionDenied: PERMISSION_DENIED_ERROR,
     JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
+    ValidationError: VALIDATION_ERROR,
     CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
