@@ -1099,7 +1099,9 @@ class Mutation(graphene.ObjectType):
             "Requires elevated privileges.\n\n"
             "Possible error codes:\n\n"
             "* `PERMISSION_DENIED_ERROR`: "
-            "The current user doesn't have the reguired permissions to perform this action."
+            "The current user doesn't have the reguired permissions to perform this action.\n"
+            "* `VALIDATION_ERROR`: "
+            "The given input doesn't pass validation."
         )
     )
     # fmt: on

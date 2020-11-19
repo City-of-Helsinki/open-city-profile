@@ -261,6 +261,10 @@ class VerifiedPersonalInformation(models.Model):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 class EncryptedAddress(models.Model, UpdateMixin):
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)

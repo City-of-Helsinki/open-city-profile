@@ -18,6 +18,7 @@ from .factories import (
     EmailFactory,
     ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
+    VerifiedPersonalInformationFactory,
 )
 
 User = get_user_model()
@@ -272,6 +273,41 @@ def test_validation_should_fail_with_invalid_email():
     e = Email("!dsdsd{}{}{}{}{}{")
     with pytest.raises(ValidationError):
         e.save()
+
+
+class TestVerifiedPersonalInformationValidation:
+    @staticmethod
+    def passes_validation(instance):
+        try:
+            instance.save()
+        except ValidationError as err:
+            assert err is None
+
+    @staticmethod
+    def fails_validation(instance):
+        with pytest.raises(ValidationError):
+            instance.save()
+
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [
+            ("first_name", 1024),
+            ("last_name", 1024),
+            ("given_name", 1024),
+            ("national_identification_number", 1024),
+            ("email", 1024),
+            ("municipality_of_residence", 1024),
+            ("municipality_of_residence_number", 4),
+        ],
+    )
+    def test_string_field_max_length(self, field_name, max_length):
+        info = VerifiedPersonalInformationFactory()
+
+        setattr(info, field_name, "x" * max_length)
+        self.passes_validation(info)
+
+        setattr(info, field_name, "x" * (max_length + 1))
+        self.fails_validation(info)
 
 
 class TestTemporaryReadAccessTokenValidityDuration:

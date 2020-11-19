@@ -2741,7 +2741,14 @@ class TestProfileWithVerifiedPersonalInformation:
         )
         query = t.substitute(input_data=input_data)
 
-        executed = gql_client.execute(query, context=request)
+        return gql_client.execute(query, context=request)
+
+    @staticmethod
+    def execute_successful_mutation(input_data, rf, gql_client):
+        executed = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+            input_data, rf, gql_client
+        )
+
         global_profile_id = executed["data"]["prof"]["profile"]["id"]
         profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
@@ -2784,7 +2791,7 @@ class TestProfileWithVerifiedPersonalInformation:
         )
         input_data = t.substitute(user_id=user_id)
 
-        profile = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
             input_data, rf, gql_client
         )
 
@@ -2895,7 +2902,7 @@ class TestProfileWithVerifiedPersonalInformation:
         )
         input_data = t.substitute(user_id=user_id)
 
-        profile = self.execute_mutation(input_data, rf, user_gql_client)
+        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
 
         verified_personal_information = profile.verified_personal_information
         address = getattr(verified_personal_information, address_type)
@@ -2938,7 +2945,7 @@ class TestProfileWithVerifiedPersonalInformation:
             address_fields=address_fields,
         )
 
-        profile = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
             input_data, rf, gql_client
         )
 
@@ -2974,6 +2981,24 @@ class TestProfileWithVerifiedPersonalInformation:
             rf,
             user_gql_client,
         )
+
+    def test_invalid_input_causes_a_validation_error(self, rf, user_gql_client):
+        t = Template(
+            """
+        {
+            userId: "03117666-117D-4F6B-80B1-A3A92B389711",
+            profile: {
+                verifiedPersonalInformation: {
+                    firstName: "${long_name}"
+                }
+            }
+        }
+        """
+        )
+        input_data = t.substitute(long_name="x" * 1025)
+
+        executed = self.execute_mutation(input_data, rf, user_gql_client)
+        assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
