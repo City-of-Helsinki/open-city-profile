@@ -16,7 +16,6 @@ urlpatterns = [
             GraphQLView.as_view(graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG)
         ),
     ),
-    path("profiles/", include("youths.urls")),
 ]
 
 

@@ -46,7 +46,6 @@ env = environ.Env(
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
     AUDIT_LOG_USERNAME=(bool, False),
-    GDPR_API_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
@@ -330,5 +329,3 @@ LOGGING = {
     },
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
-
-GDPR_API_ENABLED = env.bool("GDPR_API_ENABLED")
