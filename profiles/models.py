@@ -294,7 +294,9 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
     )
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(models.Model, UpdateMixin):
+class VerifiedPersonalInformationPermanentForeignAddress(
+    ValidateOnSaveModel, UpdateMixin
+):
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)

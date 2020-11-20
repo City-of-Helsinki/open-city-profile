@@ -334,6 +334,21 @@ class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
         )
 
 
+class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
+    ValidationTestBase
+):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [("street_address", 1024), ("additional_address", 1024), ("country_code", 3)],
+    )
+    def test_string_field_max_length(self, field_name, max_length):
+        address = VerifiedPersonalInformationFactory().permanent_foreign_address
+
+        self.execute_string_field_max_length_validation_test(
+            address, field_name, max_length
+        )
+
+
 class TestTemporaryReadAccessTokenValidityDuration:
     def test_by_default_validity_duration_is_two_days(self):
         token = TemporaryReadAccessToken()
