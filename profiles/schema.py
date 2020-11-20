@@ -668,30 +668,47 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
 
 class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
-    street_address = graphene.String()
-    postal_code = graphene.String()
-    post_office = graphene.String()
+    street_address = graphene.String(
+        description="Street address with possible house number etc. Max length 1024 characters."
+    )
+    postal_code = graphene.String(
+        description="Postal code. Max length 1024 characters."
+    )
+    post_office = graphene.String(
+        description="Post office. Max length 1024 characters."
+    )
 
 
 class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
-    street_address = graphene.String()
-    additional_address = graphene.String()
-    country_code = graphene.String()
+    street_address = graphene.String(
+        description="Street address or whatever is the _first part_ of the address. Max length 1024 characters."
+    )
+    additional_address = graphene.String(
+        description="Additional address information, perhaps town, county, state, country etc. "
+        "Max length 1024 characters."
+    )
+    country_code = graphene.String(
+        description="An ISO 3166-1 country code. Max length 3 characters."
+    )
 
 
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
-    first_name = graphene.String(description="First name(s).")
-    last_name = graphene.String(description="Last name.")
-    given_name = graphene.String(description="The name the person is called with.")
-    national_identification_number = graphene.String(
-        description="Can be social security number or other identifier."
+    first_name = graphene.String(
+        description="First name(s). Max length 1024 characters."
     )
-    email = graphene.String()
+    last_name = graphene.String(description="Last name. Max length 1024 characters.")
+    given_name = graphene.String(
+        description="The name the person is called with. Max length 1024 characters."
+    )
+    national_identification_number = graphene.String(
+        description="Can be social security number or other person identifier. Max length 1024 characters."
+    )
+    email = graphene.String(description="Email. Max length 1024 characters.")
     municipality_of_residence = graphene.String(
-        description="Official municipality of residence in Finland as a free form text."
+        description="Official municipality of residence in Finland as a free form text. Max length 1024 characters."
     )
     municipality_of_residence_number = graphene.String(
-        description="Official municipality of residence in Finland as an official number."
+        description="Official municipality of residence in Finland as an official number. Max length 4 characters."
     )
     permanent_address = graphene.InputField(
         VerifiedPersonalInformationAddressInput,
