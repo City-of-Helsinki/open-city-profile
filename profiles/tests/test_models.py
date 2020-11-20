@@ -275,7 +275,7 @@ def test_validation_should_fail_with_invalid_email():
         e.save()
 
 
-class TestVerifiedPersonalInformationValidation:
+class ValidationTestBase:
     @staticmethod
     def passes_validation(instance):
         try:
@@ -288,6 +288,18 @@ class TestVerifiedPersonalInformationValidation:
         with pytest.raises(ValidationError):
             instance.save()
 
+    @staticmethod
+    def execute_string_field_max_length_validation_test(
+        instance, field_name, max_length
+    ):
+        setattr(instance, field_name, "x" * max_length)
+        ValidationTestBase.passes_validation(instance)
+
+        setattr(instance, field_name, "x" * (max_length + 1))
+        ValidationTestBase.fails_validation(instance)
+
+
+class TestVerifiedPersonalInformationValidation(ValidationTestBase):
     @pytest.mark.parametrize(
         "field_name,max_length",
         [
@@ -303,11 +315,23 @@ class TestVerifiedPersonalInformationValidation:
     def test_string_field_max_length(self, field_name, max_length):
         info = VerifiedPersonalInformationFactory()
 
-        setattr(info, field_name, "x" * max_length)
-        self.passes_validation(info)
+        self.execute_string_field_max_length_validation_test(
+            info, field_name, max_length
+        )
 
-        setattr(info, field_name, "x" * (max_length + 1))
-        self.fails_validation(info)
+
+@pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [("street_address", 1024), ("postal_code", 1024), ("post_office", 1024)],
+    )
+    def test_string_field_max_length(self, address_type, field_name, max_length):
+        address = getattr(VerifiedPersonalInformationFactory(), address_type)
+
+        self.execute_string_field_max_length_validation_test(
+            address, field_name, max_length
+        )
 
 
 class TestTemporaryReadAccessTokenValidityDuration:

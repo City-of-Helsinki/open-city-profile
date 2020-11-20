@@ -17,7 +17,7 @@ from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
-from utils.models import SerializableMixin, UpdateMixin, UUIDModel
+from utils.models import SerializableMixin, UpdateMixin, UUIDModel, ValidateOnSaveModel
 
 from .enums import (
     AddressType,
@@ -237,7 +237,7 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
-class VerifiedPersonalInformation(models.Model):
+class VerifiedPersonalInformation(ValidateOnSaveModel):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
@@ -261,12 +261,8 @@ class VerifiedPersonalInformation(models.Model):
             ),
         ]
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
-
-class EncryptedAddress(models.Model, UpdateMixin):
+class EncryptedAddress(ValidateOnSaveModel, UpdateMixin):
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)
     postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
     post_office = fields.EncryptedCharField(max_length=1024, blank=True)
