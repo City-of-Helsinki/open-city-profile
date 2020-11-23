@@ -763,6 +763,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
     @staticmethod
     @permission_required("profiles.manage_verified_personal_information")
+    @transaction.atomic
     def mutate(parent, info, input):
         user_id_input = input.pop("user_id")
         profile_input = input.pop("profile")

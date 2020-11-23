@@ -26,6 +26,10 @@ from profiles.models import (
     _default_temporary_read_access_token_validity_duration,
     Profile,
     TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
+    VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationPermanentForeignAddress,
+    VerifiedPersonalInformationTemporaryAddress,
 )
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
@@ -2982,23 +2986,40 @@ class TestProfileWithVerifiedPersonalInformation:
             user_gql_client,
         )
 
-    def test_invalid_input_causes_a_validation_error(self, rf, user_gql_client):
-        t = Template(
-            """
+    @staticmethod
+    def execute_mutation_with_invalid_input(rf, gql_client):
+        input_data = """
         {
             userId: "03117666-117D-4F6B-80B1-A3A92B389711",
             profile: {
                 verifiedPersonalInformation: {
-                    firstName: "${long_name}"
+                    permanentForeignAddress: {
+                        countryCode: "France"
+                    }
                 }
             }
         }
         """
-        )
-        input_data = t.substitute(long_name="x" * 1025)
 
-        executed = self.execute_mutation(input_data, rf, user_gql_client)
+        return TestProfileWithVerifiedPersonalInformation.execute_mutation(
+            input_data, rf, gql_client
+        )
+
+    def test_invalid_input_causes_a_validation_error(self, rf, user_gql_client):
+        executed = self.execute_mutation_with_invalid_input(rf, user_gql_client)
         assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
+
+    @pytest.mark.django_db(transaction=True)
+    def test_database_stays_unmodified_when_mutation_is_not_completed(
+        self, rf, user_gql_client
+    ):
+        self.execute_mutation_with_invalid_input(rf, user_gql_client)
+
+        assert Profile.objects.count() == 0
+        assert VerifiedPersonalInformation.objects.count() == 0
+        assert VerifiedPersonalInformationPermanentAddress.objects.count() == 0
+        assert VerifiedPersonalInformationTemporaryAddress.objects.count() == 0
+        assert VerifiedPersonalInformationPermanentForeignAddress.objects.count() == 0
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
