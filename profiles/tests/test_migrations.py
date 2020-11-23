@@ -3,7 +3,7 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 
 
-def test_fix_primary_email_migration(transactional_db):
+def test_fix_primary_email_migration(migration_test_db):
     executor = MigrationExecutor(connection)
     app = "profiles"
     migrate_from = [(app, "0024_order_emails")]

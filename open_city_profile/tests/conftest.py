@@ -1,6 +1,7 @@
 import factory.random
 import pytest
 from django.contrib.auth.models import AnonymousUser
+from django.core.management import call_command
 from graphene.test import Client as GraphQLClient
 from graphql import build_client_schema, introspection_query
 
@@ -16,6 +17,16 @@ from open_city_profile.views import GraphQLView
 @pytest.fixture(autouse=True)
 def autouse_db(db):
     pass
+
+
+@pytest.fixture
+def migration_test_db(request, transactional_db):
+    def reset_migrations():
+        call_command("migrate", verbosity=0)
+
+    request.addfinalizer(reset_migrations)
+
+    return transactional_db
 
 
 @pytest.fixture(autouse=True)
