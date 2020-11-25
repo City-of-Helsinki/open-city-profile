@@ -22,7 +22,7 @@ django-environ==0.4.5     # via -r requirements.in
 django-filter==2.2.0      # via -r requirements.in
 django-graphql-jwt==0.2.2  # via -r requirements.in
 django-guardian==2.1.0    # via -r requirements.in
-django-helusers==0.4.5    # via -r requirements.in
+django-helusers==0.5.6    # via -r requirements.in
 django-ilmoitin==0.2.0    # via -r requirements.in
 django-import-export==2.0.2  # via -r requirements.in
 django-js-asset==1.2.2    # via django-mptt
