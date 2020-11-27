@@ -141,7 +141,6 @@ USE_TZ = True
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
-    "helusers.providers.helsinki_oidc",
     "helusers.apps.HelusersConfig",
     "helusers.apps.HelusersAdminConfig",
     "django.contrib.auth",
@@ -151,9 +150,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
     "django_filters",
     "parler",
     "thesaurus",
@@ -218,13 +214,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
-SOCIALACCOUNT_PROVIDERS = {"helsinki_oidc": {"VERIFIED_EMAIL": True}}
-LOGIN_REDIRECT_URL = "/"
-ACCOUNT_LOGOUT_ON_GET = True
-SOCIALACCOUNT_ADAPTER = "helusers.adapter.SocialAccountAdapter"
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
 
 OIDC_API_TOKEN_AUTH = {
     "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
