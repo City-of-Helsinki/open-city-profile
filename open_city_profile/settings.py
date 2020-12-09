@@ -170,6 +170,7 @@ INSTALLED_APPS = [
     "adminsortable",
     "subscriptions",
     "import_export",
+    "open_city_profile.apps.OpenCityProfileConfig",
 ]
 
 MIDDLEWARE = [
