@@ -57,6 +57,7 @@ env = environ.Env(
     USE_X_FORWARDED_HOST=(bool, None),
     CSRF_TRUSTED_ORIGINS=(list, []),
     TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
+    GDPR_AUTH_CALLBACK_URL=(str, ""),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -319,3 +320,5 @@ LOGGING = {
     },
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
+
+GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")
