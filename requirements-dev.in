@@ -15,7 +15,9 @@ pytest
 pytest-cov
 pytest-django
 pytest-mock
+python-jose
 requests-mock
+responses
 pytest-factoryboy
 rope
 yapf
