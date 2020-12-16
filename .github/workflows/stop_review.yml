@@ -17,3 +17,4 @@ jobs:
         uses: andersinno/kolga-review-cleanup-action@v2
         with:
           namespace: ${{ env.K8S_NAMESPACE }}
+
