@@ -62,12 +62,15 @@ jobs:
     #       K8S_SECRET_AUDIT_LOGGING_ENABLED: 1
     #       K8S_SECRET_GDPR_API_ENABLED: 1
 
-      - name: Setup Tunnistamo
+      - name: Setup KUBECONFIG
         run: |
           echo "${KUBECONFIG_RAW}" > $(pwd)/kubeconfig
-          echo "KUBECONFIG=$(pwd)/kubeconfig"
           echo "KUBECONFIG=$(pwd)/kubeconfig" >> $GITHUB_ENV
-          kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}' --kubeconfig $(pwd)/kubeconfig
-          echo "Kubeconfig used: ${KUBECONFIG}"
-          echo "CLIENT_URL=$(kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}' --kubeconfig $(pwd)/kubeconfig)" >> $GITHUB_ENV
+
+      - name: Get Tunnistamo Info
+        run: |
+          echo "Using KUBECONFIG ${KUBECONFIG}"
+          echo "CLIENT_URL=$(kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')" >> $GITHUB_ENV
+
+      - name: Add new client
           echo "Setting new client for ${CLIENT_URL}"
