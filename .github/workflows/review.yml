@@ -73,4 +73,5 @@ jobs:
           echo "CLIENT_URL=$(kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')" >> $GITHUB_ENV
 
       - name: Add new client
+        run: |
           echo "Setting new client for ${CLIENT_URL}"
