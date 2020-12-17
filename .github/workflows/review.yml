@@ -17,54 +17,54 @@ env:
   SERVICE_PORT: "8080"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    name: Build
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build
-        uses: andersinno/kolga-build-action@v2
+#   build:
+#     runs-on: ubuntu-latest
+#     name: Build
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: Build
+#         uses: andersinno/kolga-build-action@v2
 
   review:
     runs-on: ubuntu-latest
-    needs: build
+    # needs: build
     name: Review
     steps:
       - uses: actions/checkout@v2
       - uses: andersinno/kolga-setup-action@v2
 
-      - name: Review-Services
-        uses: andersinno/kolga-deploy-service-action@v2
-        with:
-          projects: OPEN_CITY_PROFILE
-        env:
-          POSTGRES_IMAGE: "docker.io/andersinnovations/postgis:11-bitnami"
+    #   - name: Review-Services
+    #     uses: andersinno/kolga-deploy-service-action@v2
+    #     with:
+    #       projects: OPEN_CITY_PROFILE
+    #     env:
+    #       POSTGRES_IMAGE: "docker.io/andersinnovations/postgis:11-bitnami"
 
-      - name: Deploy
-        uses: andersinno/kolga-deploy-action@v2
-        env:
-          ENVIRONMENT_URL: https://${{ env.K8S_NAMESPACE }}.${{ env.BASE_DOMAIN }}
-          K8S_SECRET_ALLOWED_HOSTS: "*"
-          K8S_SECRET_DEBUG: 1
-          K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
-          K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
-          K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso-test/openid"
-          K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
-          K8S_SECRET_VERSION: ${{ github.sha }}
-          K8S_SECRET_MAIL_MAILGUN_KEY: ${{ secrets.GH_MAILGUN_API_KEY }}
-          K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
-          K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
-          K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
-          K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
-          K8S_SECRET_FIELD_ENCRYPTION_KEYS: ${{ secrets.GH_REVIEW_FIELD_ENCRYPTION_KEYS }}
-          K8S_SECRET_ENABLE_GRAPHIQL: 1
-          K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
-          K8S_SECRET_AUDIT_LOGGING_ENABLED: 1
-          K8S_SECRET_GDPR_API_ENABLED: 1
+    #   - name: Deploy
+    #     uses: andersinno/kolga-deploy-action@v2
+    #     env:
+    #       ENVIRONMENT_URL: https://${{ env.K8S_NAMESPACE }}.${{ env.BASE_DOMAIN }}
+    #       K8S_SECRET_ALLOWED_HOSTS: "*"
+    #       K8S_SECRET_DEBUG: 1
+    #       K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
+    #       K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
+    #       K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso-test/openid"
+    #       K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
+    #       K8S_SECRET_VERSION: ${{ github.sha }}
+    #       K8S_SECRET_MAIL_MAILGUN_KEY: ${{ secrets.GH_MAILGUN_API_KEY }}
+    #       K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
+    #       K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
+    #       K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
+    #       K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
+    #       K8S_SECRET_FIELD_ENCRYPTION_KEYS: ${{ secrets.GH_REVIEW_FIELD_ENCRYPTION_KEYS }}
+    #       K8S_SECRET_ENABLE_GRAPHIQL: 1
+    #       K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
+    #       K8S_SECRET_AUDIT_LOGGING_ENABLED: 1
+    #       K8S_SECRET_GDPR_API_ENABLED: 1
 
       - name: Setup Tunnistamo
         run: |
-          printf "${{ secrets.KUBECONFIG_RAW }}" > $(pwd)/kubeconfig
+          echo "${KUBECONFIG_RAW}" > $(pwd)/kubeconfig
           KUBECONFIG=$(pwd)/kubeconfig
           CLIENT_URL=$(kubectl get ingress -n palvelutarjotin-ui-dev-github-actions-541 -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')
           echo "Setting new client for ${CLIENT_URL}"
