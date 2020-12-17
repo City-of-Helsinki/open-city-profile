@@ -66,5 +66,7 @@ jobs:
         run: |
           echo "${KUBECONFIG_RAW}" > $(pwd)/kubeconfig
           echo "KUBECONFIG=$(pwd)/kubeconfig" >> $GITHUB_ENV
+          kubectl get ingress -n palvelutarjotin-ui-dev-github-actions-541 -o jsonpath='{.items[0].spec.tls[0].hosts[0]}' --kubeconfig $(pwd)/kubeconfig
+          echo "Kubeconfig used: ${KUBECONFIG}"
           echo "CLIENT_URL=$(kubectl get ingress -n palvelutarjotin-ui-dev-github-actions-541 -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')" >> $GITHUB_ENV
           echo "Setting new client for ${CLIENT_URL}"
