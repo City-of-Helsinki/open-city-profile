@@ -65,9 +65,9 @@ jobs:
       - name: Setup Tunnistamo
         run: |
           echo "${KUBECONFIG_RAW}" > $(pwd)/kubeconfig
+          echo "KUBECONFIG=$(pwd)/kubeconfig"
           echo "KUBECONFIG=$(pwd)/kubeconfig" >> $GITHUB_ENV
           kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}' --kubeconfig $(pwd)/kubeconfig
           echo "Kubeconfig used: ${KUBECONFIG}"
-          kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}'
-          echo "CLIENT_URL=$(kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')" >> $GITHUB_ENV
+          echo "CLIENT_URL=$(kubectl get ingress -n ahti-qa -o jsonpath='{.items[0].spec.tls[0].hosts[0]}' --kubeconfig $(pwd)/kubeconfig)" >> $GITHUB_ENV
           echo "Setting new client for ${CLIENT_URL}"
