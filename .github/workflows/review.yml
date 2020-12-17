@@ -66,5 +66,5 @@ jobs:
         run: |
           printf "${{ secrets.KUBECONFIG_RAW }}" > $(pwd)/kubeconfig
           KUBECONFIG=$(pwd)/kubeconfig
-          CLIENT_URL=$(./kubectl get ingress -n palvelutarjotin-ui-dev-github-actions-541 -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')
+          CLIENT_URL=$(kubectl get ingress -n palvelutarjotin-ui-dev-github-actions-541 -o jsonpath='{.items[0].spec.tls[0].hosts[0]}')
           echo "Setting new client for ${CLIENT_URL}"
