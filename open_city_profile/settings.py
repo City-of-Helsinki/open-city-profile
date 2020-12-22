@@ -61,6 +61,7 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(list, []),
     TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
     GDPR_AUTH_CALLBACK_URL=(str, ""),
+    USE_HELUSERS_REQUEST_JWT_AUTH=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -220,6 +221,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
 
+USE_HELUSERS_REQUEST_JWT_AUTH = env.bool("USE_HELUSERS_REQUEST_JWT_AUTH")
+
 OIDC_API_TOKEN_AUTH = {
     "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
     "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
@@ -231,9 +234,12 @@ OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "open_city_profile.oidc.GraphQLApiTokenAuthentication",
     "guardian.backends.ObjectPermissionBackend",
 ]
+if not USE_HELUSERS_REQUEST_JWT_AUTH:
+    AUTHENTICATION_BACKENDS.insert(
+        1, "open_city_profile.oidc.GraphQLApiTokenAuthentication"
+    )
 
 # Profiles related settings
 
@@ -267,10 +273,13 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
-    "MIDDLEWARE": ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+    "MIDDLEWARE": ["open_city_profile.graphene.JWTMiddleware"]
+    if USE_HELUSERS_REQUEST_JWT_AUTH
+    else ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
 }
 
-GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
+if not USE_HELUSERS_REQUEST_JWT_AUTH:
+    GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")
