@@ -42,7 +42,7 @@ class Service(TranslatableModel):
     )
     allowed_data_fields = models.ManyToManyField(AllowedDataField)
     created_at = models.DateTimeField(auto_now_add=True)
-    gdpr_url = models.URLField(
+    gdpr_url = models.CharField(
         max_length=2000,
         blank=True,
         help_text=(
