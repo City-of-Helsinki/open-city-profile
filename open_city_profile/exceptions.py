@@ -49,3 +49,7 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
 
 class TokenExpiredError(ProfileGraphQLError):
     """Token has expired"""
+
+
+class TokenExchangeError(Exception):
+    """OAuth/OIDC token exchange related exception."""
