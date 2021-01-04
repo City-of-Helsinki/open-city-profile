@@ -186,7 +186,7 @@ def create_user(username="", faker=None):
             if not User.objects.filter(username=name).exists():
                 return name
 
-    return User(
+    return User.objects.create(
         first_name=faker.first_name(),
         last_name=faker.last_name(),
         username=username if username else get_random_username(),
@@ -207,7 +207,6 @@ def generate_group_admins(groups=tuple(), faker=None):
 
     def create_user_and_add_to_group(group=None):
         user = create_user(username="{}_user".format(group.name.lower()), faker=faker)
-        user.save()
         user.groups.add(group)
         return user
 
@@ -218,7 +217,6 @@ def generate_profiles(k=50, faker=None):
     """Create fake profiles and users for development purposes."""
     for i in range(k):
         user = create_user(faker=faker)
-        user.save()
         profile = Profile.objects.create(
             user=user,
             language=random.choice(settings.LANGUAGES)[0],

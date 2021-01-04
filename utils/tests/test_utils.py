@@ -67,8 +67,6 @@ def test_creates_random_user():
     assert User.objects.count() == 1  # anonymous user exists
     user = create_user(faker=Faker())
     assert user
-    assert User.objects.count() == 1
-    user.save()
     assert User.objects.count() == 2
 
 
@@ -76,7 +74,6 @@ def test_creates_defined_user():
     assert User.objects.count() == 1  # anonymous user exists
     faker = Faker()
     user = create_user(username="berth_user", faker=faker)
-    user.save()
     assert User.objects.count() == 2
     assert user.username == "berth_user"
 
