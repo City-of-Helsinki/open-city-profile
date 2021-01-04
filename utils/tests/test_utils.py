@@ -78,6 +78,14 @@ def test_creates_defined_user():
     assert user.username == "berth_user"
 
 
+def test_create_user_returns_existing_user():
+    username = "test_user"
+    faker = Faker()
+    user1 = create_user(username=username, faker=faker)
+    user2 = create_user(username=username, faker=faker)
+    assert user1 == user2
+
+
 def test_generates_group_admins():
     group = GroupFactory(name=ServiceType.BERTH.value)
     assert group.user_set.count() == 0

@@ -186,6 +186,11 @@ def create_user(username="", faker=None):
             if not User.objects.filter(username=name).exists():
                 return name
 
+    if username:
+        existing = User.objects.filter(username=username)
+        if existing.exists():
+            return existing.get()
+
     return User.objects.create(
         first_name=faker.first_name(),
         last_name=faker.last_name(),
