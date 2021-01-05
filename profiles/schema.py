@@ -30,10 +30,12 @@ from open_city_profile.exceptions import (
     APINotImplementedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
+    MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
     ProfileMustHaveOnePrimaryEmail,
     TokenExpiredError,
 )
+from open_city_profile.oidc import TunnistamoTokenExchange
 from profiles.decorators import staff_required
 from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
@@ -932,29 +934,56 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
     @classmethod
     @login_required
     def mutate_and_get_payload(cls, root, info, **input):
+        authorization_code = input["authorization_code"]
+
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
             raise ProfileDoesNotExistError("Profile does not exist")
 
-        cls.delete_service_connections_for_profile(profile, dry_run=True)
-        cls.delete_service_connections_for_profile(profile, dry_run=False)
+        if profile.service_connections.exists():
+            tte = TunnistamoTokenExchange()
+            api_tokens = tte.fetch_api_tokens(authorization_code)
+            cls.delete_service_connections_for_profile(
+                profile, api_tokens, dry_run=True
+            )
+            cls.delete_service_connections_for_profile(
+                profile, api_tokens, dry_run=False
+            )
 
         profile.delete()
         info.context.user.delete()
         return DeleteMyProfileMutation()
 
     @staticmethod
-    def delete_service_connections_for_profile(profile, dry_run=False):
+    def delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
         failed_services = []
 
         for service_connection in profile.service_connections.all():
+            service = service_connection.service
+
+            if not service.gdpr_delete_scope:
+                raise ConnectedServiceDeletionNotAllowedError(
+                    f"Connected services: {service.service_type.name}"
+                    f"does not have an API for removing data."
+                )
+
+            api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
+            api_token = api_tokens.get(api_identifier, "")
+
+            if not api_token:
+                raise MissingGDPRApiTokenError(
+                    f"Couldn't fetch an API token for service {service.service_type.name}."
+                )
+
             try:
-                service_connection.delete_gdpr_data(dry_run=dry_run)
+                service_connection.delete_gdpr_data(
+                    api_token=api_token, dry_run=dry_run
+                )
                 if not dry_run:
                     service_connection.delete()
             except (requests.RequestException, MissingGDPRUrlException):
-                service_name = service_connection.service.service_type.name
+                service_name = service.service_type.name
                 failed_services.append(service_name)
 
         if failed_services:
@@ -1078,17 +1107,39 @@ class Query(graphene.ObjectType):
 
     @login_required
     def resolve_download_my_profile(self, info, **kwargs):
+        authorization_code = kwargs["authorization_code"]
         profile = Profile.objects.filter(user=info.context.user).first()
-        return {
-            "key": "DATA",
-            "children": [
-                profile.serialize(),
-                *map(lambda item: item.json(), profile.get_service_gdpr_data()),
-            ],
-        }
+
+        external_data = []
+
+        if profile.service_connections.exists():
+            tte = TunnistamoTokenExchange()
+            api_tokens = tte.fetch_api_tokens(authorization_code)
+
+            for service_connection in profile.service_connections.all():
+                service = service_connection.service
+
+                if not service.gdpr_query_scope:
+                    continue
+
+                api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
+                api_token = api_tokens.get(api_identifier, "")
+
+                if not api_token:
+                    raise MissingGDPRApiTokenError(
+                        f"Couldn't fetch an API token for service {service.service_type.name}."
+                    )
+
+                service_connection_data = service_connection.download_gdpr_data(
+                    api_token=api_token
+                )
+
+                if service_connection_data:
+                    external_data.append(service_connection_data)
+
+        return {"key": "DATA", "children": [profile.serialize(), *external_data]}
 
     def resolve_profile_with_access_token(self, info, **kwargs):
-        token = None
         try:
             token = TemporaryReadAccessToken.objects.get(token=kwargs["token"])
         except TemporaryReadAccessToken.DoesNotExist:
