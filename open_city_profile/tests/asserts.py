@@ -17,3 +17,7 @@ def assert_almost_equal(a, b, epsilon=None):
         raise NotImplementedError(
             f"assert_almost_equal not implemented for types {type(a)} and {type(b)}"
         )
+
+
+def assert_match_error_code(response, error_code):
+    assert response["errors"][0].get("extensions").get("code") == error_code
