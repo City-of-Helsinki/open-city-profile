@@ -399,7 +399,7 @@ class RestrictedProfileNode(DjangoObjectType):
         return Address.objects.filter(profile=self, primary=True).first()
 
     def resolve_emails(self, info, **kwargs):
-        return Email.objects.filter(profile=self)
+        return info.context.emails_by_profile_id_loader.load(self.id)
 
     def resolve_phones(self, info, **kwargs):
         return Phone.objects.filter(profile=self)

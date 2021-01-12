@@ -1,5 +1,6 @@
 import sentry_sdk
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
+from django.utils.functional import cached_property
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
@@ -32,6 +33,7 @@ from open_city_profile.exceptions import (
     ServiceAlreadyExistsError,
     TokenExpiredError,
 )
+from profiles.loaders import EmailsByProfileIdLoader
 from profiles.models import Profile
 
 error_codes_shared = {
@@ -66,7 +68,23 @@ sentry_ignored_errors = (
 error_codes = {**error_codes_shared, **error_codes_profile}
 
 
+class GQLContext:
+    def __init__(self, request):
+        self.request = request
+
+    @cached_property
+    def user(self):
+        return self.request.user
+
+    @cached_property
+    def emails_by_profile_id_loader(self):
+        return EmailsByProfileIdLoader()
+
+
 class GraphQLView(BaseGraphQLView):
+    def get_context(self, request):
+        return GQLContext(request)
+
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send some of them to Sentry"""
         result = super().execute_graphql_request(request, data, query, *args, **kwargs)
