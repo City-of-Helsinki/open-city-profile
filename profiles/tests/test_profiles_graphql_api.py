@@ -2730,22 +2730,23 @@ class TestProfileWithVerifiedPersonalInformation:
         request = rf.post("/graphql")
         request.user = user
 
-        t = Template(
-            """
-        mutation {
-            prof: createOrUpdateProfileWithVerifiedPersonalInformation(
-                input: ${input_data}
+        query = """
+            mutation createOrUpdateProfileWithVerifiedPersonalInformation(
+                $input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!
             ) {
-                profile {
-                    id,
+                prof: createOrUpdateProfileWithVerifiedPersonalInformation(
+                    input: $input,
+                ) {
+                    profile {
+                        id,
+                    }
                 }
             }
-        }
         """
-        )
-        query = t.substitute(input_data=input_data)
 
-        return gql_client.execute(query, context=request)
+        return gql_client.execute(
+            query, variables={"input": input_data}, context=request
+        )
 
     @staticmethod
     def execute_successful_mutation(input_data, rf, gql_client):
@@ -2760,40 +2761,35 @@ class TestProfileWithVerifiedPersonalInformation:
 
     @staticmethod
     def execute_successful_profile_creation_test(user_id, rf, gql_client):
-        t = Template(
-            """
-        {
-            userId: "${user_id}",
-            profile: {
-                verifiedPersonalInformation: {
-                    firstName: "John",
-                    lastName: "Smith",
-                    givenName: "Johnny",
-                    nationalIdentificationNumber: "220202A1234",
-                    email: "john.smith@domain.example",
-                    municipalityOfResidence: "Helsinki",
-                    municipalityOfResidenceNumber: "091",
-                    permanentAddress: {
-                        streetAddress: "Permanent Street 1",
-                        postalCode: "12345",
-                        postOffice: "Permanent City",
+        input_data = {
+            "userId": str(user_id),
+            "profile": {
+                "verifiedPersonalInformation": {
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "givenName": "Johnny",
+                    "nationalIdentificationNumber": "220202A1234",
+                    "email": "john.smith@domain.example",
+                    "municipalityOfResidence": "Helsinki",
+                    "municipalityOfResidenceNumber": "091",
+                    "permanentAddress": {
+                        "streetAddress": "Permanent Street 1",
+                        "postalCode": "12345",
+                        "postOffice": "Permanent City",
                     },
-                    temporaryAddress: {
-                        streetAddress: "Temporary Street 2",
-                        postalCode: "98765",
-                        postOffice: "Temporary City",
+                    "temporaryAddress": {
+                        "streetAddress": "Temporary Street 2",
+                        "postalCode": "98765",
+                        "postOffice": "Temporary City",
                     },
-                    permanentForeignAddress: {
-                        streetAddress: "〒100-8994",
-                        additionalAddress: "東京都中央区八重洲1-5-3",
-                        countryCode: "JP",
+                    "permanentForeignAddress": {
+                        "streetAddress": "〒100-8994",
+                        "additionalAddress": "東京都中央区八重洲1-5-3",
+                        "countryCode": "JP",
                     },
                 },
             },
         }
-        """
-        )
-        input_data = t.substitute(user_id=user_id)
 
         profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
             input_data, rf, gql_client
@@ -2893,18 +2889,10 @@ class TestProfileWithVerifiedPersonalInformation:
 
         user_id = profile_with_verified_personal_information.user.uuid
 
-        t = Template(
-            """
-        {
-            userId: "${user_id}",
-            profile: {
-                verifiedPersonalInformation: {
-                },
-            },
+        input_data = {
+            "userId": str(user_id),
+            "profile": {"verifiedPersonalInformation": {}},
         }
-        """
-        )
-        input_data = t.substitute(user_id=user_id)
 
         profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
 
@@ -2925,29 +2913,20 @@ class TestProfileWithVerifiedPersonalInformation:
     ):
         user_id = profile.user.uuid
 
-        t = Template(
-            """
-        {
-            userId: "${user_id}",
-            profile: {
-                verifiedPersonalInformation: {
-                    ${address_type}: {
-                        ${address_fields}
-                    },
+        camel_case_address_type = inflection.camelize(address_type, False)
+
+        address_fields = {}
+        for name in address_field_names:
+            address_fields[name] = ""
+
+        input_data = {
+            "userId": str(user_id),
+            "profile": {
+                "verifiedPersonalInformation": {
+                    camel_case_address_type: address_fields,
                 },
             },
         }
-        """
-        )
-
-        camel_case_address_type = inflection.camelize(address_type, False)
-        address_fields = "\n".join(f'{name}: "",' for name in address_field_names)
-
-        input_data = t.substitute(
-            user_id=user_id,
-            address_type=camel_case_address_type,
-            address_fields=address_fields,
-        )
 
         profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
             input_data, rf, gql_client
@@ -2988,18 +2967,14 @@ class TestProfileWithVerifiedPersonalInformation:
 
     @staticmethod
     def execute_mutation_with_invalid_input(rf, gql_client):
-        input_data = """
-        {
-            userId: "03117666-117D-4F6B-80B1-A3A92B389711",
-            profile: {
-                verifiedPersonalInformation: {
-                    permanentForeignAddress: {
-                        countryCode: "France"
-                    }
+        input_data = {
+            "userId": "03117666-117D-4F6B-80B1-A3A92B389711",
+            "profile": {
+                "verifiedPersonalInformation": {
+                    "permanentForeignAddress": {"countryCode": "France"}
                 }
-            }
+            },
         }
-        """
 
         return TestProfileWithVerifiedPersonalInformation.execute_mutation(
             input_data, rf, gql_client
