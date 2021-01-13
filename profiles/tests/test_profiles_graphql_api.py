@@ -2871,6 +2871,33 @@ class TestProfileWithVerifiedPersonalInformation:
             profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
         )
 
+    def test_all_basic_fields_can_be_set_to_null(self, rf, user_gql_client):
+        input_data = {
+            "userId": "03117666-117D-4F6B-80B1-A3A92B389711",
+            "profile": {
+                "verifiedPersonalInformation": {
+                    "firstName": None,
+                    "lastName": None,
+                    "givenName": None,
+                    "nationalIdentificationNumber": None,
+                    "email": None,
+                    "municipalityOfResidence": None,
+                    "municipalityOfResidenceNumber": None,
+                },
+            },
+        }
+
+        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
+
+        verified_personal_information = profile.verified_personal_information
+        assert verified_personal_information.first_name == ""
+        assert verified_personal_information.last_name == ""
+        assert verified_personal_information.given_name == ""
+        assert verified_personal_information.national_identification_number == ""
+        assert verified_personal_information.email == ""
+        assert verified_personal_information.municipality_of_residence == ""
+        assert verified_personal_information.municipality_of_residence_number == ""
+
     @pytest.mark.parametrize(
         "address_type",
         ["permanent_address", "temporary_address", "permanent_foreign_address"],
