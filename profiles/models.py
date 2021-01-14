@@ -17,7 +17,13 @@ from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
-from utils.models import SerializableMixin, UpdateMixin, UUIDModel, ValidateOnSaveModel
+from utils.models import (
+    NullsToEmptyStringsModel,
+    SerializableMixin,
+    UpdateMixin,
+    UUIDModel,
+    ValidateOnSaveModel,
+)
 
 from .enums import (
     AddressType,
@@ -237,7 +243,7 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
-class VerifiedPersonalInformation(ValidateOnSaveModel):
+class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
@@ -261,24 +267,8 @@ class VerifiedPersonalInformation(ValidateOnSaveModel):
             ),
         ]
 
-    def clean(self):
-        super().clean()
 
-        for field_name in [
-            "first_name",
-            "last_name",
-            "given_name",
-            "national_identification_number",
-            "email",
-            "municipality_of_residence",
-            "municipality_of_residence_number",
-        ]:
-            value = getattr(self, field_name)
-            if value is None:
-                setattr(self, field_name, "")
-
-
-class EncryptedAddress(ValidateOnSaveModel, UpdateMixin):
+class EncryptedAddress(ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel):
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)
     postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
     post_office = fields.EncryptedCharField(max_length=1024, blank=True)
@@ -311,7 +301,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
 
 
 class VerifiedPersonalInformationPermanentForeignAddress(
-    ValidateOnSaveModel, UpdateMixin
+    ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel
 ):
     RELATED_NAME = "permanent_foreign_address"
 

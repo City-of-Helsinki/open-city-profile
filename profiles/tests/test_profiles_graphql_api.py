@@ -2721,6 +2721,16 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
 
 
 class TestProfileWithVerifiedPersonalInformation:
+    ADDRESS_FIELD_NAMES = {
+        "permanent_address": ["street_address", "postal_code", "post_office"],
+        "temporary_address": ["street_address", "postal_code", "post_office"],
+        "permanent_foreign_address": [
+            "street_address",
+            "additional_address",
+            "country_code",
+        ],
+    }
+
     @staticmethod
     def execute_mutation(input_data, rf, gql_client):
         user = gql_client.user
@@ -2897,6 +2907,52 @@ class TestProfileWithVerifiedPersonalInformation:
         assert verified_personal_information.email == ""
         assert verified_personal_information.municipality_of_residence == ""
         assert verified_personal_information.municipality_of_residence_number == ""
+
+    @pytest.mark.parametrize(
+        "address_type",
+        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+    )
+    @pytest.mark.parametrize("address_field_index_to_nullify", [0, 1, 2])
+    def test_address_fields_can_be_set_to_null(
+        self,
+        profile_with_verified_personal_information,
+        address_type,
+        address_field_index_to_nullify,
+        rf,
+        user_gql_client,
+    ):
+        address_field_names = self.ADDRESS_FIELD_NAMES[address_type]
+        field_to_nullify = address_field_names[address_field_index_to_nullify]
+
+        existing_address = getattr(
+            profile_with_verified_personal_information.verified_personal_information,
+            address_type,
+        )
+
+        user_id = profile_with_verified_personal_information.user.uuid
+
+        address_data = {to_graphql_name(field_to_nullify): None}
+
+        input_data = {
+            "userId": str(user_id),
+            "profile": {
+                "verifiedPersonalInformation": {
+                    to_graphql_name(address_type): address_data
+                },
+            },
+        }
+
+        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
+
+        address = getattr(profile.verified_personal_information, address_type)
+
+        for field_name in address_field_names:
+            if field_name == field_to_nullify:
+                assert getattr(address, field_name) == ""
+            else:
+                assert getattr(address, field_name) == getattr(
+                    existing_address, field_name
+                )
 
     @pytest.mark.parametrize(
         "address_type",
