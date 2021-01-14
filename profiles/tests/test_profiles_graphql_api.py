@@ -2982,13 +2982,8 @@ class TestProfileWithVerifiedPersonalInformation:
         verified_personal_information = profile.verified_personal_information
         address = getattr(verified_personal_information, address_type)
 
-        assert address.street_address == existing_address.street_address
-        if address_type == "permanent_foreign_address":
-            assert address.additional_address == existing_address.additional_address
-            assert address.country_code == existing_address.country_code
-        else:
-            assert address.postal_code == existing_address.postal_code
-            assert address.post_office == existing_address.post_office
+        for field_name in self.ADDRESS_FIELD_NAMES[address_type]:
+            assert getattr(address, field_name) == getattr(existing_address, field_name)
 
     @pytest.mark.parametrize(
         "address_type",
