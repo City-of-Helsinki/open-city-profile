@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime, timedelta
 from string import Template
 
-import inflection
 import pytest
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -19,6 +18,7 @@ from open_city_profile.consts import (
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     TOKEN_EXPIRED_ERROR,
 )
+from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
@@ -2940,7 +2940,7 @@ class TestProfileWithVerifiedPersonalInformation:
     ):
         user_id = profile.user.uuid
 
-        camel_case_address_type = inflection.camelize(address_type, False)
+        gql_address_type = to_graphql_name(address_type)
 
         address_fields = {}
         for name in address_field_names:
@@ -2949,9 +2949,7 @@ class TestProfileWithVerifiedPersonalInformation:
         input_data = {
             "userId": str(user_id),
             "profile": {
-                "verifiedPersonalInformation": {
-                    camel_case_address_type: address_fields,
-                },
+                "verifiedPersonalInformation": {gql_address_type: address_fields},
             },
         }
 
