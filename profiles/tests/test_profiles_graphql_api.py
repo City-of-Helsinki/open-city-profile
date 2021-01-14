@@ -2990,32 +2990,10 @@ class TestProfileWithVerifiedPersonalInformation:
             assert address.postal_code == existing_address.postal_code
             assert address.post_office == existing_address.post_office
 
-    @staticmethod
-    def execute_address_clearing_test(
-        address_type, address_field_names, profile, rf, gql_client
-    ):
-        user_id = profile.user.uuid
-
-        gql_address_type = to_graphql_name(address_type)
-
-        address_fields = {}
-        for name in address_field_names:
-            address_fields[name] = ""
-
-        input_data = {
-            "userId": str(user_id),
-            "profile": {
-                "verifiedPersonalInformation": {gql_address_type: address_fields},
-            },
-        }
-
-        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
-            input_data, rf, gql_client
-        )
-
-        assert not hasattr(profile.verified_personal_information, address_type)
-
-    @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+    @pytest.mark.parametrize(
+        "address_type",
+        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+    )
     def test_delete_an_address_if_it_no_longer_has_any_data(
         self,
         profile_with_verified_personal_information,
@@ -3023,28 +3001,26 @@ class TestProfileWithVerifiedPersonalInformation:
         rf,
         user_gql_client,
     ):
-        address_field_names = ["streetAddress", "postalCode", "postOffice"]
+        user_id = profile_with_verified_personal_information.user.uuid
 
-        self.execute_address_clearing_test(
-            address_type,
-            address_field_names,
-            profile_with_verified_personal_information,
-            rf,
-            user_gql_client,
+        address_fields = {}
+        for name in self.ADDRESS_FIELD_NAMES[address_type]:
+            address_fields[to_graphql_name(name)] = ""
+
+        input_data = {
+            "userId": str(user_id),
+            "profile": {
+                "verifiedPersonalInformation": {
+                    to_graphql_name(address_type): address_fields
+                },
+            },
+        }
+
+        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
+            input_data, rf, user_gql_client
         )
 
-    def test_delete_permanent_foreign_address_if_it_no_longer_has_any_data(
-        self, profile_with_verified_personal_information, rf, user_gql_client,
-    ):
-        address_field_names = ["streetAddress", "additionalAddress", "countryCode"]
-
-        self.execute_address_clearing_test(
-            "permanent_foreign_address",
-            address_field_names,
-            profile_with_verified_personal_information,
-            rf,
-            user_gql_client,
-        )
+        assert not hasattr(profile.verified_personal_information, address_type)
 
     @staticmethod
     def execute_mutation_with_invalid_input(rf, gql_client):
