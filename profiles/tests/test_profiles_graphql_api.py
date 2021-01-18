@@ -2720,7 +2720,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
 
 
-class TestProfileWithVerifiedPersonalInformation:
+class TestProfileWithVerifiedPersonalInformationCreation:
     ADDRESS_FIELD_NAMES = {
         "permanent_address": ["street_address", "postal_code", "post_office"],
         "temporary_address": ["street_address", "postal_code", "post_office"],
@@ -2760,7 +2760,7 @@ class TestProfileWithVerifiedPersonalInformation:
 
     @staticmethod
     def execute_successful_mutation(input_data, rf, gql_client):
-        executed = TestProfileWithVerifiedPersonalInformation.execute_mutation(
+        executed = TestProfileWithVerifiedPersonalInformationCreation.execute_mutation(
             input_data, rf, gql_client
         )
 
@@ -2801,7 +2801,7 @@ class TestProfileWithVerifiedPersonalInformation:
             },
         }
 
-        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
+        profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
             input_data, rf, gql_client
         )
 
@@ -3011,7 +3011,7 @@ class TestProfileWithVerifiedPersonalInformation:
             },
         }
 
-        profile = TestProfileWithVerifiedPersonalInformation.execute_successful_mutation(
+        profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
             input_data, rf, user_gql_client
         )
 
@@ -3028,7 +3028,7 @@ class TestProfileWithVerifiedPersonalInformation:
             },
         }
 
-        return TestProfileWithVerifiedPersonalInformation.execute_mutation(
+        return TestProfileWithVerifiedPersonalInformationCreation.execute_mutation(
             input_data, rf, gql_client
         )
 
