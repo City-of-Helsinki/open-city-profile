@@ -22,5 +22,6 @@ pillow
 psycopg2
 pyyaml>=5.3
 requests
+requests-oauthlib
 --no-binary psycopg2
 sentry-sdk

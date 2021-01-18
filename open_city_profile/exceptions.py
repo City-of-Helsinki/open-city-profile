@@ -19,6 +19,10 @@ class ConnectedServiceDeletionFailedError(GraphQLError):
     """
 
 
+class MissingGDPRApiTokenError(ProfileGraphQLError):
+    """API token intended for GDPR API of a service is missing."""
+
+
 class ConnectedServiceDeletionNotAllowedError(ProfileGraphQLError):
     """Deleting a connected service is not allowed."""
 
@@ -49,3 +53,7 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
 
 class TokenExpiredError(ProfileGraphQLError):
     """Token has expired"""
+
+
+class TokenExchangeError(Exception):
+    """OAuth/OIDC token exchange related exception."""

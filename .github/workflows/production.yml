@@ -50,6 +50,10 @@ jobs:
           K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
           K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso/openid"
           K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
+          K8S_SECRET_OIDC_CLIENT_ID: ${{ secrets.GH_STABLE_OIDC_CLIENT_ID }}
+          K8S_SECRET_OIDC_CLIENT_SECRET: ${{ secrets.GH_STABLE_OIDC_CLIENT_SECRET }}
+          K8S_SECRET_TUNNISTAMO_API_TOKENS_URL: "https://api.hel.fi/sso/api-tokens"
+          K8S_SECRET_GDPR_AUTH_CALLBACK_URL: "https://profiili.hel.fi/gdpr-callback"
           K8S_SECRET_VERSION: ${{ github.sha }}
           K8S_SECRET_MAIL_MAILGUN_KEY: ${{ secrets.GH_MAILGUN_API_KEY }}
           K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"

@@ -52,6 +52,7 @@ jinja2==2.10.1            # via coreschema, django-ilmoitin
 lockfile==0.12.2          # via django-mailer
 markuppy==1.14            # via tablib
 markupsafe==1.1.1         # via jinja2
+oauthlib==3.1.0           # via requests-oauthlib
 odfpy==1.4.1              # via tablib
 openpyxl==3.0.3           # via tablib
 pillow==6.2.0             # via -r requirements.in
@@ -68,7 +69,8 @@ pytz==2019.1              # via django
 pyyaml==5.3.1             # via -r requirements.in, django-munigeo, tablib
 rdflib==4.2.2             # via django-thesaurus
 requests-cache==0.5.0     # via django-munigeo
-requests==2.23.0          # via -r requirements.in, coreapi, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache
+requests-oauthlib==1.3.0  # via -r requirements.in
+requests==2.25.1          # via -r requirements.in, coreapi, django-anymail, django-helusers, django-munigeo, pyjwkest, requests-cache, requests-oauthlib
 rsa==4.0                  # via python-jose
 rx==1.6.1                 # via graphql-core
 sentry-sdk==0.10.2        # via -r requirements.in

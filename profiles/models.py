@@ -156,14 +156,6 @@ class Profile(UUIDModel, SerializableMixin):
         else:
             return str(self.id)
 
-    def get_service_gdpr_data(self):
-        """Download gdpr data for each connected service"""
-        data = map(
-            lambda service_connection: service_connection.download_gdpr_data(),
-            self.service_connections.all(),
-        )
-        return [item for item in list(data) if item]
-
     @classmethod
     @transaction.atomic
     def import_customer_data(cls, data):

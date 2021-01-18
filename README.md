@@ -41,6 +41,11 @@ Prerequisites:
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
+     * `OIDC_CLIENT_ID`, Tunnistamo client id for enabling GDPR API authorization code flows
+     * `OIDC_CLIENT_SECRET`, Tunnistamo client secret for enabling GDPR API authorization code flows
+     * `GDPR_AUTH_CALLBACK_URL`, GDPR auth callback URL should be the same which is used by the UI for
+       fetching OAuth/OIDC authorization token for using the GDPR API
+     * `TUNNISTAMO_API_TOKENS_URL`, Tunnistamo URL from which the backend will fetch API tokens for GDPR API use.
 
 2. Run `docker-compose up`
     * The project is now running at [localhost:8080](http://localhost:8080)

@@ -1,16 +1,12 @@
 from datetime import timedelta
 
 import pytest
-import requests
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
 from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
-from services.exceptions import MissingGDPRUrlException
-from services.models import ServiceConnection
-from services.tests.factories import ServiceConnectionFactory
 
 from ..models import Email, Profile, TemporaryReadAccessToken
 from ..schema import validate_primary_email
@@ -90,75 +86,6 @@ def test_serialize_profile(profile):
     assert expected_firstname in serialized_profile.get("children")
     assert expected_email in serialized_profile.get("children")
     assert expected_sensitive_data in serialized_profile.get("children")
-
-
-def test_get_service_gdpr_data(monkeypatch, service_factory, profile):
-    def mock_download_gdpr_data(self):
-        if self.service.service_type == ServiceType.BERTH:
-            return {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
-        elif self.service.service_type == ServiceType.YOUTH_MEMBERSHIP:
-            return {
-                "key": "YOUTHPROFILE",
-                "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
-            }
-        else:
-            return {}
-
-    # Setup the data
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    service_kukkuu = service_factory(service_type=ServiceType.GODCHILDREN_OF_CULTURE)
-    ServiceConnectionFactory(profile=profile, service=service_berth)
-    ServiceConnectionFactory(profile=profile, service=service_youth)
-    ServiceConnectionFactory(profile=profile, service=service_kukkuu)
-
-    # Let's monkeypatch the method in ServiceConnection to mock the http requests
-    monkeypatch.setattr(
-        ServiceConnection, "download_gdpr_data", mock_download_gdpr_data
-    )
-
-    response = profile.get_service_gdpr_data()
-    assert response == [
-        {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]},
-        {
-            "key": "YOUTHPROFILE",
-            "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
-        },
-    ]
-
-
-def test_remove_service_gdpr_data_no_url(profile, service):
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data(dry_run=True)
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data()
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
-    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    dry_run_ok = service_connection.delete_gdpr_data(dry_run=True)
-    real_ok = service_connection.delete_gdpr_data()
-
-    assert dry_run_ok
-    assert real_ok
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
-    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=405)
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data(dry_run=True)
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data()
 
 
 def test_import_customer_data_with_valid_data_set(service_factory):
