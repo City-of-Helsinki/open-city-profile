@@ -32,7 +32,7 @@ env = environ.Env(
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
-    TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
+    TOKEN_AUTH_ACCEPTED_AUDIENCE=(list, []),
     TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
     TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
@@ -225,17 +225,19 @@ AUTH_USER_MODEL = "users.User"
 USE_HELUSERS_REQUEST_JWT_AUTH = env.bool("USE_HELUSERS_REQUEST_JWT_AUTH")
 
 OIDC_API_TOKEN_AUTH = {
-    "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
+    "AUDIENCE": env.list("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
     "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
     "ISSUER": [env.str("TOKEN_AUTH_AUTHSERVER_URL")]
     + env.list("ADDITIONAL_AUTHSERVER_URLS"),
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
 if not USE_HELUSERS_REQUEST_JWT_AUTH:
-    if len(OIDC_API_TOKEN_AUTH["ISSUER"]) > 0:
-        OIDC_API_TOKEN_AUTH["ISSUER"] = OIDC_API_TOKEN_AUTH["ISSUER"][0]
-    else:
-        OIDC_API_TOKEN_AUTH["ISSUER"] = ""
+
+    def _list_to_string(value):
+        return value[0] if len(value) > 0 else ""
+
+    OIDC_API_TOKEN_AUTH["AUDIENCE"] = _list_to_string(OIDC_API_TOKEN_AUTH["AUDIENCE"])
+    OIDC_API_TOKEN_AUTH["ISSUER"] = _list_to_string(OIDC_API_TOKEN_AUTH["ISSUER"])
 
 OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
