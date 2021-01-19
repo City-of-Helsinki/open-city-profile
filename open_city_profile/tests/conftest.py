@@ -3,9 +3,10 @@ import pytest
 import responses
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
-from graphene.test import Client as GraphQLClient
+from graphene.test import Client as GrapheneClient
 from graphql import build_client_schema, introspection_query
 
+from open_city_profile.middlewares import GQLDataLoaders
 from open_city_profile.schema import schema
 from open_city_profile.tests.factories import (
     GroupFactory,
@@ -13,6 +14,16 @@ from open_city_profile.tests.factories import (
     UserFactory,
 )
 from open_city_profile.views import GraphQLView
+
+
+class GraphQLClient(GrapheneClient):
+    def execute(self, *args, **kwargs):
+        """
+        Custom wrapper on the execute method, allows adding the
+        GQL DataLoaders middleware, since it has to be added to make
+        the DataLoaders available through the context.
+        """
+        return super().execute(*args, middleware=[GQLDataLoaders()], **kwargs)
 
 
 @pytest.fixture(autouse=True)

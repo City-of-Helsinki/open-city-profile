@@ -282,9 +282,12 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
-    "MIDDLEWARE": ["open_city_profile.graphene.JWTMiddleware"]
-    if USE_HELUSERS_REQUEST_JWT_AUTH
-    else ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+    "MIDDLEWARE": [
+        "open_city_profile.graphene.JWTMiddleware"
+        if USE_HELUSERS_REQUEST_JWT_AUTH
+        else "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "open_city_profile.middlewares.GQLDataLoaders",
+    ],
 }
 
 if not USE_HELUSERS_REQUEST_JWT_AUTH:
