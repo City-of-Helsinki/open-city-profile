@@ -2721,7 +2721,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     assert Profile.objects.get(pk=profile.pk).first_name == profile.first_name
 
 
-class TestProfileWithVerifiedPersonalInformationCreation:
+class ProfileWithVerifiedPersonalInformationTestBase:
     ADDRESS_FIELD_NAMES = {
         "permanent_address": ["street_address", "postal_code", "post_office"],
         "temporary_address": ["street_address", "postal_code", "post_office"],
@@ -2731,7 +2731,12 @@ class TestProfileWithVerifiedPersonalInformationCreation:
             "country_code",
         ],
     }
+    ADDRESS_TYPES = ADDRESS_FIELD_NAMES.keys()
 
+
+class TestProfileWithVerifiedPersonalInformationCreation(
+    ProfileWithVerifiedPersonalInformationTestBase
+):
     @staticmethod
     def execute_mutation(input_data, rf, gql_client):
         user = gql_client.user
@@ -2910,8 +2915,7 @@ class TestProfileWithVerifiedPersonalInformationCreation:
         assert verified_personal_information.municipality_of_residence_number == ""
 
     @pytest.mark.parametrize(
-        "address_type",
-        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+        "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     @pytest.mark.parametrize("address_field_index_to_nullify", [0, 1, 2])
     def test_address_fields_can_be_set_to_null(
@@ -2956,8 +2960,7 @@ class TestProfileWithVerifiedPersonalInformationCreation:
                 )
 
     @pytest.mark.parametrize(
-        "address_type",
-        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+        "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
         self,
@@ -2987,8 +2990,7 @@ class TestProfileWithVerifiedPersonalInformationCreation:
             assert getattr(address, field_name) == getattr(existing_address, field_name)
 
     @pytest.mark.parametrize(
-        "address_type",
-        ["permanent_address", "temporary_address", "permanent_foreign_address"],
+        "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     def test_delete_an_address_if_it_no_longer_has_any_data(
         self,
