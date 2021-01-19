@@ -3052,7 +3052,9 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         assert VerifiedPersonalInformationPermanentForeignAddress.objects.count() == 0
 
 
-class TestProfileWithVerifiedPersonalInformation:
+class TestProfileWithVerifiedPersonalInformation(
+    ProfileWithVerifiedPersonalInformationTestBase
+):
     QUERY = """
         {
             myProfile {
@@ -3064,6 +3066,21 @@ class TestProfileWithVerifiedPersonalInformation:
                     email
                     municipalityOfResidence
                     municipalityOfResidenceNumber
+                    permanentAddress {
+                        streetAddress
+                        postalCode
+                        postOffice
+                    }
+                    temporaryAddress {
+                        streetAddress
+                        postalCode
+                        postOffice
+                    }
+                    permanentForeignAddress {
+                        streetAddress
+                        additionalAddress
+                        countryCode
+                    }
                 }
             }
         }
@@ -3091,6 +3108,12 @@ class TestProfileWithVerifiedPersonalInformation:
         request = rf.post("/graphql")
         request.user = user_gql_client.user
 
+        permanent_address = verified_personal_information.permanent_address
+        temporary_address = verified_personal_information.temporary_address
+        permanent_foreign_address = (
+            verified_personal_information.permanent_foreign_address
+        )
+
         expected_data = {
             "myProfile": {
                 "verifiedPersonalInformation": {
@@ -3101,6 +3124,21 @@ class TestProfileWithVerifiedPersonalInformation:
                     "email": verified_personal_information.email,
                     "municipalityOfResidence": verified_personal_information.municipality_of_residence,
                     "municipalityOfResidenceNumber": verified_personal_information.municipality_of_residence_number,
+                    "permanentAddress": {
+                        "streetAddress": permanent_address.street_address,
+                        "postalCode": permanent_address.postal_code,
+                        "postOffice": permanent_address.post_office,
+                    },
+                    "temporaryAddress": {
+                        "streetAddress": temporary_address.street_address,
+                        "postalCode": temporary_address.postal_code,
+                        "postOffice": temporary_address.post_office,
+                    },
+                    "permanentForeignAddress": {
+                        "streetAddress": permanent_foreign_address.street_address,
+                        "additionalAddress": permanent_foreign_address.additional_address,
+                        "countryCode": permanent_foreign_address.country_code,
+                    },
                 },
             }
         }
@@ -3108,6 +3146,32 @@ class TestProfileWithVerifiedPersonalInformation:
         executed = user_gql_client.execute(self.QUERY, context=request)
 
         assert executed["data"] == expected_data
+
+    @pytest.mark.parametrize(
+        "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
+    )
+    def test_when_address_does_not_exist_returns_object_does_not_exist_error(
+        self, address_type, rf, user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        VerifiedPersonalInformationFactory(
+            profile=profile, **{address_type: None},
+        )
+
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
+
+        executed = user_gql_client.execute(self.QUERY, context=request)
+
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+
+        received_info = executed["data"]["myProfile"]["verifiedPersonalInformation"]
+        for at in self.ADDRESS_TYPES:
+            received_address = received_info[to_graphql_name(at)]
+            if at == address_type:
+                assert received_address is None
+            else:
+                assert isinstance(received_address, dict)
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):

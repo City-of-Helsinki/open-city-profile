@@ -586,10 +586,22 @@ input VerifiedPersonalInformationAddressInput {
   postOffice: String
 }
 
+type VerifiedPersonalInformationAddressNode {
+  streetAddress: String!
+  postalCode: String!
+  postOffice: String!
+}
+
 input VerifiedPersonalInformationForeignAddressInput {
   streetAddress: String
   additionalAddress: String
   countryCode: String
+}
+
+type VerifiedPersonalInformationForeignAddressNode {
+  streetAddress: String!
+  additionalAddress: String!
+  countryCode: String!
 }
 
 input VerifiedPersonalInformationInput {
@@ -613,6 +625,9 @@ type VerifiedPersonalInformationNode {
   email: String!
   municipalityOfResidence: String!
   municipalityOfResidenceNumber: String!
+  permanentAddress: VerifiedPersonalInformationAddressNode
+  temporaryAddress: VerifiedPersonalInformationAddressNode
+  permanentForeignAddress: VerifiedPersonalInformationForeignAddressNode
 }
 
 scalar _Any

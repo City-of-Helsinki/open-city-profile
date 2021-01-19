@@ -347,6 +347,20 @@ class AddressNode(ContactNode):
         interfaces = (relay.Node,)
 
 
+class VerifiedPersonalInformationAddressNode(graphene.ObjectType):
+    street_address = graphene.String(
+        required=True, description="Street address with possible house number etc."
+    )
+    postal_code = graphene.String(required=True, description="Postal code.")
+    post_office = graphene.String(required=True, description="Post office.")
+
+
+class VerifiedPersonalInformationForeignAddressNode(DjangoObjectType):
+    class Meta:
+        model = VerifiedPersonalInformationPermanentForeignAddress
+        fields = ("street_address", "additional_address", "country_code")
+
+
 class VerifiedPersonalInformationNode(DjangoObjectType):
     class Meta:
         model = VerifiedPersonalInformation
@@ -359,6 +373,30 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
             "municipality_of_residence",
             "municipality_of_residence_number",
         )
+
+    permanent_address = graphene.Field(
+        VerifiedPersonalInformationAddressNode,
+        description="The permanent residency address in Finland.",
+    )
+
+    temporary_address = graphene.Field(
+        VerifiedPersonalInformationAddressNode,
+        description="The temporary residency address in Finland.",
+    )
+
+    permanent_foreign_address = graphene.Field(
+        VerifiedPersonalInformationForeignAddressNode,
+        description="The temporary foreign (i.e. not in Finland) residency address.",
+    )
+
+    def resolve_permanent_address(self, info, **kwargs):
+        return self.permanent_address
+
+    def resolve_temporary_address(self, info, **kwargs):
+        return self.temporary_address
+
+    def resolve_permanent_foreign_address(self, info, **kwargs):
+        return self.permanent_foreign_address
 
 
 class SensitiveDataNode(DjangoObjectType):
