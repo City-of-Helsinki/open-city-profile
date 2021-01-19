@@ -269,7 +269,10 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
-    "MIDDLEWARE": ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+    "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "open_city_profile.middlewares.GQLDataLoaders",
+    ],
 }
 
 GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
