@@ -19,6 +19,7 @@ from django_filters import (
 )
 from graphene import relay
 from graphene.utils.str_converters import to_snake_case
+from graphene_django import DjangoConnectionField
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
@@ -308,7 +309,6 @@ class ContactNode(DjangoObjectType):
     class Meta:
         model = Contact
         fields = ("primary",)
-        filter_fields = []
         interfaces = (relay.Node,)
 
 
@@ -318,7 +318,6 @@ class EmailNode(ContactNode):
     class Meta:
         model = Email
         fields = ("id", "email_type", "primary", "email", "verified")
-        filter_fields = []
         interfaces = (relay.Node,)
 
 
@@ -328,7 +327,6 @@ class PhoneNode(ContactNode):
     class Meta:
         model = Phone
         fields = ("id", "phone_type", "primary", "phone")
-        filter_fields = []
         interfaces = (relay.Node,)
 
 
@@ -346,7 +344,6 @@ class AddressNode(ContactNode):
             "city",
             "country_code",
         )
-        filter_fields = []
         interfaces = (relay.Node,)
 
 
@@ -379,35 +376,35 @@ class RestrictedProfileNode(DjangoObjectType):
         AddressNode,
         description="Convenience field for the address which is marked as primary.",
     )
-    emails = DjangoFilterConnectionField(
+    emails = DjangoConnectionField(
         EmailNode, description="List of email addresses of the profile."
     )
-    phones = DjangoFilterConnectionField(
+    phones = DjangoConnectionField(
         PhoneNode, description="List of phone numbers of the profile."
     )
-    addresses = DjangoFilterConnectionField(
+    addresses = DjangoConnectionField(
         AddressNode, description="List of addresses of the profile."
     )
     language = Language()
     contact_method = ContactMethod()
 
     def resolve_primary_email(self, info, **kwargs):
-        return Email.objects.filter(profile=self, primary=True).first()
+        return info.context.primary_email_for_profile_loader.load(self.id)
 
     def resolve_primary_phone(self, info, **kwargs):
-        return Phone.objects.filter(profile=self, primary=True).first()
+        return info.context.primary_phone_for_profile_loader.load(self.id)
 
     def resolve_primary_address(self, info, **kwargs):
-        return Address.objects.filter(profile=self, primary=True).first()
+        return info.context.primary_address_for_profile_loader.load(self.id)
 
     def resolve_emails(self, info, **kwargs):
-        return Email.objects.filter(profile=self)
+        return info.context.emails_by_profile_id_loader.load(self.id)
 
     def resolve_phones(self, info, **kwargs):
-        return Phone.objects.filter(profile=self)
+        return info.context.phones_by_profile_id_loader.load(self.id)
 
     def resolve_addresses(self, info, **kwargs):
-        return Address.objects.filter(profile=self)
+        return info.context.addresses_by_profile_id_loader.load(self.id)
 
 
 @key(fields="id")
