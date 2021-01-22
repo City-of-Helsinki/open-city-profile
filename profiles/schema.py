@@ -741,7 +741,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
     )
 
 
-class ProfileWithVerifiedPersonalInformationNode(graphene.ObjectType):
+class ProfileWithVerifiedPersonalInformationOutput(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node,)
 
@@ -749,7 +749,7 @@ class ProfileWithVerifiedPersonalInformationNode(graphene.ObjectType):
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     graphene.ObjectType
 ):
-    profile = graphene.Field(ProfileWithVerifiedPersonalInformationNode)
+    profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):

@@ -123,7 +123,7 @@ input CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput {
 }
 
 type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
-  profile: ProfileWithVerifiedPersonalInformationNode
+  profile: ProfileWithVerifiedPersonalInformationOutput
 }
 
 input CreatePhoneInput {
@@ -311,7 +311,7 @@ input ProfileWithVerifiedPersonalInformationInput {
   verifiedPersonalInformation: VerifiedPersonalInformationInput!
 }
 
-type ProfileWithVerifiedPersonalInformationNode implements Node {
+type ProfileWithVerifiedPersonalInformationOutput implements Node {
   id: ID!
 }
 
