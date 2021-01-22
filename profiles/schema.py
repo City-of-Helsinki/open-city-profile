@@ -347,6 +347,20 @@ class AddressNode(ContactNode):
         interfaces = (relay.Node,)
 
 
+class VerifiedPersonalInformationNode(DjangoObjectType):
+    class Meta:
+        model = VerifiedPersonalInformation
+        fields = (
+            "first_name",
+            "last_name",
+            "given_name",
+            "national_identification_number",
+            "email",
+            "municipality_of_residence",
+            "municipality_of_residence_number",
+        )
+
+
 class SensitiveDataNode(DjangoObjectType):
     class Meta:
         model = SensitiveData
@@ -457,6 +471,23 @@ class ProfileNode(RestrictedProfileNode):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
+
+
+class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
+    class Meta:
+        model = Profile
+        fields = ("first_name", "last_name", "nickname", "image", "language")
+        interfaces = (relay.Node,)
+        connection_class = ProfilesConnection
+        filterset_class = ProfileFilter
+
+    verified_personal_information = graphene.Field(
+        VerifiedPersonalInformationNode,
+        description="Personal information that has been verified to be true.",
+    )
+
+    def resolve_verified_personal_information(self, info, **kwargs):
+        return self.verified_personal_information
 
 
 class TemporaryReadAccessTokenNode(DjangoObjectType):
@@ -1026,7 +1057,7 @@ class Query(graphene.ObjectType):
     )
     # TODO: Add the complete list of error codes
     my_profile = graphene.Field(
-        ProfileNode,
+        ProfileWithVerifiedPersonalInformationNode,
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )

@@ -311,6 +311,26 @@ input ProfileWithVerifiedPersonalInformationInput {
   verifiedPersonalInformation: VerifiedPersonalInformationInput!
 }
 
+type ProfileWithVerifiedPersonalInformationNode implements Node {
+  firstName: String!
+  lastName: String!
+  nickname: String!
+  image: String
+  language: Language
+  id: ID!
+  primaryEmail: EmailNode
+  primaryPhone: PhoneNode
+  primaryAddress: AddressNode
+  emails(before: String, after: String, first: Int, last: Int): EmailNodeConnection
+  phones(before: String, after: String, first: Int, last: Int): PhoneNodeConnection
+  addresses(before: String, after: String, first: Int, last: Int): AddressNodeConnection
+  contactMethod: ContactMethod
+  sensitivedata: SensitiveDataNode
+  serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
+  subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection
+  verifiedPersonalInformation: VerifiedPersonalInformationNode
+}
+
 type ProfileWithVerifiedPersonalInformationOutput implements Node {
   id: ID!
 }
@@ -318,7 +338,7 @@ type ProfileWithVerifiedPersonalInformationOutput implements Node {
 type Query {
   subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection
   profile(id: ID!, serviceType: ServiceType!): ProfileNode
-  myProfile: ProfileNode
+  myProfile: ProfileWithVerifiedPersonalInformationNode
   downloadMyProfile(authorizationCode: String!): JSONString
   profiles(serviceType: ServiceType!, before: String, after: String, first: Int, last: Int, firstName: String, lastName: String, nickname: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
   claimableProfile(token: UUID!): ProfileNode
@@ -583,6 +603,16 @@ input VerifiedPersonalInformationInput {
   permanentAddress: VerifiedPersonalInformationAddressInput
   temporaryAddress: VerifiedPersonalInformationAddressInput
   permanentForeignAddress: VerifiedPersonalInformationForeignAddressInput
+}
+
+type VerifiedPersonalInformationNode {
+  firstName: String!
+  lastName: String!
+  givenName: String!
+  nationalIdentificationNumber: String!
+  email: String!
+  municipalityOfResidence: String!
+  municipalityOfResidenceNumber: String!
 }
 
 scalar _Any

@@ -19,7 +19,7 @@ from open_city_profile.consts import (
     TOKEN_EXPIRED_ERROR,
 )
 from open_city_profile.tests import to_graphql_name
-from open_city_profile.tests.asserts import assert_almost_equal
+from open_city_profile.tests.asserts import assert_almost_equal, assert_match_error_code
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import (
@@ -49,6 +49,7 @@ from .factories import (
     ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
     TemporaryReadAccessTokenFactory,
+    VerifiedPersonalInformationFactory,
 )
 
 
@@ -3047,6 +3048,64 @@ class TestProfileWithVerifiedPersonalInformationCreation:
         assert VerifiedPersonalInformationPermanentAddress.objects.count() == 0
         assert VerifiedPersonalInformationTemporaryAddress.objects.count() == 0
         assert VerifiedPersonalInformationPermanentForeignAddress.objects.count() == 0
+
+
+class TestProfileWithVerifiedPersonalInformation:
+    QUERY = """
+        {
+            myProfile {
+                verifiedPersonalInformation {
+                    firstName
+                    lastName
+                    givenName
+                    nationalIdentificationNumber
+                    email
+                    municipalityOfResidence
+                    municipalityOfResidenceNumber
+                }
+            }
+        }
+    """
+
+    def test_when_verified_personal_infomation_does_not_exist_returns_object_does_not_exist_error(
+        self, rf, user_gql_client
+    ):
+        ProfileFactory(user=user_gql_client.user)
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
+
+        executed = user_gql_client.execute(self.QUERY, context=request)
+
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+        assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
+
+    def test_normal_user_can_query_verified_personal_information(
+        self, rf, user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        verified_personal_information = VerifiedPersonalInformationFactory(
+            profile=profile
+        )
+        request = rf.post("/graphql")
+        request.user = user_gql_client.user
+
+        expected_data = {
+            "myProfile": {
+                "verifiedPersonalInformation": {
+                    "firstName": verified_personal_information.first_name,
+                    "lastName": verified_personal_information.last_name,
+                    "givenName": verified_personal_information.given_name,
+                    "nationalIdentificationNumber": verified_personal_information.national_identification_number,
+                    "email": verified_personal_information.email,
+                    "municipalityOfResidence": verified_personal_information.municipality_of_residence,
+                    "municipalityOfResidenceNumber": verified_personal_information.municipality_of_residence_number,
+                },
+            }
+        }
+
+        executed = user_gql_client.execute(self.QUERY, context=request)
+
+        assert executed["data"] == expected_data
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
