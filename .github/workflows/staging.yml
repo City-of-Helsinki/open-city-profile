@@ -13,6 +13,7 @@ env:
   KUBECONFIG_RAW: ${{ secrets.KUBECONFIG_RAW_STAGING }}
   BUILD_ARTIFACT_FOLDER: 'build_artifacts'
   SERVICE_ARTIFACT_FOLDER: 'service_artifacts'
+  BASE_DOMAIN: ${{ secrets.BASE_DOMAIN_STAGING }}
   APP_MIGRATE_COMMAND: /app/.prod/on_deploy.sh
   SERVICE_PORT: "8080"
 
@@ -48,12 +49,12 @@ jobs:
           K8S_SECRET_SKIP_DATABASE_CHECK: 1
           K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
           K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
-          K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://api.hel.fi/sso-test/openid"
+          K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.${{ env.BASE_DOMAIN }}/openid"
           K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
           K8S_SECRET_OIDC_CLIENT_ID: ${{ secrets.GH_QA_OIDC_CLIENT_ID }}
           K8S_SECRET_OIDC_CLIENT_SECRET: ${{ secrets.GH_QA_OIDC_CLIENT_SECRET }}
-          K8S_SECRET_TUNNISTAMO_API_TOKENS_URL: "https://api.hel.fi/sso-test/api-tokens"
-          K8S_SECRET_GDPR_AUTH_CALLBACK_URL: "https://profiili.test.kuva.hel.ninja/gdpr-callback"
+          K8S_SECRET_TUNNISTAMO_API_TOKENS_URL: "https://tunnistamo.${{ env.BASE_DOMAIN }}/api-tokens"
+          K8S_SECRET_GDPR_AUTH_CALLBACK_URL: "https://profiili.${{ env.BASE_DOMAIN }}/gdpr-callback"
           K8S_SECRET_VERSION: ${{ github.sha }}
           K8S_SECRET_MAIL_MAILGUN_KEY: ${{ secrets.GH_MAILGUN_API_KEY }}
           K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
