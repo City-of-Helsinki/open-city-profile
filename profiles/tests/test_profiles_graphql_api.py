@@ -3086,14 +3086,21 @@ class TestProfileWithVerifiedPersonalInformation(
         }
     """
 
+    @staticmethod
+    def _execute_query(rf, gql_client):
+        request = rf.post("/graphql")
+        request.user = gql_client.user
+
+        return gql_client.execute(
+            TestProfileWithVerifiedPersonalInformation.QUERY, context=request
+        )
+
     def test_when_verified_personal_infomation_does_not_exist_returns_object_does_not_exist_error(
         self, rf, user_gql_client
     ):
         ProfileFactory(user=user_gql_client.user)
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
 
-        executed = user_gql_client.execute(self.QUERY, context=request)
+        executed = self._execute_query(rf, user_gql_client)
 
         assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
@@ -3105,8 +3112,6 @@ class TestProfileWithVerifiedPersonalInformation(
         verified_personal_information = VerifiedPersonalInformationFactory(
             profile=profile
         )
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
 
         permanent_address = verified_personal_information.permanent_address
         temporary_address = verified_personal_information.temporary_address
@@ -3143,7 +3148,7 @@ class TestProfileWithVerifiedPersonalInformation(
             }
         }
 
-        executed = user_gql_client.execute(self.QUERY, context=request)
+        executed = self._execute_query(rf, user_gql_client)
 
         assert executed["data"] == expected_data
 
@@ -3158,10 +3163,7 @@ class TestProfileWithVerifiedPersonalInformation(
             profile=profile, **{address_type: None},
         )
 
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
-
-        executed = user_gql_client.execute(self.QUERY, context=request)
+        executed = self._execute_query(rf, user_gql_client)
 
         assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
