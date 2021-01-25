@@ -525,7 +525,13 @@ class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
     )
 
     def resolve_verified_personal_information(self, info, **kwargs):
-        return self.verified_personal_information
+        loa = info.context.user_auth.data.get("loa")
+        if loa in ["substantial", "high"]:
+            return self.verified_personal_information
+        else:
+            raise PermissionDenied(
+                "No permission to read verified personal information."
+            )
 
 
 class TemporaryReadAccessTokenNode(DjangoObjectType):

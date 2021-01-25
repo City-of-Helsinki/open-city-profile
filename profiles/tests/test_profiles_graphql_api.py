@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from graphene import relay
 from graphql_relay.node.node import from_global_id, to_global_id
 from guardian.shortcuts import assign_perm
+from helusers.authz import UserAuthorization
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -3087,9 +3088,16 @@ class TestProfileWithVerifiedPersonalInformation(
     """
 
     @staticmethod
-    def _execute_query(rf, gql_client):
+    def _execute_query(rf, gql_client, loa="substantial"):
+        user = gql_client.user
+
         request = rf.post("/graphql")
-        request.user = gql_client.user
+        request.user = user
+
+        token_payload = {
+            "loa": loa,
+        }
+        request.user_auth = UserAuthorization(user, token_payload)
 
         return gql_client.execute(
             TestProfileWithVerifiedPersonalInformation.QUERY, context=request
@@ -3174,6 +3182,31 @@ class TestProfileWithVerifiedPersonalInformation(
                 assert received_address is None
             else:
                 assert isinstance(received_address, dict)
+
+    @pytest.mark.parametrize("loa", ["substantial", "high"])
+    def test_high_enough_level_of_assurance_gains_access(
+        self, loa, rf, user_gql_client
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        VerifiedPersonalInformationFactory(profile=profile)
+
+        executed = self._execute_query(rf, user_gql_client, loa)
+
+        assert not hasattr(executed, "errors")
+        assert isinstance(
+            executed["data"]["myProfile"]["verifiedPersonalInformation"], dict
+        )
+
+    @pytest.mark.parametrize("loa", [None, "low", "unknown"])
+    def test_too_low_level_of_assurance_denies_access(self, loa, rf, user_gql_client):
+        profile = ProfileFactory(user=user_gql_client.user)
+        VerifiedPersonalInformationFactory(profile=profile)
+
+        executed = self._execute_query(rf, user_gql_client, loa)
+
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+
+        assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
 
 def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
