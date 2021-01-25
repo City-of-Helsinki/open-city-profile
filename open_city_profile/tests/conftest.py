@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import factory.random
 import pytest
 import responses
@@ -113,3 +115,12 @@ def gql_schema(rf, anon_user_gql_client):
 def mock_responses():
     with responses.RequestsMock(assert_all_requests_are_fired=False) as mock_resps:
         yield mock_resps
+
+
+def get_unix_timestamp_now():
+    return int(datetime.now(tz=timezone.utc).timestamp())
+
+
+@pytest.fixture
+def unix_timestamp_now():
+    return get_unix_timestamp_now()

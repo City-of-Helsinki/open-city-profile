@@ -18,10 +18,11 @@ def test_not_presenting_an_access_token_with_operation_needing_authentication_re
 
 
 def test_presenting_an_expired_access_token_with_any_operation_returns_general_error(
-    live_server, mock_responses,
+    unix_timestamp_now, live_server, mock_responses,
 ):
+    claims = {"exp": unix_timestamp_now - 1}
     data, errors = do_graphql_authentication_test(
-        live_server, mock_responses, BearerTokenAuth()
+        live_server, mock_responses, BearerTokenAuth(extra_claims=claims),
     )
 
     assert len(errors) == 2

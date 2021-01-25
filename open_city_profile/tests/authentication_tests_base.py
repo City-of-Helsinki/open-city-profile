@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from jose import jwt
 
+from .conftest import get_unix_timestamp_now
 from .keys import rsa_key
 
 AUDIENCE = getattr(settings, "OIDC_API_TOKEN_AUTH")["AUDIENCE"]
@@ -21,14 +22,18 @@ KEYS = {"keys": [rsa_key.public_key_jwk]}
 
 
 class BearerTokenAuth(requests.auth.AuthBase):
+    def __init__(self, extra_claims=None):
+        self._extra_claims = extra_claims or {}
+
     def __call__(self, request):
-        user_uuid = uuid.uuid4()
         jwt_data = {
             "iss": ISSUER,
+            "iat": get_unix_timestamp_now() - 10,
             "aud": AUDIENCE,
-            "sub": str(user_uuid),
-            "exp": 1,
+            "sub": str(uuid.uuid4()),
+            "exp": get_unix_timestamp_now() + 120,
         }
+        jwt_data.update(self._extra_claims)
         encoded_jwt = jwt.encode(
             jwt_data, key=rsa_key.private_key_pem, algorithm=rsa_key.jose_algorithm
         )
@@ -63,4 +68,4 @@ def do_graphql_authentication_test(live_server, mock_responses, request_auth=Non
     assert response.status_code == 200
 
     body = response.json()
-    return body["data"], body["errors"]
+    return body.get("data"), body.get("errors")
