@@ -79,6 +79,7 @@ class GraphQLView(BaseGraphQLView):
                 authenticator = RequestJWTAuthentication()
                 user_auth = authenticator.authenticate(request)
                 if user_auth is not None:
+                    request.user_auth = user_auth
                     request.user = user_auth.user
             except Exception as e:
                 request.auth_error = e

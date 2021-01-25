@@ -24,6 +24,7 @@ class GraphQLApiTokenAuthentication(ApiTokenAuthentication):
         if not user_auth_tuple:
             return None
         user, auth = user_auth_tuple
+        request.user_auth = auth
         return user
 
 

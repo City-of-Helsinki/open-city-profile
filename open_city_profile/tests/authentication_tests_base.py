@@ -42,22 +42,25 @@ class BearerTokenAuth(requests.auth.AuthBase):
         return request
 
 
-def do_graphql_authentication_test(live_server, mock_responses, request_auth=None):
+_QUERY = """
+query {
+    myProfile {
+        id
+    },
+    _service {
+        sdl
+    }
+}"""
+
+
+def do_graphql_authentication_test(
+    live_server, mock_responses, request_auth=None, query=_QUERY
+):
     url = live_server.url + "/graphql/"
 
     mock_responses.add_passthru(url)
     mock_responses.add(method="GET", url=CONFIG_URL, json=CONFIGURATION)
     mock_responses.add(method="GET", url=JWKS_URL, json=KEYS)
-
-    query = """
-        query {
-            myProfile {
-                id
-            },
-            _service {
-                sdl
-            }
-        }"""
 
     payload = {
         "query": query,
