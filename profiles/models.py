@@ -239,16 +239,30 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
-    first_name = fields.EncryptedCharField(max_length=1024, blank=True)
-    last_name = fields.EncryptedCharField(max_length=1024, blank=True)
-    given_name = fields.EncryptedCharField(max_length=1024, blank=True)
-    national_identification_number = fields.EncryptedCharField(
-        max_length=1024, blank=True
+    first_name = fields.EncryptedCharField(
+        max_length=1024, blank=True, help_text="First name(s)."
     )
-    email = fields.EncryptedCharField(max_length=1024, blank=True)
-    municipality_of_residence = fields.EncryptedCharField(max_length=1024, blank=True)
+    last_name = fields.EncryptedCharField(
+        max_length=1024, blank=True, help_text="Last name."
+    )
+    given_name = fields.EncryptedCharField(
+        max_length=1024, blank=True, help_text="The name the person is called with."
+    )
+    national_identification_number = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Finnish national identification number.",
+    )
+    email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
+    municipality_of_residence = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Official municipality of residence in Finland as a free form text.",
+    )
     municipality_of_residence_number = fields.EncryptedCharField(
-        max_length=4, blank=True
+        max_length=4,
+        blank=True,
+        help_text="Official municipality of residence in Finland as an official number.",
     )
 
     class Meta:
@@ -297,9 +311,19 @@ class VerifiedPersonalInformationPermanentForeignAddress(
 ):
     RELATED_NAME = "permanent_foreign_address"
 
-    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
-    additional_address = fields.EncryptedCharField(max_length=1024, blank=True)
-    country_code = fields.EncryptedCharField(max_length=3, blank=True)
+    street_address = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Street address or whatever is the _first part_ of the address.",
+    )
+    additional_address = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Additional address information, perhaps town, county, state, country etc.",
+    )
+    country_code = fields.EncryptedCharField(
+        max_length=3, blank=True, help_text="An ISO 3166-1 country code."
+    )
 
     verified_personal_information = models.OneToOneField(
         VerifiedPersonalInformation,
