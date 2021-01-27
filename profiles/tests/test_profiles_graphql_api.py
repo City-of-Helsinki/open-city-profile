@@ -1486,7 +1486,45 @@ def test_staff_user_with_group_access_can_query_berth_profiles(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles(rf, user_gql_client, group, service):
+def test_staff_user_can_filter_profiles_by_profile_ids(
+    rf, user_gql_client, group, service
+):
+    profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
+    ServiceConnectionFactory(profile=profile_1, service=service)
+    ServiceConnectionFactory(profile=profile_2, service=service)
+    ServiceConnectionFactory(profile=profile_3, service=service)
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    request = rf.post("/graphql")
+    request.user = user
+
+    query = """
+        query getProfiles($serviceType: ServiceType!, $ids: [UUID!]!){
+            profiles(serviceType: $serviceType, id: $ids) {
+                count
+                totalCount
+            }
+        }
+    """
+
+    expected_data = {"profiles": {"count": 2, "totalCount": 3}}
+
+    executed = user_gql_client.execute(
+        query,
+        variables={
+            "serviceType": ServiceType.BERTH.name,
+            "ids": [str(profile_2.id), str(profile_1.id), str(uuid.uuid4())],
+        },
+        context=request,
+    )
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+
+
+def test_staff_user_can_filter_berth_profiles_by_first_name(
+    rf, user_gql_client, group, service
+):
     profile_1, profile_2 = ProfileFactory.create_batch(2)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)

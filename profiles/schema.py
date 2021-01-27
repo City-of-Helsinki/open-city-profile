@@ -36,6 +36,7 @@ from open_city_profile.exceptions import (
     ProfileMustHaveOnePrimaryEmail,
     TokenExpiredError,
 )
+from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from open_city_profile.oidc import TunnistamoTokenExchange
 from profiles.decorators import staff_required
 from services.exceptions import MissingGDPRUrlException
@@ -249,6 +250,7 @@ class ProfileFilter(FilterSet):
     class Meta:
         model = Profile
         fields = (
+            "id",
             "first_name",
             "last_name",
             "nickname",
@@ -269,6 +271,10 @@ class ProfileFilter(FilterSet):
             "enabled_subscriptions",
         )
 
+    id = UUIDMultipleChoiceFilter(
+        label="Profile ids for selecting the exact profiles to return. "
+        '**Note:** these are raw UUIDs, not "relay opaque identifiers".'
+    )
     first_name = CharFilter(lookup_expr="icontains")
     last_name = CharFilter(lookup_expr="icontains")
     nickname = CharFilter(lookup_expr="icontains")
