@@ -21,6 +21,7 @@ from profiles.models import (
     Profile,
     SensitiveData,
     TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
 )
 from services.admin import ServiceConnectionInline
 from subscriptions.admin import SubscriptionInline
@@ -108,6 +109,20 @@ class AddressAdminInline(admin.StackedInline):
     extra = 0
 
 
+class VerifiedPersonalInformationAdminInline(admin.StackedInline):
+    model = VerifiedPersonalInformation
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class ImportProfilesFromJsonForm(forms.Form):
     json_file = forms.FileField(required=True, label="Please select a json file")
 
@@ -115,6 +130,7 @@ class ImportProfilesFromJsonForm(forms.Form):
 @admin.register(Profile)
 class ExtendedProfileAdmin(VersionAdmin):
     inlines = [
+        VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,
         RepresenteeAdmin,
         RepresentativeAdmin,
