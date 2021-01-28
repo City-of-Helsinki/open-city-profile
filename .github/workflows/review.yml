@@ -1,0 +1,68 @@
+name: Build & Review
+on: [pull_request]
+
+env:
+  CONTAINER_REGISTRY: ghcr.io
+  CONTAINER_REGISTRY_USER: ${{ secrets.GHCR_CONTAINER_REGISTRY_USER }}
+  CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+  CONTAINER_REGISTRY_REPO: ghcr.io/city-of-helsinki/${{ github.event.repository.name }}
+  REPO_NAME: ${{ github.event.repository.name }}
+  KUBECONFIG_RAW: ${{ secrets.KUBECONFIG_RAW }}
+  BUILD_ARTIFACT_FOLDER: 'build_artifacts'
+  SERVICE_ARTIFACT_FOLDER: 'service_artifacts'
+  BASE_DOMAIN: ${{ secrets.BASE_DOMAIN_STAGING }}
+  DATABASE_USER: user
+  DATABASE_PASSWORD: testing-password
+  APP_MIGRATE_COMMAND: /app/.prod/on_deploy.sh
+  SERVICE_PORT: "8080"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        uses: andersinno/kolga-build-action@v2
+
+  review:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Review
+    steps:
+      - uses: actions/checkout@v2
+      - uses: andersinno/kolga-setup-action@v2
+
+      - name: Review-Services
+        uses: andersinno/kolga-deploy-service-action@v2
+        with:
+          projects: OPEN_CITY_PROFILE
+        env:
+          POSTGRES_IMAGE: "docker.io/andersinnovations/postgis:11-bitnami"
+
+      - name: Deploy
+        uses: andersinno/kolga-deploy-action@v2
+        env:
+          ENVIRONMENT_URL: https://${{ env.K8S_NAMESPACE }}.${{ env.BASE_DOMAIN }}
+          K8S_SECRET_ALLOWED_HOSTS: "*"
+          K8S_SECRET_DEBUG: 1
+          K8S_SECRET_SENTRY_DSN: ${{ secrets.GH_SENTRY_DSN }}
+          K8S_SECRET_SENTRY_ENVIRONMENT: "test"
+          K8S_SECRET_TOKEN_AUTH_ACCEPTED_AUDIENCE: "https://api.hel.fi/auth/helsinkiprofile"
+          K8S_SECRET_TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX: "helsinkiprofile"
+          K8S_SECRET_TOKEN_AUTH_AUTHSERVER_URL: "https://tunnistamo.${{ env.BASE_DOMAIN }}/openid"
+          K8S_SECRET_TOKEN_AUTH_REQUIRE_SCOPE: 1
+          K8S_SECRET_OIDC_CLIENT_ID: ${{ secrets.GH_QA_OIDC_CLIENT_ID }}
+          K8S_SECRET_OIDC_CLIENT_SECRET: ${{ secrets.GH_QA_OIDC_CLIENT_SECRET }}
+          K8S_SECRET_TUNNISTAMO_API_TOKENS_URL: "https://tunnistamo.${{ env.BASE_DOMAIN }}/api-tokens"
+          K8S_SECRET_GDPR_AUTH_CALLBACK_URL: "https://profiili.${{ env.BASE_DOMAIN }}/gdpr-callback"
+          K8S_SECRET_VERSION: ${{ github.sha }}
+          K8S_SECRET_MAIL_MAILGUN_KEY: ${{ secrets.GH_MAILGUN_API_KEY }}
+          K8S_SECRET_MAIL_MAILGUN_DOMAIN: "mail.hel.ninja"
+          K8S_SECRET_MAIL_MAILGUN_API: "https://api.eu.mailgun.net/v3"
+          K8S_SECRET_MAILER_EMAIL_BACKEND: "anymail.backends.mailgun.EmailBackend"
+          K8S_SECRET_DEFAULT_FROM_EMAIL: "no-reply@hel.ninja"
+          K8S_SECRET_FIELD_ENCRYPTION_KEYS: ${{ secrets.GH_REVIEW_FIELD_ENCRYPTION_KEYS }}
+          K8S_SECRET_ENABLE_GRAPHIQL: 1
+          K8S_SECRET_SEED_DEVELOPMENT_DATA: 1
+          K8S_SECRET_AUDIT_LOGGING_ENABLED: 1
