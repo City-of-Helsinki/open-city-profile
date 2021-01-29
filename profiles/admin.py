@@ -111,6 +111,11 @@ class AddressAdminInline(admin.StackedInline):
 
 class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     model = VerifiedPersonalInformation
+    readonly_fields = (
+        "get_permanent_address",
+        "get_temporary_address",
+        "get_permanent_foreign_address",
+    )
     extra = 0
 
     def has_add_permission(self, request, obj=None):
@@ -121,6 +126,33 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_permanent_address(self, obj):
+        return "{}, {} {}\n".format(
+            obj.permanent_address.street_address,
+            obj.permanent_address.postal_code,
+            obj.permanent_address.post_office,
+        )
+
+    get_permanent_address.short_description = "Permanent address"
+
+    def get_temporary_address(self, obj):
+        return "{}, {} {}\n".format(
+            obj.temporary_address.street_address,
+            obj.temporary_address.postal_code,
+            obj.temporary_address.post_office,
+        )
+
+    get_temporary_address.short_description = "Temporary address"
+
+    def get_permanent_foreign_address(self, obj):
+        return "{}, {}, {}\n".format(
+            obj.permanent_foreign_address.street_address,
+            obj.permanent_foreign_address.additional_address,
+            obj.permanent_foreign_address.country_code,
+        )
+
+    get_permanent_foreign_address.short_description = "Permanent foreign address"
 
 
 class ImportProfilesFromJsonForm(forms.Form):
