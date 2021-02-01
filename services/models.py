@@ -69,6 +69,13 @@ class Service(TranslatableModel):
         return self.safe_translation_getter("title", super().__str__())
 
 
+class ServiceClientId(models.Model):
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="client_ids"
+    )
+    client_id = models.CharField(max_length=256, null=False, blank=False, unique=True)
+
+
 class ServiceConnection(SerializableMixin):
     profile = models.ForeignKey(
         "profiles.Profile", on_delete=models.CASCADE, related_name="service_connections"
