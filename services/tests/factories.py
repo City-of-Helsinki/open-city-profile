@@ -1,7 +1,12 @@
 import factory
 
 from profiles.tests.factories import ProfileFactory
-from services.models import AllowedDataField, Service, ServiceConnection
+from services.models import (
+    AllowedDataField,
+    Service,
+    ServiceClientId,
+    ServiceConnection,
+)
 
 from ..enums import ServiceType
 
@@ -14,6 +19,19 @@ class ServiceFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Service
+
+
+class ServiceClientIdFactory(factory.django.DjangoModelFactory):
+    service = factory.SubFactory(ServiceFactory)
+
+    @factory.lazy_attribute
+    def client_id(self):
+        id_format = f"{self.service.service_type.name}_client_id_%%%"
+        faker = factory.Faker("numerify", text=id_format)
+        return faker.generate()
+
+    class Meta:
+        model = ServiceClientId
 
 
 class ServiceConnectionFactory(factory.django.DjangoModelFactory):

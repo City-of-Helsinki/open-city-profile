@@ -13,7 +13,11 @@ from profiles.tests.factories import (
     VocabularyFactory,
 )
 from services.enums import ServiceType
-from services.tests.factories import ServiceFactory
+from services.tests.factories import (
+    ServiceClientIdFactory,
+    ServiceConnectionFactory,
+    ServiceFactory,
+)
 
 
 @pytest.fixture
@@ -58,6 +62,8 @@ def address_data(primary=False):
 
 # Register factory fixtures
 register(ServiceFactory)
+register(ServiceConnectionFactory)
+register(ServiceClientIdFactory)
 
 
 @pytest.fixture

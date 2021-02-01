@@ -811,6 +811,9 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
         required=True,
         description="The **user id** of the user the Profile is or will be associated with.",
     )
+    service_client_id = graphene.String(
+        description="Connect the profile to the service identified by this client id."
+    )
     profile = graphene.InputField(
         ProfileWithVerifiedPersonalInformationInput, required=True
     )
@@ -878,6 +881,13 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                     )
                 if address.is_empty():
                     address.delete()
+
+        service_client_id = input.pop("service_client_id", None)
+        if service_client_id:
+            service = Service.objects.get(client_ids__client_id=service_client_id)
+            profile.service_connections.update_or_create(
+                service=service, defaults={"enabled": True}
+            )
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile

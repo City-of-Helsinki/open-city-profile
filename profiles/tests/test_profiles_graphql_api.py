@@ -3022,6 +3022,93 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         assert not hasattr(profile.verified_personal_information, address_type)
 
     @staticmethod
+    def service_input_data(user_id, service_client_id):
+        user_id = str(user_id)
+        return {
+            "userId": user_id,
+            "serviceClientId": service_client_id,
+            "profile": {"verifiedPersonalInformation": {"firstName": "John"}},
+        }
+
+    @staticmethod
+    def execute_service_connection_test(
+        user_id, service_in_mutation, expected_service_connections, rf, gql_client
+    ):
+        input_data = TestProfileWithVerifiedPersonalInformationCreation.service_input_data(
+            user_id, service_in_mutation.client_ids.first().client_id
+        )
+
+        profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
+            input_data, rf, gql_client
+        )
+
+        connected_services = profile.service_connections.all()
+
+        assert connected_services.count() == len(expected_service_connections)
+        for service in expected_service_connections:
+            connection = connected_services.get(service=service)
+            assert connection.service == service
+            assert connection.enabled
+
+    def test_giving_non_existing_service_client_id_results_in_object_does_not_exist_error(
+        self, rf, user_gql_client
+    ):
+        input_data = self.service_input_data(uuid.uuid1(), "not_existing")
+
+        executed = self.execute_mutation(input_data, rf, user_gql_client)
+
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+
+    def test_add_new_service_connections(
+        self, service_factory, service_client_id_factory, rf, user_gql_client
+    ):
+        user_id = uuid.uuid1()
+        service1 = service_factory(service_type=ServiceType.BERTH)
+        service2 = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+        service_client_id_factory(service=service1)
+        service_client_id_factory(service=service2)
+
+        self.execute_service_connection_test(
+            user_id, service1, [service1], rf, user_gql_client
+        )
+
+        self.execute_service_connection_test(
+            user_id, service2, [service1, service2], rf, user_gql_client
+        )
+
+    def test_adding_existing_connection_again_does_nothing(
+        self,
+        profile,
+        service,
+        service_connection_factory,
+        service_client_id_factory,
+        rf,
+        user_gql_client,
+    ):
+        service_client_id_factory(service=service)
+        service_connection_factory(profile=profile, service=service, enabled=True)
+
+        self.execute_service_connection_test(
+            profile.user.uuid, service, [service], rf, user_gql_client
+        )
+
+    def test_enable_existing_disabled_service_connection(
+        self,
+        profile,
+        service,
+        service_connection_factory,
+        service_client_id_factory,
+        rf,
+        user_gql_client,
+    ):
+        service_client_id_factory(service=service)
+        service_connection_factory(profile=profile, service=service, enabled=False)
+
+        self.execute_service_connection_test(
+            profile.user.uuid, service, [service], rf, user_gql_client
+        )
+
+    @staticmethod
     def execute_mutation_with_invalid_input(rf, gql_client):
         input_data = {
             "userId": "03117666-117D-4F6B-80B1-A3A92B389711",

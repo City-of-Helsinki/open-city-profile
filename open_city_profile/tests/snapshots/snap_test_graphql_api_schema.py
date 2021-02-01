@@ -119,6 +119,7 @@ type CreateMyProfileTemporaryReadAccessTokenMutationPayload {
 
 input CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput {
   userId: UUID!
+  serviceClientId: String
   profile: ProfileWithVerifiedPersonalInformationInput!
 }
 
