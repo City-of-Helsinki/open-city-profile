@@ -52,8 +52,8 @@ def delete_nested(model, profile, data):
         model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
 
 
-def set_current_user(user):
-    _thread_locals.user = user
+def set_current_request(request):
+    _thread_locals.request = request
 
 
 def clear_thread_locals():
@@ -65,7 +65,8 @@ def set_current_service(service):
 
 
 def get_current_user():
-    return getattr(_thread_locals, "user", None)
+    request = getattr(_thread_locals, "request", None)
+    return getattr(request, "user", None) if request else None
 
 
 def get_current_service():

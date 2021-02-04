@@ -4,6 +4,7 @@ import logging
 import pytest
 from django.conf import settings
 
+from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
 
 from .factories import ProfileFactory
@@ -31,10 +32,10 @@ def cap_audit_log(caplog):
     return caplog
 
 
-def assert_common_fields(log_message):
+def assert_common_fields(log_message, actor_role="SYSTEM"):
     assert log_message["audit_event"]["origin"] == "PROFILE-BE"
     assert log_message["audit_event"]["status"] == "SUCCESS"
-    assert log_message["audit_event"]["actor"]["role"] == "SYSTEM"
+    assert log_message["audit_event"]["actor"]["role"] == actor_role
     assert log_message["audit_event"]["date_time_epoch"] is not None
     assert log_message["audit_event"]["date_time"] is not None
 
@@ -97,3 +98,23 @@ def test_audit_log_create(
         "profile_id": str(profile.pk),
         "profile_part": "base profile",
     }
+
+
+def test_actor_is_resolved_in_graphql_call(
+    enable_audit_log, enable_audit_log_username, live_server, profile, cap_audit_log
+):
+    user = profile.user
+    query = """
+        query {
+            myProfile {
+                id
+            }
+        }"""
+
+    do_graphql_call_as_user(live_server, user, query)
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
+    assert_common_fields(log_message, actor_role="OWNER")
+    assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
+    assert log_message["audit_event"]["actor"]["user_name"] == user.username
