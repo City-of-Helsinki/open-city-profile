@@ -1,6 +1,7 @@
 import uuid
 
 import requests
+import requests_mock
 from django.conf import settings
 from jose import jwt
 
@@ -53,18 +54,17 @@ query {
 }"""
 
 
-def do_graphql_call(live_server, mock_responses, request_auth=None, query=_QUERY):
+def do_graphql_call(live_server, request_auth=None, query=_QUERY):
     url = live_server.url + "/graphql/"
-
-    mock_responses.add_passthru(url)
-    mock_responses.add(method="GET", url=CONFIG_URL, json=CONFIGURATION)
-    mock_responses.add(method="GET", url=JWKS_URL, json=KEYS)
-
     payload = {
         "query": query,
     }
 
-    response = requests.post(url, json=payload, auth=request_auth)
+    with requests_mock.Mocker(real_http=True) as mock:
+        mock.get(CONFIG_URL, json=CONFIGURATION)
+        mock.get(JWKS_URL, json=KEYS)
+
+        response = requests.post(url, json=payload, auth=request_auth)
 
     assert response.status_code == 200
 
