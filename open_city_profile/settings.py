@@ -50,6 +50,7 @@ env = environ.Env(
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
     AUDIT_LOG_USERNAME=(bool, False),
+    AUDIT_LOG_FILENAME=(str, ""),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
@@ -336,12 +337,27 @@ YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
+AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
+
+if AUDIT_LOG_FILENAME:
+    _audit_log_handler = {
+        "level": "INFO",
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": AUDIT_LOG_FILENAME,
+        "maxBytes": 100_000_000,
+        "backupCount": 1,
+    }
+else:
+    _audit_log_handler = {
+        "level": "INFO",
+        "class": "logging.StreamHandler",
+        "stream": stdout,
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "audit": {"level": "INFO", "class": "logging.StreamHandler", "stream": stdout}
-    },
+    "handlers": {"audit": _audit_log_handler},
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
 
