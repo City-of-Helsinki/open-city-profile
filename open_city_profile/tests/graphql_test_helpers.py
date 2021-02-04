@@ -53,9 +53,7 @@ query {
 }"""
 
 
-def do_graphql_authentication_test(
-    live_server, mock_responses, request_auth=None, query=_QUERY
-):
+def do_graphql_call(live_server, mock_responses, request_auth=None, query=_QUERY):
     url = live_server.url + "/graphql/"
 
     mock_responses.add_passthru(url)
