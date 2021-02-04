@@ -158,11 +158,7 @@ regex==2020.4.4
 requests-mock==1.8.0
     # via -r requirements-dev.in
 requests==2.25.1
-    # via
-    #   requests-mock
-    #   responses
-responses==0.12.1
-    # via -r requirements-dev.in
+    # via requests-mock
 rope==0.16.0
     # via -r requirements-dev.in
 rsa==4.0
@@ -174,7 +170,6 @@ six==1.14.0
     #   python-dateutil
     #   python-jose
     #   requests-mock
-    #   responses
     #   snapshottest
     #   traitlets
     #   virtualenv
@@ -195,9 +190,7 @@ traitlets==4.3.3
 typed-ast==1.4.1
     # via black
 urllib3==1.25.11
-    # via
-    #   requests
-    #   responses
+    # via requests
 virtualenv==20.0.20
     # via pre-commit
 wasmer==0.4.1

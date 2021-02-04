@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 import factory.random
 import pytest
-import responses
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from graphene.test import Client as GrapheneClient
@@ -109,12 +108,6 @@ def gql_schema(rf, anon_user_gql_client):
     request = rf.post("/graphql")
     introspection = anon_user_gql_client.execute(introspection_query, context=request)
     return build_client_schema(introspection["data"])
-
-
-@pytest.fixture
-def mock_responses():
-    with responses.RequestsMock(assert_all_requests_are_fired=False) as mock_resps:
-        yield mock_resps
 
 
 def get_unix_timestamp_now():
