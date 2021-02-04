@@ -3,12 +3,12 @@ import pytest
 from open_city_profile.tests.graphql_test_helpers import (
     BearerTokenAuth,
     do_graphql_call,
+    do_graphql_call_as_user,
 )
 
 
 def test_presenting_a_valid_access_token_grants_access(profile, live_server):
-    claims = {"sub": str(profile.user.uuid)}
-    data, errors = do_graphql_call(live_server, BearerTokenAuth(extra_claims=claims))
+    data, errors = do_graphql_call_as_user(live_server, profile.user)
 
     assert not errors
     assert data["myProfile"]["id"]

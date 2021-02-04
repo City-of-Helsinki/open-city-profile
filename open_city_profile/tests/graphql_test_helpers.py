@@ -70,3 +70,10 @@ def do_graphql_call(live_server, request_auth=None, query=_QUERY):
 
     body = response.json()
     return body.get("data"), body.get("errors")
+
+
+def do_graphql_call_as_user(live_server, user, query=_QUERY):
+    claims = {"sub": str(user.uuid)}
+    return do_graphql_call(
+        live_server, BearerTokenAuth(extra_claims=claims), query=query,
+    )
