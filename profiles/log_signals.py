@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db.models.signals import post_delete, post_init, post_save
@@ -36,7 +36,7 @@ def log(action, instance):
     ):
         logger = logging.getLogger("audit")
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(tz=timezone.utc)
         current_user = get_current_user()
         profile = instance.resolve_profile()
         profile_id = str(profile.pk) if profile else None

@@ -4,6 +4,8 @@ import logging
 import pytest
 from django.conf import settings
 
+from open_city_profile.tests.asserts import assert_almost_equal
+from open_city_profile.tests.conftest import get_unix_timestamp_now
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
 
@@ -36,7 +38,8 @@ def assert_common_fields(log_message, actor_role="SYSTEM"):
     assert log_message["audit_event"]["origin"] == "PROFILE-BE"
     assert log_message["audit_event"]["status"] == "SUCCESS"
     assert log_message["audit_event"]["actor"]["role"] == actor_role
-    assert log_message["audit_event"]["date_time_epoch"] is not None
+    now = get_unix_timestamp_now()
+    assert_almost_equal(log_message["audit_event"]["date_time_epoch"], now)
     assert log_message["audit_event"]["date_time"] is not None
 
 
