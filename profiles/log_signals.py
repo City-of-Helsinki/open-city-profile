@@ -47,7 +47,7 @@ def log(action, instance):
                 "origin": "PROFILE-BE",
                 "status": "SUCCESS",
                 "date_time_epoch": int(current_time.timestamp()),
-                "date_time": f"{current_time.isoformat(sep='T', timespec='milliseconds')}Z",
+                "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
                 "actor": {"role": _resolve_role(current_user, profile)},
                 "operation": action,
                 "target": {

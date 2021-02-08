@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from django.conf import settings
@@ -40,7 +41,12 @@ def assert_common_fields(log_message, actor_role="SYSTEM"):
     assert log_message["audit_event"]["actor"]["role"] == actor_role
     now = get_unix_timestamp_now()
     assert_almost_equal(log_message["audit_event"]["date_time_epoch"], now)
-    assert log_message["audit_event"]["date_time"] is not None
+
+    now_dt = datetime.fromtimestamp(now, tz=timezone.utc)
+    log_dt = datetime.strptime(
+        log_message["audit_event"]["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+    ).replace(tzinfo=timezone.utc)
+    assert_almost_equal(log_dt, now_dt, timedelta(seconds=1))
 
 
 def test_audit_log_read(user, enable_audit_log, cap_audit_log):
