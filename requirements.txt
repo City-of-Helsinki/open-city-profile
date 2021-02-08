@@ -149,7 +149,7 @@ openpyxl==3.0.3
     # via tablib
 packaging==20.3
     # via deprecation
-pillow==6.2.0
+pillow==7.1.0
     # via -r requirements.in
 promise==2.2.1
     # via
