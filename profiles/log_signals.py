@@ -15,15 +15,27 @@ def should_audit(model):
     return False
 
 
-def log(action, instance):
-    def _resolve_role(current_user, profile):
-        if profile.user == current_user:
-            return "OWNER"
-        elif current_user is not None:
-            return "ADMIN"
-        else:
-            return "SYSTEM"
+def _resolve_role(current_user, profile):
+    if profile.user == current_user:
+        return "OWNER"
+    elif current_user is not None:
+        return "ADMIN"
+    else:
+        return "SYSTEM"
 
+
+def _format_user_data(audit_event, field_name, user):
+    if user:
+        audit_event[field_name]["user_id"] = (
+            str(user.uuid) if hasattr(user, "uuid") else None
+        )
+        if settings.AUDIT_LOG_USERNAME:
+            audit_event[field_name]["user_name"] = (
+                user.username if hasattr(user, "username") else None
+            )
+
+
+def log(action, instance):
     profile_parts = {
         "Profile": "base profile",
         "SensitiveData": "sensitive data",
@@ -57,23 +69,9 @@ def log(action, instance):
             }
         }
 
-        if current_user:
-            message["audit_event"]["actor"]["user_id"] = (
-                str(current_user.uuid) if hasattr(current_user, "uuid") else None
-            )
-            if settings.AUDIT_LOG_USERNAME:
-                message["audit_event"]["actor"]["user_name"] = (
-                    current_user.username if hasattr(current_user, "username") else None
-                )
+        _format_user_data(message["audit_event"], "actor", current_user)
 
-        if target_user:
-            message["audit_event"]["target"]["user_id"] = (
-                str(target_user.uuid) if hasattr(target_user, "uuid") else None
-            )
-            if settings.AUDIT_LOG_USERNAME:
-                message["audit_event"]["target"]["user_name"] = (
-                    target_user.username if hasattr(target_user, "username") else None
-                )
+        _format_user_data(message["audit_event"], "target", target_user)
 
         service = get_current_service()
         if service:
