@@ -109,21 +109,42 @@ def test_audit_log_create(
     }
 
 
+MY_PROFILE_QUERY = """
+    query {
+        myProfile {
+            id
+        }
+    }
+"""
+
+
 def test_actor_is_resolved_in_graphql_call(
     enable_audit_log, enable_audit_log_username, live_server, profile, cap_audit_log
 ):
     user = profile.user
-    query = """
-        query {
-            myProfile {
-                id
-            }
-        }"""
 
-    do_graphql_call_as_user(live_server, user, query)
+    do_graphql_call_as_user(live_server, user, MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
     assert_common_fields(log_message, actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
     assert log_message["audit_event"]["actor"]["user_name"] == user.username
+
+
+def test_requester_ip_address_is_extracted_from_x_forwarded_for_header(
+    enable_audit_log, live_server, profile, cap_audit_log
+):
+    user = profile.user
+
+    ip_address = "12.23.34.45"
+
+    request_args = {"headers": {"X-Forwarded-For": ip_address}}
+
+    do_graphql_call_as_user(
+        live_server, user, MY_PROFILE_QUERY, extra_request_args=request_args
+    )
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
+    assert log_message["audit_event"]["profilebe"]["ip_address"] == ip_address

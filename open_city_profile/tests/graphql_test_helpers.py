@@ -54,7 +54,9 @@ query {
 }"""
 
 
-def do_graphql_call(live_server, request_auth=None, query=_QUERY):
+def do_graphql_call(
+    live_server, request_auth=None, query=_QUERY, extra_request_args=dict()
+):
     url = live_server.url + "/graphql/"
     payload = {
         "query": query,
@@ -64,7 +66,12 @@ def do_graphql_call(live_server, request_auth=None, query=_QUERY):
         mock.get(CONFIG_URL, json=CONFIGURATION)
         mock.get(JWKS_URL, json=KEYS)
 
-        response = requests.post(url, json=payload, auth=request_auth)
+        request_args = {
+            "auth": request_auth,
+        }
+        request_args.update(extra_request_args)
+
+        response = requests.post(url, json=payload, **request_args)
 
     assert response.status_code == 200
 
@@ -72,8 +79,11 @@ def do_graphql_call(live_server, request_auth=None, query=_QUERY):
     return body.get("data"), body.get("errors")
 
 
-def do_graphql_call_as_user(live_server, user, query=_QUERY):
+def do_graphql_call_as_user(live_server, user, query=_QUERY, extra_request_args=dict()):
     claims = {"sub": str(user.uuid)}
     return do_graphql_call(
-        live_server, BearerTokenAuth(extra_claims=claims), query=query,
+        live_server,
+        BearerTokenAuth(extra_claims=claims),
+        query=query,
+        extra_request_args=extra_request_args,
     )

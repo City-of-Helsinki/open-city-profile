@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models.signals import post_delete, post_init, post_save
 from django.dispatch import receiver
 
-from .utils import get_current_service, get_current_user
+from .utils import get_current_service, get_current_user, get_original_client_ip
 
 
 def should_audit(model):
@@ -79,6 +79,13 @@ def log(action, instance):
                 "id": str(service.name),
                 "name": str(service.label),
             }
+
+        ip_address = get_original_client_ip()
+        if ip_address:
+            message["audit_event"]["profilebe"] = {
+                "ip_address": ip_address,
+            }
+
         logger.info(json.dumps(message))
 
 

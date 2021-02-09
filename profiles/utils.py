@@ -64,9 +64,18 @@ def set_current_service(service):
     _thread_locals.service = service
 
 
+def get_current_request():
+    return getattr(_thread_locals, "request", None)
+
+
 def get_current_user():
-    request = getattr(_thread_locals, "request", None)
+    request = get_current_request()
     return getattr(request, "user", None) if request else None
+
+
+def get_original_client_ip():
+    request = get_current_request()
+    return request.headers.get("x-forwarded-for") if request else None
 
 
 def get_current_service():
