@@ -132,20 +132,33 @@ def test_actor_is_resolved_in_graphql_call(
     assert log_message["audit_event"]["actor"]["user_name"] == user.username
 
 
-@pytest.mark.parametrize(
-    "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
-)
-def test_requester_ip_address_is_extracted_from_x_forwarded_for_header(
-    header, enable_audit_log, live_server, profile, cap_audit_log
-):
-    user = profile.user
+class TestIPAddressLogging:
+    @staticmethod
+    def execute_ip_address_test(
+        live_server, profile, expected_ip, cap_audit_log, request_args=dict()
+    ):
+        user = profile.user
 
-    request_args = {"headers": {"X-Forwarded-For": header}}
+        do_graphql_call_as_user(
+            live_server, user, MY_PROFILE_QUERY, extra_request_args=request_args
+        )
+        audit_logs = cap_audit_log.get_logs()
+        assert len(audit_logs) == 1
+        log_message = audit_logs[0]
+        assert log_message["audit_event"]["profilebe"]["ip_address"] == expected_ip
 
-    do_graphql_call_as_user(
-        live_server, user, MY_PROFILE_QUERY, extra_request_args=request_args
+    @pytest.mark.parametrize(
+        "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
     )
-    audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
-    log_message = audit_logs[0]
-    assert log_message["audit_event"]["profilebe"]["ip_address"] == "12.23.34.45"
+    def test_requester_ip_address_is_extracted_from_x_forwarded_for_header(
+        self, header, enable_audit_log, live_server, profile, cap_audit_log
+    ):
+        request_args = {"headers": {"X-Forwarded-For": header}}
+        self.execute_ip_address_test(
+            live_server, profile, "12.23.34.45", cap_audit_log, request_args
+        )
+
+    def test_requester_ip_address_is_extracted_from_remote_addr_meta(
+        self, enable_audit_log, live_server, profile, cap_audit_log
+    ):
+        self.execute_ip_address_test(live_server, profile, "127.0.0.1", cap_audit_log)
