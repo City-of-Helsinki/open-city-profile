@@ -12,6 +12,13 @@ User = get_user_model()
 
 @admin.register(User)
 class UserAdmin(VersionAdmin, DjangoUserAdmin):
+    list_display = (
+        "uuid",
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+    )
     inlines = [ProfileAdminInline]
 
     def get_fieldsets(self, request, obj=None):
