@@ -19,6 +19,7 @@ class UserAdmin(VersionAdmin, DjangoUserAdmin):
         "last_name",
         "is_staff",
     )
+    search_fields = ("uuid", "first_name", "last_name", "email")
     inlines = [ProfileAdminInline]
 
     def get_fieldsets(self, request, obj=None):
