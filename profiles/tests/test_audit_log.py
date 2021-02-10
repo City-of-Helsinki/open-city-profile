@@ -158,6 +158,16 @@ class TestIPAddressLogging:
             live_server, profile, "12.23.34.45", cap_audit_log, request_args
         )
 
+    def test_do_not_use_x_forwarded_for_header_if_it_is_denied_in_settings(
+        self, enable_audit_log, live_server, settings, profile, cap_audit_log
+    ):
+        settings.USE_X_FORWARDED_FOR = False
+        request_args = {"headers": {"X-Forwarded-For": "should ignore"}}
+
+        self.execute_ip_address_test(
+            live_server, profile, "127.0.0.1", cap_audit_log, request_args
+        )
+
     def test_requester_ip_address_is_extracted_from_remote_addr_meta(
         self, enable_audit_log, live_server, profile, cap_audit_log
     ):

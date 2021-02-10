@@ -59,6 +59,7 @@ env = environ.Env(
     SESSION_COOKIE_NAME=(str, ""),
     SESSION_COOKIE_PATH=(str, ""),
     SESSION_COOKIE_SECURE=(bool, None),
+    USE_X_FORWARDED_FOR=(bool, False),
     USE_X_FORWARDED_HOST=(bool, None),
     CSRF_TRUSTED_ORIGINS=(list, []),
     TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
@@ -110,6 +111,8 @@ if env("SESSION_COOKIE_PATH"):
 
 if env("SESSION_COOKIE_SECURE") is not None:
     SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE")
+
+USE_X_FORWARDED_FOR = env.bool("USE_X_FORWARDED_FOR")
 
 if env("USE_X_FORWARDED_HOST") is not None:
     USE_X_FORWARDED_HOST = env.bool("USE_X_FORWARDED_HOST")

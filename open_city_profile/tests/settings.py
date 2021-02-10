@@ -1,5 +1,7 @@
 from open_city_profile.settings import *  # noqa
 
+USE_X_FORWARDED_FOR = True
+
 OIDC_API_TOKEN_AUTH = {
     "AUDIENCE": "test_audience",
     "ISSUER": "https://test_issuer",

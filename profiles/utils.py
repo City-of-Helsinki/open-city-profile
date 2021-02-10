@@ -1,6 +1,7 @@
 import threading
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from graphql_relay.node.node import from_global_id
 
@@ -78,8 +79,9 @@ def get_original_client_ip():
 
     request = get_current_request()
     if request:
-        forwarded_for = request.headers.get("x-forwarded-for", "")
-        client_ip = forwarded_for.split(",")[0] or None
+        if settings.USE_X_FORWARDED_FOR:
+            forwarded_for = request.headers.get("x-forwarded-for", "")
+            client_ip = forwarded_for.split(",")[0] or None
 
         if not client_ip:
             client_ip = request.META.get("REMOTE_ADDR")
