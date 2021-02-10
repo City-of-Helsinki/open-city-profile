@@ -78,6 +78,7 @@ sftp-config.json
 target/
 var/
 venv/
+.venv*/
 .pytest_cache/
 docker-compose.env.yaml
 .vscode/settings.json
