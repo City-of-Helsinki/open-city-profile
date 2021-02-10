@@ -74,8 +74,14 @@ def get_current_user():
 
 
 def get_original_client_ip():
+    client_ip = None
+
     request = get_current_request()
-    return request.headers.get("x-forwarded-for") if request else None
+    if request:
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0] or None
+
+    return client_ip
 
 
 def get_current_service():
