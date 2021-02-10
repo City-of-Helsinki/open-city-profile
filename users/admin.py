@@ -15,12 +15,14 @@ User = get_user_model()
 class UserAdmin(VersionAdmin, DjangoUserAdmin):
     list_display = (
         "uuid",
+        "get_profile_uuid_link",
         "email",
         "first_name",
         "last_name",
         "is_staff",
     )
-    search_fields = ("uuid", "first_name", "last_name", "email")
+    list_select_related = ("profile",)
+    search_fields = ("uuid", "first_name", "last_name", "email", "profile__id")
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -43,3 +45,4 @@ class UserAdmin(VersionAdmin, DjangoUserAdmin):
         )
 
     get_profile_uuid_link.short_description = _("Profile")
+    get_profile_uuid_link.admin_order_field = "profile__id"
