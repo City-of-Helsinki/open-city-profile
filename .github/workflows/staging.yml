@@ -16,6 +16,11 @@ env:
   BASE_DOMAIN: ${{ secrets.BASE_DOMAIN_STAGING }}
   APP_MIGRATE_COMMAND: /app/.prod/on_deploy.sh
   SERVICE_PORT: "8080"
+  K8S_REQUEST_CPU: 50m
+  K8S_REQUEST_RAM: 300Mi
+  K8S_LIMIT_CPU: 200m
+  K8S_LIMIT_RAM: 400Mi
+  K8S_REPLICACOUNT: 2
 
 jobs:
   build:
