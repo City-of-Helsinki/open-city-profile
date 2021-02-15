@@ -2877,10 +2877,17 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         assert permanent_foreign_address.additional_address == "東京都中央区八重洲1-5-3"
         assert permanent_foreign_address.country_code == "JP"
 
+        return profile.user
+
     def test_profile_with_verified_personal_information_can_be_created(
         self, rf, user_gql_client
     ):
-        self.execute_successful_profile_creation_test(uuid.uuid1(), rf, user_gql_client)
+        current_user = self.execute_successful_profile_creation_test(
+            uuid.uuid1(), rf, user_gql_client
+        )
+
+        assert current_user.first_name == "John"
+        assert current_user.last_name == "Smith"
 
     def test_manage_verified_personal_information_permission_is_needed(
         self, rf, user_gql_client
@@ -2910,7 +2917,12 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         assert executed["errors"][0]["extensions"]["code"] == "PERMISSION_DENIED_ERROR"
 
     def test_existing_user_is_used(self, user, rf, user_gql_client):
-        self.execute_successful_profile_creation_test(user.uuid, rf, user_gql_client)
+        current_user = self.execute_successful_profile_creation_test(
+            user.uuid, rf, user_gql_client
+        )
+
+        assert current_user.first_name == "John"
+        assert current_user.last_name == "Smith"
 
     def test_existing_profile_without_verified_personal_information_is_updated(
         self, profile, rf, user_gql_client
@@ -2925,6 +2937,21 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         self.execute_successful_profile_creation_test(
             profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
         )
+
+    def test_when_first_and_last_name_are_not_given_the_names_of_user_are_not_changed(
+        self, user, rf, user_gql_client
+    ):
+        input_data = {
+            "userId": str(user.uuid),
+            "profile": {"verifiedPersonalInformation": {"givenName": "Frankie"}},
+        }
+
+        current_user = self.execute_successful_mutation(
+            input_data, rf, user_gql_client
+        ).user
+
+        assert current_user.first_name == user.first_name
+        assert current_user.last_name == user.last_name
 
     def test_all_basic_fields_can_be_set_to_null(self, rf, user_gql_client):
         input_data = {

@@ -865,7 +865,15 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                 address_type["name"], None
             )
 
-        user, created = User.objects.get_or_create(uuid=user_id_input)
+        user_names = {}
+        for name_part in ["first_name", "last_name"]:
+            if name_part in verified_personal_information_input:
+                user_names[name_part] = (
+                    verified_personal_information_input.get(name_part) or ""
+                )
+        user, created = User.objects.update_or_create(
+            uuid=user_id_input, defaults=user_names
+        )
 
         profile, created = Profile.objects.get_or_create(user=user)
 
