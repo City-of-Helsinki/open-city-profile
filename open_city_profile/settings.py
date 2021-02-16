@@ -194,7 +194,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reversion.middleware.RevisionMiddleware",
-    "profiles.middleware.SetCurrentRequest",
+    "profiles.middleware.ProfilesMiddleware",
 ]
 
 TEMPLATES = [

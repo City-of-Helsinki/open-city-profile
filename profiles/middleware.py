@@ -4,7 +4,7 @@ from .audit_log import flush_audit_log
 from .utils import clear_thread_locals, set_current_request
 
 
-class SetCurrentRequest(MiddlewareMixin):
+class ProfilesMiddleware(MiddlewareMixin):
     def process_request(self, request):
         set_current_request(request)
 
