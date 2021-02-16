@@ -8,6 +8,7 @@ from django.conf import settings
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.conftest import get_unix_timestamp_now
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
+from profiles.audit_log import flush_audit_log
 from profiles.models import Profile
 
 from .factories import ProfileFactory
@@ -25,7 +26,12 @@ def enable_audit_log_username():
 
 @pytest.fixture
 def cap_audit_log(caplog):
+    flush_audit_log()
+    caplog.clear()
+
     def get_logs(self):
+        flush_audit_log()
+
         audit_records = [
             r for r in self.records if r.name == "audit" and r.levelno == logging.INFO
         ]
@@ -49,19 +55,16 @@ def assert_common_fields(log_message, actor_role="SYSTEM"):
     assert_almost_equal(log_dt, now_dt, timedelta(seconds=1))
 
 
-def test_audit_log_read(user, enable_audit_log, cap_audit_log):
-    ProfileFactory()
-
-    cap_audit_log.clear()
-    profile = Profile.objects.first()
+def test_audit_log_read(user, enable_audit_log, profile, cap_audit_log):
+    profile_from_db = Profile.objects.first()
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
     assert_common_fields(log_message)
     assert log_message["audit_event"]["operation"] == "READ"
     assert log_message["audit_event"]["target"] == {
-        "user_id": str(profile.user.uuid),
-        "profile_id": str(profile.pk),
+        "user_id": str(profile_from_db.user.uuid),
+        "profile_id": str(profile_from_db.pk),
         "profile_part": "base profile",
     }
 

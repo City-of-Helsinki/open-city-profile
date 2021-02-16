@@ -1,16 +1,32 @@
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 
 from django.conf import settings
 
 from .utils import get_current_service, get_current_user, get_original_client_ip
 
+_thread_locals = threading.local()
 
-def should_audit(model):
+
+def _should_audit(model):
     if hasattr(model, "audit_log") and model.audit_log:
         return True
     return False
+
+
+def add_loggable(action, instance):
+    if (
+        settings.AUDIT_LOGGING_ENABLED
+        and _should_audit(instance.__class__)
+        and instance.pk
+    ):
+        current_time = datetime.now(tz=timezone.utc)
+
+        if not hasattr(_thread_locals, "loggables"):
+            _thread_locals.loggables = list()
+        _thread_locals.loggables.append((current_time, action, instance))
 
 
 def _resolve_role(current_user, profile):
@@ -33,20 +49,15 @@ def _format_user_data(audit_event, field_name, user):
             )
 
 
-def log(action, instance):
+def flush_audit_log():
     profile_parts = {
         "Profile": "base profile",
         "SensitiveData": "sensitive data",
     }
 
-    if (
-        settings.AUDIT_LOGGING_ENABLED
-        and should_audit(instance.__class__)
-        and instance.pk
-    ):
-        logger = logging.getLogger("audit")
+    logger = logging.getLogger("audit")
 
-        current_time = datetime.now(tz=timezone.utc)
+    for event_time, action, instance in getattr(_thread_locals, "loggables", list()):
         current_user = get_current_user()
         profile = instance.resolve_profile()
         profile_id = str(profile.pk) if profile else None
@@ -56,8 +67,8 @@ def log(action, instance):
             "audit_event": {
                 "origin": "PROFILE-BE",
                 "status": "SUCCESS",
-                "date_time_epoch": int(current_time.timestamp()),
-                "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
+                "date_time_epoch": int(event_time.timestamp()),
+                "date_time": f"{event_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
                 "actor": {"role": _resolve_role(current_user, profile)},
                 "operation": action,
                 "target": {
@@ -85,3 +96,5 @@ def log(action, instance):
             }
 
         logger.info(json.dumps(message))
+
+    _thread_locals.loggables = list()
