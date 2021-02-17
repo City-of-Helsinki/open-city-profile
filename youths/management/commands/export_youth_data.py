@@ -52,7 +52,8 @@ class Command(BaseCommand):
         for obj in youth_data:
             # in youth-membership User is related directly to YouthProfile.
             # we'll want this to be used as a natural key when deserializing, hence the tuple
-            obj["fields"]["user"] = (user_uuids_by_youth_id.get(obj["pk"]),)
+            user_uuid = user_uuids_by_youth_id.get(obj["pk"])
+            obj["fields"]["user"] = (user_uuid,) if user_uuid else None
             # in youth-membership YouthProfile pk should be the pk of the corresponding Profile
             obj["pk"] = obj["fields"].pop("profile")
 
