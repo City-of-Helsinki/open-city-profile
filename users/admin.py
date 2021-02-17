@@ -17,11 +17,11 @@ class UserAdmin(VersionAdmin, DjangoUserAdmin):
         "uuid",
         "get_profile_uuid_link",
         "email",
-        "first_name",
-        "last_name",
+        "get_first_name",
+        "get_last_name",
         "is_staff",
     )
-    list_select_related = ("profile",)
+    list_select_related = ("profile", "profile__verified_personal_information")
     search_fields = ("uuid", "first_name", "last_name", "email", "profile__id")
 
     def get_fieldsets(self, request, obj=None):
@@ -46,3 +46,21 @@ class UserAdmin(VersionAdmin, DjangoUserAdmin):
 
     get_profile_uuid_link.short_description = _("Profile")
     get_profile_uuid_link.admin_order_field = "profile__id"
+
+    def get_first_name(self, obj):
+        return (
+            obj.first_name
+            or obj.profile.first_name
+            or obj.profile.verified_personal_information.first_name
+        )
+
+    get_first_name.short_description = _("First name")
+
+    def get_last_name(self, obj):
+        return (
+            obj.last_name
+            or obj.profile.last_name
+            or obj.profile.verified_personal_information.last_name
+        )
+
+    get_last_name.short_description = _("Last name")
