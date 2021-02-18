@@ -239,12 +239,10 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
-    first_name = fields.EncryptedCharField(
+    first_name = models.CharField(
         max_length=1024, blank=True, help_text="First name(s)."
     )
-    last_name = fields.EncryptedCharField(
-        max_length=1024, blank=True, help_text="Last name."
-    )
+    last_name = models.CharField(max_length=1024, blank=True, help_text="Last name.")
     given_name = fields.EncryptedCharField(
         max_length=1024, blank=True, help_text="The name the person is called with."
     )

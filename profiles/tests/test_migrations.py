@@ -87,3 +87,34 @@ def test_fix_primary_email_migration(migration_test_db):
     execute_migration_test(
         "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration
     )
+
+
+def test_verified_personal_information_searchable_names_migration(migration_test_db):
+    FIRST_NAME = "First name"
+    LAST_NAME = "Last name"
+
+    def create_data(apps):
+        Profile = apps.get_model(app, "Profile")
+        VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
+        profile = Profile.objects.create()
+        VerifiedPersonalInformation.objects.create(
+            profile=profile, first_name=FIRST_NAME, last_name=LAST_NAME
+        )
+
+    def verify_migration(apps):
+        VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
+        vpi = VerifiedPersonalInformation.objects.get(
+            first_name__icontains=FIRST_NAME[:4].lower()
+        )
+        assert vpi.first_name == FIRST_NAME
+        vpi = VerifiedPersonalInformation.objects.get(
+            last_name__icontains=LAST_NAME[:4].lower()
+        )
+        assert vpi.last_name == LAST_NAME
+
+    execute_migration_test(
+        "0034_add_help_texts_to_fields__noop",
+        "0036_start_using_raw_verifiedpersonalinformation_names",
+        create_data,
+        verify_migration,
+    )
