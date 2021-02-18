@@ -22,7 +22,17 @@ class UserAdmin(VersionAdmin, DjangoUserAdmin):
         "is_staff",
     )
     list_select_related = ("profile", "profile__verified_personal_information")
-    search_fields = ("uuid", "first_name", "last_name", "email", "profile__id")
+    search_fields = (
+        "uuid",
+        "first_name",
+        "last_name",
+        "email",
+        "profile__id",
+        "profile__first_name",
+        "profile__last_name",
+        "profile__verified_personal_information__first_name",
+        "profile__verified_personal_information__last_name",
+    )
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
