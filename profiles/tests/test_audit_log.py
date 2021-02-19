@@ -35,9 +35,10 @@ def cap_audit_log(caplog):
     return caplog
 
 
-def assert_common_fields(log_message, actor_role="SYSTEM"):
+def assert_common_fields(log_message, operation, actor_role="SYSTEM"):
     assert log_message["audit_event"]["origin"] == "PROFILE-BE"
     assert log_message["audit_event"]["status"] == "SUCCESS"
+    assert log_message["audit_event"]["operation"] == operation
     assert log_message["audit_event"]["actor"]["role"] == actor_role
     now = get_unix_timestamp_now()
     assert_almost_equal(log_message["audit_event"]["date_time_epoch"], now)
@@ -57,8 +58,7 @@ def test_audit_log_read(cap_audit_log):
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
-    assert_common_fields(log_message)
-    assert log_message["audit_event"]["operation"] == "READ"
+    assert_common_fields(log_message, "READ")
     assert log_message["audit_event"]["target"] == {
         "user_id": str(profile.user.uuid),
         "profile_id": str(profile.pk),
@@ -72,8 +72,7 @@ def test_audit_log_update(profile, cap_audit_log):
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
-    assert_common_fields(log_message)
-    assert log_message["audit_event"]["operation"] == "UPDATE"
+    assert_common_fields(log_message, "UPDATE")
     assert log_message["audit_event"]["target"] == {
         "user_id": str(profile.user.uuid),
         "profile_id": str(profile.pk),
@@ -86,8 +85,7 @@ def test_audit_log_delete(profile, cap_audit_log):
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
-    assert_common_fields(log_message)
-    assert log_message["audit_event"]["operation"] == "DELETE"
+    assert_common_fields(log_message, "DELETE")
 
 
 def test_audit_log_create(enable_audit_log_username, cap_audit_log):
@@ -97,8 +95,7 @@ def test_audit_log_create(enable_audit_log_username, cap_audit_log):
         len(audit_logs) == 2
     )  # profile is accessed here as well, thus the 2 log entries
     log_message = audit_logs[1]
-    assert_common_fields(log_message)
-    assert log_message["audit_event"]["operation"] == "CREATE"
+    assert_common_fields(log_message, "CREATE")
     assert log_message["audit_event"]["target"] == {
         "user_id": str(profile.user.uuid),
         "user_name": profile.user.username,
@@ -125,7 +122,7 @@ def test_actor_is_resolved_in_graphql_call(
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
-    assert_common_fields(log_message, actor_role="OWNER")
+    assert_common_fields(log_message, "READ", actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
     assert log_message["audit_event"]["actor"]["user_name"] == user.username
 
