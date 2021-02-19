@@ -36,16 +36,19 @@ def cap_audit_log(caplog):
 
 
 def assert_common_fields(log_message, operation, actor_role="SYSTEM"):
-    assert log_message["audit_event"]["origin"] == "PROFILE-BE"
-    assert log_message["audit_event"]["status"] == "SUCCESS"
-    assert log_message["audit_event"]["operation"] == operation
-    assert log_message["audit_event"]["actor"]["role"] == actor_role
     now = get_unix_timestamp_now()
-    assert_almost_equal(log_message["audit_event"]["date_time_epoch"], now)
+    audit_event = log_message["audit_event"]
+
+    assert audit_event["origin"] == "PROFILE-BE"
+    assert audit_event["status"] == "SUCCESS"
+    assert audit_event["operation"] == operation
+    assert audit_event["actor"]["role"] == actor_role
+
+    assert_almost_equal(audit_event["date_time_epoch"], now)
 
     now_dt = datetime.fromtimestamp(now, tz=timezone.utc)
     log_dt = datetime.strptime(
-        log_message["audit_event"]["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+        audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
     ).replace(tzinfo=timezone.utc)
     assert_almost_equal(log_dt, now_dt, timedelta(seconds=1))
 
