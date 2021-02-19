@@ -13,7 +13,7 @@ from profiles.models import Profile
 from .factories import ProfileFactory
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def enable_audit_log():
     settings.AUDIT_LOGGING_ENABLED = True
 
@@ -49,7 +49,7 @@ def assert_common_fields(log_message, actor_role="SYSTEM"):
     assert_almost_equal(log_dt, now_dt, timedelta(seconds=1))
 
 
-def test_audit_log_read(user, enable_audit_log, cap_audit_log):
+def test_audit_log_read(cap_audit_log):
     ProfileFactory()
 
     cap_audit_log.clear()
@@ -66,7 +66,7 @@ def test_audit_log_read(user, enable_audit_log, cap_audit_log):
     }
 
 
-def test_audit_log_update(user, enable_audit_log, profile, cap_audit_log):
+def test_audit_log_update(profile, cap_audit_log):
     profile.first_name = "John"
     profile.save()
     audit_logs = cap_audit_log.get_logs()
@@ -81,7 +81,7 @@ def test_audit_log_update(user, enable_audit_log, profile, cap_audit_log):
     }
 
 
-def test_audit_log_delete(user, enable_audit_log, profile, cap_audit_log):
+def test_audit_log_delete(profile, cap_audit_log):
     profile.delete()
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
@@ -90,9 +90,7 @@ def test_audit_log_delete(user, enable_audit_log, profile, cap_audit_log):
     assert log_message["audit_event"]["operation"] == "DELETE"
 
 
-def test_audit_log_create(
-    user, enable_audit_log, enable_audit_log_username, cap_audit_log
-):
+def test_audit_log_create(enable_audit_log_username, cap_audit_log):
     profile = ProfileFactory()
     audit_logs = cap_audit_log.get_logs()
     assert (
@@ -119,7 +117,7 @@ MY_PROFILE_QUERY = """
 
 
 def test_actor_is_resolved_in_graphql_call(
-    enable_audit_log, enable_audit_log_username, live_server, profile, cap_audit_log
+    enable_audit_log_username, live_server, profile, cap_audit_log
 ):
     user = profile.user
 
@@ -151,7 +149,7 @@ class TestIPAddressLogging:
         "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
     )
     def test_requester_ip_address_is_extracted_from_x_forwarded_for_header(
-        self, header, enable_audit_log, live_server, profile, cap_audit_log
+        self, header, live_server, profile, cap_audit_log
     ):
         request_args = {"headers": {"X-Forwarded-For": header}}
         self.execute_ip_address_test(
@@ -159,7 +157,7 @@ class TestIPAddressLogging:
         )
 
     def test_do_not_use_x_forwarded_for_header_if_it_is_denied_in_settings(
-        self, enable_audit_log, live_server, settings, profile, cap_audit_log
+        self, live_server, settings, profile, cap_audit_log
     ):
         settings.USE_X_FORWARDED_FOR = False
         request_args = {"headers": {"X-Forwarded-For": "should ignore"}}
@@ -169,6 +167,6 @@ class TestIPAddressLogging:
         )
 
     def test_requester_ip_address_is_extracted_from_remote_addr_meta(
-        self, enable_audit_log, live_server, profile, cap_audit_log
+        self, live_server, profile, cap_audit_log
     ):
         self.execute_ip_address_test(live_server, profile, "127.0.0.1", cap_audit_log)
