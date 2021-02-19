@@ -9,6 +9,7 @@ from profiles.tests.factories import (
     PhoneDataDictFactory,
     ProfileDataDictFactory,
     ProfileFactory,
+    SensitiveDataFactory,
     VerifiedPersonalInformationFactory,
     VocabularyFactory,
 )
@@ -23,6 +24,11 @@ from services.tests.factories import (
 @pytest.fixture
 def profile(user):
     return ProfileFactory(user=user)
+
+
+@pytest.fixture
+def profile_with_sensitive_data():
+    return SensitiveDataFactory().profile
 
 
 @pytest.fixture

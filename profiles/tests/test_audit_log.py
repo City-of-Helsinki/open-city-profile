@@ -35,7 +35,13 @@ def cap_audit_log(caplog):
     return caplog
 
 
-def assert_common_fields(log_message, target_profile, operation, actor_role="SYSTEM"):
+def assert_common_fields(
+    log_message,
+    target_profile,
+    operation,
+    actor_role="SYSTEM",
+    target_profile_part="base profile",
+):
     now = get_unix_timestamp_now()
     audit_event = log_message["audit_event"]
 
@@ -54,7 +60,7 @@ def assert_common_fields(log_message, target_profile, operation, actor_role="SYS
 
     expected_target = {
         "profile_id": str(target_profile.pk),
-        "profile_part": "base profile",
+        "profile_part": target_profile_part,
         "user_id": str(target_profile.user.uuid),
     }
     if settings.AUDIT_LOG_USERNAME:
@@ -62,15 +68,18 @@ def assert_common_fields(log_message, target_profile, operation, actor_role="SYS
     assert audit_event["target"] == expected_target
 
 
-def test_audit_log_read(cap_audit_log):
-    ProfileFactory()
-
-    cap_audit_log.clear()
-    profile = Profile.objects.first()
+def test_audit_log_read(profile_with_sensitive_data, cap_audit_log):
+    profile_from_db = Profile.objects.select_related("sensitivedata").first()
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
-    log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "READ")
+    assert len(audit_logs) == 3
+
+    assert_common_fields(audit_logs[0], profile_from_db, "READ")
+    # Audit logging the SensitiveData READ causes another READ for the base Profile.
+    # This is unnecessary, but a feature of the current implementation.
+    assert_common_fields(audit_logs[1], profile_from_db, "READ")
+    assert_common_fields(
+        audit_logs[2], profile_from_db, "READ", target_profile_part="sensitive data"
+    )
 
 
 def test_audit_log_update(profile, cap_audit_log):
