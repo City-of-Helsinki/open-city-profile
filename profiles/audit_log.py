@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 
 from django.conf import settings
+from django.utils.text import camel_case_to_spaces
 
 from .utils import get_current_service, get_current_user, get_original_client_ip
 
@@ -22,6 +23,15 @@ def _resolve_role(current_user, profile):
         return "SYSTEM"
 
 
+def _profile_part(instance):
+    class_name = instance.__class__.__name__
+
+    if class_name == "Profile":
+        return "base profile"
+
+    return camel_case_to_spaces(class_name)
+
+
 def _format_user_data(audit_event, field_name, user):
     if user:
         audit_event[field_name]["user_id"] = (
@@ -34,11 +44,6 @@ def _format_user_data(audit_event, field_name, user):
 
 
 def log(action, instance):
-    profile_parts = {
-        "Profile": "base profile",
-        "SensitiveData": "sensitive data",
-    }
-
     if (
         settings.AUDIT_LOGGING_ENABLED
         and should_audit(instance.__class__)
@@ -62,7 +67,7 @@ def log(action, instance):
                 "operation": action,
                 "target": {
                     "profile_id": profile_id,
-                    "profile_part": profile_parts[instance.__class__.__name__],
+                    "profile_part": _profile_part(instance),
                 },
             }
         }
