@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.models import Group
+from django.db.models import Count
 from faker import Faker
 from guardian.shortcuts import get_group_perms
 
@@ -18,9 +19,7 @@ from utils.utils import (
     generate_profiles,
     generate_service_connections,
     generate_services,
-    generate_youth_profiles,
 )
-from youths.models import YouthProfile
 
 
 @pytest.mark.parametrize("times", [1, 2])
@@ -105,39 +104,21 @@ def test_generates_default_amount_of_profiles():
     assert Profile.objects.count() == 50
 
 
-@pytest.mark.parametrize(
-    "profiles,youth_percentage", [(5, 0.2), (10, 0.5), (10, 0), (0, 1)]
-)
-def test_generate_service_connections(profiles, youth_percentage):
+@pytest.mark.parametrize("profiles", [5, 10, 0])
+def test_generate_service_connections(profiles):
     """Service connection is generated for all profiles,"""
     generate_services()
     generate_profiles(k=profiles, faker=Faker())
 
-    generate_service_connections(youth_percentage)
+    generate_service_connections()
 
     assert ServiceConnection.objects.count() == profiles
-    assert ServiceConnection.objects.filter(
-        service__service_type=ServiceType.YOUTH_MEMBERSHIP
-    ).count() == int(profiles * youth_percentage)
-    assert YouthProfile.objects.count() == 0
-
-
-@pytest.mark.parametrize(
-    "profiles,youth_percentage", [(5, 0.2), (10, 0.5), (10, 0), (0, 1)]
-)
-def test_generates_youth_profiles(profiles, youth_percentage):
-    """Youth profiles are generated for all profiles which have youth membership ServiceConnection."""
-    generate_services()
-    generate_profiles(k=profiles, faker=Faker())
-    generate_service_connections(youth_percentage)
-
-    generate_youth_profiles(faker=Faker())
-
-    assert YouthProfile.objects.count() == int(profiles * youth_percentage)
-    # Assert that youth membership service connections have youth membership profile
-    assert Profile.objects.filter(
-        service_connections__service__service_type=ServiceType.YOUTH_MEMBERSHIP
-    ).count() == int(profiles * youth_percentage)
+    assert (
+        Profile.objects.annotate(Count("service_connections"))
+        .filter(service_connections__count=1)
+        .count()
+        == profiles
+    )
 
 
 @pytest.mark.parametrize("times", [1, 2])

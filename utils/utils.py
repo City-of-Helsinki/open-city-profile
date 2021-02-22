@@ -12,8 +12,6 @@ from profiles.models import Address, Email, Phone, Profile
 from services.enums import ServiceType
 from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
-from youths.enums import YouthLanguage
-from youths.models import YouthProfile
 
 DATA_FIELD_VALUES = [
     {
@@ -250,51 +248,12 @@ def generate_profiles(k=50, faker=None):
         )
 
 
-def generate_service_connections(youth_profile_percentage=0.2):
+def generate_service_connections():
     """Create fake service connections for development purposes."""
     profiles = Profile.objects.all()
-    number_of_youth_profiles_to_generate = int(
-        profiles.count() * youth_profile_percentage
-    )
-
-    youth_service = Service.objects.get(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    other_services = Service.objects.exclude(pk=youth_service.pk)
-
-    for index, profile in enumerate(profiles):
-        if index < number_of_youth_profiles_to_generate:
-            ServiceConnection.objects.create(profile=profile, service=youth_service)
-        else:
-            ServiceConnection.objects.create(
-                profile=profile, service=random.choice(other_services)
-            )
-
-
-def generate_youth_profiles(faker=None):
-    """Create fake youth membership profiles for development purposes."""
-    profiles = Profile.objects.filter(
-        service_connections__service__service_type=ServiceType.YOUTH_MEMBERSHIP
-    )
+    services = Service.objects.all()
 
     for profile in profiles:
-        approved = bool(random.getrandbits(1))
-        YouthProfile.objects.create(
-            profile=profile,
-            birth_date=make_aware(
-                faker.date_time_between(start_date="-17y", end_date="-13y"),
-                get_current_timezone(),
-                is_dst=False,
-            ),
-            language_at_home=random.choice(list(YouthLanguage)),
-            approver_first_name=faker.first_name() if approved else "",
-            approver_last_name=profile.last_name if approved else "",
-            approved_time=make_aware(
-                faker.date_time_between(
-                    start_date=profile.user.date_joined, end_date="now"
-                ),
-                get_current_timezone(),
-                is_dst=False,
-            )
-            if approved
-            else None,
-            photo_usage_approved=bool(random.getrandbits(1)) if approved else False,
+        ServiceConnection.objects.create(
+            profile=profile, service=random.choice(services)
         )
