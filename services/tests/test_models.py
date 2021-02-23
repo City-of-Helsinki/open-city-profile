@@ -16,6 +16,12 @@ def test_generate_services_from_enum():
     assert Service.objects.count() == len(ServiceType)
 
 
+def test_generate_services_without_service_type(service_factory):
+    service_factory(service_type=None)
+    service_factory(service_type=None)
+    assert Service.objects.count() == 2
+
+
 @pytest.mark.django_db(transaction=True)
 def test_add_service_with_duplicate_service_type(service_factory):
     service_factory()

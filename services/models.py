@@ -36,7 +36,9 @@ class AllowedDataField(TranslatableModel, SortableMixin):
 
 
 class Service(TranslatableModel):
-    service_type = EnumField(ServiceType, max_length=32, blank=False, unique=True)
+    service_type = EnumField(
+        ServiceType, max_length=32, blank=False, null=True, unique=True
+    )
     name = models.CharField(max_length=200, blank=False, null=False, unique=True)
     translations = TranslatedFields(
         title=models.CharField(max_length=64),
