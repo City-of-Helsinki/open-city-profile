@@ -401,7 +401,6 @@ input ServiceInput {
 
 type ServiceNode implements Node {
   id: ID!
-  serviceType: ServiceServiceType!
   allowedDataFields(before: String, after: String, first: Int, last: Int): AllowedDataFieldNodeConnection!
   createdAt: DateTime!
   gdprUrl: String!
@@ -421,13 +420,6 @@ type ServiceNodeConnection {
 type ServiceNodeEdge {
   node: ServiceNode
   cursor: String!
-}
-
-enum ServiceServiceType {
-  HELSINKI_MY_DATA
-  BERTH
-  YOUTH_MEMBERSHIP
-  GODCHILDREN_OF_CULTURE
 }
 
 enum ServiceType {

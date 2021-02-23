@@ -30,6 +30,15 @@ class ServiceNode(DjangoObjectType):
 
     class Meta:
         model = Service
+        fields = (
+            "id",
+            "allowed_data_fields",
+            "created_at",
+            "gdpr_url",
+            "gdpr_query_scope",
+            "gdpr_delete_scope",
+            "serviceconnection_set",
+        )
         filter_fields = []
         interfaces = (relay.Node,)
 
