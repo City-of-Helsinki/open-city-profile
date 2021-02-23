@@ -37,6 +37,7 @@ class AllowedDataField(TranslatableModel, SortableMixin):
 
 class Service(TranslatableModel):
     service_type = EnumField(ServiceType, max_length=32, blank=False, unique=True)
+    name = models.CharField(max_length=200, blank=False, null=False, unique=True)
     translations = TranslatedFields(
         title=models.CharField(max_length=64),
         description=models.TextField(max_length=200, blank=True),
@@ -64,6 +65,15 @@ class Service(TranslatableModel):
             ("can_manage_sensitivedata", "Can manage sensitive data"),
             ("can_view_sensitivedata", "Can view sensitive data"),
         )
+
+    def save(self, *args, **kwargs):
+        # Convenience for saving Services with only service_type and no name.
+        # When service_type is removed from the code base, this should be
+        # removed as well and every Service creation requires a name at that point.
+        if not self.name and self.service_type:
+            self.name = self.service_type.value
+
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.safe_translation_getter("title", super().__str__())

@@ -13,6 +13,7 @@ from ..enums import ServiceType
 
 class ServiceFactory(factory.django.DjangoModelFactory):
     service_type = ServiceType.BERTH
+    name = factory.Sequence(lambda n: "service %d" % n)
     title = "Berth"
     description = "Service for Berth Reservations"
     gdpr_url = ""
