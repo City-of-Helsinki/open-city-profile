@@ -25,7 +25,6 @@ from profiles.models import (
 )
 from services.admin import ServiceConnectionInline
 from subscriptions.admin import SubscriptionInline
-from youths.admin import YouthProfileAdminInline
 
 
 def superuser_required(function):
@@ -166,7 +165,6 @@ class ExtendedProfileAdmin(VersionAdmin):
         SensitiveDataAdminInline,
         RepresenteeAdmin,
         RepresentativeAdmin,
-        YouthProfileAdminInline,
         ServiceConnectionInline,
         SubscriptionInline,
         ClaimTokenInline,
