@@ -96,10 +96,6 @@ Prerequisites:
         * With user
         * With email, phone number and address
         * Connects to one random service
-      * Youth profiles
-        * Adds for existing profiles
-        * By default adds for 20% of profiles (0.2)
-        * Approved randomly
 
 
 ## Development without Docker
