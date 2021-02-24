@@ -1052,7 +1052,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 
             if not service.gdpr_delete_scope:
                 raise ConnectedServiceDeletionNotAllowedError(
-                    f"Connected services: {service.service_type.name}"
+                    f"Connected services: {service.name}"
                     f"does not have an API for removing data."
                 )
 
@@ -1061,7 +1061,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 
             if not api_token:
                 raise MissingGDPRApiTokenError(
-                    f"Couldn't fetch an API token for service {service.service_type.name}."
+                    f"Couldn't fetch an API token for service {service.name}."
                 )
 
             try:
@@ -1071,8 +1071,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
                 if not dry_run:
                     service_connection.delete()
             except (requests.RequestException, MissingGDPRUrlException):
-                service_name = service.service_type.name
-                failed_services.append(service_name)
+                failed_services.append(service.name)
 
         if failed_services:
             failed_services_string = ", ".join(failed_services)
@@ -1215,7 +1214,7 @@ class Query(graphene.ObjectType):
 
                 if not api_token:
                     raise MissingGDPRApiTokenError(
-                        f"Couldn't fetch an API token for service {service.service_type.name}."
+                        f"Couldn't fetch an API token for service {service.name}."
                     )
 
                 service_connection_data = service_connection.download_gdpr_data(

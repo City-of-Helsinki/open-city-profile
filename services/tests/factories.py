@@ -27,7 +27,7 @@ class ServiceClientIdFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def client_id(self):
-        id_format = f"{self.service.service_type.name}_client_id_%%%"
+        id_format = f"{self.service.name}_client_id_%%%"
         faker = factory.Faker("numerify", text=id_format)
         return faker.generate()
 

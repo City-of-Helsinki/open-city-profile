@@ -103,10 +103,7 @@ class ServiceConnection(SerializableMixin):
         )
 
     serialize_fields = (
-        {
-            "name": "service",
-            "accessor": lambda x: getattr(getattr(x, "service_type"), "name"),
-        },
+        {"name": "service", "accessor": lambda x: getattr(x, "name")},
         {"name": "created_at", "accessor": lambda x: x.strftime("%Y-%m-%d")},
     )
 
@@ -150,5 +147,5 @@ class ServiceConnection(SerializableMixin):
             return True
 
         raise MissingGDPRUrlException(
-            f"Service {self.service.service_type.name} does not define an URL for GDPR removal."
+            f"Service {self.service.name} does not define an URL for GDPR removal."
         )
