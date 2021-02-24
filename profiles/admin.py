@@ -209,3 +209,9 @@ class ExtendedProfileAdmin(VersionAdmin):
             )
         formfield = super().formfield_for_manytomany(db_field, request, **kwargs)
         return formfield
+
+    def delete_model(self, request, obj):
+        user = obj.user
+        super().delete_model(request, obj)
+        if user and request.POST.get("delete-user"):
+            user.delete()
