@@ -49,7 +49,11 @@ def log(action, instance):
 
         current_time = datetime.now(tz=timezone.utc)
         current_user = get_current_user()
-        profile = instance.resolve_profile()
+        profile = (
+            instance.profile
+            if hasattr(instance, "profile")
+            else instance.resolve_profile()
+        )
         profile_id = str(profile.pk) if profile else None
         target_user = profile.user if profile and profile.user else None
 

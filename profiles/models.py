@@ -261,6 +261,8 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         help_text="Official municipality of residence in Finland as an official number.",
     )
 
+    audit_log = True
+
     class Meta:
         permissions = [
             (

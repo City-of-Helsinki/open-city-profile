@@ -13,7 +13,11 @@ from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory
 
-from .factories import ProfileFactory, SensitiveDataFactory
+from .factories import (
+    ProfileFactory,
+    SensitiveDataFactory,
+    VerifiedPersonalInformationFactory,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -78,6 +82,11 @@ class ProfileWithRelated:
     params=[
         (ProfileFactory, None, None),
         (SensitiveDataFactory, "sensitivedata", "sensitive data"),
+        (
+            VerifiedPersonalInformationFactory,
+            "verified_personal_information",
+            "verified personal information",
+        ),
     ]
 )
 def profile_with_related(request):
