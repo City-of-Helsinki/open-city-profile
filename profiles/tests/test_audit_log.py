@@ -10,7 +10,7 @@ from open_city_profile.tests.conftest import get_unix_timestamp_now
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
 
-from .factories import ProfileFactory
+from .factories import ProfileFactory, SensitiveDataFactory
 
 
 @pytest.fixture(autouse=True)
@@ -68,37 +68,81 @@ def assert_common_fields(
     assert audit_event["target"] == expected_target
 
 
-def test_audit_log_read(profile_with_sensitive_data, cap_audit_log):
-    profile_from_db = Profile.objects.select_related("sensitivedata").first()
+@pytest.fixture(
+    params=[
+        (ProfileFactory, (None, None)),
+        (SensitiveDataFactory, ("sensitivedata", "sensitive data")),
+    ]
+)
+def profile_with_related(request):
+    factory, related_info = request.param
+    created = factory()
+    if related_info[0]:
+        profile = getattr(created, "profile")
+        related_part = created
+    else:
+        profile = created
+        related_part = None
+    return profile, related_part, related_info
+
+
+def test_audit_log_read(profile_with_related, cap_audit_log):
+    _, _, (related_name, profile_part_name) = profile_with_related
+    profile_from_db = Profile.objects.select_related(related_name).first()
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 3
+    assert len(audit_logs) == 1 + (2 if related_name else 0)
 
     assert_common_fields(audit_logs[0], profile_from_db, "READ")
-    # Audit logging the SensitiveData READ causes another READ for the base Profile.
-    # This is unnecessary, but a feature of the current implementation.
-    assert_common_fields(audit_logs[1], profile_from_db, "READ")
-    assert_common_fields(
-        audit_logs[2], profile_from_db, "READ", target_profile_part="sensitive data"
-    )
+    if profile_part_name:
+        # Audit logging the Profile related object READ causes another READ
+        # for the base Profile.
+        # This is unnecessary, but it's a feature of the current implementation.
+        assert_common_fields(audit_logs[1], profile_from_db, "READ")
+        assert_common_fields(
+            audit_logs[2],
+            profile_from_db,
+            "READ",
+            target_profile_part=profile_part_name,
+        )
 
 
-def test_audit_log_update(profile, cap_audit_log):
+def test_audit_log_update(profile_with_related, cap_audit_log):
+    profile, related_part, (related_name, profile_part_name) = profile_with_related
     profile.first_name = "John"
     profile.save()
+    if related_part:
+        related_part.save()
+
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
-    log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "UPDATE")
+    assert len(audit_logs) == 1 + (1 if related_name else 0)
+
+    assert_common_fields(audit_logs[0], profile, "UPDATE")
+    if profile_part_name:
+        assert_common_fields(
+            audit_logs[1], profile, "UPDATE", target_profile_part=profile_part_name
+        )
 
 
-def test_audit_log_delete(profile, cap_audit_log):
+def test_audit_log_delete(profile_with_related, cap_audit_log):
+    profile, related_part, (related_name, profile_part_name) = profile_with_related
     deleted_pk = profile.pk
     profile.delete()
     profile.pk = deleted_pk
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
-    log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "DELETE")
+    # Audit logging the Profile DELETE with a related object causes some READs
+    # for the involved models.
+    # This is unnecessary, but it's a feature of the current implementation.
+    # We ignore the READ events in this test for now.
+    audit_logs = list(
+        filter(lambda e: e["audit_event"]["operation"] != "READ", audit_logs)
+    )
+    assert len(audit_logs) == 1 + (1 if related_name else 0)
+
+    if profile_part_name:
+        assert_common_fields(
+            audit_logs.pop(0), profile, "DELETE", target_profile_part=profile_part_name
+        )
+    assert_common_fields(audit_logs[0], profile, "DELETE")
 
 
 def test_audit_log_create(enable_audit_log_username, cap_audit_log):
