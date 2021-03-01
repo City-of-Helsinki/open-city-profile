@@ -174,6 +174,8 @@ This repository contains `requirements*.in` and corresponding `requirements*.txt
 5. To install Python requirements run:
     * `pip-sync requirements.txt`
 
+**Note:** when updating dependencies, read the [dependency update checklist](docs/dependency-update.adoc) if there's anything you need to pay attention to.
+
 ## Code format
 
 This project uses
