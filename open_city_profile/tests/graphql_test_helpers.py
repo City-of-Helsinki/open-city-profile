@@ -79,8 +79,16 @@ def do_graphql_call(
     return body.get("data"), body.get("errors")
 
 
-def do_graphql_call_as_user(live_server, user, query=_QUERY, extra_request_args=dict()):
+def do_graphql_call_as_user(
+    live_server, user, service=None, query=_QUERY, extra_request_args=dict()
+):
     claims = {"sub": str(user.uuid)}
+
+    if service is not None:
+        service_client_id = service.client_ids.first()
+        if service_client_id:
+            claims["azp"] = service_client_id.client_id
+
     return do_graphql_call(
         live_server,
         BearerTokenAuth(extra_claims=claims),

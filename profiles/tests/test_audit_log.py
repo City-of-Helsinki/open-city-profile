@@ -4,10 +4,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from django.conf import settings
+from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
+from services.tests.factories import ServiceConnectionFactory
 
 from .factories import ProfileFactory, SensitiveDataFactory
 
@@ -177,6 +179,40 @@ def test_actor_is_resolved_in_graphql_call(
     assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
     assert log_message["audit_event"]["actor"]["user_name"] == user.username
+
+
+def test_actor_service(live_server, user, group, service_client_id, cap_audit_log):
+    profile = ProfileFactory()
+    service = service_client_id.service
+    ServiceConnectionFactory(profile=profile, service=service)
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+
+    cap_audit_log.clear()
+
+    do_graphql_call_as_user(live_server, user, service=service, query=query)
+
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
+    assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
+    service_log = log_message["audit_event"]["actor_service"]
+    assert service_log == {
+        "id": service.service_type.name,
+        "name": service.service_type.label,
+    }
 
 
 class TestIPAddressLogging:
