@@ -42,6 +42,7 @@ def staff_required(required_permission="view"):
             if context.user.has_perm(
                 "can_{}_profiles".format(required_permission), service
             ):
+                context.service = service
                 return function(*args, **kwargs)
             else:
                 raise PermissionDenied(

@@ -496,11 +496,7 @@ class ProfileNode(RestrictedProfileNode):
         return ServiceConnection.objects.filter(profile=self)
 
     def resolve_sensitivedata(self, info, **kwargs):
-        service = (
-            Service.objects.filter(service_type=info.context.service_type).first()
-            if hasattr(info.context, "service_type")
-            else None
-        )
+        service = getattr(info.context, "service", None)
         if (
             not service and info.context.user == self.user
         ) or info.context.user.has_perm("can_view_sensitivedata", service):
@@ -725,9 +721,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     @staff_required(required_permission="manage")
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
-        service = Service.objects.get(service_type=input["service_type"])
-        # serviceType passed on to the sub resolvers
-        info.context.service_type = input["service_type"]
+        service = info.context.service
         profile_data = input.pop("profile")
         sensitivedata = profile_data.pop("sensitivedata", None)
         nested_to_create = [
@@ -972,9 +966,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     @staff_required(required_permission="manage")
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
-        service = Service.objects.get(service_type=input["service_type"])
-        # serviceType passed on to the sub resolvers
-        info.context.service_type = input["service_type"]
+        service = info.context.service
         profile_data = input.get("profile")
         profile = graphene.Node.get_node_from_global_id(
             info, profile_data.pop("id"), only_type=ProfileNode
@@ -1180,9 +1172,7 @@ class Query(graphene.ObjectType):
 
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
-        service = Service.objects.get(service_type=kwargs["service_type"])
-        # serviceType passed on to the sub resolvers
-        info.context.service_type = kwargs["service_type"]
+        service = info.context.service
         return Profile.objects.filter(service_connections__service=service).get(
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
@@ -1193,11 +1183,8 @@ class Query(graphene.ObjectType):
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
-        # serviceType passed on to the sub resolvers
-        info.context.service_type = kwargs["service_type"]
-        return Profile.objects.filter(
-            service_connections__service__service_type=kwargs["service_type"]
-        )
+        service = info.context.service
+        return Profile.objects.filter(service_connections__service=service)
 
     @login_required
     def resolve_claimable_profile(self, info, **kwargs):
