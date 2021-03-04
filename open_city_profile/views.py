@@ -1,9 +1,7 @@
 import sentry_sdk
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
-from helusers.oidc import RequestJWTAuthentication
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -72,22 +70,8 @@ error_codes = {**error_codes_shared, **error_codes_profile}
 
 
 class GraphQLView(BaseGraphQLView):
-    @staticmethod
-    def _authenticate(request):
-        if settings.USE_HELUSERS_REQUEST_JWT_AUTH:
-            try:
-                authenticator = RequestJWTAuthentication()
-                user_auth = authenticator.authenticate(request)
-                if user_auth is not None:
-                    request.user_auth = user_auth
-                    request.user = user_auth.user
-            except Exception as e:
-                request.auth_error = e
-
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send some of them to Sentry"""
-        self._authenticate(request)
-
         result = super().execute_graphql_request(request, data, query, *args, **kwargs)
         # If 'invalid' is set, it's a bad request
         if result and result.errors and not result.invalid:
