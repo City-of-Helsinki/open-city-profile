@@ -86,3 +86,16 @@ def setup_audit_log(settings):
 @pytest.fixture(autouse=True)
 def setup_log_username(settings):
     settings.AUDIT_LOG_USERNAME = False
+
+
+class ProfileWithVerifiedPersonalInformationTestBase:
+    ADDRESS_FIELD_NAMES = {
+        "permanent_address": ["street_address", "postal_code", "post_office"],
+        "temporary_address": ["street_address", "postal_code", "post_office"],
+        "permanent_foreign_address": [
+            "street_address",
+            "additional_address",
+            "country_code",
+        ],
+    }
+    ADDRESS_TYPES = ADDRESS_FIELD_NAMES.keys()
