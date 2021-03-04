@@ -1,7 +1,11 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone as django_timezone
 from pytest_factoryboy import register
 
 from open_city_profile.tests.conftest import *  # noqa
+from profiles.models import _default_temporary_read_access_token_validity_duration
 from profiles.tests.factories import (
     AddressDataDictFactory,
     ConceptFactory,
@@ -10,6 +14,7 @@ from profiles.tests.factories import (
     ProfileDataDictFactory,
     ProfileFactory,
     SensitiveDataFactory,
+    TemporaryReadAccessTokenFactory,
     VerifiedPersonalInformationFactory,
     VocabularyFactory,
 )
@@ -99,3 +104,17 @@ class ProfileWithVerifiedPersonalInformationTestBase:
         ],
     }
     ADDRESS_TYPES = ADDRESS_FIELD_NAMES.keys()
+
+
+class TemporaryProfileReadAccessTokenTestBase:
+    def create_expired_token(self, profile):
+        over_default_validity_duration = _default_temporary_read_access_token_validity_duration() + timedelta(
+            seconds=1
+        )
+        expired_token_creation_time = (
+            django_timezone.now() - over_default_validity_duration
+        )
+        token = TemporaryReadAccessTokenFactory(
+            profile=profile, created_at=expired_token_creation_time
+        )
+        return token
