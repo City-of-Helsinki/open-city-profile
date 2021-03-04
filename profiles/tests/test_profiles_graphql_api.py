@@ -3,10 +3,8 @@ from datetime import datetime, timedelta
 from string import Template
 
 from django.utils import timezone
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import (
-    API_NOT_IMPLEMENTED_ERROR,
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     TOKEN_EXPIRED_ERROR,
@@ -17,12 +15,7 @@ from profiles.models import (
     TemporaryReadAccessToken,
 )
 
-from .factories import (
-    ClaimTokenFactory,
-    ProfileFactory,
-    ProfileWithPrimaryEmailFactory,
-    TemporaryReadAccessTokenFactory,
-)
+from .factories import ProfileFactory, TemporaryReadAccessTokenFactory
 
 
 def test_profile_node_exposes_key_for_federation_gateway(rf, anon_user_gql_client):
@@ -60,131 +53,6 @@ def test_profile_connection_schema_matches_federated_schema(rf, anon_user_gql_cl
         "edges: [ProfileNodeEdge]!   count: Int!   totalCount: Int! }"
         in executed["data"]["_service"]["sdl"]
     )
-
-
-def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_client):
-    profile = ProfileWithPrimaryEmailFactory(
-        user=None, first_name="John", last_name="Doe"
-    )
-    claim_token = ClaimTokenFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-        mutation {
-            claimProfile(
-                input: {
-                    token: "${claimToken}",
-                    profile: {
-                        firstName: "Joe",
-                        nickname: "Joey"
-                    }
-                }
-            ) {
-                profile {
-                    id
-                    firstName
-                    lastName
-                    nickname
-                }
-            }
-        }
-        """
-    )
-    query = t.substitute(claimToken=claim_token.token)
-    expected_data = {
-        "claimProfile": {
-            "profile": {
-                "id": to_global_id(type="ProfileNode", id=profile.id),
-                "firstName": "Joe",
-                "nickname": "Joey",
-                "lastName": profile.last_name,
-            }
-        }
-    }
-    executed = user_gql_client.execute(query, context=request)
-
-    assert "errors" not in executed
-    assert dict(executed["data"]) == expected_data
-    profile.refresh_from_db()
-    assert profile.user == user_gql_client.user
-    assert profile.claim_tokens.count() == 0
-
-
-def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_client):
-    profile = ProfileWithPrimaryEmailFactory(
-        user=None, first_name="John", last_name="Doe"
-    )
-    expired_claim_token = ClaimTokenFactory(
-        profile=profile, expires_at=timezone.now() - timedelta(days=1)
-    )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-        mutation {
-            claimProfile(
-                input: {
-                    token: "${claimToken}",
-                    profile: {
-                        firstName: "Joe",
-                        nickname: "Joey"
-                    }
-                }
-            ) {
-                profile {
-                    id
-                    firstName
-                    lastName
-                    nickname
-                }
-            }
-        }
-        """
-    )
-    query = t.substitute(claimToken=expired_claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
-
-    assert "errors" in executed
-    assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
-
-
-def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_client):
-    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
-    expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-        mutation {
-            claimProfile(
-                input: {
-                    token: "${claimToken}",
-                    profile: {
-                        firstName: "Joe",
-                        nickname: "Joey"
-                    }
-                }
-            ) {
-                profile {
-                    id
-                    firstName
-                    lastName
-                    nickname
-                }
-            }
-        }
-        """
-    )
-    query = t.substitute(claimToken=expired_claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
-
-    assert "errors" in executed
-    assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
 
 
 class TemporaryProfileReadAccessTokenTestBase:
