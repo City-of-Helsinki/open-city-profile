@@ -290,7 +290,7 @@ GRAPHENE = {
         "open_city_profile.graphene.JWTMiddleware"
         if USE_HELUSERS_REQUEST_JWT_AUTH
         else "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        "open_city_profile.middlewares.GQLDataLoaders",
+        "open_city_profile.graphene.GQLDataLoaders",
     ],
 }
 

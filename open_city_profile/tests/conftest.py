@@ -7,7 +7,7 @@ from django.core.management import call_command
 from graphene.test import Client as GrapheneClient
 from graphql import build_client_schema, introspection_query
 
-from open_city_profile.middlewares import GQLDataLoaders
+from open_city_profile.graphene import GQLDataLoaders
 from open_city_profile.schema import schema
 from open_city_profile.tests.factories import (
     GroupFactory,
