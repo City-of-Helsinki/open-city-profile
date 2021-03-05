@@ -1140,10 +1140,14 @@ class Query(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
         ProfileNode,
-        service_type=graphene.Argument(AllowedServiceType, required=True),
+        service_type=graphene.Argument(
+            AllowedServiceType,
+            description="**DEPRECATED**: requester's service is determined by authentication, "
+            "but for now it can still be overridden by this argument.",
+        ),
         description="Search for profiles. The results are filtered based on the given parameters. The results are "
-        "paged using Relay.\n\nRequires `staff` credentials for the service given in "
-        "`serviceType`. The profiles must have an active connection to the given `serviceType`, otherwise "
+        "paged using Relay.\n\nRequires `staff` credentials for the requester's service."
+        "The profiles must have an active connection to the requester's service, otherwise "
         "they will not be returned.\n\nPossible error codes:\n\n* `TODO`",
     )
     # TODO: Add the complete list of error codes

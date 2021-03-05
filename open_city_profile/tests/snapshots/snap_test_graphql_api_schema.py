@@ -341,7 +341,7 @@ type Query {
   profile(id: ID!, serviceType: ServiceType!): ProfileNode
   myProfile: ProfileWithVerifiedPersonalInformationNode
   downloadMyProfile(authorizationCode: String!): JSONString
-  profiles(serviceType: ServiceType!, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
+  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
   claimableProfile(token: UUID!): ProfileNode
   profileWithAccessToken(token: UUID!): RestrictedProfileNode
   _entities(representations: [_Any]): [_Entity]

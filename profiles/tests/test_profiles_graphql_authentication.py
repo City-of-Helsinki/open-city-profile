@@ -1,4 +1,5 @@
 import pytest
+from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.graphql_test_helpers import (
     BearerTokenAuth,
@@ -34,3 +35,36 @@ def test_jwt_claims_are_usable_in_field_resolvers(
     )
 
     assert isinstance(errors, list) == returns_errors
+
+
+def test_determine_service_from_the_azp_claim(
+    service_client_id, profile, service_connection_factory, group, live_server
+):
+    service = service_client_id.service
+    service_connection_factory(profile=profile, service=service)
+    user = profile.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+
+    claims = {"sub": str(user.uuid), "azp": service_client_id.client_id}
+    query = """
+        query {
+            profiles {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+
+    data, errors = do_graphql_call(
+        live_server, BearerTokenAuth(extra_claims=claims), query=query,
+    )
+    expected_data = {
+        "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
+    }
+
+    assert data == expected_data
+    assert errors is None

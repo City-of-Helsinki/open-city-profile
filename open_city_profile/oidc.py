@@ -6,6 +6,7 @@ from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from open_city_profile.exceptions import TokenExchangeError
+from services.utils import set_service_to_request
 
 
 class GraphQLApiTokenAuthentication(ApiTokenAuthentication):
@@ -25,6 +26,7 @@ class GraphQLApiTokenAuthentication(ApiTokenAuthentication):
             return None
         user, auth = user_auth_tuple
         request.user_auth = auth
+        set_service_to_request(request)
         return user
 
 
