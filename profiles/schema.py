@@ -961,7 +961,11 @@ class UpdateProfileInput(ProfileInputBase):
 
 class UpdateProfileMutation(relay.ClientIDMutation):
     class Input:
-        service_type = graphene.Argument(AllowedServiceType, required=True)
+        service_type = graphene.Argument(
+            AllowedServiceType,
+            description="**DEPRECATED**: requester's service is determined by authentication, "
+            "but for now it can still be overridden by this argument.",
+        )
         profile = UpdateProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)

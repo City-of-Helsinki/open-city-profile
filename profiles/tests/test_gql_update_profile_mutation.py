@@ -24,6 +24,7 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
     assign_perm("can_manage_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     data = {
         "first_name": "John",
@@ -42,7 +43,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
         mutation {
             updateProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         id: \"${id}\",
                         firstName: \"${first_name}\",
@@ -94,7 +94,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
     """
     )
     query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
         id=to_global_id("ProfileNode", profile.pk),
         first_name=data["first_name"],
         phone_id=to_global_id("PhoneNode", phone.pk),
@@ -138,13 +137,13 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
 
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     t = Template(
         """
         mutation {
             updateProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         id: \"${id}\",
                         sensitivedata: {
@@ -162,11 +161,7 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
         }
     """
     )
-    query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
-        id=to_global_id("ProfileNode", profile.pk),
-        ssn="010199-1234",
-    )
+    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), ssn="010199-1234",)
     executed = user_gql_client.execute(query, context=request)
 
     assert "errors" in executed
@@ -179,16 +174,16 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     rf, user_gql_client, service_factory
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
-    service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         mutation {
             updateProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         id: \"${id}\",
                         firstName: \"${first_name}\",
@@ -202,11 +197,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
         }
     """
     )
-    query = t.substitute(
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
-        id=to_global_id("ProfileNode", profile.pk),
-        first_name="John",
-    )
+    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), first_name="John",)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(

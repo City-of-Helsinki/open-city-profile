@@ -563,7 +563,7 @@ input UpdateProfileInput {
 }
 
 input UpdateProfileMutationInput {
-  serviceType: ServiceType!
+  serviceType: ServiceType
   profile: UpdateProfileInput!
   clientMutationId: String
 }
