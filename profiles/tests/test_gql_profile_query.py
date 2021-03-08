@@ -68,7 +68,7 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
         "profile": {"firstName": profile.first_name, "lastName": profile.last_name}
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_cannot_query_a_profile_without_id(
@@ -193,7 +193,7 @@ def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
     expected_data = {"profile": {"sensitivedata": None}}
     executed = user_gql_client.execute(query, context=request)
     assert "errors" not in executed
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_query_sensitive_data_with_given_permissions(
@@ -227,7 +227,7 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
     expected_data = {"profile": {"sensitivedata": {"ssn": sensitive_data.ssn}}}
     executed = user_gql_client.execute(query, context=request)
     assert "errors" not in executed
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
@@ -260,4 +260,4 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     expected_data = {"profile": {"sensitivedata": None}}
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data

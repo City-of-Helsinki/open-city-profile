@@ -76,7 +76,7 @@ def test_admin_user_can_query_profiles(rf, superuser_gql_client, profile, servic
         }
     }
     executed = superuser_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_with_group_access_can_query_profiles(
@@ -106,7 +106,7 @@ def test_staff_user_with_group_access_can_query_profiles(
         "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_profile_ids(
@@ -140,7 +140,7 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
         context=request,
     )
     assert "errors" not in executed
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_first_name(
@@ -171,7 +171,7 @@ def test_staff_user_can_filter_profiles_by_first_name(
         query, variables={"firstName": profile_2.first_name}, context=request,
     )
     assert "errors" not in executed
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
@@ -206,7 +206,7 @@ def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
         }
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 @pytest.mark.parametrize(
@@ -233,7 +233,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
         postal_code="00100",
         country_code="FI",
         primary=True,
-    ),
+    )
     AddressFactory(
         profile=profile_2,
         city="Ypäjä",
@@ -241,9 +241,9 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
         postal_code="99999",
         country_code="SE",
         primary=True,
-    ),
-    EmailFactory(profile=profile_1, email="adam.tester@example.com", primary=True,),
-    EmailFactory(profile=profile_2, email="bryan.tester@example.com", primary=True,),
+    )
+    EmailFactory(profile=profile_1, email="adam.tester@example.com", primary=True)
+    EmailFactory(profile=profile_2, email="bryan.tester@example.com", primary=True)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     user = user_gql_client.user
@@ -273,7 +273,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
         }
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     query = t.substitute(order_by=f"-{order_by}")
     expected_data = {
@@ -282,7 +282,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
         }
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, service):
@@ -318,7 +318,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"email": email.email}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by email_type
 
@@ -336,7 +336,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"emailType": email.email_type.value}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by primary
 
@@ -354,7 +354,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"primary": False}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by verified
 
@@ -372,7 +372,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"verified": True}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, service):
@@ -406,7 +406,7 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"phone": phone.phone}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by phone_type
 
@@ -424,7 +424,7 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"phoneType": phone.phone_type.value}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by primary
 
@@ -442,7 +442,7 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     executed = user_gql_client.execute(
         query, variables={"primary": False}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_addresses(
@@ -499,7 +499,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"address": address.address}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by postal_code
 
@@ -517,7 +517,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"postalCode": address.postal_code}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by city
 
@@ -535,7 +535,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"city": address.city}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by country code
 
@@ -553,7 +553,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"countryCode": address.country_code}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by address_type
 
@@ -571,7 +571,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"addressType": address.address_type.value}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     # filter by primary
 
@@ -589,7 +589,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     executed = user_gql_client.execute(
         query, variables={"primary": False}, context=request,
     )
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
@@ -706,9 +706,7 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
         variables={"subscriptionType": type_1.code, "postalCode": "00100"},
         context=request,
     )
-    assert dict(executed["data"]) == generate_expected_data(
-        [profile_1, profile_2, profile_3]
-    )
+    assert executed["data"] == generate_expected_data([profile_1, profile_2, profile_3])
 
     # test for type 2 + postal code 00100
 
@@ -717,7 +715,7 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
         variables={"subscriptionType": type_2.code, "postalCode": "00100"},
         context=request,
     )
-    assert dict(executed["data"]) == generate_expected_data([profile_1])
+    assert executed["data"] == generate_expected_data([profile_1])
 
 
 def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
@@ -809,7 +807,7 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
     }
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
     request.service = service_youth
     executed = user_gql_client.execute(query, context=request)

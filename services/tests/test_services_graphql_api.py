@@ -81,7 +81,7 @@ def test_normal_user_can_query_own_services(
         }
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_normal_user_can_add_service(rf, user_gql_client, service):
@@ -184,7 +184,7 @@ def test_normal_user_can_add_service_using_service_type_input_field(
         },
     }
     executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
 def test_normal_user_cannot_add_service_multiple_times_mutation(
