@@ -51,6 +51,10 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
 
 
+class ServiceNotIdentifiedError(ProfileGraphQLError):
+    """The requester failed to identify the service they are coming from"""
+
+
 class TokenExpiredError(ProfileGraphQLError):
     """Token has expired"""
 

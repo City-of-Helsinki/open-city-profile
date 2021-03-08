@@ -17,6 +17,7 @@ from open_city_profile.consts import (
     PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    SERVICE_NOT_IDENTIFIED_ERROR,
     TOKEN_EXPIRED_ERROR,
     VALIDATION_ERROR,
 )
@@ -32,6 +33,7 @@ from open_city_profile.exceptions import (
     ProfileHasNoPrimaryEmailError,
     ProfileMustHaveOnePrimaryEmail,
     ServiceAlreadyExistsError,
+    ServiceNotIdentifiedError,
     TokenExpiredError,
 )
 from profiles.models import Profile
@@ -54,6 +56,7 @@ error_codes_profile = {
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     MissingGDPRApiTokenError: MISSING_GDPR_API_TOKEN_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
 }

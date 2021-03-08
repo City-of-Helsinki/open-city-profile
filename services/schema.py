@@ -5,7 +5,10 @@ from graphene import relay
 from graphene_django.types import DjangoObjectType
 from graphql_jwt.decorators import login_required
 
-from open_city_profile.exceptions import ServiceAlreadyExistsError
+from open_city_profile.exceptions import (
+    ServiceAlreadyExistsError,
+    ServiceNotIdentifiedError,
+)
 
 from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection
@@ -83,6 +86,9 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
 
         if not service:
             service = getattr(info.context, "service", None)
+
+        if not service:
+            raise ServiceNotIdentifiedError("No service identified")
 
         try:
             service_connection = ServiceConnection.objects.create(

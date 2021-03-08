@@ -1,6 +1,10 @@
 from string import Template
 
-from open_city_profile.consts import SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
+from open_city_profile.consts import (
+    SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    SERVICE_NOT_IDENTIFIED_ERROR,
+)
+from open_city_profile.tests.asserts import assert_match_error_code
 from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
@@ -223,6 +227,33 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
         executed["errors"][0]["extensions"]["code"]
         == SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
     )
+
+
+def test_not_identifying_service_for_add_service_connection_produces_service_not_identified_error(
+    rf, user_gql_client
+):
+    ProfileFactory(user=user_gql_client.user)
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    query = """
+        mutation {
+            addServiceConnection(input: {
+                serviceConnection: {
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                }
+            }
+        }
+    """
+
+    executed = user_gql_client.execute(query, context=request)
+
+    assert_match_error_code(executed, SERVICE_NOT_IDENTIFIED_ERROR)
 
 
 def test_normal_user_can_query_own_services_gdpr_api_scopes(
