@@ -15,13 +15,13 @@ def test_staff_user_can_create_a_profile(
     assign_perm("can_manage_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
                         lastName: \"${last_name}\",
@@ -74,7 +74,6 @@ def test_staff_user_can_create_a_profile(
     """
     )
     query = t.substitute(
-        service_type=ServiceType.BERTH.name,
         first_name="John",
         last_name="Doe",
         phone_type=phone_data["phone_type"],
@@ -120,19 +119,18 @@ def test_staff_user_can_create_a_profile(
 
 
 def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
-    rf, user_gql_client, service_factory
+    rf, user_gql_client, service
 ):
-    service_factory()
     user = user_gql_client.user
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
                     }
@@ -145,7 +143,7 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
         }
     """
     )
-    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John")
+    query = t.substitute(first_name="John")
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -153,17 +151,18 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
     )
 
 
-def test_staff_user_cannot_create_a_profile_without_service_access(
+def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_of(
     rf, user_gql_client, service_factory
 ):
-    service_factory(service_type=ServiceType.BERTH)
-    service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     group = GroupFactory(name="youth_membership")
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
+    assign_perm("can_manage_profiles", group, service_youth)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service_youth
 
     t = Template(
         """
@@ -183,7 +182,9 @@ def test_staff_user_cannot_create_a_profile_without_service_access(
         }
     """
     )
-    query = t.substitute(service_type=ServiceType.BERTH.name, first_name="John")
+    query = t.substitute(
+        service_type=service_berth.service_type.name, first_name="John"
+    )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -201,13 +202,13 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
     assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
                         addEmails: [{
@@ -232,7 +233,6 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
     """
     )
     query = t.substitute(
-        service_type=ServiceType.BERTH.name,
         first_name="John",
         ssn="121282-123E",
         email=email_data["email"],
@@ -263,13 +263,13 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     assign_perm("can_view_sensitivedata", group_youth, service_youth)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service_berth
 
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
-                    serviceType: ${service_type},
                     profile: {
                         firstName: \"${first_name}\",
                         sensitivedata: {
@@ -288,9 +288,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
         }
     """
     )
-    query = t.substitute(
-        service_type=ServiceType.BERTH.name, first_name="John", ssn="121282-123E"
-    )
+    query = t.substitute(first_name="John", ssn="121282-123E")
 
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed

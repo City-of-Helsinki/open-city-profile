@@ -154,7 +154,7 @@ input CreateProfileInput {
 }
 
 input CreateProfileMutationInput {
-  serviceType: ServiceType!
+  serviceType: ServiceType
   profile: CreateProfileInput!
   clientMutationId: String
 }

@@ -712,7 +712,11 @@ There's no replacement for these as these fields have never had any effect in th
 
 class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
-        service_type = graphene.Argument(AllowedServiceType, required=True)
+        service_type = graphene.Argument(
+            AllowedServiceType,
+            description="**DEPRECATED**: requester's service is determined by authentication, "
+            "but for now it can still be overridden by this argument.",
+        )
         profile = CreateProfileInput(required=True)
 
     profile = graphene.Field(ProfileNode)
