@@ -18,7 +18,7 @@ from subscriptions.tests.factories import (
 from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
 
 
-def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service):
+def test_normal_user_can_not_query_profiles(rf, user_gql_client, service):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     request.service = service
@@ -42,9 +42,7 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service):
     )
 
 
-def test_admin_user_can_query_berth_profiles(
-    rf, superuser_gql_client, profile, service
-):
+def test_admin_user_can_query_profiles(rf, superuser_gql_client, profile, service):
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
@@ -81,7 +79,7 @@ def test_admin_user_can_query_berth_profiles(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_with_group_access_can_query_berth_profiles(
+def test_staff_user_with_group_access_can_query_profiles(
     rf, user_gql_client, profile, group, service
 ):
     ServiceConnectionFactory(profile=profile, service=service)
@@ -145,7 +143,7 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_first_name(
+def test_staff_user_can_filter_profiles_by_first_name(
     rf, user_gql_client, group, service
 ):
     profile_1, profile_2 = ProfileFactory.create_batch(2)
@@ -176,7 +174,7 @@ def test_staff_user_can_filter_berth_profiles_by_first_name(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service):
+def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
@@ -221,7 +219,7 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service)
         "primaryEmail",
     ],
 )
-def test_staff_user_can_sort_berth_profiles_by_custom_fields(
+def test_staff_user_can_sort_profiles_by_custom_fields(
     rf, user_gql_client, group, service, order_by
 ):
     profile_1, profile_2 = (
@@ -287,9 +285,7 @@ def test_staff_user_can_sort_berth_profiles_by_custom_fields(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_emails(
-    rf, user_gql_client, group, service
-):
+def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     EmailFactory(
         profile=profile_1, primary=True, email_type=EmailType.PERSONAL, verified=True
@@ -379,9 +375,7 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_phones(
-    rf, user_gql_client, group, service
-):
+def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     PhoneFactory(profile=profile_1, primary=True, phone_type=PhoneType.HOME)
     phone = PhoneFactory(profile=profile_2, primary=False, phone_type=PhoneType.WORK)
@@ -451,7 +445,7 @@ def test_staff_user_can_filter_berth_profiles_by_phones(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_addresses(
+def test_staff_user_can_filter_profiles_by_addresses(
     rf, user_gql_client, group, service
 ):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
@@ -598,7 +592,7 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     assert dict(executed["data"]) == expected_data
 
 
-def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
+def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     rf, user_gql_client, group, service
 ):
     def generate_expected_data(profiles):
@@ -726,7 +720,7 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
     assert dict(executed["data"]) == generate_expected_data([profile_1])
 
 
-def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client, group, service):
+def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
