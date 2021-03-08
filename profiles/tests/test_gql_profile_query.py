@@ -16,11 +16,12 @@ def test_normal_user_cannot_query_a_profile(rf, user_gql_client, profile, servic
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 firstName
                 lastName
             }
@@ -30,7 +31,6 @@ def test_normal_user_cannot_query_a_profile(rf, user_gql_client, profile, servic
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.BERTH.name,
     )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -48,11 +48,12 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 firstName
                 lastName
             }
@@ -62,7 +63,6 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.BERTH.name,
     )
     expected_data = {
         "profile": {"firstName": profile.first_name, "lastName": profile.last_name}
@@ -80,50 +80,22 @@ def test_staff_user_cannot_query_a_profile_without_id(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         {
-            profile(serviceType: ${service_type}) {
+            profile {
                 firstName
                 lastName
             }
         }
     """
-    )
 
-    query = t.substitute(service_type=ServiceType.BERTH.name)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
 
 
-def test_staff_user_cannot_query_a_profile_without_service_type(
-    rf, user_gql_client, profile, group, service
-):
-    ServiceConnectionFactory(profile=profile, service=service)
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
-    t = Template(
-        """
-        {
-            profile(id: ${id}) {
-                firstName
-                lastName
-            }
-        }
-    """
-    )
-
-    query = t.substitute(id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id))
-    executed = user_gql_client.execute(query, context=request)
-    assert "errors" in executed
-
-
-def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connected(
+def test_staff_user_cannot_query_a_profile_without_a_connection_to_their_service(
     rf, user_gql_client, profile, group, service_factory
 ):
     service_berth = service_factory()
@@ -134,11 +106,12 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
     assign_perm("can_view_profiles", group, service_youth)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service_youth
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 firstName
                 lastName
             }
@@ -148,7 +121,6 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.YOUTH_MEMBERSHIP.name,
     )
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
@@ -156,7 +128,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_is_not_connect
     assert executed["errors"][0]["extensions"]["code"] == OBJECT_DOES_NOT_EXIST_ERROR
 
 
-def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admin_of(
+def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_of(
     rf, user_gql_client, profile, group, service_factory
 ):
     service_berth = service_factory()
@@ -167,6 +139,7 @@ def test_staff_user_cannot_query_a_profile_with_service_type_that_he_is_not_admi
     assign_perm("can_view_profiles", group, service_youth)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service_youth
 
     t = Template(
         """
@@ -200,11 +173,12 @@ def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 sensitivedata {
                     ssn
                 }
@@ -215,7 +189,6 @@ def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.BERTH.name,
     )
     expected_data = {"profile": {"sensitivedata": None}}
     executed = user_gql_client.execute(query, context=request)
@@ -234,11 +207,12 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
     assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 sensitivedata {
                     ssn
                 }
@@ -249,7 +223,6 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.BERTH.name,
     )
     expected_data = {"profile": {"sensitivedata": {"ssn": sensitive_data.ssn}}}
     executed = user_gql_client.execute(query, context=request)
@@ -267,11 +240,12 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     assign_perm("can_view_sensitivedata", group, service)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
     t = Template(
         """
         {
-            profile(id: "${id}", serviceType: ${service_type}) {
+            profile(id: "${id}") {
                 sensitivedata {
                     ssn
                 }
@@ -282,7 +256,6 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
 
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
-        service_type=ServiceType.BERTH.name,
     )
     expected_data = {"profile": {"sensitivedata": None}}
     executed = user_gql_client.execute(query, context=request)

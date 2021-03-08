@@ -1113,9 +1113,13 @@ class Query(graphene.ObjectType):
     profile = graphene.Field(
         ProfileNode,
         id=graphene.Argument(graphene.ID, required=True),
-        service_type=graphene.Argument(AllowedServiceType, required=True),
-        description="Get profile by profile ID.\n\nRequires `staff` credentials for the service given in "
-        "`serviceType`. The profile must have an active connection to the given `serviceType`, otherwise "
+        service_type=graphene.Argument(
+            AllowedServiceType,
+            description="**DEPRECATED**: requester's service is determined by authentication, "
+            "but for now it can still be overridden by this argument.",
+        ),
+        description="Get profile by profile ID.\n\nRequires `staff` credentials for the requester's service."
+        "The profile must have an active connection to the requester's service, otherwise "
         "it will not be returned.\n\nPossible error codes:\n\n* `TODO`",
     )
     # TODO: Add the complete list of error codes
