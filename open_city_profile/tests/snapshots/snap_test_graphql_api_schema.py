@@ -374,7 +374,7 @@ type SensitiveDataNode implements Node {
 }
 
 input ServiceConnectionInput {
-  service: ServiceInput!
+  service: ServiceInput
   enabled: Boolean
 }
 

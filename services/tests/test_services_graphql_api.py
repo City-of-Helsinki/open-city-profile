@@ -80,20 +80,16 @@ def test_normal_user_can_query_own_services(
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_add_service_mutation(rf, user_gql_client, service_factory):
+def test_normal_user_can_add_service(rf, user_gql_client, service):
     request = rf.post("/graphql")
-    request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    service_factory()
+    request.user = user_gql_client.user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         mutation {
             addServiceConnection(input: {
                 serviceConnection: {
-                    service: {
-                        type: ${service_type}
-                    }
                     enabled: false
                 }
             }) {
@@ -106,36 +102,99 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client, service_facto
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {
-                "service": {"type": ServiceType.BERTH.name},
+                "service": {"type": service.service_type.name},
                 "enabled": False,
             }
         }
+    }
+    executed = user_gql_client.execute(query, context=request)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_can_add_service_using_service_type_input_field(
+    rf, user_gql_client, service_factory
+):
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+    ProfileFactory(user=user_gql_client.user)
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    request.service = service_factory(service_type=None)
+
+    t = Template(
+        """
+        mutation {
+            add1: addServiceConnection(input: {
+                serviceConnection: {
+                    service: {
+                        type: ${service_type_1}
+                    }
+                    enabled: false
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                    enabled
+                }
+            }
+
+            add2: addServiceConnection(input: {
+                serviceConnection: {
+                    service: {
+                        type: ${service_type_2}
+                    }
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                    enabled
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type_1=service_berth.service_type.name,
+        service_type_2=service_youth.service_type.name,
+    )
+    expected_data = {
+        "add1": {
+            "serviceConnection": {
+                "service": {"type": service_berth.service_type.name},
+                "enabled": False,
+            }
+        },
+        "add2": {
+            "serviceConnection": {
+                "service": {"type": service_youth.service_type.name},
+                "enabled": True,
+            }
+        },
     }
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_cannot_add_service_multiple_times_mutation(
-    rf, user_gql_client, service_factory
+    rf, user_gql_client, service
 ):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    service_factory()
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         mutation {
             addServiceConnection(input: {
                 serviceConnection: {
-                    service: {
-                        type: ${service_type}
-                    }
                 }
             }) {
                 serviceConnection {
@@ -146,8 +205,7 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
