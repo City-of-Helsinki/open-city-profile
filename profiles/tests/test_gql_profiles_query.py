@@ -18,15 +18,14 @@ from subscriptions.tests.factories import (
 from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
 
 
-def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service_factory):
-    service_factory()
+def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         {
-            profiles(serviceType: ${service_type}) {
+            profiles {
                 edges {
                     node {
                         firstName
@@ -36,8 +35,6 @@ def test_normal_user_can_not_query_berth_profiles(rf, user_gql_client, service_f
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -51,11 +48,11 @@ def test_admin_user_can_query_berth_profiles(
     ServiceConnectionFactory(profile=profile, service=service)
     request = rf.post("/graphql")
     request.user = superuser_gql_client.user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         {
-            profiles(serviceType: ${service_type}) {
+            profiles {
                 edges {
                     node {
                         firstName
@@ -66,8 +63,7 @@ def test_admin_user_can_query_berth_profiles(
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "profiles": {
             "edges": [
@@ -94,11 +90,11 @@ def test_staff_user_with_group_access_can_query_berth_profiles(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         {
-            profiles(serviceType: ${service_type}) {
+            profiles {
                 edges {
                     node {
                         firstName
@@ -107,8 +103,7 @@ def test_staff_user_with_group_access_can_query_berth_profiles(
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
     }
@@ -128,10 +123,11 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     query = """
-        query getProfiles($serviceType: ServiceType!, $ids: [UUID!]!){
-            profiles(serviceType: $serviceType, id: $ids) {
+        query getProfiles($ids: [UUID!]!){
+            profiles(id: $ids) {
                 count
                 totalCount
             }
@@ -142,10 +138,7 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
 
     executed = user_gql_client.execute(
         query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "ids": [str(profile_2.id), str(profile_1.id), str(uuid.uuid4())],
-        },
+        variables={"ids": [str(profile_2.id), str(profile_1.id), str(uuid.uuid4())]},
         context=request,
     )
     assert "errors" not in executed
@@ -163,10 +156,11 @@ def test_staff_user_can_filter_berth_profiles_by_first_name(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $firstName: String){
-            profiles(serviceType: $serviceType, firstName: $firstName) {
+        query getBerthProfiles($firstName: String){
+            profiles(firstName: $firstName) {
                 count
                 totalCount
             }
@@ -176,12 +170,7 @@ def test_staff_user_can_filter_berth_profiles_by_first_name(
     expected_data = {"profiles": {"count": 1, "totalCount": 2}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "firstName": profile_2.first_name,
-        },
-        context=request,
+        query, variables={"firstName": profile_2.first_name}, context=request,
     )
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
@@ -199,11 +188,11 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service)
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
-    t = Template(
-        """
+    query = """
         query getBerthProfiles {
-            profiles(serviceType: ${service_type}, orderBy: "-firstName") {
+            profiles(orderBy: "-firstName") {
                 edges {
                     node {
                         firstName
@@ -212,8 +201,7 @@ def test_staff_user_can_sort_berth_profiles(rf, user_gql_client, group, service)
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "profiles": {
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
@@ -265,11 +253,12 @@ def test_staff_user_can_sort_berth_profiles_by_custom_fields(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     t = Template(
         """
         query getBerthProfiles {
-            profiles(serviceType: ${service_type}, orderBy: \"${order_by}\") {
+            profiles(orderBy: \"${order_by}\") {
                 edges {
                     node {
                         firstName
@@ -279,7 +268,7 @@ def test_staff_user_can_sort_berth_profiles_by_custom_fields(
         }
     """
     )
-    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=order_by)
+    query = t.substitute(order_by=order_by)
     expected_data = {
         "profiles": {
             "edges": [{"node": {"firstName": "Adam"}}, {"node": {"firstName": "Bryan"}}]
@@ -288,7 +277,7 @@ def test_staff_user_can_sort_berth_profiles_by_custom_fields(
     executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
-    query = t.substitute(service_type=ServiceType.BERTH.name, order_by=f"-{order_by}")
+    query = t.substitute(order_by=f"-{order_by}")
     expected_data = {
         "profiles": {
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
@@ -315,12 +304,13 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     # filter by email
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $email: String){
-            profiles(serviceType: $serviceType, emails_Email: $email) {
+        query getBerthProfiles($email: String){
+            profiles(emails_Email: $email) {
                 count
                 totalCount
             }
@@ -330,17 +320,15 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "email": email.email},
-        context=request,
+        query, variables={"email": email.email}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by email_type
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $emailType: String){
-            profiles(serviceType: $serviceType, emails_EmailType: $emailType) {
+        query getBerthProfiles($emailType: String){
+            profiles(emails_EmailType: $emailType) {
                 count
                 totalCount
             }
@@ -350,20 +338,15 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "emailType": email.email_type.value,
-        },
-        context=request,
+        query, variables={"emailType": email.email_type.value}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by primary
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
-            profiles(serviceType: $serviceType, emails_Primary: $primary) {
+        query getBerthProfiles($primary: Boolean){
+            profiles(emails_Primary: $primary) {
                 count
                 totalCount
             }
@@ -373,17 +356,15 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
-        context=request,
+        query, variables={"primary": False}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by verified
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $verified: Boolean){
-            profiles(serviceType: $serviceType, emails_Verified: $verified) {
+        query getBerthProfiles($verified: Boolean){
+            profiles(emails_Verified: $verified) {
                 count
                 totalCount
             }
@@ -393,9 +374,7 @@ def test_staff_user_can_filter_berth_profiles_by_emails(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "verified": True},
-        context=request,
+        query, variables={"verified": True}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
@@ -415,12 +394,13 @@ def test_staff_user_can_filter_berth_profiles_by_phones(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     # filter by phone
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $phone: String){
-            profiles(serviceType: $serviceType, phones_Phone: $phone) {
+        query getBerthProfiles($phone: String){
+            profiles(phones_Phone: $phone) {
                 count
                 totalCount
             }
@@ -430,17 +410,15 @@ def test_staff_user_can_filter_berth_profiles_by_phones(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "phone": phone.phone},
-        context=request,
+        query, variables={"phone": phone.phone}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by phone_type
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $phoneType: String){
-            profiles(serviceType: $serviceType, phones_PhoneType: $phoneType) {
+        query getBerthProfiles($phoneType: String){
+            profiles(phones_PhoneType: $phoneType) {
                 count
                 totalCount
             }
@@ -450,20 +428,15 @@ def test_staff_user_can_filter_berth_profiles_by_phones(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "phoneType": phone.phone_type.value,
-        },
-        context=request,
+        query, variables={"phoneType": phone.phone_type.value}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by primary
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
-            profiles(serviceType: $serviceType, phones_Primary: $primary) {
+        query getBerthProfiles($primary: Boolean){
+            profiles(phones_Primary: $primary) {
                 count
                 totalCount
             }
@@ -473,9 +446,7 @@ def test_staff_user_can_filter_berth_profiles_by_phones(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
-        context=request,
+        query, variables={"primary": False}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
@@ -516,12 +487,13 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     # filter by address
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $address: String){
-            profiles(serviceType: $serviceType, addresses_Address: $address) {
+        query getBerthProfiles($address: String){
+            profiles(addresses_Address: $address) {
                 count
                 totalCount
             }
@@ -531,17 +503,15 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "address": address.address},
-        context=request,
+        query, variables={"address": address.address}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by postal_code
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $postalCode: String){
-            profiles(serviceType: $serviceType, addresses_PostalCode: $postalCode) {
+        query getBerthProfiles($postalCode: String){
+            profiles(addresses_PostalCode: $postalCode) {
                 count
                 totalCount
             }
@@ -551,20 +521,15 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "postalCode": address.postal_code,
-        },
-        context=request,
+        query, variables={"postalCode": address.postal_code}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by city
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $city: String){
-            profiles(serviceType: $serviceType, addresses_City: $city) {
+        query getBerthProfiles($city: String){
+            profiles(addresses_City: $city) {
                 count
                 totalCount
             }
@@ -574,17 +539,15 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "city": address.city},
-        context=request,
+        query, variables={"city": address.city}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by country code
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $countryCode: String){
-            profiles(serviceType: $serviceType, addresses_CountryCode: $countryCode) {
+        query getBerthProfiles($countryCode: String){
+            profiles(addresses_CountryCode: $countryCode) {
                 count
                 totalCount
             }
@@ -594,20 +557,15 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "countryCode": address.country_code,
-        },
-        context=request,
+        query, variables={"countryCode": address.country_code}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by address_type
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $addressType: String){
-            profiles(serviceType: $serviceType, addresses_AddressType: $addressType) {
+        query getBerthProfiles($addressType: String){
+            profiles(addresses_AddressType: $addressType) {
                 count
                 totalCount
             }
@@ -617,20 +575,15 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "addressType": address.address_type.value,
-        },
-        context=request,
+        query, variables={"addressType": address.address_type.value}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
     # filter by primary
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $primary: Boolean){
-            profiles(serviceType: $serviceType, addresses_Primary: $primary) {
+        query getBerthProfiles($primary: Boolean){
+            profiles(addresses_Primary: $primary) {
                 count
                 totalCount
             }
@@ -640,9 +593,7 @@ def test_staff_user_can_filter_berth_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query,
-        variables={"serviceType": ServiceType.BERTH.name, "primary": False},
-        context=request,
+        query, variables={"primary": False}, context=request,
     )
     assert dict(executed["data"]) == expected_data
 
@@ -724,11 +675,11 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     query = """
-        query getBerthProfiles($serviceType: ServiceType!, $subscriptionType: String, $postalCode: String){
+        query getBerthProfiles($subscriptionType: String, $postalCode: String){
             profiles(
-                serviceType: $serviceType,
                 enabledSubscriptions: $subscriptionType,
                 addresses_PostalCode: $postalCode
             ) {
@@ -758,11 +709,7 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
 
     executed = user_gql_client.execute(
         query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "subscriptionType": type_1.code,
-            "postalCode": "00100",
-        },
+        variables={"subscriptionType": type_1.code, "postalCode": "00100"},
         context=request,
     )
     assert dict(executed["data"]) == generate_expected_data(
@@ -773,11 +720,7 @@ def test_staff_user_can_filter_berth_profiles_by_subscriptions_and_postal_code(
 
     executed = user_gql_client.execute(
         query,
-        variables={
-            "serviceType": ServiceType.BERTH.name,
-            "subscriptionType": type_2.code,
-            "postalCode": "00100",
-        },
+        variables={"subscriptionType": type_2.code, "postalCode": "00100"},
         context=request,
     )
     assert dict(executed["data"]) == generate_expected_data([profile_1])
@@ -795,10 +738,11 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client, group, serv
     assign_perm("can_view_profiles", group, service)
     request = rf.post("/graphql")
     request.user = user
+    request.service = service
 
     query = """
         query getBerthProfiles {
-            profiles(serviceType: BERTH, orderBy: "firstName", first: 1) {
+            profiles(orderBy: "firstName", first: 1) {
                 pageInfo {
                     endCursor
                 }
@@ -822,7 +766,7 @@ def test_staff_user_can_paginate_berth_profiles(rf, user_gql_client, group, serv
 
     query = """
         query getBerthProfiles($endCursor: String){
-            profiles(serviceType: BERTH, first: 1, after: $endCursor) {
+            profiles(first: 1, after: $endCursor) {
                 edges {
                     node {
                         firstName
@@ -854,10 +798,9 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     request = rf.post("/graphql")
     request.user = user
 
-    t = Template(
-        """
+    query = """
         {
-            profiles(serviceType: ${service_type}) {
+            profiles {
                 edges {
                     node {
                         firstName
@@ -866,28 +809,15 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
+    request.service = service_berth
+    executed = user_gql_client.execute(query, context=request)
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
     }
-    executed = user_gql_client.execute(query, context=request)
     assert dict(executed["data"]) == expected_data
 
-    t = Template(
-        """
-        {
-            profiles(serviceType: ${service_type}) {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(service_type=ServiceType.YOUTH_MEMBERSHIP.name)
+    request.service = service_youth
     executed = user_gql_client.execute(query, context=request)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
