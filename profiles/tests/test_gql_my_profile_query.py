@@ -302,7 +302,7 @@ class TestProfileWithVerifiedPersonalInformation(
     @pytest.mark.parametrize(
         "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
-    def test_when_address_does_not_exist_returns_object_does_not_exist_error(
+    def test_when_address_does_not_exist_returns_null(
         self, address_type, rf, user_gql_client
     ):
         profile = ProfileFactory(user=user_gql_client.user)
@@ -312,7 +312,7 @@ class TestProfileWithVerifiedPersonalInformation(
 
         executed = self._execute_query(rf, user_gql_client)
 
-        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+        assert "errors" not in executed
 
         received_info = executed["data"]["myProfile"]["verifiedPersonalInformation"]
         for at in self.ADDRESS_TYPES:

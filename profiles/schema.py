@@ -396,13 +396,22 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
     )
 
     def resolve_permanent_address(self, info, **kwargs):
-        return self.permanent_address
+        try:
+            return self.permanent_address
+        except VerifiedPersonalInformationPermanentAddress.DoesNotExist:
+            return None
 
     def resolve_temporary_address(self, info, **kwargs):
-        return self.temporary_address
+        try:
+            return self.temporary_address
+        except VerifiedPersonalInformationTemporaryAddress.DoesNotExist:
+            return None
 
     def resolve_permanent_foreign_address(self, info, **kwargs):
-        return self.permanent_foreign_address
+        try:
+            return self.permanent_foreign_address
+        except VerifiedPersonalInformationPermanentForeignAddress.DoesNotExist:
+            return None
 
 
 class SensitiveDataNode(DjangoObjectType):
