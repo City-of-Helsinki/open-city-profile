@@ -533,7 +533,10 @@ class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
     def resolve_verified_personal_information(self, info, **kwargs):
         loa = info.context.user_auth.data.get("loa")
         if loa in ["substantial", "high"]:
-            return self.verified_personal_information
+            try:
+                return self.verified_personal_information
+            except VerifiedPersonalInformation.DoesNotExist:
+                return None
         else:
             raise PermissionDenied(
                 "No permission to read verified personal information."

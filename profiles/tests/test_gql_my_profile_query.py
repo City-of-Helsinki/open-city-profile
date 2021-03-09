@@ -242,14 +242,14 @@ class TestProfileWithVerifiedPersonalInformation(
             TestProfileWithVerifiedPersonalInformation.QUERY, context=request
         )
 
-    def test_when_verified_personal_infomation_does_not_exist_returns_object_does_not_exist_error(
+    def test_when_verified_personal_infomation_does_not_exist_returns_null(
         self, rf, user_gql_client
     ):
         ProfileFactory(user=user_gql_client.user)
 
         executed = self._execute_query(rf, user_gql_client)
 
-        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+        assert "errors" not in executed
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
     def test_normal_user_can_query_verified_personal_information(
