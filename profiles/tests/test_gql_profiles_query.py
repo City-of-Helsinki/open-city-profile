@@ -256,7 +256,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
     t = Template(
         """
         query getBerthProfiles {
-            profiles(orderBy: \"${order_by}\") {
+            profiles(orderBy: "${order_by}") {
                 edges {
                     node {
                         firstName

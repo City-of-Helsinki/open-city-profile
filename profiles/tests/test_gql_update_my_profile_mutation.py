@@ -30,12 +30,12 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                 updateMyProfile(
                     input: {
                         profile: {
-                            nickname: \"${nickname}\",
+                            nickname: "${nickname}",
                             updateEmails:[
                                 {
-                                    id: \"${email_id}\",
+                                    id: "${email_id}",
                                     emailType: ${email_type},
-                                    email:\"${email}\",
+                                    email:"${email}",
                                     primary: ${primary}
                                 }
                             ]
@@ -106,7 +106,7 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                     input: {
                         profile: {
                             addEmails:[
-                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ]
                         }
                     }
@@ -176,7 +176,7 @@ def test_normal_user_cannot_add_invalid_email(rf, user_gql_client, email_data):
                     input: {
                         profile: {
                             addEmails:[
-                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ]
                         }
                     }
@@ -221,9 +221,9 @@ def test_normal_user_cannot_update_email_to_invalid_format(
                         profile: {
                         updateEmails:[
                             {
-                                id: \"${email_id}\",
+                                id: "${email_id}",
                                 emailType: ${email_type},
-                                email:\"${email}\",
+                                email:"${email}",
                                 primary: ${primary}
                             }
                         ]
@@ -267,7 +267,7 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
                     input: {
                         profile: {
                         addPhones:[
-                            {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                            {phoneType: ${phone_type}, phone:"${phone}", primary: ${primary}}
                         ]
                     }
                 }
@@ -329,10 +329,10 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
                             addAddresses: [
                                 {
                                     addressType: ${address_type},
-                                    address:\"${address}\",
-                                    postalCode: \"${postal_code}\",
-                                    city: \"${city}\",
-                                    countryCode: \"${country_code}\",
+                                    address:"${address}",
+                                    postalCode: "${postal_code}",
+                                    city: "${city}",
+                                    countryCode: "${country_code}",
                                     primary: ${primary}
                                 }
                             ]
@@ -405,11 +405,11 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                         profile: {
                         updateAddresses:[
                             {
-                                id: \"${address_id}\",
+                                id: "${address_id}",
                                 addressType: ${address_type},
-                                address:\"${address}\",
-                                postalCode:\"${postal_code}\",
-                                city:\"${city}\",
+                                address:"${address}",
+                                postalCode:"${postal_code}",
+                                city:"${city}",
                                 primary: ${primary}
                             }
                         ]
@@ -482,9 +482,9 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
                         profile: {
                         updateEmails:[
                             {
-                                id: \"${email_id}\",
+                                id: "${email_id}",
                                 emailType: ${email_type},
-                                email:\"${email}\",
+                                email:"${email}",
                                 primary: ${primary}
                             }
                         ]
@@ -551,9 +551,9 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
                         profile: {
                         updatePhones:[
                             {
-                                id: \"${phone_id}\",
+                                id: "${phone_id}",
                                 phoneType: ${phone_type},
-                                phone:\"${phone}\",
+                                phone:"${phone}",
                                 primary: ${primary}
                             }
                         ]
@@ -620,7 +620,7 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
                     input: {
                         profile: {
                         removeEmails:[
-                            \"${email_id}\"
+                            "${email_id}"
                         ]
                     }
                 }
@@ -686,7 +686,7 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
                     input: {
                         profile: {
                         removePhones:[
-                            \"${phone_id}\"
+                            "${phone_id}"
                         ]
                     }
                 }
@@ -733,7 +733,7 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
                     input: {
                         profile: {
                         removeAddresses:[
-                            \"${address_id}\"
+                            "${address_id}"
                         ]
                     }
                 }
@@ -784,17 +784,17 @@ def test_normal_user_can_change_primary_contact_details(
                     input: {
                         profile: {
                             addEmails:[
-                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ],
                             addPhones:[
-                                {phoneType: ${phone_type}, phone:\"${phone}\", primary: ${primary}}
+                                {phoneType: ${phone_type}, phone:"${phone}", primary: ${primary}}
                             ],
                             addAddresses:[
                                 {
                                     addressType: ${address_type},
-                                    address:\"${address}\",
-                                    postalCode:\"${postal_code}\",
-                                    city:\"${city}\",
+                                    address:"${address}",
+                                    postalCode:"${postal_code}",
+                                    city:"${city}",
                                     primary: ${primary}
                                 }
                             ]
@@ -881,9 +881,9 @@ def test_normal_user_can_update_primary_contact_details(
                         profile: {
                         updateEmails:[
                             {
-                                id: \"${email_id}\",
+                                id: "${email_id}",
                                 emailType: ${email_type},
-                                email:\"${email}\",
+                                email:"${email}",
                                 primary: ${primary}
                             }
                         ]
@@ -1007,11 +1007,11 @@ def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
                     profile: {
                         subscriptions: [
                             {
-                                subscriptionTypeId: \"${type_1_id}\",
+                                subscriptionTypeId: "${type_1_id}",
                                 enabled: ${type_1_enabled}
                             },
                             {
-                                subscriptionTypeId: \"${type_2_id}\",
+                                subscriptionTypeId: "${type_2_id}",
                                 enabled: ${type_2_enabled}
                             }
                         ]

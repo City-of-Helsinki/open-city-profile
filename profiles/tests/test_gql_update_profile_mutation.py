@@ -44,20 +44,20 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
             updateProfile(
                 input: {
                     profile: {
-                        id: \"${id}\",
-                        firstName: \"${first_name}\",
+                        id: "${id}",
+                        firstName: "${first_name}",
                         addEmails: [{
-                            email: \"${email}\"
+                            email: "${email}"
                             emailType: ${email_type}
                             primary: ${primary}
                         }],
                         updatePhones: [{
-                            id: \"${phone_id}\",
-                            phone: \"${phone}\",
+                            id: "${phone_id}",
+                            phone: "${phone}",
                         }],
-                        removeAddresses: [\"${address_id}\"],
+                        removeAddresses: ["${address_id}"],
                         sensitivedata: {
-                            ssn: \"${ssn}\"
+                            ssn: "${ssn}"
                         }
                     }
                 }
@@ -145,9 +145,9 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
             updateProfile(
                 input: {
                     profile: {
-                        id: \"${id}\",
+                        id: "${id}",
                         sensitivedata: {
-                            ssn: \"${ssn}\"
+                            ssn: "${ssn}"
                         }
                     }
                 }
@@ -185,8 +185,8 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
             updateProfile(
                 input: {
                     profile: {
-                        id: \"${id}\",
-                        firstName: \"${first_name}\",
+                        id: "${id}",
+                        firstName: "${first_name}",
                     }
                 }
             ) {

@@ -13,9 +13,9 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
                 createMyProfile(
                     input: {
                         profile: {
-                            nickname: \"${nickname}\",
+                            nickname: "${nickname}",
                             addEmails:[
-                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ]
                         }
                     }
@@ -81,7 +81,7 @@ def test_normal_user_cannot_create_profile_with_no_primary_email(
                     input: {
                         profile: {
                             addEmails:[
-                                {emailType: ${email_type}, email:\"${email}\", primary: ${primary}}
+                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ]
                         }
                     }

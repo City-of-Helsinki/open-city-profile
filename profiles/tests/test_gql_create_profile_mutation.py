@@ -23,16 +23,16 @@ def test_staff_user_can_create_a_profile(
             createProfile(
                 input: {
                     profile: {
-                        firstName: \"${first_name}\",
-                        lastName: \"${last_name}\",
+                        firstName: "${first_name}",
+                        lastName: "${last_name}",
                         addEmails: [{
                             emailType: ${email_type},
-                            email: \"${email}\",
+                            email: "${email}",
                             primary: true,
                         }],
                         addPhones: [{
                             phoneType: ${phone_type},
-                            phone: \"${phone}\",
+                            phone: "${phone}",
                             primary: true
                         }]
                     }
@@ -132,7 +132,7 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
             createProfile(
                 input: {
                     profile: {
-                        firstName: \"${first_name}\",
+                        firstName: "${first_name}",
                     }
                 }
             ) {
@@ -171,7 +171,7 @@ def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_
                 input: {
                     serviceType: ${service_type},
                     profile: {
-                        firstName: \"${first_name}\",
+                        firstName: "${first_name}",
                     }
                 }
             ) {
@@ -210,14 +210,14 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
             createProfile(
                 input: {
                     profile: {
-                        firstName: \"${first_name}\",
+                        firstName: "${first_name}",
                         addEmails: [{
-                            email: \"${email}\",
+                            email: "${email}",
                             emailType: ${email_type},
                             primary: true
                         }],
                         sensitivedata: {
-                            ssn: \"${ssn}\"
+                            ssn: "${ssn}"
                         }
                     }
                 }
@@ -271,9 +271,9 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
             createProfile(
                 input: {
                     profile: {
-                        firstName: \"${first_name}\",
+                        firstName: "${first_name}",
                         sensitivedata: {
-                            ssn: \"${ssn}\"
+                            ssn: "${ssn}"
                         }
                     }
                 }
