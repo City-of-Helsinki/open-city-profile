@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import TestCase
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -84,7 +85,12 @@ def test_serialize_profile(profile):
     assert "children" in serialized_profile
     assert serialized_profile.get("key") == "PROFILE"
     assert expected_firstname in serialized_profile.get("children")
-    assert expected_email in serialized_profile.get("children")
+    serialized_email = list(
+        filter(lambda x: x["key"] == "EMAILS", serialized_profile.get("children"))
+    )[0]
+    TestCase().assertCountEqual(
+        serialized_email.get("children"), expected_email.get("children")
+    )
     assert expected_sensitive_data in serialized_profile.get("children")
 
 
