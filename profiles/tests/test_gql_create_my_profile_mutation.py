@@ -1,9 +1,12 @@
 from string import Template
 
-from open_city_profile.consts import PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL
+import pytest
 
 
-def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile_data):
+@pytest.mark.parametrize("email_is_primary", [True, False])
+def test_normal_user_can_create_profile(
+    rf, user_gql_client, email_data, profile_data, email_is_primary
+):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
@@ -48,7 +51,7 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
                             "node": {
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
-                                "primary": email_data["primary"],
+                                "primary": email_is_primary,
                                 "verified": False,
                             }
                         }
@@ -62,46 +65,40 @@ def test_normal_user_can_create_profile(rf, user_gql_client, email_data, profile
         nickname=profile_data["nickname"],
         email=email_data["email"],
         email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
+        primary=str(email_is_primary).lower(),
     )
     executed = user_gql_client.execute(mutation, context=request)
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
 
 
-def test_normal_user_cannot_create_profile_with_no_primary_email(
-    rf, user_gql_client, email_data
-):
+def test_normal_user_can_create_profile_with_no_email(rf, user_gql_client, email_data):
     request = rf.post("/graphql")
     request.user = user_gql_client.user
 
-    t = Template(
-        """
+    mutation = """
             mutation {
                 createMyProfile(
                     input: {
-                        profile: {
-                            addEmails:[
-                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
-                            ]
-                        }
+                        profile: {}
                     }
                 ) {
                 profile{
-                    id
+                    emails{
+                        edges{
+                        node{
+                            email,
+                            emailType,
+                            primary,
+                            verified
+                        }
+                        }
+                    }
                 }
             }
             }
         """
-    )
 
-    mutation = t.substitute(
-        email=email_data["email"],
-        email_type=email_data["email_type"],
-        primary=str(not email_data["primary"]).lower(),
-    )
+    expected_data = {"createMyProfile": {"profile": {"emails": {"edges": []}}}}
+
     executed = user_gql_client.execute(mutation, context=request)
-    assert "code" in executed["errors"][0]["extensions"]
-    assert (
-        executed["errors"][0]["extensions"]["code"]
-        == PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL
-    )
+    assert executed["data"] == expected_data

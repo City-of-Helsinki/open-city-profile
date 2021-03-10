@@ -33,7 +33,6 @@ from open_city_profile.exceptions import (
     ConnectedServiceDeletionNotAllowedError,
     MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
-    ProfileMustHaveOnePrimaryEmail,
     TokenExpiredError,
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
@@ -83,13 +82,6 @@ AllowedAddressType = graphene.Enum.from_enum(
 )
 
 
-def validate_primary_email(profile):
-    if profile.emails.filter(primary=True).count() != 1:
-        raise ProfileMustHaveOnePrimaryEmail(
-            "Profile must have exactly one primary email"
-        )
-
-
 def get_claimable_profile(token=None):
     claim_token = ClaimToken.objects.get(token=token)
     if claim_token.expires_at and claim_token.expires_at < timezone.now():
@@ -126,8 +118,6 @@ def update_profile(profile, profile_data):
 
     for model, data in nested_to_delete:
         delete_nested(model, profile, data)
-
-    validate_primary_email(profile)
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -673,8 +663,6 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         for model, data in nested_to_create:
             create_nested(model, profile, data)
 
-        validate_primary_email(profile)
-
         return CreateMyProfileMutation(profile=profile)
 
 
@@ -751,8 +739,6 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         # create the service connection for the profile
         profile.service_connections.create(service=service)
-
-        validate_primary_email(profile)
 
         return CreateProfileMutation(profile=profile)
 

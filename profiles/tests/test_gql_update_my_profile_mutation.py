@@ -93,6 +93,53 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
     assert dict(executed["data"]) == expected_data
 
 
+def test_normal_user_can_update_profile_without_email(
+    rf, user_gql_client, profile_data
+):
+    ProfileFactory(user=user_gql_client.user)
+
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: "${nickname}"
+                        }
+                    }
+                ) {
+                    profile{
+                        nickname,
+                    emails{
+                        edges{
+                        node{
+                            email
+                            emailType
+                            primary
+                            verified
+                        }
+                        }
+                    }
+                    }
+                }
+            }
+        """
+    )
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {"nickname": profile_data["nickname"], "emails": {"edges": []}}
+        }
+    }
+
+    mutation = t.substitute(nickname=profile_data["nickname"],)
+    executed = user_gql_client.execute(mutation, context=request)
+    assert executed["data"] == expected_data
+
+
 def test_normal_user_can_add_email(rf, user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
@@ -671,6 +718,53 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
     )
     executed = user_gql_client.execute(mutation, context=request)
     assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_remove_all_emails(rf, user_gql_client, email_data):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
+    primary_email = profile.emails.filter(primary=True).first()
+    email = profile.emails.filter(primary=False).first()
+    request = rf.post("/graphql")
+    request.user = user_gql_client.user
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                        removeEmails:[
+                            "${primary_email_id}",
+                            "${email_id}",
+                        ]
+                    }
+                }
+            ) {
+                profile{
+                    emails{
+                        edges{
+                        node{
+                            id
+                            email
+                            emailType
+                            primary
+                        }
+                        }
+                    }
+                }
+            }
+            }
+        """
+    )
+
+    expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
+
+    mutation = t.substitute(
+        primary_email_id=to_global_id(type="EmailNode", id=primary_email.id),
+        email_id=to_global_id(type="EmailNode", id=email.id),
+    )
+    executed = user_gql_client.execute(mutation, context=request)
+    assert executed["data"] == expected_data
 
 
 def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):

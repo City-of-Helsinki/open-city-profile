@@ -43,10 +43,6 @@ class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
     """Profile does not have a primary email address"""
 
 
-class ProfileMustHaveOnePrimaryEmail(ProfileGraphQLError):
-    """Profile must have exactly one primary email"""
-
-
 class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
 

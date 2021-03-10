@@ -15,7 +15,6 @@ from open_city_profile.consts import (
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
-    PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     SERVICE_NOT_IDENTIFIED_ERROR,
     TOKEN_EXPIRED_ERROR,
@@ -31,7 +30,6 @@ from open_city_profile.exceptions import (
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
-    ProfileMustHaveOnePrimaryEmail,
     ServiceAlreadyExistsError,
     ServiceNotIdentifiedError,
     TokenExpiredError,
@@ -58,7 +56,6 @@ error_codes_profile = {
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
-    ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
 }
 
 sentry_ignored_errors = (
