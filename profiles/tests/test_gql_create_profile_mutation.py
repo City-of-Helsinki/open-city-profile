@@ -1,5 +1,6 @@
 from string import Template
 
+import pytest
 from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import assign_perm
 
@@ -7,8 +8,16 @@ from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
 
 
+@pytest.mark.parametrize("with_email", [True, False])
 def test_staff_user_can_create_a_profile(
-    rf, user_gql_client, email_data, phone_data, address_data, group, service
+    rf,
+    user_gql_client,
+    email_data,
+    phone_data,
+    address_data,
+    group,
+    service,
+    with_email,
 ):
     user = user_gql_client.user
     user.groups.add(group)
@@ -25,11 +34,7 @@ def test_staff_user_can_create_a_profile(
                     profile: {
                         firstName: "${first_name}",
                         lastName: "${last_name}",
-                        addEmails: [{
-                            emailType: ${email_type},
-                            email: "${email}",
-                            primary: true,
-                        }],
+${email_input}
                         addPhones: [{
                             phoneType: ${phone_type},
                             phone: "${phone}",
@@ -73,14 +78,21 @@ def test_staff_user_can_create_a_profile(
         }
     """
     )
+    email_input = f"""
+                        addEmails: [{{
+                            emailType: {email_data["email_type"]},
+                            email: "{email_data["email"]}",
+                            primary: true,
+                        }}],"""
+
     query = t.substitute(
         first_name="John",
         last_name="Doe",
         phone_type=phone_data["phone_type"],
         phone=phone_data["phone"],
-        email_type=email_data["email_type"],
-        email=email_data["email"],
+        email_input=email_input if with_email else "",
     )
+
     expected_data = {
         "createProfile": {
             "profile": {
@@ -107,6 +119,8 @@ def test_staff_user_can_create_a_profile(
                             }
                         }
                     ]
+                    if with_email
+                    else []
                 },
                 "serviceConnections": {
                     "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
