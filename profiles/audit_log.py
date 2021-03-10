@@ -61,7 +61,7 @@ def log(action, instance):
             "audit_event": {
                 "origin": "PROFILE-BE",
                 "status": "SUCCESS",
-                "date_time_epoch": int(current_time.timestamp()),
+                "date_time_epoch": int(current_time.timestamp() * 1000),
                 "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
                 "actor": {"role": _resolve_role(current_user, profile)},
                 "operation": action,
