@@ -66,6 +66,10 @@ class Service(TranslatableModel):
             ("can_view_profiles", "Can view profiles"),
             ("can_manage_sensitivedata", "Can manage sensitive data"),
             ("can_view_sensitivedata", "Can view sensitive data"),
+            (
+                "can_view_verified_personal_information",
+                "Can view verified personal information",
+            ),
         )
 
     def save(self, *args, **kwargs):
