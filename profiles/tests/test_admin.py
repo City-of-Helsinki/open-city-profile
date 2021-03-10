@@ -21,7 +21,7 @@ def test_profile_should_have_exactly_one_primary_email(profile):
     assert formset.is_valid()
 
 
-def test_profile_should_not_be_valid_with_no_primary_email(profile):
+def test_profile_should_be_valid_with_no_primary_email(profile):
     email_formset = inlineformset_factory(
         Profile, Email, formset=EmailFormSet, fields=["email", "email_type", "primary"]
     )
@@ -34,7 +34,7 @@ def test_profile_should_not_be_valid_with_no_primary_email(profile):
         "emails-0-primary": False,
     }
     formset = email_formset(data, prefix="emails", instance=profile)
-    assert not formset.is_valid()
+    assert formset.is_valid()
 
 
 def test_profile_should_not_be_valid_with_two_or_more_primary_emails(profile):

@@ -87,9 +87,9 @@ class EmailFormSet(forms.models.BaseInlineFormSet):
             self.forms,
             0,
         )
-        if count != 1:
+        if count > 1:
             raise forms.ValidationError(
-                "Profile must have one exactly one primary email"
+                "Profile must have zero or one primary email(s)"
             )
 
 
