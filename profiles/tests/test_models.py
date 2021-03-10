@@ -6,14 +6,11 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
-from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 
 from ..models import Email, Profile, TemporaryReadAccessToken
-from ..schema import validate_primary_email
 from .factories import (
     EmailFactory,
-    ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
     VerifiedPersonalInformationFactory,
 )
@@ -94,8 +91,7 @@ def test_serialize_profile(profile):
     assert expected_sensitive_data in serialized_profile.get("children")
 
 
-def test_import_customer_data_with_valid_data_set(service_factory):
-    service_factory()
+def test_import_customer_data_with_valid_data_set(service):
     data = [
         {
             "customer_id": "321456",
@@ -163,7 +159,7 @@ def test_import_customer_data_with_missing_customer_id():
     assert Profile.objects.count() == 0
 
 
-def test_import_customer_data_with_missing_email():
+def test_import_customer_data_with_missing_email(service):
     data = [
         {
             "customer_id": "321457",
@@ -179,27 +175,8 @@ def test_import_customer_data_with_missing_email():
         }
     ]
     assert Profile.objects.count() == 0
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail) as e:
-        Profile.import_customer_data(data)
-    assert str(e.value) == "Profile must have exactly one primary email, index: 0"
-    assert Profile.objects.count() == 0
-
-
-def test_validation_should_pass_with_one_primary_email():
-    profile = ProfileWithPrimaryEmailFactory()
-    validate_primary_email(profile)
-
-
-def test_validation_should_fail_with_no_primary_email(profile):
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
-        validate_primary_email(profile)
-
-
-def test_validation_should_fail_with_multiple_primary_emails(profile):
-    EmailFactory(profile=profile, primary=True)
-    EmailFactory(profile=profile, primary=True)
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
-        validate_primary_email(profile)
+    Profile.import_customer_data(data)
+    assert Profile.objects.count() == 1
 
 
 def test_validation_should_fail_with_invalid_email():
