@@ -19,7 +19,7 @@ from open_city_profile.views import GraphQLView
 
 
 class GraphQLClient(GrapheneClient):
-    def execute(self, *args, context=None, **kwargs):
+    def execute(self, *args, service=None, context=None, **kwargs):
         """
         Custom wrapper on the execute method, allows adding the
         GQL DataLoaders middleware, since it has to be added to make
@@ -30,6 +30,9 @@ class GraphQLClient(GrapheneClient):
 
         if not hasattr(context, "user") and hasattr(self, "user"):
             context.user = self.user
+
+        if service is not None:
+            context.service = service
 
         return super().execute(
             *args, context=context, middleware=[GQLDataLoaders()], **kwargs
