@@ -962,7 +962,7 @@ def test_normal_user_can_update_primary_contact_details(
     rf, user_gql_client, email_data
 ):
     profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile)
+    email = EmailFactory(profile=profile, primary=False)
     email_2 = EmailFactory(profile=profile, primary=True)
     request = rf.post("/graphql")
     request.user = user_gql_client.user
