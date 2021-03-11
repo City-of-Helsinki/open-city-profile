@@ -49,7 +49,7 @@ def test_new_profile_with_non_existing_name_and_default_name(user):
 
 def test_serialize_profile(profile):
     email_2 = EmailFactory(profile=profile)
-    email_1 = EmailFactory(profile=profile)
+    email_1 = EmailFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
     serialized_profile = profile.serialize()
     expected_firstname = {"key": "FIRST_NAME", "value": profile.first_name}
@@ -183,6 +183,12 @@ def test_validation_should_fail_with_invalid_email():
     e = Email("!dsdsd{}{}{}{}{}{")
     with pytest.raises(ValidationError):
         e.save()
+
+
+def test_should_not_allow_two_primary_emails(profile):
+    EmailFactory(profile=profile, primary=True)
+    with pytest.raises(ValidationError):
+        EmailFactory(profile=profile, primary=True)
 
 
 class ValidationTestBase:

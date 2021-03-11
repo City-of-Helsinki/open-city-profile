@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import reversion
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.utils import timezone
@@ -384,6 +385,20 @@ class Email(Contact):
         {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
         {"name": "email"},
     )
+
+    def clean(self):
+        super().clean()
+
+        if not self.primary:
+            return
+
+        existing_primary_emails = Email.objects.filter(
+            profile=self.profile, primary=True,
+        )
+        if self.pk:
+            existing_primary_emails.exclude(pk=self.pk)
+        if existing_primary_emails.exists():
+            raise ValidationError("Primary email already exists")
 
     def save(self, *args, **kwargs):
         self.full_clean()
