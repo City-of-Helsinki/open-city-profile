@@ -82,11 +82,8 @@ def test_normal_user_can_query_own_services(
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_add_service(rf, user_gql_client, service):
-    request = rf.post("/graphql")
+def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
-    request.user = user_gql_client.user
-    request.service = service
 
     query = """
         mutation {
@@ -113,19 +110,17 @@ def test_normal_user_can_add_service(rf, user_gql_client, service):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
 def test_normal_user_can_add_service_using_service_type_input_field(
-    rf, user_gql_client, service_factory
+    user_gql_client, service_factory
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
     service_berth = service_factory(service_type=ServiceType.BERTH)
     service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    request.service = service_factory(service_type=None)
+    request_service = service_factory(service_type=None)
 
     t = Template(
         """
@@ -181,17 +176,14 @@ def test_normal_user_can_add_service_using_service_type_input_field(
             }
         },
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=request_service)
     assert executed["data"] == expected_data
 
 
 def test_normal_user_cannot_add_service_multiple_times_mutation(
-    rf, user_gql_client, service
+    user_gql_client, service
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    request.service = service
 
     query = """
         mutation {
@@ -213,12 +205,12 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
             "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
     assert "errors" not in executed
 
     # do the mutation again
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert "code" in executed["errors"][0]["extensions"]
     assert (

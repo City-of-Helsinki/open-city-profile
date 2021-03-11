@@ -10,21 +10,11 @@ from services.enums import ServiceType
 
 @pytest.mark.parametrize("with_email", [True, False])
 def test_staff_user_can_create_a_profile(
-    rf,
-    user_gql_client,
-    email_data,
-    phone_data,
-    address_data,
-    group,
-    service,
-    with_email,
+    user_gql_client, email_data, phone_data, address_data, group, service, with_email,
 ):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     t = Template(
         """
@@ -132,18 +122,13 @@ ${email_input}
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
 def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
-    rf, user_gql_client, service
+    user_gql_client, service
 ):
-    user = user_gql_client.user
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
-
     t = Template(
         """
         mutation {
@@ -162,7 +147,7 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
     """
     )
     query = t.substitute(first_name="John")
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -170,7 +155,7 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
 
 
 def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_of(
-    rf, user_gql_client, service_factory
+    user_gql_client, service_factory
 ):
     service_berth = service_factory(service_type=ServiceType.BERTH)
     service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
@@ -178,9 +163,6 @@ def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service_youth)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service_youth
 
     t = Template(
         """
@@ -203,7 +185,7 @@ def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_
     query = t.substitute(
         service_type=service_berth.service_type.name, first_name="John"
     )
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service_youth)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -211,16 +193,13 @@ def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_
 
 
 def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_with_sensitive_data(
-    rf, user_gql_client, email_data, group, service
+    user_gql_client, email_data, group, service
 ):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     assign_perm("can_manage_sensitivedata", group, service)
     assign_perm("can_view_sensitivedata", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     t = Template(
         """
@@ -264,12 +243,12 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
             "profile": {"firstName": "John", "sensitivedata": {"ssn": "121282-123E"}}
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
 def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
-    rf, user_gql_client, service_factory
+    user_gql_client, service_factory
 ):
     service_berth = service_factory(service_type=ServiceType.BERTH)
     service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
@@ -281,9 +260,6 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     assign_perm("can_manage_profiles", group_berth, service_berth)
     assign_perm("can_manage_sensitivedata", group_youth, service_youth)
     assign_perm("can_view_sensitivedata", group_youth, service_youth)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service_berth
 
     t = Template(
         """
@@ -310,7 +286,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     )
     query = t.substitute(first_name="John", ssn="121282-123E")
 
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service_berth)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."

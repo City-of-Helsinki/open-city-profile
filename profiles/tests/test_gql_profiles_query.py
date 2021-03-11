@@ -18,11 +18,7 @@ from subscriptions.tests.factories import (
 from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
 
 
-def test_normal_user_can_not_query_profiles(rf, user_gql_client, service):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-    request.service = service
-
+def test_normal_user_can_not_query_profiles(user_gql_client, service):
     query = """
         {
             profiles {
@@ -35,18 +31,15 @@ def test_normal_user_can_not_query_profiles(rf, user_gql_client, service):
             }
         }
     """
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
 
 
-def test_admin_user_can_query_profiles(rf, superuser_gql_client, profile, service):
+def test_admin_user_can_query_profiles(superuser_gql_client, profile, service):
     ServiceConnectionFactory(profile=profile, service=service)
-    request = rf.post("/graphql")
-    request.user = superuser_gql_client.user
-    request.service = service
 
     query = """
         {
@@ -75,20 +68,17 @@ def test_admin_user_can_query_profiles(rf, superuser_gql_client, profile, servic
             ]
         }
     }
-    executed = superuser_gql_client.execute(query, context=request)
+    executed = superuser_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
 def test_staff_user_with_group_access_can_query_profiles(
-    rf, user_gql_client, profile, group, service
+    user_gql_client, profile, group, service
 ):
     ServiceConnectionFactory(profile=profile, service=service)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         {
@@ -105,13 +95,11 @@ def test_staff_user_with_group_access_can_query_profiles(
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_profile_ids(
-    rf, user_gql_client, group, service
-):
+def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
@@ -119,9 +107,6 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         query getProfiles($ids: [UUID!]!) {
@@ -137,24 +122,19 @@ def test_staff_user_can_filter_profiles_by_profile_ids(
     executed = user_gql_client.execute(
         query,
         variables={"ids": [str(profile_2.id), str(profile_1.id), str(uuid.uuid4())]},
-        context=request,
+        service=service,
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_first_name(
-    rf, user_gql_client, group, service
-):
+def test_staff_user_can_filter_profiles_by_first_name(user_gql_client, group, service):
     profile_1, profile_2 = ProfileFactory.create_batch(2)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         query getBerthProfiles($firstName: String) {
@@ -168,13 +148,13 @@ def test_staff_user_can_filter_profiles_by_first_name(
     expected_data = {"profiles": {"count": 1, "totalCount": 2}}
 
     executed = user_gql_client.execute(
-        query, variables={"firstName": profile_2.first_name}, context=request,
+        query, variables={"firstName": profile_2.first_name}, service=service,
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
+def test_staff_user_can_sort_profiles(user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
@@ -184,9 +164,6 @@ def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         query getBerthProfiles {
@@ -205,7 +182,7 @@ def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
@@ -220,7 +197,7 @@ def test_staff_user_can_sort_profiles(rf, user_gql_client, group, service):
     ],
 )
 def test_staff_user_can_sort_profiles_by_custom_fields(
-    rf, user_gql_client, group, service, order_by
+    user_gql_client, group, service, order_by
 ):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
@@ -249,9 +226,6 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     t = Template(
         """
@@ -272,7 +246,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
             "edges": [{"node": {"firstName": "Adam"}}, {"node": {"firstName": "Bryan"}}]
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
     query = t.substitute(order_by=f"-{order_by}")
@@ -281,11 +255,11 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
             "edges": [{"node": {"firstName": "Bryan"}}, {"node": {"firstName": "Adam"}}]
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, service):
+def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     EmailFactory(
         profile=profile_1, primary=True, email_type=EmailType.PERSONAL, verified=True
@@ -298,9 +272,6 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     # filter by email
 
@@ -316,7 +287,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"email": email.email}, context=request,
+        query, variables={"email": email.email}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -334,7 +305,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"emailType": email.email_type.value}, context=request,
+        query, variables={"emailType": email.email_type.value}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -352,7 +323,7 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, context=request,
+        query, variables={"primary": False}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -370,12 +341,12 @@ def test_staff_user_can_filter_profiles_by_emails(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"verified": True}, context=request,
+        query, variables={"verified": True}, service=service,
     )
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, service):
+def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     PhoneFactory(profile=profile_1, primary=True, phone_type=PhoneType.HOME)
     phone = PhoneFactory(profile=profile_2, primary=False, phone_type=PhoneType.WORK)
@@ -386,9 +357,6 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     # filter by phone
 
@@ -404,7 +372,7 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"phone": phone.phone}, context=request,
+        query, variables={"phone": phone.phone}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -422,7 +390,7 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"phoneType": phone.phone_type.value}, context=request,
+        query, variables={"phoneType": phone.phone_type.value}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -440,14 +408,12 @@ def test_staff_user_can_filter_profiles_by_phones(rf, user_gql_client, group, se
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, context=request,
+        query, variables={"primary": False}, service=service,
     )
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_addresses(
-    rf, user_gql_client, group, service
-):
+def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, service):
     profile_1, profile_2, profile_3 = ProfileFactory.create_batch(3)
     AddressFactory(
         profile=profile_1,
@@ -479,9 +445,6 @@ def test_staff_user_can_filter_profiles_by_addresses(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     # filter by address
 
@@ -497,7 +460,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"address": address.address}, context=request,
+        query, variables={"address": address.address}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -515,7 +478,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"postalCode": address.postal_code}, context=request,
+        query, variables={"postalCode": address.postal_code}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -533,7 +496,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"city": address.city}, context=request,
+        query, variables={"city": address.city}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -551,7 +514,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"countryCode": address.country_code}, context=request,
+        query, variables={"countryCode": address.country_code}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -569,7 +532,7 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"addressType": address.address_type.value}, context=request,
+        query, variables={"addressType": address.address_type.value}, service=service,
     )
     assert executed["data"] == expected_data
 
@@ -587,13 +550,13 @@ def test_staff_user_can_filter_profiles_by_addresses(
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, context=request,
+        query, variables={"primary": False}, service=service,
     )
     assert executed["data"] == expected_data
 
 
 def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
-    rf, user_gql_client, group, service
+    user_gql_client, group, service
 ):
     def generate_expected_data(profiles):
         return {
@@ -667,9 +630,6 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         query getBerthProfiles($subscriptionType: String, $postalCode: String) {
@@ -704,7 +664,7 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     executed = user_gql_client.execute(
         query,
         variables={"subscriptionType": type_1.code, "postalCode": "00100"},
-        context=request,
+        service=service,
     )
     assert executed["data"] == generate_expected_data([profile_1, profile_2, profile_3])
 
@@ -713,12 +673,12 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     executed = user_gql_client.execute(
         query,
         variables={"subscriptionType": type_2.code, "postalCode": "00100"},
-        context=request,
+        service=service,
     )
     assert executed["data"] == generate_expected_data([profile_1])
 
 
-def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
+def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     profile_1, profile_2 = (
         ProfileFactory(first_name="Adam", last_name="Tester"),
         ProfileFactory(first_name="Bryan", last_name="Tester"),
@@ -728,9 +688,6 @@ def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     query = """
         query getBerthProfiles {
@@ -748,7 +705,7 @@ def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
     """
 
     expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "data" in executed
     assert executed["data"]["profiles"]["edges"] == expected_data["edges"]
     assert "pageInfo" in executed["data"]["profiles"]
@@ -769,14 +726,14 @@ def test_staff_user_can_paginate_profiles(rf, user_gql_client, group, service):
     """
     expected_data = {"edges": [{"node": {"firstName": "Bryan"}}]}
     executed = user_gql_client.execute(
-        query, variables={"endCursor": end_cursor}, context=request
+        query, variables={"endCursor": end_cursor}, service=service
     )
     assert "data" in executed
     assert executed["data"]["profiles"] == expected_data
 
 
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
-    rf, user_gql_client, group, service_factory
+    user_gql_client, group, service_factory
 ):
     profile_berth = ProfileFactory()
     profile_youth = ProfileFactory()
@@ -787,8 +744,6 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service_berth)
-    request = rf.post("/graphql")
-    request.user = user
 
     query = """
         {
@@ -802,15 +757,13 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
         }
     """
 
-    request.service = service_berth
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service_berth)
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
     }
     assert executed["data"] == expected_data
 
-    request.service = service_youth
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service_youth)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -836,7 +789,7 @@ def test_not_specifying_requesters_service_results_in_permission_denied_error(
 
 
 def test_service_type_argument_temporarily_overrides_the_requesters_service(
-    rf, user_gql_client, group, service_factory
+    user_gql_client, group, service_factory
 ):
     profile_berth = ProfileFactory()
     profile_youth = ProfileFactory()
@@ -848,9 +801,6 @@ def test_service_type_argument_temporarily_overrides_the_requesters_service(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service_berth)
     assign_perm("can_view_profiles", group, service_youth)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service_youth
 
     t = Template(
         """
@@ -878,5 +828,5 @@ def test_service_type_argument_temporarily_overrides_the_requesters_service(
         "berthProfiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]},
         "youthProfiles": {"edges": [{"node": {"firstName": profile_youth.first_name}}]},
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service_youth)
     assert executed["data"] == expected_data

@@ -13,7 +13,7 @@ from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFact
 
 
 @pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
-def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
+def test_staff_user_can_update_a_profile(user_gql_client, group, service):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
@@ -22,9 +22,6 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
     assign_perm("can_manage_profiles", group, service)
     assign_perm("can_view_sensitivedata", group, service)
     assign_perm("can_manage_sensitivedata", group, service)
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     data = {
         "first_name": "John",
@@ -124,13 +121,13 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
 
 
 @pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
-    rf, user_gql_client, group, service
+    user_gql_client, group, service
 ):
     """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
     profile = ProfileWithPrimaryEmailFactory()
@@ -138,10 +135,6 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     assign_perm("can_view_sensitivedata", group, service)
-
-    request = rf.post("/graphql")
-    request.user = user
-    request.service = service
 
     t = Template(
         """
@@ -166,7 +159,7 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
     """
     )
     query = t.substitute(id=to_global_id("ProfileNode", profile.pk), ssn="010199-1234",)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
 
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
@@ -175,13 +168,10 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
 
 
 def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
-    rf, user_gql_client, service_factory
+    user_gql_client, service_factory
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-    request.service = service
 
     t = Template(
         """
@@ -202,7 +192,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
     """
     )
     query = t.substitute(id=to_global_id("ProfileNode", profile.pk), first_name="John",)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
