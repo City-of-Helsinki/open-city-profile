@@ -9,13 +9,11 @@ from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ER
 from .factories import ClaimTokenFactory, ProfileFactory, ProfileWithPrimaryEmailFactory
 
 
-def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_client):
+def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(
         user=None, first_name="John", last_name="Doe"
     )
     claim_token = ClaimTokenFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -50,7 +48,7 @@ def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
@@ -59,15 +57,13 @@ def test_user_can_claim_claimable_profile_without_existing_profile(rf, user_gql_
     assert profile.claim_tokens.count() == 0
 
 
-def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_client):
+def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(
         user=None, first_name="John", last_name="Doe"
     )
     expired_claim_token = ClaimTokenFactory(
         profile=profile, expires_at=timezone.now() - timedelta(days=1)
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -92,18 +88,16 @@ def test_user_cannot_claim_claimable_profile_if_token_expired(rf, user_gql_clien
         """
     )
     query = t.substitute(claimToken=expired_claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
 
 
-def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_client):
+def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
     expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -128,7 +122,7 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(rf, user_gql_
         """
     )
     query = t.substitute(claimToken=expired_claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR

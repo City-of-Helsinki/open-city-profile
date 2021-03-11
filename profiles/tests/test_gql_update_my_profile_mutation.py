@@ -18,11 +18,9 @@ from .factories import (
 )
 
 
-def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile_data):
+def test_normal_user_can_update_profile(user_gql_client, email_data, profile_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -89,17 +87,12 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_profile_without_email(
-    rf, user_gql_client, profile_data
-):
+def test_normal_user_can_update_profile_without_email(user_gql_client, profile_data):
     ProfileFactory(user=user_gql_client.user)
-
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -136,15 +129,13 @@ def test_normal_user_can_update_profile_without_email(
     }
 
     mutation = t.substitute(nickname=profile_data["nickname"],)
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_add_email(rf, user_gql_client, email_data):
+def test_normal_user_can_add_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -211,14 +202,12 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
         email_type=email_data["email_type"],
         primary=str(not email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_cannot_add_invalid_email(rf, user_gql_client, email_data):
+def test_normal_user_cannot_add_invalid_email(user_gql_client, email_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -255,18 +244,14 @@ def test_normal_user_cannot_add_invalid_email(rf, user_gql_client, email_data):
         email_type=email_data["email_type"],
         primary=str(not email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert "code" in executed["errors"][0]["extensions"]
     assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
-def test_normal_user_cannot_update_email_to_invalid_format(
-    rf, user_gql_client, email_data
-):
+def test_normal_user_cannot_update_email_to_invalid_format(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -305,15 +290,13 @@ def test_normal_user_cannot_update_email_to_invalid_format(
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert "code" in executed["errors"][0]["extensions"]
     assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
-def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
+def test_normal_user_can_add_phone(user_gql_client, phone_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -370,14 +353,12 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_add_address(rf, user_gql_client, address_data):
+def test_normal_user_can_add_address(user_gql_client, address_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -446,15 +427,13 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_address(rf, user_gql_client, address_data):
+def test_normal_user_can_update_address(user_gql_client, address_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -523,15 +502,13 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_email(rf, user_gql_client, email_data):
+def test_normal_user_can_update_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -592,15 +569,13 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
+def test_normal_user_can_update_phone(user_gql_client, phone_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -661,16 +636,14 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
+def test_normal_user_can_remove_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -728,16 +701,14 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_all_emails(rf, user_gql_client, email_data):
+def test_normal_user_can_remove_all_emails(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -775,15 +746,13 @@ def test_normal_user_can_remove_all_emails(rf, user_gql_client, email_data):
         primary_email_id=to_global_id(type="EmailNode", id=primary_email.id),
         email_id=to_global_id(type="EmailNode", id=email.id),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
+def test_normal_user_can_remove_phone(user_gql_client, phone_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -822,15 +791,13 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
         phone_type=phone_data["phone_type"],
         primary=str(phone_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
+def test_normal_user_can_remove_address(user_gql_client, address_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -869,19 +836,17 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
         address_type=address_data["address_type"],
         primary=str(address_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_change_primary_contact_details(
-    rf, user_gql_client, email_data, phone_data, address_data
+    user_gql_client, email_data, phone_data, address_data
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     PhoneFactory(profile=profile, primary=True)
     EmailFactory(profile=profile, primary=True)
     AddressFactory(profile=profile, primary=True)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -974,18 +939,14 @@ def test_normal_user_can_change_primary_contact_details(
         address_type=address_data["address_type"],
         primary="true",
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_primary_contact_details(
-    rf, user_gql_client, email_data
-):
+def test_normal_user_can_update_primary_contact_details(user_gql_client, email_data):
     profile = ProfileFactory(user=user_gql_client.user)
     email = EmailFactory(profile=profile, primary=False)
     email_2 = EmailFactory(profile=profile, primary=True)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -1054,14 +1015,11 @@ def test_normal_user_can_update_primary_contact_details(
         email_type=email_data["email_type"],
         primary="true",
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
+def test_normal_user_can_update_sensitive_data(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     SensitiveDataFactory(profile=profile, ssn="010199-1234")
 
@@ -1101,17 +1059,15 @@ def test_normal_user_can_update_sensitive_data(rf, user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
+def test_normal_user_can_update_subscriptions_via_profile(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     category = SubscriptionTypeCategoryFactory()
     type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
     type_2 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-2")
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -1187,5 +1143,5 @@ def test_normal_user_can_update_subscriptions_via_profile(rf, user_gql_client):
         type_2_id=to_global_id(type="SubscriptionTypeNode", id=type_2.id),
         type_2_enabled="false",
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data

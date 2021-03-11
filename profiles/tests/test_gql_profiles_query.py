@@ -818,12 +818,8 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 
 
 def test_not_specifying_requesters_service_results_in_permission_denied_error(
-    rf, user_gql_client
+    user_gql_client,
 ):
-    user = user_gql_client.user
-    request = rf.post("/graphql")
-    request.user = user
-
     query = """
         {
             profiles {
@@ -835,7 +831,7 @@ def test_not_specifying_requesters_service_results_in_permission_denied_error(
             }
         }
     """
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
 
 

@@ -26,13 +26,11 @@ class TestTemporaryProfileReadAccessTokenCreation(
     """
 
     def test_normal_user_can_create_temporary_read_access_token_for_profile(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
         ProfileFactory(user=user_gql_client.user)
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
 
-        executed = user_gql_client.execute(self.query, context=request)
+        executed = user_gql_client.execute(self.query)
 
         token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
             "temporaryReadAccessToken"
@@ -48,28 +46,23 @@ class TestTemporaryProfileReadAccessTokenCreation(
         )
 
     def test_anonymous_user_cannot_create_any_temporary_read_access_token_for_profile(
-        self, rf, anon_user_gql_client
+        self, anon_user_gql_client
     ):
-        request = rf.post("/graphql")
-        request.user = anon_user_gql_client.user
-
-        executed = anon_user_gql_client.execute(self.query, context=request)
+        executed = anon_user_gql_client.execute(self.query)
 
         assert executed["errors"][0]["extensions"]["code"] == PERMISSION_DENIED_ERROR
 
     def test_other_valid_tokens_are_deleted_when_a_new_token_is_created(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
         profile = ProfileFactory(user=user_gql_client.user)
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
 
         valid_token1 = TemporaryReadAccessTokenFactory(profile=profile)
         valid_token2 = TemporaryReadAccessTokenFactory(profile=profile)
         valid_token_for_another_profile = TemporaryReadAccessTokenFactory()
         expired_token = self.create_expired_token(profile)
 
-        executed = user_gql_client.execute(self.query, context=request)
+        executed = user_gql_client.execute(self.query)
         token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
             "temporaryReadAccessToken"
         ]

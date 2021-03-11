@@ -1,5 +1,5 @@
 def test_normal_user_can_query_subscription_types_grouped_by_categories(  # noqa: E302
-    rf, user_gql_client, subscription_type_factory, subscription_type_category
+    user_gql_client, subscription_type_factory, subscription_type_category
 ):
     type_1 = subscription_type_factory(
         subscription_type_category=subscription_type_category
@@ -7,8 +7,6 @@ def test_normal_user_can_query_subscription_types_grouped_by_categories(  # noqa
     type_2 = subscription_type_factory(
         subscription_type_category=subscription_type_category
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     query = """
         query {
@@ -63,6 +61,6 @@ def test_normal_user_can_query_subscription_types_grouped_by_categories(  # noqa
             ]
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data

@@ -21,11 +21,10 @@ from .factories import (
 )
 
 
-def test_normal_user_can_query_emails(rf, user_gql_client):
+def test_normal_user_can_query_emails(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -56,15 +55,14 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_phones(rf, user_gql_client):
+def test_normal_user_can_query_phones(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -95,15 +93,14 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_addresses(rf, user_gql_client):
+def test_normal_user_can_query_addresses(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -134,11 +131,11 @@ def test_normal_user_can_query_addresses(rf, user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
+def test_normal_user_can_query_primary_contact_details(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile, primary=True)
     email = EmailFactory(profile=profile, primary=True)
@@ -146,8 +143,7 @@ def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
     PhoneFactory(profile=profile, primary=False)
     EmailFactory(profile=profile, primary=False)
     AddressFactory(profile=profile, primary=False)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -188,7 +184,7 @@ def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
             },
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
@@ -348,10 +344,9 @@ class TestProfileWithVerifiedPersonalInformation(
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
 
-def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
+def test_normal_user_can_query_his_own_profile(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -363,15 +358,14 @@ def test_normal_user_can_query_his_own_profile(rf, user_gql_client):
     expected_data = {
         "myProfile": {"firstName": profile.first_name, "lastName": profile.last_name}
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_his_own_profiles_sensitivedata(rf, user_gql_client):
+def test_normal_user_can_query_his_own_profiles_sensitivedata(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     sensitive_data = SensitiveDataFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -388,11 +382,11 @@ def test_normal_user_can_query_his_own_profiles_sensitivedata(rf, user_gql_clien
             "sensitivedata": {"ssn": sensitive_data.ssn},
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_client):
+def test_normal_user_can_query_his_own_profile_with_subscriptions(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     cat = SubscriptionTypeCategoryFactory(
         code="TEST-CATEGORY-1", label="Test Category 1"
@@ -407,8 +401,7 @@ def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_c
     Subscription.objects.create(
         profile=profile, subscription_type=type_2, enabled=False
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+
     query = """
         {
             myProfile {
@@ -471,5 +464,5 @@ def test_normal_user_can_query_his_own_profile_with_subscriptions(rf, user_gql_c
             },
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert dict(executed["data"]) == expected_data

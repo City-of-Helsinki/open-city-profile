@@ -10,10 +10,8 @@ from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
 def test_normal_user_can_query_own_services(
-    rf, user_gql_client, service, allowed_data_field_factory
+    user_gql_client, service, allowed_data_field_factory
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
     first_field = allowed_data_field_factory()
     second_field = allowed_data_field_factory()
@@ -80,7 +78,7 @@ def test_normal_user_can_query_own_services(
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
     assert executed["data"] == expected_data
 
 
@@ -230,11 +228,9 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
 
 
 def test_not_identifying_service_for_add_service_connection_produces_service_not_identified_error(
-    rf, user_gql_client
+    user_gql_client,
 ):
     ProfileFactory(user=user_gql_client.user)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     query = """
         mutation {
@@ -251,21 +247,19 @@ def test_not_identifying_service_for_add_service_connection_produces_service_not
         }
     """
 
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert_match_error_code(executed, SERVICE_NOT_IDENTIFIED_ERROR)
 
 
 def test_normal_user_can_query_own_services_gdpr_api_scopes(
-    rf, user_gql_client, service_factory,
+    user_gql_client, service_factory,
 ):
     query_scope = "query_scope"
     delete_scope = "delete_scope"
     service = service_factory(
         gdpr_query_scope=query_scope, gdpr_delete_scope=delete_scope
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
 
     ServiceConnectionFactory(profile=profile, service=service)
@@ -305,6 +299,6 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert dict(executed["data"]) == expected_data

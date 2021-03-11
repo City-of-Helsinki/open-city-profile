@@ -5,11 +5,8 @@ import pytest
 
 @pytest.mark.parametrize("email_is_primary", [True, False])
 def test_normal_user_can_create_profile(
-    rf, user_gql_client, email_data, profile_data, email_is_primary
+    user_gql_client, email_data, profile_data, email_is_primary
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
     t = Template(
         """
             mutation {
@@ -67,14 +64,11 @@ def test_normal_user_can_create_profile(
         email_type=email_data["email_type"],
         primary=str(email_is_primary).lower(),
     )
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_create_profile_with_no_email(rf, user_gql_client, email_data):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-
+def test_normal_user_can_create_profile_with_no_email(user_gql_client, email_data):
     mutation = """
             mutation {
                 createMyProfile(
@@ -100,5 +94,5 @@ def test_normal_user_can_create_profile_with_no_email(rf, user_gql_client, email
 
     expected_data = {"createMyProfile": {"profile": {"emails": {"edges": []}}}}
 
-    executed = user_gql_client.execute(mutation, context=request)
+    executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data

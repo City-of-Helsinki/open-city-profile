@@ -21,17 +21,12 @@ class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBas
         ).substitute(token=token)
 
     def test_anonymous_user_can_retrieve_a_profile_with_temporary_read_access_token(
-        self, rf, anon_user_gql_client
+        self, anon_user_gql_client
     ):
         profile = ProfileFactory()
         token = TemporaryReadAccessTokenFactory(profile=profile)
 
-        request = rf.post("/graphql")
-        request.user = anon_user_gql_client.user
-
-        executed = anon_user_gql_client.execute(
-            self.query(token.token), context=request
-        )
+        executed = anon_user_gql_client.execute(self.query(token.token))
 
         assert "errors" not in executed
         actual_profile = executed["data"]["profileWithAccessToken"]
@@ -66,30 +61,20 @@ class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBas
         )
 
     def test_using_non_existing_token_reports_profile_not_found_error(
-        self, rf, anon_user_gql_client
+        self, anon_user_gql_client
     ):
-        request = rf.post("/graphql")
-        request.user = anon_user_gql_client.user
-
-        executed = anon_user_gql_client.execute(
-            self.query(uuid.uuid4()), context=request
-        )
+        executed = anon_user_gql_client.execute(self.query(uuid.uuid4()))
 
         assert (
             executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
         )
 
     def test_using_an_expired_token_reports_token_expired_error(
-        self, rf, anon_user_gql_client
+        self, anon_user_gql_client
     ):
         profile = ProfileFactory()
         token = self.create_expired_token(profile)
 
-        request = rf.post("/graphql")
-        request.user = anon_user_gql_client.user
-
-        executed = anon_user_gql_client.execute(
-            self.query(token.token), context=request
-        )
+        executed = anon_user_gql_client.execute(self.query(token.token))
 
         assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR

@@ -22,13 +22,10 @@ class TestProfileWithVerifiedPersonalInformationCreation(
     ProfileWithVerifiedPersonalInformationTestBase
 ):
     @staticmethod
-    def execute_mutation(input_data, rf, gql_client):
+    def execute_mutation(input_data, gql_client):
         user = gql_client.user
 
         assign_perm("profiles.manage_verified_personal_information", user)
-
-        request = rf.post("/graphql")
-        request.user = user
 
         query = """
             mutation createOrUpdateProfileWithVerifiedPersonalInformation(
@@ -44,14 +41,12 @@ class TestProfileWithVerifiedPersonalInformationCreation(
             }
         """
 
-        return gql_client.execute(
-            query, variables={"input": input_data}, context=request
-        )
+        return gql_client.execute(query, variables={"input": input_data})
 
     @staticmethod
-    def execute_successful_mutation(input_data, rf, gql_client):
+    def execute_successful_mutation(input_data, gql_client):
         executed = TestProfileWithVerifiedPersonalInformationCreation.execute_mutation(
-            input_data, rf, gql_client
+            input_data, gql_client
         )
 
         global_profile_id = executed["data"]["prof"]["profile"]["id"]
@@ -60,7 +55,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         return Profile.objects.get(pk=profile_id)
 
     @staticmethod
-    def execute_successful_profile_creation_test(user_id, rf, gql_client):
+    def execute_successful_profile_creation_test(user_id, gql_client):
         input_data = {
             "userId": str(user_id),
             "profile": {
@@ -92,7 +87,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         }
 
         profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
-            input_data, rf, gql_client
+            input_data, gql_client
         )
 
         assert profile.user.uuid == user_id
@@ -123,16 +118,13 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         assert permanent_foreign_address.country_code == "JP"
 
     def test_profile_with_verified_personal_information_can_be_created(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
-        self.execute_successful_profile_creation_test(uuid.uuid1(), rf, user_gql_client)
+        self.execute_successful_profile_creation_test(uuid.uuid1(), user_gql_client)
 
     def test_manage_verified_personal_information_permission_is_needed(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
-        request = rf.post("/graphql")
-        request.user = user_gql_client.user
-
         query = """
         mutation {
             createOrUpdateProfileWithVerifiedPersonalInformation(
@@ -151,27 +143,27 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         }
         """
 
-        executed = user_gql_client.execute(query, context=request)
+        executed = user_gql_client.execute(query)
         assert executed["errors"][0]["extensions"]["code"] == "PERMISSION_DENIED_ERROR"
 
-    def test_existing_user_is_used(self, user, rf, user_gql_client):
-        self.execute_successful_profile_creation_test(user.uuid, rf, user_gql_client)
+    def test_existing_user_is_used(self, user, user_gql_client):
+        self.execute_successful_profile_creation_test(user.uuid, user_gql_client)
 
     def test_existing_profile_without_verified_personal_information_is_updated(
-        self, profile, rf, user_gql_client
+        self, profile, user_gql_client
     ):
         self.execute_successful_profile_creation_test(
-            profile.user.uuid, rf, user_gql_client
+            profile.user.uuid, user_gql_client
         )
 
     def test_existing_profile_with_verified_personal_information_is_updated(
-        self, profile_with_verified_personal_information, rf, user_gql_client
+        self, profile_with_verified_personal_information, user_gql_client
     ):
         self.execute_successful_profile_creation_test(
-            profile_with_verified_personal_information.user.uuid, rf, user_gql_client,
+            profile_with_verified_personal_information.user.uuid, user_gql_client,
         )
 
-    def test_all_basic_fields_can_be_set_to_null(self, rf, user_gql_client):
+    def test_all_basic_fields_can_be_set_to_null(self, user_gql_client):
         input_data = {
             "userId": "03117666-117D-4F6B-80B1-A3A92B389711",
             "profile": {
@@ -187,7 +179,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
             },
         }
 
-        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
+        profile = self.execute_successful_mutation(input_data, user_gql_client)
 
         verified_personal_information = profile.verified_personal_information
         assert verified_personal_information.first_name == ""
@@ -207,7 +199,6 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         profile_with_verified_personal_information,
         address_type,
         address_field_index_to_nullify,
-        rf,
         user_gql_client,
     ):
         address_field_names = self.ADDRESS_FIELD_NAMES[address_type]
@@ -231,7 +222,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
             },
         }
 
-        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
+        profile = self.execute_successful_mutation(input_data, user_gql_client)
 
         address = getattr(profile.verified_personal_information, address_type)
 
@@ -247,11 +238,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
-        self,
-        profile_with_verified_personal_information,
-        address_type,
-        rf,
-        user_gql_client,
+        self, profile_with_verified_personal_information, address_type, user_gql_client,
     ):
         existing_address = getattr(
             profile_with_verified_personal_information.verified_personal_information,
@@ -265,7 +252,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
             "profile": {"verifiedPersonalInformation": {}},
         }
 
-        profile = self.execute_successful_mutation(input_data, rf, user_gql_client)
+        profile = self.execute_successful_mutation(input_data, user_gql_client)
 
         verified_personal_information = profile.verified_personal_information
         address = getattr(verified_personal_information, address_type)
@@ -277,11 +264,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     def test_delete_an_address_if_it_no_longer_has_any_data(
-        self,
-        profile_with_verified_personal_information,
-        address_type,
-        rf,
-        user_gql_client,
+        self, profile_with_verified_personal_information, address_type, user_gql_client,
     ):
         user_id = profile_with_verified_personal_information.user.uuid
 
@@ -299,7 +282,7 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         }
 
         profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
-            input_data, rf, user_gql_client
+            input_data, user_gql_client
         )
 
         assert not hasattr(profile.verified_personal_information, address_type)
@@ -315,14 +298,14 @@ class TestProfileWithVerifiedPersonalInformationCreation(
 
     @staticmethod
     def execute_service_connection_test(
-        user_id, service_in_mutation, expected_service_connections, rf, gql_client
+        user_id, service_in_mutation, expected_service_connections, gql_client
     ):
         input_data = TestProfileWithVerifiedPersonalInformationCreation.service_input_data(
             user_id, service_in_mutation.client_ids.first().client_id
         )
 
         profile = TestProfileWithVerifiedPersonalInformationCreation.execute_successful_mutation(
-            input_data, rf, gql_client
+            input_data, gql_client
         )
 
         connected_services = profile.service_connections.all()
@@ -334,16 +317,16 @@ class TestProfileWithVerifiedPersonalInformationCreation(
             assert connection.enabled
 
     def test_giving_non_existing_service_client_id_results_in_object_does_not_exist_error(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
         input_data = self.service_input_data(uuid.uuid1(), "not_existing")
 
-        executed = self.execute_mutation(input_data, rf, user_gql_client)
+        executed = self.execute_mutation(input_data, user_gql_client)
 
         assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
     def test_add_new_service_connections(
-        self, service_factory, service_client_id_factory, rf, user_gql_client
+        self, service_factory, service_client_id_factory, user_gql_client
     ):
         user_id = uuid.uuid1()
         service1 = service_factory(service_type=ServiceType.BERTH)
@@ -352,11 +335,11 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         service_client_id_factory(service=service2)
 
         self.execute_service_connection_test(
-            user_id, service1, [service1], rf, user_gql_client
+            user_id, service1, [service1], user_gql_client
         )
 
         self.execute_service_connection_test(
-            user_id, service2, [service1, service2], rf, user_gql_client
+            user_id, service2, [service1, service2], user_gql_client
         )
 
     def test_adding_existing_connection_again_does_nothing(
@@ -365,14 +348,13 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         service,
         service_connection_factory,
         service_client_id_factory,
-        rf,
         user_gql_client,
     ):
         service_client_id_factory(service=service)
         service_connection_factory(profile=profile, service=service, enabled=True)
 
         self.execute_service_connection_test(
-            profile.user.uuid, service, [service], rf, user_gql_client
+            profile.user.uuid, service, [service], user_gql_client
         )
 
     def test_enable_existing_disabled_service_connection(
@@ -381,18 +363,17 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         service,
         service_connection_factory,
         service_client_id_factory,
-        rf,
         user_gql_client,
     ):
         service_client_id_factory(service=service)
         service_connection_factory(profile=profile, service=service, enabled=False)
 
         self.execute_service_connection_test(
-            profile.user.uuid, service, [service], rf, user_gql_client
+            profile.user.uuid, service, [service], user_gql_client
         )
 
     @staticmethod
-    def execute_mutation_with_invalid_input(rf, gql_client):
+    def execute_mutation_with_invalid_input(gql_client):
         input_data = {
             "userId": "03117666-117D-4F6B-80B1-A3A92B389711",
             "profile": {
@@ -403,18 +384,18 @@ class TestProfileWithVerifiedPersonalInformationCreation(
         }
 
         return TestProfileWithVerifiedPersonalInformationCreation.execute_mutation(
-            input_data, rf, gql_client
+            input_data, gql_client
         )
 
-    def test_invalid_input_causes_a_validation_error(self, rf, user_gql_client):
-        executed = self.execute_mutation_with_invalid_input(rf, user_gql_client)
+    def test_invalid_input_causes_a_validation_error(self, user_gql_client):
+        executed = self.execute_mutation_with_invalid_input(user_gql_client)
         assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
 
     @pytest.mark.django_db(transaction=True)
     def test_database_stays_unmodified_when_mutation_is_not_completed(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
-        self.execute_mutation_with_invalid_input(rf, user_gql_client)
+        self.execute_mutation_with_invalid_input(user_gql_client)
 
         assert Profile.objects.count() == 0
         assert VerifiedPersonalInformation.objects.count() == 0

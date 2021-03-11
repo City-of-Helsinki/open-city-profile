@@ -9,11 +9,9 @@ from open_city_profile.consts import TOKEN_EXPIRED_ERROR
 from .factories import ClaimTokenFactory, ProfileFactory
 
 
-def test_can_query_claimable_profile_with_token(rf, user_gql_client):
+def test_can_query_claimable_profile_with_token(user_gql_client):
     profile = ProfileFactory(user=None, first_name="John", last_name="Doe")
     claim_token = ClaimTokenFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -34,18 +32,16 @@ def test_can_query_claimable_profile_with_token(rf, user_gql_client):
             "lastName": profile.last_name,
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
 
 
 def test_cannot_query_claimable_profile_with_user_already_attached(
-    rf, user_gql_client, profile
+    user_gql_client, profile
 ):
     claim_token = ClaimTokenFactory(profile=profile)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -57,18 +53,16 @@ def test_cannot_query_claimable_profile_with_user_already_attached(
         """
     )
     query = t.substitute(claimToken=claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" in executed
 
 
-def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
+def test_cannot_query_claimable_profile_with_expired_token(user_gql_client):
     profile = ProfileFactory(user=None)
     claim_token = ClaimTokenFactory(
         profile=profile, expires_at=timezone.now() - timedelta(days=1)
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     t = Template(
         """
@@ -80,7 +74,7 @@ def test_cannot_query_claimable_profile_with_expired_token(rf, user_gql_client):
         """
     )
     query = t.substitute(claimToken=claim_token.token)
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR

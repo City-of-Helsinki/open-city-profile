@@ -61,11 +61,9 @@ def youth_service(service_factory):
     )
 
 
-def test_user_can_download_profile(rf, user_gql_client):
+def test_user_can_download_profile(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     primary_email = profile.emails.first()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     expected_json = json.dumps(
         {
@@ -107,12 +105,12 @@ def test_user_can_download_profile(rf, user_gql_client):
             ],
         }
     )
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
     assert expected_json == executed["data"]["downloadMyProfile"]
 
 
 def test_user_can_download_profile_with_connected_services(
-    rf, user_gql_client, youth_service, berth_service, mocker
+    user_gql_client, youth_service, berth_service, mocker
 ):
     expected = {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
 
@@ -134,10 +132,8 @@ def test_user_can_download_profile_with_connected_services(
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=berth_service)
     ServiceConnectionFactory(profile=profile, service=youth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
     assert len(response_data) == 2
@@ -148,7 +144,7 @@ def test_user_can_download_profile_with_connected_services(
 
 
 def test_user_can_download_profile_using_correct_api_tokens(
-    rf, user_gql_client, youth_service, berth_service, mocker
+    user_gql_client, youth_service, berth_service, mocker
 ):
     def mock_download_gdpr_data(self, api_token: str):
         if (
@@ -177,10 +173,8 @@ def test_user_can_download_profile_using_correct_api_tokens(
     mocked_token_exchange = mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=tokens
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     mocked_token_exchange.assert_called_once()
     assert mocked_token_exchange.call_args == ((AUTHORIZATION_CODE,),)
@@ -189,7 +183,7 @@ def test_user_can_download_profile_using_correct_api_tokens(
 
 
 def test_user_can_delete_his_profile(
-    rf, user_gql_client, youth_service, requests_mock, mocker
+    user_gql_client, youth_service, requests_mock, mocker
 ):
     """Deletion is allowed when GDPR URL is set, and service returns a successful status."""
     mocker.patch.object(
@@ -198,10 +192,8 @@ def test_user_can_delete_his_profile(
     profile = ProfileFactory(user=user_gql_client.user)
     requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
     ServiceConnectionFactory(profile=profile, service=youth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": {"clientMutationId": None}}
     assert dict(executed["data"]) == expected_data
@@ -212,7 +204,7 @@ def test_user_can_delete_his_profile(
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(
-    rf, user_gql_client, youth_service, berth_service, mocker
+    user_gql_client, youth_service, berth_service, mocker
 ):
     """Test an edge case where dry runs passes for all connected services, but the
     proper service connection delete fails for a single connected service. All other
@@ -236,9 +228,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     ServiceConnectionFactory(profile=profile, service=youth_service)
     ServiceConnectionFactory(profile=profile, service=berth_service)
 
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": None}
 
@@ -252,7 +242,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     "gdpr_url, response_status", [("", 204), ("", 405), (GDPR_URL, 405)]
 )
 def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
-    rf, user_gql_client, youth_service, requests_mock, gdpr_url, response_status, mocker
+    user_gql_client, youth_service, requests_mock, gdpr_url, response_status, mocker
 ):
     """Profile cannot be deleted if connected service doesn't have GDPR URL configured or if the service
     returns a failed status for the dry_run call.
@@ -267,23 +257,19 @@ def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
     youth_service.gdpr_url = gdpr_url
     youth_service.save()
     ServiceConnectionFactory(profile=profile, service=youth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": None}
     assert dict(executed["data"]) == expected_data
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
 
 
-def test_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_client):
+def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     profile.delete()
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": None}
     assert dict(executed["data"]) == expected_data
@@ -291,7 +277,7 @@ def test_user_gets_error_when_deleting_non_existent_profile(rf, user_gql_client)
 
 
 def test_user_can_delete_his_profile_using_correct_api_tokens(
-    rf, user_gql_client, youth_service, berth_service, mocker
+    user_gql_client, youth_service, berth_service, mocker
 ):
     def mock_delete_gdpr_data(self, api_token, dry_run=False):
         if (
@@ -320,10 +306,8 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     mocked_token_exchange = mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=tokens
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     mocked_token_exchange.assert_called_once()
     assert mocked_token_exchange.call_args == ((AUTHORIZATION_CODE,),)
@@ -338,7 +322,7 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
 
 
 def test_service_doesnt_have_gdpr_query_scope_set(
-    rf, user_gql_client, berth_service, mocker
+    user_gql_client, berth_service, mocker
 ):
     """Missing query scope should make the query skip the service for a given connected profile."""
     berth_service.gdpr_query_scope = ""
@@ -355,10 +339,8 @@ def test_service_doesnt_have_gdpr_query_scope_set(
     )
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=berth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
     assert len(response_data) == 1
@@ -366,7 +348,7 @@ def test_service_doesnt_have_gdpr_query_scope_set(
 
 
 def test_service_doesnt_have_gdpr_delete_scope_set(
-    rf, user_gql_client, berth_service, mocker
+    user_gql_client, berth_service, mocker
 ):
     """Missing delete scope shouldn't allow deleting a connected profile."""
     berth_service.gdpr_delete_scope = ""
@@ -383,30 +365,22 @@ def test_service_doesnt_have_gdpr_delete_scope_set(
     )
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=berth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
 
 
 @pytest.mark.parametrize("query_or_delete", ["query", "delete"])
-def test_api_tokens_missing(
-    rf, user_gql_client, youth_service, query_or_delete, mocker
-):
+def test_api_tokens_missing(user_gql_client, youth_service, query_or_delete, mocker):
     """Missing API token for a service connection that has the query/delete scope set, should be an error."""
     mocker.patch.object(TunnistamoTokenExchange, "fetch_api_tokens", return_value={})
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=youth_service)
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
 
     if query_or_delete == "query":
-        executed = user_gql_client.execute(
-            DOWNLOAD_MY_PROFILE_MUTATION, context=request
-        )
+        executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
     else:
-        executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, context=request)
+        executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     assert_match_error_code(executed, MISSING_GDPR_API_TOKEN_ERROR)
