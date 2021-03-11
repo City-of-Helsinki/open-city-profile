@@ -4,6 +4,7 @@ import factory.random
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
+from django.test import RequestFactory
 from graphene.test import Client as GrapheneClient
 from graphql import build_client_schema, introspection_query
 
@@ -18,13 +19,21 @@ from open_city_profile.views import GraphQLView
 
 
 class GraphQLClient(GrapheneClient):
-    def execute(self, *args, **kwargs):
+    def execute(self, *args, context=None, **kwargs):
         """
         Custom wrapper on the execute method, allows adding the
         GQL DataLoaders middleware, since it has to be added to make
         the DataLoaders available through the context.
         """
-        return super().execute(*args, middleware=[GQLDataLoaders()], **kwargs)
+        if context is None:
+            context = RequestFactory().post("/graphql")
+
+        if not hasattr(context, "user") and hasattr(self, "user"):
+            context.user = self.user
+
+        return super().execute(
+            *args, context=context, middleware=[GQLDataLoaders()], **kwargs
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -98,9 +107,8 @@ def superuser_gql_client(superuser):
 
 
 @pytest.fixture
-def gql_schema(rf, anon_user_gql_client):
-    request = rf.post("/graphql")
-    introspection = anon_user_gql_client.execute(introspection_query, context=request)
+def gql_schema(anon_user_gql_client):
+    introspection = anon_user_gql_client.execute(introspection_query)
     return build_client_schema(introspection["data"])
 
 
