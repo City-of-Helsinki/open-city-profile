@@ -1,5 +1,4 @@
 import pytest
-from helusers.authz import UserAuthorization
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
@@ -223,34 +222,27 @@ class TestProfileWithVerifiedPersonalInformation(
     """
 
     @staticmethod
-    def _execute_query(rf, gql_client, loa="substantial"):
-        user = gql_client.user
-
-        request = rf.post("/graphql")
-        request.user = user
-
+    def _execute_query(gql_client, loa="substantial"):
         token_payload = {
             "loa": loa,
         }
-        request.user_auth = UserAuthorization(user, token_payload)
 
         return gql_client.execute(
-            TestProfileWithVerifiedPersonalInformation.QUERY, context=request
+            TestProfileWithVerifiedPersonalInformation.QUERY,
+            auth_token_payload=token_payload,
         )
 
     def test_when_verified_personal_infomation_does_not_exist_returns_null(
-        self, rf, user_gql_client
+        self, user_gql_client
     ):
         ProfileFactory(user=user_gql_client.user)
 
-        executed = self._execute_query(rf, user_gql_client)
+        executed = self._execute_query(user_gql_client)
 
         assert "errors" not in executed
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
-    def test_normal_user_can_query_verified_personal_information(
-        self, rf, user_gql_client
-    ):
+    def test_normal_user_can_query_verified_personal_information(self, user_gql_client):
         profile = ProfileFactory(user=user_gql_client.user)
         verified_personal_information = VerifiedPersonalInformationFactory(
             profile=profile
@@ -291,7 +283,7 @@ class TestProfileWithVerifiedPersonalInformation(
             }
         }
 
-        executed = self._execute_query(rf, user_gql_client)
+        executed = self._execute_query(user_gql_client)
 
         assert executed["data"] == expected_data
 
@@ -299,14 +291,14 @@ class TestProfileWithVerifiedPersonalInformation(
         "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
     )
     def test_when_address_does_not_exist_returns_null(
-        self, address_type, rf, user_gql_client
+        self, address_type, user_gql_client
     ):
         profile = ProfileFactory(user=user_gql_client.user)
         VerifiedPersonalInformationFactory(
             profile=profile, **{address_type: None},
         )
 
-        executed = self._execute_query(rf, user_gql_client)
+        executed = self._execute_query(user_gql_client)
 
         assert "errors" not in executed
 
@@ -319,13 +311,11 @@ class TestProfileWithVerifiedPersonalInformation(
                 assert isinstance(received_address, dict)
 
     @pytest.mark.parametrize("loa", ["substantial", "high"])
-    def test_high_enough_level_of_assurance_gains_access(
-        self, loa, rf, user_gql_client
-    ):
+    def test_high_enough_level_of_assurance_gains_access(self, loa, user_gql_client):
         profile = ProfileFactory(user=user_gql_client.user)
         VerifiedPersonalInformationFactory(profile=profile)
 
-        executed = self._execute_query(rf, user_gql_client, loa)
+        executed = self._execute_query(user_gql_client, loa)
 
         assert not hasattr(executed, "errors")
         assert isinstance(
@@ -333,11 +323,11 @@ class TestProfileWithVerifiedPersonalInformation(
         )
 
     @pytest.mark.parametrize("loa", [None, "low", "unknown"])
-    def test_too_low_level_of_assurance_denies_access(self, loa, rf, user_gql_client):
+    def test_too_low_level_of_assurance_denies_access(self, loa, user_gql_client):
         profile = ProfileFactory(user=user_gql_client.user)
         VerifiedPersonalInformationFactory(profile=profile)
 
-        executed = self._execute_query(rf, user_gql_client, loa)
+        executed = self._execute_query(user_gql_client, loa)
 
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
 
