@@ -43,6 +43,7 @@ class RepresentativeAdmin(admin.StackedInline):
     fk_name = "representative"
     verbose_name = "Representative"
     verbose_name_plural = "Representing"
+    autocomplete_fields = ("representee",)
 
 
 class RepresenteeAdmin(admin.StackedInline):
@@ -51,6 +52,7 @@ class RepresenteeAdmin(admin.StackedInline):
     fk_name = "representee"
     verbose_name = "Representative"
     verbose_name_plural = "Represented by"
+    autocomplete_fields = ("representative",)
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -177,6 +179,14 @@ class ExtendedProfileAdmin(VersionAdmin):
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
     list_filter = ("service_connections__service",)
+    autocomplete_fields = ("user",)
+    search_fields = (
+        "id",
+        "first_name",
+        "last_name",
+        "verified_personal_information__first_name",
+        "verified_personal_information__last_name",
+    )
 
     def get_urls(self):
         urls = super().get_urls()
