@@ -328,17 +328,6 @@ if "SECRET_KEY" not in locals():
                 % secret_file
             )
 
-# A youth membership number is the youth profile's PK padded with zeroes.
-# This value tells what length the number will be padded to.
-# For example, PK 123, length 6 --> 000123.
-YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
-
-# Date (day, month) for when the memberships are set to expire
-YOUTH_MEMBERSHIP_SEASON_END_DATE = 31, 8
-
-# Month from which on the membership will last until the next year, instead of ending in the current year
-YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
-
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
 AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
