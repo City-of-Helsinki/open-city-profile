@@ -6,7 +6,6 @@ import pytest
 from django.conf import settings
 
 from open_city_profile.tests.asserts import assert_almost_equal
-from open_city_profile.tests.conftest import get_unix_timestamp_now
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import Profile
 
@@ -42,7 +41,10 @@ def assert_common_fields(
     actor_role="SYSTEM",
     target_profile_part="base profile",
 ):
-    now = get_unix_timestamp_now()
+    now_dt = datetime.now(tz=timezone.utc)
+    now_ms_timestamp = int(now_dt.timestamp() * 1000)
+    leeway_ms = 20
+
     audit_event = log_message["audit_event"]
 
     assert audit_event["origin"] == "PROFILE-BE"
@@ -50,13 +52,12 @@ def assert_common_fields(
     assert audit_event["operation"] == operation
     assert audit_event["actor"]["role"] == actor_role
 
-    assert_almost_equal(audit_event["date_time_epoch"], now)
+    assert_almost_equal(audit_event["date_time_epoch"], now_ms_timestamp, leeway_ms)
 
-    now_dt = datetime.fromtimestamp(now, tz=timezone.utc)
     log_dt = datetime.strptime(
         audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
     ).replace(tzinfo=timezone.utc)
-    assert_almost_equal(log_dt, now_dt, timedelta(seconds=1))
+    assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
 
     expected_target = {
         "profile_id": str(target_profile.pk),
