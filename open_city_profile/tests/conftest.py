@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.test import RequestFactory
 from graphene.test import Client as GrapheneClient
 from graphql import build_client_schema, introspection_query
+from helusers.authz import UserAuthorization
 
 from open_city_profile.graphene import GQLDataLoaders
 from open_city_profile.schema import schema
@@ -19,7 +20,9 @@ from open_city_profile.views import GraphQLView
 
 
 class GraphQLClient(GrapheneClient):
-    def execute(self, *args, service=None, context=None, **kwargs):
+    def execute(
+        self, *args, auth_token_payload=None, service=None, context=None, **kwargs
+    ):
         """
         Custom wrapper on the execute method, allows adding the
         GQL DataLoaders middleware, since it has to be added to make
@@ -30,6 +33,15 @@ class GraphQLClient(GrapheneClient):
 
         if not hasattr(context, "user") and hasattr(self, "user"):
             context.user = self.user
+
+        if (
+            hasattr(context, "user")
+            and context.user.is_authenticated
+            and not hasattr(context, "user_auth")
+        ):
+            context.user_auth = UserAuthorization(
+                context.user, auth_token_payload or {}
+            )
 
         if service is not None:
             context.service = service
