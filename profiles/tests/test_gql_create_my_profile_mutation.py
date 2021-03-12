@@ -17,26 +17,26 @@ def test_normal_user_can_create_profile(
                     input: {
                         profile: {
                             nickname: "${nickname}",
-                            addEmails:[
+                            addEmails: [
                                 {emailType: ${email_type}, email:"${email}", primary: ${primary}}
                             ]
                         }
                     }
                 ) {
-                profile{
-                    nickname,
-                    emails{
-                        edges{
-                        node{
-                            email,
-                            emailType,
-                            primary,
-                            verified
-                        }
+                    profile {
+                        nickname,
+                        emails {
+                            edges {
+                                node {
+                                    email,
+                                    emailType,
+                                    primary,
+                                    verified
+                                }
+                            }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -82,19 +82,19 @@ def test_normal_user_can_create_profile_with_no_email(rf, user_gql_client, email
                         profile: {}
                     }
                 ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            email,
-                            emailType,
-                            primary,
-                            verified
-                        }
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    email,
+                                    emailType,
+                                    primary,
+                                    verified
+                                }
+                            }
                         }
                     }
                 }
-            }
             }
         """
 

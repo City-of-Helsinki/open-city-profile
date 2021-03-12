@@ -35,11 +35,13 @@ def test_staff_user_can_create_a_profile(
                         firstName: "${first_name}",
                         lastName: "${last_name}",
 ${email_input}
-                        addPhones: [{
-                            phoneType: ${phone_type},
-                            phone: "${phone}",
-                            primary: true
-                        }]
+                        addPhones: [
+                            {
+                                phoneType: ${phone_type},
+                                phone: "${phone}",
+                                primary: true
+                            }
+                        ]
                     }
                 }
             ) {
@@ -79,11 +81,13 @@ ${email_input}
     """
     )
     email_input = f"""
-                        addEmails: [{{
-                            emailType: {email_data["email_type"]},
-                            email: "{email_data["email"]}",
-                            primary: true,
-                        }}],"""
+                        addEmails: [
+                            {{
+                                emailType: {email_data["email_type"]},
+                                email: "{email_data["email"]}",
+                                primary: true,
+                            }}
+                        ],"""
 
     query = t.substitute(
         first_name="John",
@@ -225,11 +229,13 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
                 input: {
                     profile: {
                         firstName: "${first_name}",
-                        addEmails: [{
-                            email: "${email}",
-                            emailType: ${email_type},
-                            primary: true
-                        }],
+                        addEmails: [
+                            {
+                                email: "${email}",
+                                emailType: ${email_type},
+                                primary: true
+                            }
+                        ],
                         sensitivedata: {
                             ssn: "${ssn}"
                         }

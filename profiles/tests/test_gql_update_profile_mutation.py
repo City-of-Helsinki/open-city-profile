@@ -46,15 +46,19 @@ def test_staff_user_can_update_a_profile(rf, user_gql_client, group, service):
                     profile: {
                         id: "${id}",
                         firstName: "${first_name}",
-                        addEmails: [{
-                            email: "${email}"
-                            emailType: ${email_type}
-                            primary: ${primary}
-                        }],
-                        updatePhones: [{
-                            id: "${phone_id}",
-                            phone: "${phone}",
-                        }],
+                        addEmails: [
+                            {
+                                email: "${email}"
+                                emailType: ${email_type}
+                                primary: ${primary}
+                            }
+                        ],
+                        updatePhones: [
+                            {
+                                id: "${phone_id}",
+                                phone: "${phone}",
+                            }
+                        ],
                         removeAddresses: ["${address_id}"],
                         sensitivedata: {
                             ssn: "${ssn}"

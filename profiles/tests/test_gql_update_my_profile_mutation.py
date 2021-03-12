@@ -31,7 +31,7 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                     input: {
                         profile: {
                             nickname: "${nickname}",
-                            updateEmails:[
+                            updateEmails: [
                                 {
                                     id: "${email_id}",
                                     emailType: ${email_type},
@@ -42,17 +42,17 @@ def test_normal_user_can_update_profile(rf, user_gql_client, email_data, profile
                         }
                     }
                 ) {
-                    profile{
+                    profile {
                         nickname,
-                        emails{
-                            edges{
-                            node{
-                                id
-                                email
-                                emailType
-                                primary
-                                verified
-                            }
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                    email
+                                    emailType
+                                    primary
+                                    verified
+                                }
                             }
                         }
                     }
@@ -111,18 +111,18 @@ def test_normal_user_can_update_profile_without_email(
                         }
                     }
                 ) {
-                    profile{
+                    profile {
                         nickname,
-                    emails{
-                        edges{
-                        node{
-                            email
-                            emailType
-                            primary
-                            verified
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                    emailType
+                                    primary
+                                    verified
+                                }
+                            }
                         }
-                        }
-                    }
                     }
                 }
             }
@@ -152,25 +152,29 @@ def test_normal_user_can_add_email(rf, user_gql_client, email_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                            addEmails:[
-                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
+                            addEmails: [
+                                {
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
                             ]
                         }
                     }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            email
-                            emailType
-                            primary
-                            verified
-                        }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                    emailType
+                                    primary
+                                    verified
+                                }
+                            }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -222,22 +226,26 @@ def test_normal_user_cannot_add_invalid_email(rf, user_gql_client, email_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                            addEmails:[
-                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
+                            addEmails: [
+                                {
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
                             ]
                         }
                     }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                        }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                }
+                            }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -266,27 +274,27 @@ def test_normal_user_cannot_update_email_to_invalid_format(
                 updateMyProfile(
                     input: {
                         profile: {
-                        updateEmails:[
-                            {
-                                id: "${email_id}",
-                                emailType: ${email_type},
-                                email:"${email}",
-                                primary: ${primary}
+                            updateEmails: [
+                                {
+                                    id: "${email_id}",
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
+                    }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                }
                             }
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                        }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -313,24 +321,28 @@ def test_normal_user_can_add_phone(rf, user_gql_client, phone_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        addPhones:[
-                            {phoneType: ${phone_type}, phone:"${phone}", primary: ${primary}}
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    phones{
-                        edges{
-                        node{
-                            phone
-                            phoneType
-                            primary
-                        }
+                            addPhones: [
+                                {
+                                    phoneType: ${phone_type},
+                                    phone:"${phone}",
+                                    primary: ${primary}
+                                }
+                            ]
                         }
                     }
+                ) {
+                    profile {
+                        phones {
+                            edges {
+                                node {
+                                    phone
+                                    phoneType
+                                    primary
+                                }
+                            }
+                        }
+                    }
                 }
-            }
             }
         """
     )
@@ -386,21 +398,21 @@ def test_normal_user_can_add_address(rf, user_gql_client, address_data):
                         }
                     }
                 ) {
-                profile {
-                    addresses {
-                        edges {
-                            node {
-                                address
-                                postalCode
-                                city
-                                countryCode
-                                addressType
-                                primary
+                    profile {
+                        addresses {
+                            edges {
+                                node {
+                                    address
+                                    postalCode
+                                    city
+                                    countryCode
+                                    addressType
+                                    primary
+                                }
                             }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -450,34 +462,34 @@ def test_normal_user_can_update_address(rf, user_gql_client, address_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        updateAddresses:[
-                            {
-                                id: "${address_id}",
-                                addressType: ${address_type},
-                                address:"${address}",
-                                postalCode:"${postal_code}",
-                                city:"${city}",
-                                primary: ${primary}
+                            updateAddresses: [
+                                {
+                                    id: "${address_id}",
+                                    addressType: ${address_type},
+                                    address:"${address}",
+                                    postalCode:"${postal_code}",
+                                    city:"${city}",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
+                    }
+                ) {
+                    profile {
+                        addresses {
+                            edges {
+                                node {
+                                    id
+                                    address
+                                    postalCode
+                                    city
+                                    addressType
+                                    primary
+                                }
                             }
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    addresses{
-                        edges{
-                        node{
-                            id
-                            address
-                            postalCode
-                            city
-                            addressType
-                            primary
-                        }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -527,30 +539,30 @@ def test_normal_user_can_update_email(rf, user_gql_client, email_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        updateEmails:[
-                            {
-                                id: "${email_id}",
-                                emailType: ${email_type},
-                                email:"${email}",
-                                primary: ${primary}
+                            updateEmails: [
+                                {
+                                    id: "${email_id}",
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
+                    }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                    email
+                                    emailType
+                                    primary
+                                }
                             }
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                            email
-                            emailType
-                            primary
-                        }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -596,30 +608,30 @@ def test_normal_user_can_update_phone(rf, user_gql_client, phone_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        updatePhones:[
-                            {
-                                id: "${phone_id}",
-                                phoneType: ${phone_type},
-                                phone:"${phone}",
-                                primary: ${primary}
+                            updatePhones: [
+                                {
+                                    id: "${phone_id}",
+                                    phoneType: ${phone_type},
+                                    phone:"${phone}",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
+                    }
+                ) {
+                    profile {
+                        phones {
+                            edges {
+                                node {
+                                    id
+                                    phone
+                                    phoneType
+                                    primary
+                                }
                             }
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    phones{
-                        edges{
-                        node{
-                            id
-                            phone
-                            phoneType
-                            primary
-                        }
                         }
                     }
                 }
-            }
             }
         """
     )
@@ -666,25 +678,25 @@ def test_normal_user_can_remove_email(rf, user_gql_client, email_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        removeEmails:[
-                            "${email_id}"
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                            email
-                            emailType
-                            primary
-                        }
+                            removeEmails: [
+                                "${email_id}"
+                            ]
                         }
                     }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                    email
+                                    emailType
+                                    primary
+                                }
+                            }
+                        }
+                    }
                 }
-            }
             }
         """
     )
@@ -733,26 +745,26 @@ def test_normal_user_can_remove_all_emails(rf, user_gql_client, email_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        removeEmails:[
-                            "${primary_email_id}",
-                            "${email_id}",
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                            email
-                            emailType
-                            primary
-                        }
+                            removeEmails: [
+                                "${primary_email_id}",
+                                "${email_id}",
+                            ]
                         }
                     }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                    email
+                                    emailType
+                                    primary
+                                }
+                            }
+                        }
+                    }
                 }
-            }
             }
         """
     )
@@ -779,25 +791,25 @@ def test_normal_user_can_remove_phone(rf, user_gql_client, phone_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        removePhones:[
-                            "${phone_id}"
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    phones{
-                        edges{
-                        node{
-                            id
-                            phone
-                            phoneType
-                            primary
-                        }
+                            removePhones: [
+                                "${phone_id}"
+                            ]
                         }
                     }
+                ) {
+                    profile {
+                        phones {
+                            edges {
+                                node {
+                                    id
+                                    phone
+                                    phoneType
+                                    primary
+                                }
+                            }
+                        }
+                    }
                 }
-            }
             }
         """
     )
@@ -826,25 +838,25 @@ def test_normal_user_can_remove_address(rf, user_gql_client, address_data):
                 updateMyProfile(
                     input: {
                         profile: {
-                        removeAddresses:[
-                            "${address_id}"
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    addresses{
-                        edges{
-                        node{
-                            id
-                            address
-                            addressType
-                            primary
-                        }
+                            removeAddresses: [
+                                "${address_id}"
+                            ]
                         }
                     }
+                ) {
+                    profile {
+                        addresses {
+                            edges {
+                                node {
+                                    id
+                                    address
+                                    addressType
+                                    primary
+                                }
+                            }
+                        }
+                    }
                 }
-            }
             }
         """
     )
@@ -877,13 +889,21 @@ def test_normal_user_can_change_primary_contact_details(
                 updateMyProfile(
                     input: {
                         profile: {
-                            addEmails:[
-                                {emailType: ${email_type}, email:"${email}", primary: ${primary}}
+                            addEmails: [
+                                {
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
                             ],
-                            addPhones:[
-                                {phoneType: ${phone_type}, phone:"${phone}", primary: ${primary}}
+                            addPhones: [
+                                {
+                                    phoneType: ${phone_type},
+                                    phone:"${phone}",
+                                    primary: ${primary}
+                                }
                             ],
-                            addAddresses:[
+                            addAddresses: [
                                 {
                                     addressType: ${address_type},
                                     address:"${address}",
@@ -895,26 +915,26 @@ def test_normal_user_can_change_primary_contact_details(
                         }
                     }
                 ) {
-                profile{
-                    primaryEmail{
-                        email,
-                        emailType,
-                        primary
-                    },
-                    primaryPhone{
-                        phone,
-                        phoneType,
-                        primary
-                    },
-                    primaryAddress{
-                        address,
-                        postalCode,
-                        city,
-                        addressType,
-                        primary
-                    },
+                    profile {
+                        primaryEmail {
+                            email,
+                            emailType,
+                            primary
+                        },
+                        primaryPhone {
+                            phone,
+                            phoneType,
+                            primary
+                        },
+                        primaryAddress {
+                            address,
+                            postalCode,
+                            city,
+                            addressType,
+                            primary
+                        },
+                    }
                 }
-            }
             }
         """
     )
@@ -973,30 +993,30 @@ def test_normal_user_can_update_primary_contact_details(
                 updateMyProfile(
                     input: {
                         profile: {
-                        updateEmails:[
-                            {
-                                id: "${email_id}",
-                                emailType: ${email_type},
-                                email:"${email}",
-                                primary: ${primary}
+                            updateEmails: [
+                                {
+                                    id: "${email_id}",
+                                    emailType: ${email_type},
+                                    email:"${email}",
+                                    primary: ${primary}
+                                }
+                            ]
+                        }
+                    }
+                ) {
+                    profile {
+                        emails {
+                            edges {
+                                node {
+                                    id
+                                    email
+                                    emailType
+                                    primary
+                                }
                             }
-                        ]
-                    }
-                }
-            ) {
-                profile{
-                    emails{
-                        edges{
-                        node{
-                            id
-                            email
-                            emailType
-                            primary
-                        }
                         }
                     }
                 }
-            }
             }
         """
     )

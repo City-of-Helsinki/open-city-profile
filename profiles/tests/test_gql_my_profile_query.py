@@ -29,9 +29,9 @@ def test_normal_user_can_query_emails(rf, user_gql_client):
     query = """
         {
             myProfile {
-                emails{
-                    edges{
-                        node{
+                emails {
+                    edges {
+                        node {
                             email
                             emailType
                             primary
@@ -68,9 +68,9 @@ def test_normal_user_can_query_phones(rf, user_gql_client):
     query = """
         {
             myProfile {
-                phones{
-                    edges{
-                        node{
+                phones {
+                    edges {
+                        node {
                             phone
                             phoneType
                             primary
@@ -107,9 +107,9 @@ def test_normal_user_can_query_addresses(rf, user_gql_client):
     query = """
         {
             myProfile {
-                addresses{
-                    edges{
-                        node{
+                addresses {
+                    edges {
+                        node {
                             address
                             addressType
                             primary
@@ -151,17 +151,17 @@ def test_normal_user_can_query_primary_contact_details(rf, user_gql_client):
     query = """
         {
             myProfile {
-                primaryPhone{
+                primaryPhone {
                     phone,
                     phoneType,
                     primary
                 },
-                primaryEmail{
+                primaryEmail {
                     email,
                     emailType,
                     primary
                 },
-                primaryAddress{
+                primaryAddress {
                     address,
                     addressType,
                     primary
