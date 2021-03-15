@@ -5,6 +5,7 @@ import pytest
 from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import AddressType, EmailType, PhoneType
 from services.enums import ServiceType
@@ -134,8 +135,9 @@ def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, s
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_any_first_name(
-    user_gql_client, group, service
+@pytest.mark.parametrize("field_name", ["first_name", "last_name"])
+def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
+    field_name, user_gql_client, group, service
 ):
     vpi_1, vpi_2 = VerifiedPersonalInformationFactory.create_batch(2)
     profile_1, profile_2 = vpi_1.profile, vpi_2.profile
@@ -145,19 +147,23 @@ def test_staff_user_can_filter_profiles_by_any_first_name(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
 
-    query = """
-        query getBerthProfiles($firstName: String) {
-            profiles(firstName: $firstName) {
-                count
-                totalCount
-                edges {
-                    node {
-                        firstName
+    t = Template(
+        """
+            query getBerthProfiles($$searchString: String) {
+                profiles(${search_arg_name}: $$searchString) {
+                    count
+                    totalCount
+                    edges {
+                        node {
+                            firstName
+                        }
                     }
                 }
             }
-        }
-    """
+        """
+    )
+    gql_field_name = to_graphql_name(field_name)
+    query = t.substitute(search_arg_name=gql_field_name)
 
     expected_data = {
         "profiles": {
@@ -167,9 +173,9 @@ def test_staff_user_can_filter_profiles_by_any_first_name(
         }
     }
 
-    for q in [profile_2.first_name, vpi_2.first_name]:
+    for q in [getattr(profile_2, field_name), getattr(vpi_2, field_name)]:
         executed = user_gql_client.execute(
-            query, variables={"firstName": q[1:].upper()}, service=service,
+            query, variables={"searchString": q[1:].upper()}, service=service,
         )
         assert "errors" not in executed
         assert executed["data"] == expected_data

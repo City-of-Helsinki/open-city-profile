@@ -265,8 +265,8 @@ class ProfileFilter(FilterSet):
         label="Profile ids for selecting the exact profiles to return. "
         '**Note:** these are raw UUIDs, not "relay opaque identifiers".'
     )
-    first_name = CharFilter(method="filter_by_first_name")
-    last_name = CharFilter(lookup_expr="icontains")
+    first_name = CharFilter(method="filter_by_name_icontains")
+    last_name = CharFilter(method="filter_by_name_icontains")
     nickname = CharFilter(lookup_expr="icontains")
     emails__email = CharFilter(lookup_expr="icontains")
     emails__email_type = ChoiceFilter(choices=EmailType.choices())
@@ -292,10 +292,10 @@ class ProfileFilter(FilterSet):
         )
     )
 
-    def filter_by_first_name(self, queryset, name, value):
+    def filter_by_name_icontains(self, queryset, name, value):
         return queryset.filter(
-            Q(first_name__icontains=value)
-            | Q(verified_personal_information__first_name__icontains=value)
+            Q(**{f"{name}__icontains": value})
+            | Q(**{f"verified_personal_information__{name}__icontains": value})
         )
 
     def get_enabled_subscriptions(self, queryset, name, value):
