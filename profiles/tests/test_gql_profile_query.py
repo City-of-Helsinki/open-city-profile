@@ -1,10 +1,12 @@
 from string import Template
 
+import pytest
 from django.utils.translation import gettext_lazy as _
 from graphene import relay
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR
+from open_city_profile.tests.asserts import assert_match_error_code
 from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 
@@ -237,3 +239,54 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert executed["data"] == expected_data
+
+
+@pytest.mark.parametrize("has_needed_permission", [True, False])
+def test_staff_user_needs_required_permission_to_access_verified_personal_information(
+    has_needed_permission,
+    user_gql_client,
+    profile_with_verified_personal_information,
+    group,
+    service,
+):
+    ServiceConnectionFactory(
+        profile=profile_with_verified_personal_information, service=service
+    )
+
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    if has_needed_permission:
+        assign_perm("can_view_verified_personal_information", group, service)
+
+    t = Template(
+        """
+            {
+                profile(id: "${id}") {
+                    verifiedPersonalInformation {
+                        firstName
+                    }
+                }
+            }
+        """
+    )
+    query = t.substitute(
+        id=relay.Node.to_global_id(
+            ProfileNode._meta.name, profile_with_verified_personal_information.id
+        )
+    )
+
+    executed = user_gql_client.execute(query, service=service)
+
+    if has_needed_permission:
+        assert "errors" not in executed
+        assert executed["data"] == {
+            "profile": {
+                "verifiedPersonalInformation": {
+                    "firstName": profile_with_verified_personal_information.verified_personal_information.first_name
+                }
+            }
+        }
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"] == {"profile": {"verifiedPersonalInformation": None}}

@@ -503,7 +503,10 @@ class ProfileNode(RestrictedProfileNode):
 
     def resolve_verified_personal_information(self, info, **kwargs):
         loa = info.context.user_auth.data.get("loa")
-        if loa in ["substantial", "high"]:
+        service = getattr(info.context, "service", None)
+        if loa in ["substantial", "high"] or info.context.user.has_perm(
+            "can_view_verified_personal_information", service
+        ):
             try:
                 return self.verified_personal_information
             except VerifiedPersonalInformation.DoesNotExist:
