@@ -126,3 +126,46 @@ class SerializableMixin(models.Model):
                 if self._resolve_field(self, field) is not None
             ],
         }
+
+
+class UpdateMixin:
+    def update(self, data):
+        for field, value in data.items():
+            setattr(self, field, value)
+        self.save(update_fields=data.keys())
+
+
+class ValidateOnSaveModel(models.Model):
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class NullsToEmptyStringsModel(models.Model):
+    """A Model that ensures that all of its string fields (e.g. CharField)
+    that are configured as not-null, have an empty string instead of a None
+    value. This verification happens in the clean() method."""
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def _non_nullable_string_field_names(cls):
+        if not hasattr(cls, "_cached_non_nullable_string_field_names"):
+            names = []
+            for field in cls._meta.fields:
+                if isinstance(field, models.CharField) and not field.null:
+                    names.append(field.attname)
+            setattr(cls, "_cached_non_nullable_string_field_names", names)
+        return cls._cached_non_nullable_string_field_names
+
+    def clean(self):
+        super().clean()
+
+        for field_name in self._non_nullable_string_field_names():
+            value = getattr(self, field_name)
+            if value is None:
+                setattr(self, field_name, "")

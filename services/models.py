@@ -2,12 +2,12 @@ import urllib.parse
 
 import requests
 from adminsortable.models import SortableMixin
-from django.conf import settings
 from django.db import models
 from django.db.models import Max
 from enumfields import EnumField
 from parler.models import TranslatableModel, TranslatedFields
 
+from utils.auth import BearerAuth
 from utils.models import SerializableMixin
 
 from .enums import ServiceType
@@ -36,14 +36,17 @@ class AllowedDataField(TranslatableModel, SortableMixin):
 
 
 class Service(TranslatableModel):
-    service_type = EnumField(ServiceType, max_length=32, blank=False, unique=True)
+    service_type = EnumField(
+        ServiceType, max_length=32, blank=False, null=True, unique=True
+    )
+    name = models.CharField(max_length=200, blank=False, null=False, unique=True)
     translations = TranslatedFields(
         title=models.CharField(max_length=64),
         description=models.TextField(max_length=200, blank=True),
     )
     allowed_data_fields = models.ManyToManyField(AllowedDataField)
     created_at = models.DateTimeField(auto_now_add=True)
-    gdpr_url = models.URLField(
+    gdpr_url = models.CharField(
         max_length=2000,
         blank=True,
         help_text=(
@@ -65,8 +68,24 @@ class Service(TranslatableModel):
             ("can_view_sensitivedata", "Can view sensitive data"),
         )
 
+    def save(self, *args, **kwargs):
+        # Convenience for saving Services with only service_type and no name.
+        # When service_type is removed from the code base, this should be
+        # removed as well and every Service creation requires a name at that point.
+        if not self.name and self.service_type:
+            self.name = self.service_type.value
+
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return self.safe_translation_getter("title", super().__str__())
+
+
+class ServiceClientId(models.Model):
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="client_ids"
+    )
+    client_id = models.CharField(max_length=256, null=False, blank=False, unique=True)
 
 
 class ServiceConnection(SerializableMixin):
@@ -86,27 +105,31 @@ class ServiceConnection(SerializableMixin):
         )
 
     serialize_fields = (
-        {
-            "name": "service",
-            "accessor": lambda x: getattr(getattr(x, "service_type"), "name"),
-        },
+        {"name": "service", "accessor": lambda x: getattr(x, "name")},
         {"name": "created_at", "accessor": lambda x: x.strftime("%Y-%m-%d")},
     )
 
-    def download_gdpr_data(self):
-        """Download service specific GDPR data by profile."""
+    def download_gdpr_data(self, api_token: str):
+        """Download service specific GDPR data by profile.
+
+        API token needs to be for a user that can access information for the related profile on
+        on the related GDPR API.
+        """
         if self.service.gdpr_url:
             url = urllib.parse.urljoin(self.service.gdpr_url, str(self.profile.pk))
             try:
-                response = requests.get(url, timeout=5)
+                response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
                 response.raise_for_status()
-                return response
+                return response.json()
             except requests.RequestException:
                 return {}
         return {}
 
-    def delete_gdpr_data(self, dry_run=False):
+    def delete_gdpr_data(self, api_token: str, dry_run=False):
         """Delete service specific GDPR data by profile.
+
+        API token needs to be for a user that can access information for the related profile on
+        on the related GDPR API.
 
         Dry run parameter can be used for asking the service if delete is possible.
         An exception will be raised by this method if deletion response from the
@@ -117,22 +140,14 @@ class ServiceConnection(SerializableMixin):
         if dry_run:
             data["dry_run"] = True
 
-        if (
-            not self.service.gdpr_url
-            and self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
-            and not settings.GDPR_API_ENABLED
-        ):
-            # TODO Remove once youth profile is separated from profile OM-278
-            # If GDPR API for youth profile is disabled, we can still go ahead and
-            # say it's deletable. Youth profile is deleted when the profile is deleted.
-            return True
-
         if self.service.gdpr_url:
             url = urllib.parse.urljoin(self.service.gdpr_url, str(self.profile.pk))
-            response = requests.delete(url, timeout=5, data=data)
+            response = requests.delete(
+                url, auth=BearerAuth(api_token), timeout=5, data=data
+            )
             response.raise_for_status()
             return True
 
         raise MissingGDPRUrlException(
-            f"Service {self.service.service_type.name} does not define an URL for GDPR removal."
+            f"Service {self.service.name} does not define an URL for GDPR removal."
         )

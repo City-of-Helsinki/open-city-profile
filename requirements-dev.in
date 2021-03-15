@@ -4,6 +4,7 @@ black
 flake8
 freezegun
 importmagic
+inflection
 ipython
 isort
 jedi
@@ -14,6 +15,7 @@ pytest
 pytest-cov
 pytest-django
 pytest-mock
+python-jose
 requests-mock
 pytest-factoryboy
 rope

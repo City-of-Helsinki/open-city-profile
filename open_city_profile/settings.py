@@ -32,10 +32,14 @@ env = environ.Env(
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
-    TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
+    TOKEN_AUTH_ACCEPTED_AUDIENCE=(list, []),
     TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
     TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
+    ADDITIONAL_AUTHSERVER_URLS=(list, []),
+    OIDC_CLIENT_ID=(str, ""),
+    OIDC_CLIENT_SECRET=(str, ""),
+    TUNNISTAMO_API_TOKENS_URL=(str, ""),
     MAILER_EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
     DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
     MAIL_MAILGUN_KEY=(str, ""),
@@ -46,7 +50,7 @@ env = environ.Env(
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
     AUDIT_LOG_USERNAME=(bool, False),
-    GDPR_API_ENABLED=(bool, False),
+    AUDIT_LOG_FILENAME=(str, ""),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
@@ -55,8 +59,12 @@ env = environ.Env(
     SESSION_COOKIE_NAME=(str, ""),
     SESSION_COOKIE_PATH=(str, ""),
     SESSION_COOKIE_SECURE=(bool, None),
+    USE_X_FORWARDED_FOR=(bool, False),
     USE_X_FORWARDED_HOST=(bool, None),
     CSRF_TRUSTED_ORIGINS=(list, []),
+    TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
+    GDPR_AUTH_CALLBACK_URL=(str, ""),
+    USE_HELUSERS_REQUEST_JWT_AUTH=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -104,6 +112,8 @@ if env("SESSION_COOKIE_PATH"):
 if env("SESSION_COOKIE_SECURE") is not None:
     SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE")
 
+USE_X_FORWARDED_FOR = env.bool("USE_X_FORWARDED_FOR")
+
 if env("USE_X_FORWARDED_HOST") is not None:
     USE_X_FORWARDED_HOST = env.bool("USE_X_FORWARDED_HOST")
 
@@ -141,9 +151,8 @@ USE_TZ = True
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
-    "helusers",
-    "helusers.providers.helsinki_oidc",
-    "django.contrib.admin",
+    "helusers.apps.HelusersConfig",
+    "helusers.apps.HelusersAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -151,9 +160,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
     "django_filters",
     "parler",
     "thesaurus",
@@ -174,6 +180,7 @@ INSTALLED_APPS = [
     "adminsortable",
     "subscriptions",
     "import_export",
+    "open_city_profile.apps.OpenCityProfileConfig",
 ]
 
 MIDDLEWARE = [
@@ -187,7 +194,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "reversion.middleware.RevisionMiddleware",
-    "profiles.middleware.SetUser",
+    "open_city_profile.middleware.JWTAuthentication",
+    "profiles.middleware.SetCurrentRequest",
 ]
 
 TEMPLATES = [
@@ -218,32 +226,42 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
-SOCIALACCOUNT_PROVIDERS = {"helsinki_oidc": {"VERIFIED_EMAIL": True}}
-LOGIN_REDIRECT_URL = "/"
-ACCOUNT_LOGOUT_ON_GET = True
-SOCIALACCOUNT_ADAPTER = "helusers.adapter.SocialAccountAdapter"
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
+
+USE_HELUSERS_REQUEST_JWT_AUTH = env.bool("USE_HELUSERS_REQUEST_JWT_AUTH")
 
 OIDC_API_TOKEN_AUTH = {
-    "AUDIENCE": env.str("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
+    "AUDIENCE": env.list("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
     "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
-    "ISSUER": env.str("TOKEN_AUTH_AUTHSERVER_URL"),
+    "ISSUER": [env.str("TOKEN_AUTH_AUTHSERVER_URL")]
+    + env.list("ADDITIONAL_AUTHSERVER_URLS"),
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
+if not USE_HELUSERS_REQUEST_JWT_AUTH:
+
+    def _list_to_string(value):
+        return value[0] if len(value) > 0 else ""
+
+    OIDC_API_TOKEN_AUTH["AUDIENCE"] = _list_to_string(OIDC_API_TOKEN_AUTH["AUDIENCE"])
+    OIDC_API_TOKEN_AUTH["ISSUER"] = _list_to_string(OIDC_API_TOKEN_AUTH["ISSUER"])
 
 OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "open_city_profile.oidc.GraphQLApiTokenAuthentication",
     "guardian.backends.ObjectPermissionBackend",
 ]
+if not USE_HELUSERS_REQUEST_JWT_AUTH:
+    AUTHENTICATION_BACKENDS.insert(
+        1, "open_city_profile.oidc.GraphQLApiTokenAuthentication"
+    )
 
 # Profiles related settings
 
 CONTACT_METHODS = (("email", "Email"), ("sms", "SMS"))
+
+TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES = env.int(
+    "TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES"
+)
 
 # Django-parler
 
@@ -269,10 +287,16 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
-    "MIDDLEWARE": ["graphql_jwt.middleware.JSONWebTokenMiddleware"],
+    "MIDDLEWARE": [
+        "open_city_profile.graphene.JWTMiddleware"
+        if USE_HELUSERS_REQUEST_JWT_AUTH
+        else "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "open_city_profile.graphene.GQLDataLoaders",
+    ],
 }
 
-GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
+if not USE_HELUSERS_REQUEST_JWT_AUTH:
+    GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")
@@ -304,26 +328,34 @@ if "SECRET_KEY" not in locals():
                 % secret_file
             )
 
-# A youth membership number is the youth profile's PK padded with zeroes.
-# This value tells what length the number will be padded to.
-# For example, PK 123, length 6 --> 000123.
-YOUTH_MEMBERSHIP_NUMBER_LENGTH = 6
-
-# Date (day, month) for when the memberships are set to expire
-YOUTH_MEMBERSHIP_SEASON_END_DATE = 31, 8
-
-# Month from which on the membership will last until the next year, instead of ending in the current year
-YOUTH_MEMBERSHIP_FULL_SEASON_START_MONTH = 5
-
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
+AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
+
+if AUDIT_LOG_FILENAME:
+    _audit_log_handler = {
+        "level": "INFO",
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": AUDIT_LOG_FILENAME,
+        "maxBytes": 100_000_000,
+        "backupCount": 1,
+    }
+else:
+    _audit_log_handler = {
+        "level": "INFO",
+        "class": "logging.StreamHandler",
+        "stream": stdout,
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "audit": {"level": "INFO", "class": "logging.StreamHandler", "stream": stdout}
-    },
+    "handlers": {"audit": _audit_log_handler},
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
 
-GDPR_API_ENABLED = env.bool("GDPR_API_ENABLED")
+GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")
+TUNNISTAMO_CLIENT_ID = env("OIDC_CLIENT_ID")
+TUNNISTAMO_CLIENT_SECRET = env("OIDC_CLIENT_SECRET")
+TUNNISTAMO_OIDC_ENDPOINT = env("TOKEN_AUTH_AUTHSERVER_URL")
+TUNNISTAMO_API_TOKENS_URL = env("TUNNISTAMO_API_TOKENS_URL")

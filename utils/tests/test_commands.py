@@ -7,7 +7,6 @@ from services.models import AllowedDataField, Service
 from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
 from users.models import User
 from utils.utils import DATA_FIELD_VALUES
-from youths.models import YouthProfile
 
 
 def test_command_seed_data_works_without_arguments():
@@ -37,7 +36,6 @@ def test_command_seed_data_initializes_development_data():
         == normal_users + len(ServiceType) + admin_users + anonymous_users
     )
     assert Profile.objects.count() == normal_users
-    assert YouthProfile.objects.count() == 10
     assert User.objects.filter(is_superuser=True).count() == admin_users
 
 
@@ -46,11 +44,9 @@ def test_command_seed_data_works_withs_arguments():
         "--development",
         "--no-clear",  # Flushing not needed in tests + it caused test failures
         "--profilecount=20",
-        "--youthprofilepercentage=0.5",
         "--locale=fi_FI",
         "--superuser",
     ]
     call_command("seed_data", *args)
     assert Profile.objects.count() == 20
-    assert YouthProfile.objects.count() == 10
     assert User.objects.filter(is_superuser=True).count() == 1

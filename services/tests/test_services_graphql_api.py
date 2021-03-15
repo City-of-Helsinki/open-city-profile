@@ -1,15 +1,17 @@
 from string import Template
 
-from open_city_profile.consts import SERVICE_CONNECTION_ALREADY_EXISTS_ERROR
+from open_city_profile.consts import (
+    SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    SERVICE_NOT_IDENTIFIED_ERROR,
+)
+from open_city_profile.tests.asserts import assert_match_error_code
 from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
 def test_normal_user_can_query_own_services(
-    rf, user_gql_client, service, allowed_data_field_factory
+    user_gql_client, service, allowed_data_field_factory
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
     first_field = allowed_data_field_factory()
     second_field = allowed_data_field_factory()
@@ -76,24 +78,17 @@ def test_normal_user_can_query_own_services(
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    executed = user_gql_client.execute(query)
+    assert executed["data"] == expected_data
 
 
-def test_normal_user_can_add_service_mutation(rf, user_gql_client, service_factory):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
+def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
-    service_factory()
 
-    t = Template(
-        """
+    query = """
         mutation {
             addServiceConnection(input: {
                 serviceConnection: {
-                    service: {
-                        type: ${service_type}
-                    }
                     enabled: false
                 }
             }) {
@@ -106,36 +101,94 @@ def test_normal_user_can_add_service_mutation(rf, user_gql_client, service_facto
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {
-                "service": {"type": ServiceType.BERTH.name},
+                "service": {"type": service.service_type.name},
                 "enabled": False,
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
-    assert dict(executed["data"]) == expected_data
+    executed = user_gql_client.execute(query, service=service)
+    assert executed["data"] == expected_data
 
 
-def test_normal_user_cannot_add_service_multiple_times_mutation(
-    rf, user_gql_client, service_factory
+def test_normal_user_can_add_service_using_service_type_input_field(
+    user_gql_client, service_factory
 ):
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     ProfileFactory(user=user_gql_client.user)
-    service_factory()
+    service_berth = service_factory(service_type=ServiceType.BERTH)
+    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    request_service = service_factory(service_type=None)
 
     t = Template(
         """
         mutation {
-            addServiceConnection(input: {
+            add1: addServiceConnection(input: {
                 serviceConnection: {
                     service: {
-                        type: ${service_type}
+                        type: ${service_type_1}
                     }
+                    enabled: false
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                    enabled
+                }
+            }
+
+            add2: addServiceConnection(input: {
+                serviceConnection: {
+                    service: {
+                        type: ${service_type_2}
+                    }
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                    enabled
+                }
+            }
+        }
+    """
+    )
+    query = t.substitute(
+        service_type_1=service_berth.service_type.name,
+        service_type_2=service_youth.service_type.name,
+    )
+    expected_data = {
+        "add1": {
+            "serviceConnection": {
+                "service": {"type": service_berth.service_type.name},
+                "enabled": False,
+            }
+        },
+        "add2": {
+            "serviceConnection": {
+                "service": {"type": service_youth.service_type.name},
+                "enabled": True,
+            }
+        },
+    }
+    executed = user_gql_client.execute(query, service=request_service)
+    assert executed["data"] == expected_data
+
+
+def test_normal_user_cannot_add_service_multiple_times_mutation(
+    user_gql_client, service
+):
+    ProfileFactory(user=user_gql_client.user)
+
+    query = """
+        mutation {
+            addServiceConnection(input: {
+                serviceConnection: {
                 }
             }) {
                 serviceConnection {
@@ -146,19 +199,18 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
             }
         }
     """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
+
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
     assert "errors" not in executed
 
     # do the mutation again
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert "code" in executed["errors"][0]["extensions"]
     assert (
@@ -167,16 +219,39 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
     )
 
 
+def test_not_identifying_service_for_add_service_connection_produces_service_not_identified_error(
+    user_gql_client,
+):
+    ProfileFactory(user=user_gql_client.user)
+
+    query = """
+        mutation {
+            addServiceConnection(input: {
+                serviceConnection: {
+                }
+            }) {
+                serviceConnection {
+                    service {
+                        type
+                    }
+                }
+            }
+        }
+    """
+
+    executed = user_gql_client.execute(query)
+
+    assert_match_error_code(executed, SERVICE_NOT_IDENTIFIED_ERROR)
+
+
 def test_normal_user_can_query_own_services_gdpr_api_scopes(
-    rf, user_gql_client, service_factory,
+    user_gql_client, service_factory,
 ):
     query_scope = "query_scope"
     delete_scope = "delete_scope"
     service = service_factory(
         gdpr_query_scope=query_scope, gdpr_delete_scope=delete_scope
     )
-    request = rf.post("/graphql")
-    request.user = user_gql_client.user
     profile = ProfileFactory(user=user_gql_client.user)
 
     ServiceConnectionFactory(profile=profile, service=service)
@@ -216,6 +291,6 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
             }
         }
     }
-    executed = user_gql_client.execute(query, context=request)
+    executed = user_gql_client.execute(query)
 
     assert dict(executed["data"]) == expected_data

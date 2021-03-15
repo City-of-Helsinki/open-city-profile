@@ -3,7 +3,20 @@ from thesaurus.models import Concept, Vocabulary
 
 from open_city_profile.tests.factories import UserFactory
 from profiles.enums import AddressType, EmailType, PhoneType
-from profiles.models import Address, ClaimToken, Email, Phone, Profile, SensitiveData
+from profiles.models import (
+    Address,
+    ClaimToken,
+    Email,
+    EncryptedAddress,
+    Phone,
+    Profile,
+    SensitiveData,
+    TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
+    VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationPermanentForeignAddress,
+    VerifiedPersonalInformationTemporaryAddress,
+)
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
@@ -17,11 +30,77 @@ class ProfileDataDictFactory(factory.DictFactory):
     nickname = factory.Faker("name")
 
 
+class EncryptedAddressFactory(factory.django.DjangoModelFactory):
+    street_address = factory.Faker("street_address")
+    postal_code = factory.Faker("postcode")
+    post_office = factory.Faker("city")
+
+    class Meta:
+        model = EncryptedAddress
+        abstract = True
+
+
+class VerifiedPersonalInformationPermanentAddressFactory(EncryptedAddressFactory):
+    class Meta:
+        model = VerifiedPersonalInformationPermanentAddress
+
+
+class VerifiedPersonalInformationTemporaryAddressFactory(EncryptedAddressFactory):
+    class Meta:
+        model = VerifiedPersonalInformationTemporaryAddress
+
+
+class VerifiedPersonalInformationPermanentForeignAddressFactory(
+    factory.django.DjangoModelFactory
+):
+    street_address = factory.Faker("street_address", locale="jp_JP")
+    additional_address = factory.Faker("address", locale="jp_JP")
+    country_code = factory.Faker("country_code", representation="alpha-2")
+
+    class Meta:
+        model = VerifiedPersonalInformationPermanentForeignAddress
+
+
+class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+
+    first_name = factory.Faker("first_name")
+    last_name = factory.Faker("last_name")
+    given_name = factory.Faker("first_name")
+    national_identification_number = factory.Faker("ssn", locale="fi_FI")
+    email = factory.Faker("email")
+    municipality_of_residence = factory.Faker("city")
+    municipality_of_residence_number = factory.Faker("numerify", text="###")
+
+    permanent_address = factory.RelatedFactory(
+        VerifiedPersonalInformationPermanentAddressFactory,
+        factory_related_name="verified_personal_information",
+    )
+    temporary_address = factory.RelatedFactory(
+        VerifiedPersonalInformationTemporaryAddressFactory,
+        factory_related_name="verified_personal_information",
+    )
+    permanent_foreign_address = factory.RelatedFactory(
+        VerifiedPersonalInformationPermanentForeignAddressFactory,
+        factory_related_name="verified_personal_information",
+    )
+
+    class Meta:
+        model = VerifiedPersonalInformation
+
+
 class ClaimTokenFactory(factory.django.DjangoModelFactory):
     profile = factory.SubFactory(ProfileFactory)
 
     class Meta:
         model = ClaimToken
+
+
+class TemporaryReadAccessTokenFactory(factory.django.DjangoModelFactory):
+    profile = factory.SubFactory(ProfileFactory)
+
+    class Meta:
+        model = TemporaryReadAccessToken
 
 
 class EmailFactory(factory.django.DjangoModelFactory):

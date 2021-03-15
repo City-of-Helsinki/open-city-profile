@@ -41,7 +41,11 @@ Prerequisites:
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
      * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
-     * `GDPR_API_ENABLED`, enable the GDPR API for youth profiles
+     * `OIDC_CLIENT_ID`, Tunnistamo client id for enabling GDPR API authorization code flows
+     * `OIDC_CLIENT_SECRET`, Tunnistamo client secret for enabling GDPR API authorization code flows
+     * `GDPR_AUTH_CALLBACK_URL`, GDPR auth callback URL should be the same which is used by the UI for
+       fetching OAuth/OIDC authorization token for using the GDPR API
+     * `TUNNISTAMO_API_TOKENS_URL`, Tunnistamo URL from which the backend will fetch API tokens for GDPR API use.
 
 2. Run `docker-compose up`
     * The project is now running at [localhost:8080](http://localhost:8080)
@@ -92,10 +96,6 @@ Prerequisites:
         * With user
         * With email, phone number and address
         * Connects to one random service
-      * Youth profiles
-        * Adds for existing profiles
-        * By default adds for 20% of profiles (0.2)
-        * Approved randomly
 
 
 ## Development without Docker
@@ -152,6 +152,8 @@ The project is now running at [localhost:8000](http://localhost:8000)
 
 ## Keeping Python requirements up to date
 
+This repository contains `requirements*.in` and corresponding `requirements*.txt` files for requirements handling. The `requirements*.txt` files are generated from the `requirements*.in` files with `pip-compile`.
+
 1. Install `pip-tools`:
     * `pip install pip-tools`
 
@@ -160,12 +162,15 @@ The project is now running at [localhost:8000](http://localhost:8000)
 3. Update `.txt` file for the changed requirements file:
     * `pip-compile requirements.in`
     * `pip-compile requirements-dev.in`
+    * **Note:** the `requirements*.txt` files added to version control are meant to be used in the containerized environment where the service is run. Because [Python package dependencies are environment dependent](https://github.com/jazzband/pip-tools/#cross-environment-usage-of-requirementsinrequirementstxt-and-pip-compile) they need to be generated within a similar environment. This can be done by running the `pip-compile` command within Docker, for example like this: `docker-compose exec django pip-compile requirements.in` ([the container needs to be running](#development-with-docker) beforehand).
 
 4. If you want to update dependencies to their newest versions, run:
     * `pip-compile --upgrade requirements.in`
 
 5. To install Python requirements run:
     * `pip-sync requirements.txt`
+
+**Note:** when updating dependencies, read the [dependency update checklist](docs/dependency-update.adoc) if there's anything you need to pay attention to.
 
 ## Code format
 

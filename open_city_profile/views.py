@@ -1,5 +1,5 @@
 import sentry_sdk
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
@@ -10,13 +10,15 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
+    MISSING_GDPR_API_TOKEN_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
-    PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    SERVICE_NOT_IDENTIFIED_ERROR,
     TOKEN_EXPIRED_ERROR,
+    VALIDATION_ERROR,
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
@@ -24,26 +26,15 @@ from open_city_profile.exceptions import (
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
+    MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
     ProfileHasNoPrimaryEmailError,
-    ProfileMustHaveOnePrimaryEmail,
     ServiceAlreadyExistsError,
+    ServiceNotIdentifiedError,
     TokenExpiredError,
 )
 from profiles.models import Profile
-from youths.consts import (
-    APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
-    CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
-    CANNOT_RENEW_YOUTH_PROFILE_ERROR,
-    CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
-)
-from youths.exceptions import (
-    ApproverEmailCannotBeEmptyForMinorsError,
-    CannotCreateYouthProfileIfUnder13YearsOldError,
-    CannotRenewYouthProfileError,
-    CannotSetPhotoUsagePermissionIfUnder15YearsError,
-)
 
 error_codes_shared = {
     Exception: GENERAL_ERROR,
@@ -52,6 +43,7 @@ error_codes_shared = {
     PermissionDenied: PERMISSION_DENIED_ERROR,
     JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
+    ValidationError: VALIDATION_ERROR,
     CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
@@ -60,16 +52,10 @@ error_codes_profile = {
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
+    MissingGDPRApiTokenError: MISSING_GDPR_API_TOKEN_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
+    ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
     ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
-    ProfileMustHaveOnePrimaryEmail: PROFILE_MUST_HAVE_ONE_PRIMARY_EMAIL,
-}
-
-error_codes_youth_profile = {
-    ApproverEmailCannotBeEmptyForMinorsError: APPROVER_EMAIL_CANNOT_BE_EMPTY_FOR_MINORS_ERROR,
-    CannotCreateYouthProfileIfUnder13YearsOldError: CANNOT_CREATE_YOUTH_PROFILE_IF_UNDER_13_YEARS_OLD_ERROR,
-    CannotRenewYouthProfileError: CANNOT_RENEW_YOUTH_PROFILE_ERROR,
-    CannotSetPhotoUsagePermissionIfUnder15YearsError: CANNOT_SET_PHOTO_USAGE_PERMISSION_IF_UNDER_15_YEARS_ERROR,
 }
 
 sentry_ignored_errors = (
@@ -80,7 +66,7 @@ sentry_ignored_errors = (
 )
 
 
-error_codes = {**error_codes_shared, **error_codes_profile, **error_codes_youth_profile}
+error_codes = {**error_codes_shared, **error_codes_profile}
 
 
 class GraphQLView(BaseGraphQLView):

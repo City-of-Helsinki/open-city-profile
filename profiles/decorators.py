@@ -37,16 +37,33 @@ def staff_required(required_permission="view"):
                         required_permission
                     )
                 )
-            service = Service.objects.get(service_type=kwargs["service_type"])
-            set_current_service(service.service_type)
-            if context.user.has_perm(
-                "can_{}_profiles".format(required_permission), service
-            ):
-                return function(*args, **kwargs)
-            else:
+
+            old_service = None
+            service_type = kwargs.get("service_type")
+            if service_type:
+                old_service = getattr(context, "service", None)
+                context.service = Service.objects.get(service_type=service_type)
+
+            if not hasattr(context, "service"):
                 raise PermissionDenied(
                     _("You do not have permission to perform this action.")
                 )
+
+            service = context.service
+            set_current_service(service.service_type)
+
+            try:
+                if context.user.has_perm(
+                    "can_{}_profiles".format(required_permission), service
+                ):
+                    return function(*args, **kwargs)
+                else:
+                    raise PermissionDenied(
+                        _("You do not have permission to perform this action.")
+                    )
+            finally:
+                if old_service:
+                    context.service = old_service
 
         return wrapper
 
