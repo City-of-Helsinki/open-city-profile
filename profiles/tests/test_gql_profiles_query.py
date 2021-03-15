@@ -141,14 +141,27 @@ def test_staff_user_can_filter_profiles_by_first_name(user_gql_client, group, se
             profiles(firstName: $firstName) {
                 count
                 totalCount
+                edges {
+                    node {
+                        firstName
+                    }
+                }
             }
         }
     """
 
-    expected_data = {"profiles": {"count": 1, "totalCount": 2}}
+    expected_data = {
+        "profiles": {
+            "count": 1,
+            "totalCount": 2,
+            "edges": [{"node": {"firstName": profile_2.first_name}}],
+        }
+    }
 
     executed = user_gql_client.execute(
-        query, variables={"firstName": profile_2.first_name}, service=service,
+        query,
+        variables={"firstName": profile_2.first_name[1:].upper()},
+        service=service,
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
