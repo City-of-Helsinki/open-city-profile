@@ -276,7 +276,10 @@ def test_staff_user_needs_required_permission_to_access_verified_personal_inform
         )
     )
 
-    executed = user_gql_client.execute(query, service=service)
+    token_payload = {"loa": "substantial"}
+    executed = user_gql_client.execute(
+        query, auth_token_payload=token_payload, service=service
+    )
 
     if has_needed_permission:
         assert "errors" not in executed
