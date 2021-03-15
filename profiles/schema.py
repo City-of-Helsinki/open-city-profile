@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import F, OuterRef, Subquery
+from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -265,7 +265,7 @@ class ProfileFilter(FilterSet):
         label="Profile ids for selecting the exact profiles to return. "
         '**Note:** these are raw UUIDs, not "relay opaque identifiers".'
     )
-    first_name = CharFilter(lookup_expr="icontains")
+    first_name = CharFilter(method="filter_by_first_name")
     last_name = CharFilter(lookup_expr="icontains")
     nickname = CharFilter(lookup_expr="icontains")
     emails__email = CharFilter(lookup_expr="icontains")
@@ -291,6 +291,12 @@ class ProfileFilter(FilterSet):
             ("language", "language"),
         )
     )
+
+    def filter_by_first_name(self, queryset, name, value):
+        return queryset.filter(
+            Q(first_name__icontains=value)
+            | Q(verified_personal_information__first_name__icontains=value)
+        )
 
     def get_enabled_subscriptions(self, queryset, name, value):
         """

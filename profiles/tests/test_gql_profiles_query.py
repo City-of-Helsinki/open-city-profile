@@ -15,7 +15,13 @@ from subscriptions.tests.factories import (
     SubscriptionTypeFactory,
 )
 
-from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
+from .factories import (
+    AddressFactory,
+    EmailFactory,
+    PhoneFactory,
+    ProfileFactory,
+    VerifiedPersonalInformationFactory,
+)
 
 
 def test_normal_user_can_not_query_profiles(user_gql_client, service):
@@ -128,8 +134,11 @@ def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, s
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_first_name(user_gql_client, group, service):
-    profile_1, profile_2 = ProfileFactory.create_batch(2)
+def test_staff_user_can_filter_profiles_by_any_first_name(
+    user_gql_client, group, service
+):
+    vpi_1, vpi_2 = VerifiedPersonalInformationFactory.create_batch(2)
+    profile_1, profile_2 = vpi_1.profile, vpi_2.profile
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     user = user_gql_client.user
@@ -158,13 +167,12 @@ def test_staff_user_can_filter_profiles_by_first_name(user_gql_client, group, se
         }
     }
 
-    executed = user_gql_client.execute(
-        query,
-        variables={"firstName": profile_2.first_name[1:].upper()},
-        service=service,
-    )
-    assert "errors" not in executed
-    assert executed["data"] == expected_data
+    for q in [profile_2.first_name, vpi_2.first_name]:
+        executed = user_gql_client.execute(
+            query, variables={"firstName": q[1:].upper()}, service=service,
+        )
+        assert "errors" not in executed
+        assert executed["data"] == expected_data
 
 
 def test_staff_user_can_sort_profiles(user_gql_client, group, service):
