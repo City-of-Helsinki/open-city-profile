@@ -169,7 +169,6 @@ INSTALLED_APPS = [
     "users",
     "profiles",
     "reversion",
-    "youths",
     "django_ilmoitin",
     "mailer",
     "graphene_django",

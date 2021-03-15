@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
         ("thesaurus", "0001_initial"),
         ("profiles", "0009_add_profile_uuid"),
         ("services", "0003_pre_profile_uuid"),
-        ("youths", "0004_pre_profile_uuid"),
     ]
 
     operations = [
