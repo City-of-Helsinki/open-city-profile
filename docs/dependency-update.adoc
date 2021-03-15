@@ -1,0 +1,5 @@
+= Checklist for updating dependencies
+
+== Django
+
+- `templates/admin/profiles/profile/delete_confirmation.html` has parts copied from Django (`django/contrib/admin/templates/admin/delete_confirmation.html`) and customised. Customisations are surrounded by comments. When updating Django, check if the original template has changed and update the customised template accordingly.

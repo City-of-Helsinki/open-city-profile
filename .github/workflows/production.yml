@@ -15,6 +15,11 @@ env:
   SERVICE_ARTIFACT_FOLDER: 'service_artifacts'
   APP_MIGRATE_COMMAND: /app/.prod/on_deploy.sh
   SERVICE_PORT: "8080"
+  K8S_REQUEST_CPU: 50m
+  K8S_REQUEST_RAM: 300Mi
+  K8S_LIMIT_CPU: 500m
+  K8S_LIMIT_RAM: 400Mi
+  K8S_REPLICACOUNT: 2
 
 jobs:
   build:
@@ -39,6 +44,7 @@ jobs:
           track: 'stable'
         env:
           K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE_STABLE }}
+          K8S_ADDITIONAL_HOSTNAMES: ${{ secrets.K8S_ADDITIONAL_HOSTNAMES }}
           ENVIRONMENT_URL: https://${{ secrets.ENVIRONMENT_URL_STABLE }}
           K8S_SECRET_ALLOWED_HOSTS: "*"
           K8S_SECRET_DEBUG: 0
@@ -71,6 +77,7 @@ jobs:
           K8S_SECRET_SESSION_COOKIE_PATH: "/profiili/"
           K8S_SECRET_SESSION_COOKIE_SECURE: 1
           K8S_SECRET_USE_X_FORWARDED_HOST: 1
+          K8S_SECRET_USE_X_FORWARDED_FOR: 1
           K8S_SECRET_CSRF_TRUSTED_ORIGINS: "api.hel.fi"
           K8S_SECRET_DATABASE_HOST: ${{ secrets.K8S_SECRET_DATABASE_HOST_STABLE }}
           K8S_SECRET_DATABASE_URL: ${{ secrets.K8S_SECRET_DATABASE_URL_STABLE }}

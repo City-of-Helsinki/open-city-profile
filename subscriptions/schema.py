@@ -5,6 +5,8 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql_jwt.decorators import login_required
 
+import profiles.schema as profiles_schema
+
 from .models import Subscription, SubscriptionType, SubscriptionTypeCategory
 
 
@@ -13,6 +15,8 @@ class SubscriptionNode(DjangoObjectType):
         model = Subscription
         interfaces = (relay.Node,)
         filter_fields = []
+
+    profile = graphene.Field(lambda: profiles_schema.ProfileNode, required=True)
 
 
 class SubscriptionTypeNode(DjangoObjectType):

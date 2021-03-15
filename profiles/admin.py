@@ -20,10 +20,11 @@ from profiles.models import (
     Phone,
     Profile,
     SensitiveData,
+    TemporaryReadAccessToken,
+    VerifiedPersonalInformation,
 )
 from services.admin import ServiceConnectionInline
 from subscriptions.admin import SubscriptionInline
-from youths.admin import YouthProfileAdminInline
 
 
 def superuser_required(function):
@@ -41,6 +42,7 @@ class RepresentativeAdmin(admin.StackedInline):
     fk_name = "representative"
     verbose_name = "Representative"
     verbose_name_plural = "Representing"
+    autocomplete_fields = ("representee",)
 
 
 class RepresenteeAdmin(admin.StackedInline):
@@ -49,6 +51,7 @@ class RepresenteeAdmin(admin.StackedInline):
     fk_name = "representee"
     verbose_name = "Representative"
     verbose_name_plural = "Represented by"
+    autocomplete_fields = ("representative",)
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -65,6 +68,13 @@ class ClaimTokenInline(admin.StackedInline):
     form = AlwaysChangedModelForm
 
 
+class TemporaryReadAccessTokenInline(admin.StackedInline):
+    model = TemporaryReadAccessToken
+    extra = 0
+    readonly_fields = ("created_at", "validity_duration", "token")
+    form = AlwaysChangedModelForm
+
+
 class SensitiveDataAdminInline(admin.StackedInline):
     model = SensitiveData
     fk_name = "profile"
@@ -78,9 +88,9 @@ class EmailFormSet(forms.models.BaseInlineFormSet):
             self.forms,
             0,
         )
-        if count != 1:
+        if count > 1:
             raise forms.ValidationError(
-                "Profile must have one exactly one primary email"
+                "Profile must have zero or one primary email(s)"
             )
 
 
@@ -100,6 +110,52 @@ class AddressAdminInline(admin.StackedInline):
     extra = 0
 
 
+class VerifiedPersonalInformationAdminInline(admin.StackedInline):
+    model = VerifiedPersonalInformation
+    readonly_fields = (
+        "get_permanent_address",
+        "get_temporary_address",
+        "get_permanent_foreign_address",
+    )
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_permanent_address(self, obj):
+        return "{}, {} {}\n".format(
+            obj.permanent_address.street_address,
+            obj.permanent_address.postal_code,
+            obj.permanent_address.post_office,
+        )
+
+    get_permanent_address.short_description = "Permanent address"
+
+    def get_temporary_address(self, obj):
+        return "{}, {} {}\n".format(
+            obj.temporary_address.street_address,
+            obj.temporary_address.postal_code,
+            obj.temporary_address.post_office,
+        )
+
+    get_temporary_address.short_description = "Temporary address"
+
+    def get_permanent_foreign_address(self, obj):
+        return "{}, {}, {}\n".format(
+            obj.permanent_foreign_address.street_address,
+            obj.permanent_foreign_address.additional_address,
+            obj.permanent_foreign_address.country_code,
+        )
+
+    get_permanent_foreign_address.short_description = "Permanent foreign address"
+
+
 class ImportProfilesFromJsonForm(forms.Form):
     json_file = forms.FileField(required=True, label="Please select a json file")
 
@@ -107,19 +163,28 @@ class ImportProfilesFromJsonForm(forms.Form):
 @admin.register(Profile)
 class ExtendedProfileAdmin(VersionAdmin):
     inlines = [
+        VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,
         RepresenteeAdmin,
         RepresentativeAdmin,
-        YouthProfileAdminInline,
         ServiceConnectionInline,
         SubscriptionInline,
         ClaimTokenInline,
+        TemporaryReadAccessTokenInline,
         EmailAdminInline,
         PhoneAdminInline,
         AddressAdminInline,
     ]
     change_list_template = "admin/profiles/profiles_changelist.html"
     list_filter = ("service_connections__service",)
+    autocomplete_fields = ("user",)
+    search_fields = (
+        "id",
+        "first_name",
+        "last_name",
+        "verified_personal_information__first_name",
+        "verified_personal_information__last_name",
+    )
 
     def get_urls(self):
         urls = super().get_urls()
@@ -153,14 +218,8 @@ class ExtendedProfileAdmin(VersionAdmin):
         formfield = super().formfield_for_manytomany(db_field, request, **kwargs)
         return formfield
 
-
-class ProfileAdminInline(admin.StackedInline):
-    model = Profile
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "divisions_of_interest":
-            kwargs["queryset"] = AdministrativeDivision.objects.filter(
-                division_of_interest__isnull=False
-            )
-        formfield = super().formfield_for_manytomany(db_field, request, **kwargs)
-        return formfield
+    def delete_model(self, request, obj):
+        user = obj.user
+        super().delete_model(request, obj)
+        if user and request.POST.get("delete-user"):
+            user.delete()

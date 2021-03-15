@@ -1,21 +1,29 @@
 import os
 import shutil
 import uuid
+from datetime import timedelta
 
 import reversion
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
+from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
-from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
 from services.models import Service, ServiceConnection
 from users.models import User
-from utils.models import SerializableMixin, UUIDModel
+from utils.models import (
+    NullsToEmptyStringsModel,
+    SerializableMixin,
+    UpdateMixin,
+    UUIDModel,
+    ValidateOnSaveModel,
+)
 
 from .enums import (
     AddressType,
@@ -148,14 +156,6 @@ class Profile(UUIDModel, SerializableMixin):
         else:
             return str(self.id)
 
-    def get_service_gdpr_data(self):
-        """Download gdpr data for each connected service"""
-        data = map(
-            lambda service_connection: service_connection.download_gdpr_data(),
-            self.service_connections.all(),
-        )
-        return [item for item in list(data) if item]
-
     @classmethod
     @transaction.atomic
     def import_customer_data(cls, data):
@@ -194,10 +194,6 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.emails.create(
                         email=email, email_type=EmailType.PERSONAL, primary=True
                     )
-                else:
-                    raise ProfileMustHaveOnePrimaryEmail(
-                        f"Profile must have exactly one primary email, index: {customer_index}"
-                    )
                 address = item.get("address", None)
                 if address:
                     profile.addresses.create(
@@ -219,8 +215,6 @@ class Profile(UUIDModel, SerializableMixin):
                     enabled=False,
                 )
                 result[item["customer_id"]] = profile.pk
-            except ProfileMustHaveOnePrimaryEmail:
-                raise
             except Exception as err:
                 msg = (
                     "Could not import customer_id: {}, index: {}".format(
@@ -233,6 +227,104 @@ class Profile(UUIDModel, SerializableMixin):
                 )
                 raise Exception(msg) from err
         return result
+
+
+class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
+    profile = models.OneToOneField(
+        Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
+    )
+    first_name = models.CharField(
+        max_length=1024, blank=True, help_text="First name(s)."
+    )
+    last_name = models.CharField(max_length=1024, blank=True, help_text="Last name.")
+    given_name = fields.EncryptedCharField(
+        max_length=1024, blank=True, help_text="The name the person is called with."
+    )
+    national_identification_number = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Finnish national identification number.",
+    )
+    email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
+    municipality_of_residence = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Official municipality of residence in Finland as a free form text.",
+    )
+    municipality_of_residence_number = fields.EncryptedCharField(
+        max_length=4,
+        blank=True,
+        help_text="Official municipality of residence in Finland as an official number.",
+    )
+
+    class Meta:
+        permissions = [
+            (
+                "manage_verified_personal_information",
+                "Can manage verified personal information",
+            ),
+        ]
+
+
+class EncryptedAddress(ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel):
+    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
+    postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
+    post_office = fields.EncryptedCharField(max_length=1024, blank=True)
+
+    class Meta:
+        abstract = True
+
+    def is_empty(self):
+        return not (self.street_address or self.postal_code or self.post_office)
+
+
+class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
+    RELATED_NAME = "permanent_address"
+
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name=RELATED_NAME,
+    )
+
+
+class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
+    RELATED_NAME = "temporary_address"
+
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name=RELATED_NAME,
+    )
+
+
+class VerifiedPersonalInformationPermanentForeignAddress(
+    ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel
+):
+    RELATED_NAME = "permanent_foreign_address"
+
+    street_address = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Street address or whatever is the _first part_ of the address.",
+    )
+    additional_address = fields.EncryptedCharField(
+        max_length=1024,
+        blank=True,
+        help_text="Additional address information, perhaps town, county, state, country etc.",
+    )
+    country_code = fields.EncryptedCharField(
+        max_length=3, blank=True, help_text="An ISO 3166-1 country code."
+    )
+
+    verified_personal_information = models.OneToOneField(
+        VerifiedPersonalInformation,
+        on_delete=models.CASCADE,
+        related_name=RELATED_NAME,
+    )
+
+    def is_empty(self):
+        return not (self.street_address or self.additional_address or self.country_code)
 
 
 class DivisionOfInterest(models.Model):
@@ -294,6 +386,20 @@ class Email(Contact):
         {"name": "email"},
     )
 
+    def clean(self):
+        super().clean()
+
+        if not self.primary:
+            return
+
+        existing_primary_emails = Email.objects.filter(
+            profile=self.profile, primary=True,
+        )
+        if self.pk:
+            existing_primary_emails.exclude(pk=self.pk)
+        if existing_primary_emails.exists():
+            raise ValidationError("Primary email already exists")
+
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -328,3 +434,26 @@ class ClaimToken(models.Model):
         max_length=36, blank=True, default=uuid.uuid4, editable=False
     )
     expires_at = models.DateTimeField(null=True, blank=True)
+
+
+def _default_temporary_read_access_token_validity_duration():
+    return timedelta(
+        minutes=settings.TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES
+    )
+
+
+class TemporaryReadAccessToken(models.Model):
+    profile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="read_access_tokens"
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now, blank=False)
+    validity_duration = models.DurationField(
+        default=_default_temporary_read_access_token_validity_duration, blank=False
+    )
+
+    def expires_at(self):
+        return self.created_at + self.validity_duration
+
+    def __str__(self):
+        return f"{self.token} ({self.expires_at()})"

@@ -1,7 +1,6 @@
 import pytest
-from django.apps import apps
 from django.contrib.auth.models import Group
-from django_ilmoitin.models import NotificationTemplate
+from django.db.models import Count
 from faker import Faker
 from guardian.shortcuts import get_group_perms
 
@@ -17,13 +16,10 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
-    generate_notifications,
     generate_profiles,
     generate_service_connections,
     generate_services,
-    generate_youth_profiles,
 )
-from youths.models import YouthProfile
 
 
 @pytest.mark.parametrize("times", [1, 2])
@@ -66,27 +62,10 @@ def test_assign_permissions(times, user, service):
         assert permission in get_group_perms(group, service)
 
 
-@pytest.mark.parametrize("times", [1, 2])
-def test_generate_notifications(times):
-    """Test notifications are generated and that function can be run multiple times."""
-
-    NotificationTemplateTranslation = apps.get_model(  # noqa: N806
-        "django_ilmoitin", "NotificationTemplateTranslation"
-    )
-
-    for i in range(times):
-        generate_notifications()
-
-    assert NotificationTemplate.objects.count() == 2
-    assert NotificationTemplateTranslation.objects.count() == 6
-
-
 def test_creates_random_user():
     assert User.objects.count() == 1  # anonymous user exists
     user = create_user(faker=Faker())
     assert user
-    assert User.objects.count() == 1
-    user.save()
     assert User.objects.count() == 2
 
 
@@ -94,9 +73,16 @@ def test_creates_defined_user():
     assert User.objects.count() == 1  # anonymous user exists
     faker = Faker()
     user = create_user(username="berth_user", faker=faker)
-    user.save()
     assert User.objects.count() == 2
     assert user.username == "berth_user"
+
+
+def test_create_user_returns_existing_user():
+    username = "test_user"
+    faker = Faker()
+    user1 = create_user(username=username, faker=faker)
+    user2 = create_user(username=username, faker=faker)
+    assert user1 == user2
 
 
 def test_generates_group_admins():
@@ -118,39 +104,21 @@ def test_generates_default_amount_of_profiles():
     assert Profile.objects.count() == 50
 
 
-@pytest.mark.parametrize(
-    "profiles,youth_percentage", [(5, 0.2), (10, 0.5), (10, 0), (0, 1)]
-)
-def test_generate_service_connections(profiles, youth_percentage):
+@pytest.mark.parametrize("profiles", [5, 10, 0])
+def test_generate_service_connections(profiles):
     """Service connection is generated for all profiles,"""
     generate_services()
     generate_profiles(k=profiles, faker=Faker())
 
-    generate_service_connections(youth_percentage)
+    generate_service_connections()
 
     assert ServiceConnection.objects.count() == profiles
-    assert ServiceConnection.objects.filter(
-        service__service_type=ServiceType.YOUTH_MEMBERSHIP
-    ).count() == int(profiles * youth_percentage)
-    assert YouthProfile.objects.count() == 0
-
-
-@pytest.mark.parametrize(
-    "profiles,youth_percentage", [(5, 0.2), (10, 0.5), (10, 0), (0, 1)]
-)
-def test_generates_youth_profiles(profiles, youth_percentage):
-    """Youth profiles are generated for all profiles which have youth membership ServiceConnection."""
-    generate_services()
-    generate_profiles(k=profiles, faker=Faker())
-    generate_service_connections(youth_percentage)
-
-    generate_youth_profiles(faker=Faker())
-
-    assert YouthProfile.objects.count() == int(profiles * youth_percentage)
-    # Assert that youth membership service connections have youth membership profile
-    assert Profile.objects.filter(
-        service_connections__service__service_type=ServiceType.YOUTH_MEMBERSHIP
-    ).count() == int(profiles * youth_percentage)
+    assert (
+        Profile.objects.annotate(Count("service_connections"))
+        .filter(service_connections__count=1)
+        .count()
+        == profiles
+    )
 
 
 @pytest.mark.parametrize("times", [1, 2])

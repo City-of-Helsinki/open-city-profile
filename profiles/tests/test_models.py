@@ -1,20 +1,18 @@
+from datetime import timedelta
+from unittest import TestCase
+
 import pytest
-import requests
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 
-from open_city_profile.exceptions import ProfileMustHaveOnePrimaryEmail
 from services.enums import ServiceType
-from services.exceptions import MissingGDPRUrlException
-from services.models import ServiceConnection
-from services.tests.factories import ServiceConnectionFactory
 
-from ..models import Email, Profile
-from ..schema import validate_primary_email
+from ..models import Email, Profile, TemporaryReadAccessToken
 from .factories import (
     EmailFactory,
-    ProfileWithPrimaryEmailFactory,
     SensitiveDataFactory,
+    VerifiedPersonalInformationFactory,
 )
 
 User = get_user_model()
@@ -51,7 +49,7 @@ def test_new_profile_with_non_existing_name_and_default_name(user):
 
 def test_serialize_profile(profile):
     email_2 = EmailFactory(profile=profile)
-    email_1 = EmailFactory(profile=profile)
+    email_1 = EmailFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
     serialized_profile = profile.serialize()
     expected_firstname = {"key": "FIRST_NAME", "value": profile.first_name}
@@ -84,81 +82,16 @@ def test_serialize_profile(profile):
     assert "children" in serialized_profile
     assert serialized_profile.get("key") == "PROFILE"
     assert expected_firstname in serialized_profile.get("children")
-    assert expected_email in serialized_profile.get("children")
+    serialized_email = list(
+        filter(lambda x: x["key"] == "EMAILS", serialized_profile.get("children"))
+    )[0]
+    TestCase().assertCountEqual(
+        serialized_email.get("children"), expected_email.get("children")
+    )
     assert expected_sensitive_data in serialized_profile.get("children")
 
 
-def test_get_service_gdpr_data(monkeypatch, service_factory, profile):
-    def mock_download_gdpr_data(self):
-        if self.service.service_type == ServiceType.BERTH:
-            return {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
-        elif self.service.service_type == ServiceType.YOUTH_MEMBERSHIP:
-            return {
-                "key": "YOUTHPROFILE",
-                "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
-            }
-        else:
-            return {}
-
-    # Setup the data
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    service_kukkuu = service_factory(service_type=ServiceType.GODCHILDREN_OF_CULTURE)
-    ServiceConnectionFactory(profile=profile, service=service_berth)
-    ServiceConnectionFactory(profile=profile, service=service_youth)
-    ServiceConnectionFactory(profile=profile, service=service_kukkuu)
-
-    # Let's monkeypatch the method in ServiceConnection to mock the http requests
-    monkeypatch.setattr(
-        ServiceConnection, "download_gdpr_data", mock_download_gdpr_data
-    )
-
-    response = profile.get_service_gdpr_data()
-    assert response == [
-        {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]},
-        {
-            "key": "YOUTHPROFILE",
-            "children": [{"key": "BIRTH_DATE", "value": "2004-12-08"}],
-        },
-    ]
-
-
-def test_remove_service_gdpr_data_no_url(profile, service):
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data(dry_run=True)
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data()
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
-    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    dry_run_ok = service_connection.delete_gdpr_data(dry_run=True)
-    real_ok = service_connection.delete_gdpr_data()
-
-    assert dry_run_ok
-    assert real_ok
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
-    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=405)
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data(dry_run=True)
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data()
-
-
-def test_import_customer_data_with_valid_data_set(service_factory):
-    service_factory()
+def test_import_customer_data_with_valid_data_set(service):
     data = [
         {
             "customer_id": "321456",
@@ -226,7 +159,7 @@ def test_import_customer_data_with_missing_customer_id():
     assert Profile.objects.count() == 0
 
 
-def test_import_customer_data_with_missing_email():
+def test_import_customer_data_with_missing_email(service):
     data = [
         {
             "customer_id": "321457",
@@ -242,30 +175,102 @@ def test_import_customer_data_with_missing_email():
         }
     ]
     assert Profile.objects.count() == 0
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail) as e:
-        Profile.import_customer_data(data)
-    assert str(e.value) == "Profile must have exactly one primary email, index: 0"
-    assert Profile.objects.count() == 0
-
-
-def test_validation_should_pass_with_one_primary_email():
-    profile = ProfileWithPrimaryEmailFactory()
-    validate_primary_email(profile)
-
-
-def test_validation_should_fail_with_no_primary_email(profile):
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
-        validate_primary_email(profile)
-
-
-def test_validation_should_fail_with_multiple_primary_emails(profile):
-    EmailFactory(profile=profile, primary=True)
-    EmailFactory(profile=profile, primary=True)
-    with pytest.raises(ProfileMustHaveOnePrimaryEmail):
-        validate_primary_email(profile)
+    Profile.import_customer_data(data)
+    assert Profile.objects.count() == 1
 
 
 def test_validation_should_fail_with_invalid_email():
     e = Email("!dsdsd{}{}{}{}{}{")
     with pytest.raises(ValidationError):
         e.save()
+
+
+def test_should_not_allow_two_primary_emails(profile):
+    EmailFactory(profile=profile, primary=True)
+    with pytest.raises(ValidationError):
+        EmailFactory(profile=profile, primary=True)
+
+
+class ValidationTestBase:
+    @staticmethod
+    def passes_validation(instance):
+        try:
+            instance.save()
+        except ValidationError as err:
+            assert err is None
+
+    @staticmethod
+    def fails_validation(instance):
+        with pytest.raises(ValidationError):
+            instance.save()
+
+    @staticmethod
+    def execute_string_field_max_length_validation_test(
+        instance, field_name, max_length
+    ):
+        setattr(instance, field_name, "x" * max_length)
+        ValidationTestBase.passes_validation(instance)
+
+        setattr(instance, field_name, "x" * (max_length + 1))
+        ValidationTestBase.fails_validation(instance)
+
+
+class TestVerifiedPersonalInformationValidation(ValidationTestBase):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [
+            ("first_name", 1024),
+            ("last_name", 1024),
+            ("given_name", 1024),
+            ("national_identification_number", 1024),
+            ("email", 1024),
+            ("municipality_of_residence", 1024),
+            ("municipality_of_residence_number", 4),
+        ],
+    )
+    def test_string_field_max_length(self, field_name, max_length):
+        info = VerifiedPersonalInformationFactory()
+
+        self.execute_string_field_max_length_validation_test(
+            info, field_name, max_length
+        )
+
+
+@pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
+class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [("street_address", 1024), ("postal_code", 1024), ("post_office", 1024)],
+    )
+    def test_string_field_max_length(self, address_type, field_name, max_length):
+        address = getattr(VerifiedPersonalInformationFactory(), address_type)
+
+        self.execute_string_field_max_length_validation_test(
+            address, field_name, max_length
+        )
+
+
+class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
+    ValidationTestBase
+):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [("street_address", 1024), ("additional_address", 1024), ("country_code", 3)],
+    )
+    def test_string_field_max_length(self, field_name, max_length):
+        address = VerifiedPersonalInformationFactory().permanent_foreign_address
+
+        self.execute_string_field_max_length_validation_test(
+            address, field_name, max_length
+        )
+
+
+class TestTemporaryReadAccessTokenValidityDuration:
+    def test_by_default_validity_duration_is_two_days(self):
+        token = TemporaryReadAccessToken()
+        assert token.validity_duration == timedelta(days=2)
+
+    @override_settings(TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=60)
+    def test_validity_duration_can_be_controlled_with_a_setting(self):
+        token = TemporaryReadAccessToken()
+        assert token.validity_duration == timedelta(minutes=60)

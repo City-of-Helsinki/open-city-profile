@@ -1,6 +1,7 @@
 import threading
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from graphql_relay.node.node import from_global_id
 
@@ -52,8 +53,8 @@ def delete_nested(model, profile, data):
         model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
 
 
-def set_current_user(user):
-    _thread_locals.user = user
+def set_current_request(request):
+    _thread_locals.request = request
 
 
 def clear_thread_locals():
@@ -64,8 +65,28 @@ def set_current_service(service):
     _thread_locals.service = service
 
 
+def get_current_request():
+    return getattr(_thread_locals, "request", None)
+
+
 def get_current_user():
-    return getattr(_thread_locals, "user", None)
+    request = get_current_request()
+    return getattr(request, "user", None) if request else None
+
+
+def get_original_client_ip():
+    client_ip = None
+
+    request = get_current_request()
+    if request:
+        if settings.USE_X_FORWARDED_FOR:
+            forwarded_for = request.headers.get("x-forwarded-for", "")
+            client_ip = forwarded_for.split(",")[0] or None
+
+        if not client_ip:
+            client_ip = request.META.get("REMOTE_ADDR")
+
+    return client_ip
 
 
 def get_current_service():

@@ -10,11 +10,9 @@ from utils.utils import (
     generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
-    generate_notifications,
     generate_profiles,
     generate_service_connections,
     generate_services,
-    generate_youth_profiles,
 )
 
 available_permissions = [item[0] for item in Service._meta.permissions]
@@ -49,13 +47,6 @@ class Command(BaseCommand):
             default=50,
         )
         parser.add_argument(
-            "-y",
-            "--youthprofilepercentage",
-            type=float,
-            help="Percentage of profiles to have youth profile",
-            default=0.2,
-        )
-        parser.add_argument(
             "-l",
             "--locale",
             type=str,
@@ -80,7 +71,6 @@ class Command(BaseCommand):
         locale = kwargs["locale"]
         faker = Faker(locale)
         profile_count = kwargs["profilecount"]
-        youth_profile_percentage = kwargs["youthprofilepercentage"]
 
         if not no_clear and (development or clear):
             self.stdout.write("Clearing data...")
@@ -115,12 +105,6 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Done - Profile data"))
 
-        # Initial youth profile data
-        self.stdout.write("Generating youth membership notifications...")
-        generate_notifications()
-
-        self.stdout.write(self.style.SUCCESS("Done - Youth Profile data"))
-
         # Development
         if development:
             self.stdout.write("Assigning group permissions for services...")
@@ -132,8 +116,6 @@ class Command(BaseCommand):
                 self.stdout.write(f"Generating profiles ({profile_count})...")
                 generate_profiles(profile_count, faker=faker)
                 self.stdout.write("Generating service connections...")
-                generate_service_connections(youth_profile_percentage)
-                self.stdout.write("Generating youth profiles...")
-                generate_youth_profiles(faker=faker)
+                generate_service_connections()
 
             self.stdout.write(self.style.SUCCESS("Done - Development fake data"))

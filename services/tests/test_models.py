@@ -1,15 +1,25 @@
 import pytest
+import requests
 from django.db.utils import IntegrityError
 
 from ..enums import ServiceType
+from ..exceptions import MissingGDPRUrlException
 from ..models import Service, ServiceConnection
 from .factories import ProfileFactory, ServiceConnectionFactory
+
+GDPR_URL = "https://example.com/"
 
 
 def test_generate_services_from_enum():
     for service_type in ServiceType:
         Service.objects.create(service_type=service_type)
     assert Service.objects.count() == len(ServiceType)
+
+
+def test_generate_services_without_service_type(service_factory):
+    service_factory(service_type=None)
+    service_factory(service_type=None)
+    assert Service.objects.count() == 2
 
 
 @pytest.mark.django_db(transaction=True)
@@ -55,41 +65,90 @@ def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
     assert second_data_field.order == 2
 
 
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
 def test_download_gdpr_data_with_valid_service_and_url(
-    requests_mock, youth_profile_response, service_factory, profile
+    requests_mock, youth_profile_response, service, profile
 ):
-    # setup models
-    service = service_factory(gdpr_url="http://valid-gdpr-url.com/profiles/")
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    # mock request
     requests_mock.get(
-        f"http://valid-gdpr-url.com/profiles/{profile.pk}", json=youth_profile_response
+        f"{GDPR_URL}{profile.pk}",
+        json=youth_profile_response,
+        request_headers={"authorization": "Bearer token"},
     )
 
-    response = service_connection.download_gdpr_data()
-    assert response.json() == youth_profile_response
+    response = service_connection.download_gdpr_data(api_token="token")
+    assert response == youth_profile_response
 
 
-def test_download_gdpr_data_with_invalid_service(
-    requests_mock, service_factory, profile, service
+def test_download_gdpr_data_returns_empty_dict_if_no_url(
+    requests_mock, profile, service
 ):
-    # setup models
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    # mock request
-    requests_mock.get(f"http://valid-gdpr-url.com/profiles/{profile.pk}", json={})
+    requests_mock.get(
+        f"{GDPR_URL}{profile.pk}",
+        json={},
+        request_headers={"authorization": "Bearer token"},
+    )
 
-    response = service_connection.download_gdpr_data()
+    response = service_connection.download_gdpr_data(api_token="token")
     assert response == {}
 
 
-def test_download_gdpr_data_with_invalid_url(requests_mock, profile, service_factory):
-    # setup models
-    service = service_factory(gdpr_url="http://invalid-gdpr-url.com/profiles/")
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_download_gdpr_data_returns_empty_dict_if_request_fails(
+    requests_mock, profile, service
+):
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    # mock request
     requests_mock.get(
-        f"http://invalid-gdpr-url.com/profiles/{profile.pk}", json={}, status_code=404
+        f"{GDPR_URL}{profile.pk}",
+        json={},
+        status_code=404,
+        request_headers={"authorization": "Bearer token"},
     )
 
-    response = service_connection.download_gdpr_data()
+    response = service_connection.download_gdpr_data(api_token="token")
     assert response == {}
+
+
+def test_remove_service_gdpr_data_no_url(profile, service):
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    with pytest.raises(MissingGDPRUrlException):
+        service_connection.delete_gdpr_data(api_token="token", dry_run=True)
+    with pytest.raises(MissingGDPRUrlException):
+        service_connection.delete_gdpr_data(api_token="token")
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
+    requests_mock.delete(
+        f"{GDPR_URL}{profile.pk}",
+        json={},
+        status_code=204,
+        request_headers={"authorization": "Bearer token"},
+    )
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    dry_run_ok = service_connection.delete_gdpr_data(api_token="token", dry_run=True)
+    real_ok = service_connection.delete_gdpr_data(api_token="token")
+
+    assert dry_run_ok
+    assert real_ok
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
+    requests_mock.delete(
+        f"{GDPR_URL}{profile.pk}",
+        json={},
+        status_code=405,
+        request_headers={"authorization": "Bearer token"},
+    )
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    with pytest.raises(requests.RequestException):
+        service_connection.delete_gdpr_data(api_token="token", dry_run=True)
+    with pytest.raises(requests.RequestException):
+        service_connection.delete_gdpr_data(api_token="token")
