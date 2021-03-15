@@ -481,6 +481,12 @@ class ProfileNode(RestrictedProfileNode):
         ServiceConnectionType, description="List of the profile's connected services."
     )
     subscriptions = DjangoFilterConnectionField(SubscriptionNode)
+    verified_personal_information = graphene.Field(
+        VerifiedPersonalInformationNode,
+        description="Personal information that has been verified to be true. "
+        "Can result into `PERMISSION_DENIED_ERROR` if the requester has no required "
+        "privileges to access this information.",
+    )
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
@@ -494,6 +500,18 @@ class ProfileNode(RestrictedProfileNode):
         else:
             # TODO: We should return PermissionDenied as a partial error here.
             return None
+
+    def resolve_verified_personal_information(self, info, **kwargs):
+        loa = info.context.user_auth.data.get("loa")
+        if loa in ["substantial", "high"]:
+            try:
+                return self.verified_personal_information
+            except VerifiedPersonalInformation.DoesNotExist:
+                return None
+        else:
+            raise PermissionDenied(
+                "No permission to read verified personal information."
+            )
 
     @login_required
     def __resolve_reference(self, info, **kwargs):
@@ -509,32 +527,6 @@ class ProfileNode(RestrictedProfileNode):
         else:
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
-            )
-
-
-class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
-    class Meta:
-        model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
-        interfaces = (relay.Node,)
-        connection_class = ProfilesConnection
-        filterset_class = ProfileFilter
-
-    verified_personal_information = graphene.Field(
-        VerifiedPersonalInformationNode,
-        description="Personal information that has been verified to be true.",
-    )
-
-    def resolve_verified_personal_information(self, info, **kwargs):
-        loa = info.context.user_auth.data.get("loa")
-        if loa in ["substantial", "high"]:
-            try:
-                return self.verified_personal_information
-            except VerifiedPersonalInformation.DoesNotExist:
-                return None
-        else:
-            raise PermissionDenied(
-                "No permission to read verified personal information."
             )
 
 
@@ -1118,7 +1110,7 @@ class Query(graphene.ObjectType):
     )
     # TODO: Add the complete list of error codes
     my_profile = graphene.Field(
-        ProfileWithVerifiedPersonalInformationNode,
+        ProfileNode,
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )
