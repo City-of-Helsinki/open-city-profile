@@ -383,6 +383,11 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
             "municipality_of_residence_number",
         )
 
+    # Need to set the national_identification_number field explicitly as non-null
+    # because django-searchable-encrypted-fields SearchFields are always nullable
+    # and you can't change it.
+    national_identification_number = graphene.NonNull(graphene.String)
+
     permanent_address = graphene.Field(
         VerifiedPersonalInformationAddressNode,
         description="The permanent residency address in Finland.",

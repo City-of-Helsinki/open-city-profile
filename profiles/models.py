@@ -240,8 +240,12 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
     given_name = fields.EncryptedCharField(
         max_length=1024, blank=True, help_text="The name the person is called with."
     )
-    national_identification_number = fields.EncryptedCharField(
-        max_length=1024,
+    _national_identification_number_data = fields.EncryptedCharField(
+        max_length=1024, blank=True,
+    )
+    national_identification_number = fields.SearchField(
+        hash_key=settings.SALT_NATIONAL_IDENTIFICATION_NUMBER,
+        encrypted_field_name="_national_identification_number_data",
         blank=True,
         help_text="Finnish national identification number.",
     )
