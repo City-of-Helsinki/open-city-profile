@@ -194,7 +194,9 @@ def test_staff_user_can_filter_profiles_by_a_field(
         assert executed["data"] == expected_data
 
 
-@pytest.mark.parametrize("field_name", ["first_name", "last_name"])
+@pytest.mark.parametrize(
+    "field_name", ["first_name", "last_name", "national_identification_number"]
+)
 def test_staff_user_can_not_filter_profiles_by_verified_personal_information_without_required_permission(
     field_name, user_gql_client, group, service
 ):

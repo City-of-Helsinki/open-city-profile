@@ -310,9 +310,14 @@ class ProfileFilter(FilterSet):
         return queryset.filter(name_filter)
 
     def filter_by_nin_exact(self, queryset, name, value):
-        return queryset.filter(
-            verified_personal_information__national_identification_number=value
-        )
+        if requester_has_service_permission(
+            self.request, "can_view_verified_personal_information"
+        ):
+            return queryset.filter(
+                verified_personal_information__national_identification_number=value
+            )
+        else:
+            return queryset.none()
 
     def get_enabled_subscriptions(self, queryset, name, value):
         """
