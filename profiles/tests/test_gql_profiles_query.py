@@ -135,6 +135,23 @@ def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, s
     assert executed["data"] == expected_data
 
 
+query_template = Template(
+    """
+        query getBerthProfiles($$searchString: String) {
+            profiles(${search_arg_name}: $$searchString) {
+                count
+                totalCount
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+)
+
+
 @pytest.mark.parametrize("field_name", ["first_name", "last_name"])
 def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
     field_name, user_gql_client, group, service
@@ -146,24 +163,10 @@ def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_verified_personal_information", group, service)
 
-    t = Template(
-        """
-            query getBerthProfiles($$searchString: String) {
-                profiles(${search_arg_name}: $$searchString) {
-                    count
-                    totalCount
-                    edges {
-                        node {
-                            firstName
-                        }
-                    }
-                }
-            }
-        """
-    )
     gql_field_name = to_graphql_name(field_name)
-    query = t.substitute(search_arg_name=gql_field_name)
+    query = query_template.substitute(search_arg_name=gql_field_name)
 
     expected_data = {
         "profiles": {
@@ -179,6 +182,29 @@ def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
         )
         assert "errors" not in executed
         assert executed["data"] == expected_data
+
+
+@pytest.mark.parametrize("field_name", ["first_name", "last_name"])
+def test_staff_user_can_not_filter_profiles_by_verified_personal_information_without_required_permission(
+    field_name, user_gql_client, group, service
+):
+    vpi = VerifiedPersonalInformationFactory()
+    ServiceConnectionFactory(profile=vpi.profile, service=service)
+
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+
+    gql_field_name = to_graphql_name(field_name)
+    query = query_template.substitute(search_arg_name=gql_field_name)
+
+    expected_data = {"profiles": {"count": 0, "totalCount": 1, "edges": []}}
+
+    executed = user_gql_client.execute(
+        query, variables={"searchString": getattr(vpi, field_name)}, service=service,
+    )
+    assert "errors" not in executed
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_can_sort_profiles(user_gql_client, group, service):

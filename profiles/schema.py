@@ -293,10 +293,17 @@ class ProfileFilter(FilterSet):
     )
 
     def filter_by_name_icontains(self, queryset, name, value):
-        return queryset.filter(
-            Q(**{f"{name}__icontains": value})
-            | Q(**{f"verified_personal_information__{name}__icontains": value})
-        )
+        name_filter = Q(**{f"{name}__icontains": value})
+
+        service = self.request.service
+        if self.request.user.has_perm(
+            "can_view_verified_personal_information", service
+        ):
+            name_filter |= Q(
+                **{f"verified_personal_information__{name}__icontains": value}
+            )
+
+        return queryset.filter(name_filter)
 
     def get_enabled_subscriptions(self, queryset, name, value):
         """
