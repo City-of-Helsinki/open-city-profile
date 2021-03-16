@@ -112,6 +112,7 @@ class AddressAdminInline(admin.StackedInline):
 
 class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     model = VerifiedPersonalInformation
+    exclude = ("_national_identification_number_data",)
     readonly_fields = (
         "get_permanent_address",
         "get_temporary_address",
