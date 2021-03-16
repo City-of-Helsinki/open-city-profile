@@ -65,6 +65,7 @@ from .models import (
 from .utils import (
     create_nested,
     delete_nested,
+    requester_has_service_permission,
     update_nested,
     user_has_staff_perms_to_view_profile,
 )
@@ -295,9 +296,8 @@ class ProfileFilter(FilterSet):
     def filter_by_name_icontains(self, queryset, name, value):
         name_filter = Q(**{f"{name}__icontains": value})
 
-        service = self.request.service
-        if self.request.user.has_perm(
-            "can_view_verified_personal_information", service
+        if requester_has_service_permission(
+            self.request, "can_view_verified_personal_information"
         ):
             name_filter |= Q(
                 **{f"verified_personal_information__{name}__icontains": value}
@@ -516,11 +516,10 @@ class ProfileNode(RestrictedProfileNode):
 
     def resolve_verified_personal_information(self, info, **kwargs):
         loa = info.context.user_auth.data.get("loa")
-        service = getattr(info.context, "service", None)
         if (
             info.context.user == self.user and loa in ["substantial", "high"]
-        ) or info.context.user.has_perm(
-            "can_view_verified_personal_information", service
+        ) or requester_has_service_permission(
+            info.context, "can_view_verified_personal_information"
         ):
             try:
                 return self.verified_personal_information

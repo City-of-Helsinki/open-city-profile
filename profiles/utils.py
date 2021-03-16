@@ -108,3 +108,8 @@ def user_has_staff_perms_to_view_profile(
             for service_conn in service_conns
         ]
     )
+
+
+def requester_has_service_permission(request, permission):
+    service = getattr(request, "service", None)
+    return service and request.user.has_perm(permission, service)
