@@ -245,6 +245,7 @@ class ProfileFilter(FilterSet):
             "first_name",
             "last_name",
             "nickname",
+            "national_identification_number",
             "emails__email",
             "emails__email_type",
             "emails__primary",
@@ -269,6 +270,9 @@ class ProfileFilter(FilterSet):
     first_name = CharFilter(method="filter_by_name_icontains")
     last_name = CharFilter(method="filter_by_name_icontains")
     nickname = CharFilter(lookup_expr="icontains")
+    national_identification_number = CharFilter(
+        method="filter_by_nin_exact", label="Searches by full match only."
+    )
     emails__email = CharFilter(lookup_expr="icontains")
     emails__email_type = ChoiceFilter(choices=EmailType.choices())
     emails__primary = BooleanFilter()
@@ -304,6 +308,11 @@ class ProfileFilter(FilterSet):
             )
 
         return queryset.filter(name_filter)
+
+    def filter_by_nin_exact(self, queryset, name, value):
+        return queryset.filter(
+            verified_personal_information__national_identification_number=value
+        )
 
     def get_enabled_subscriptions(self, queryset, name, value):
         """

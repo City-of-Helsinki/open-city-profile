@@ -152,9 +152,16 @@ query_template = Template(
 )
 
 
-@pytest.mark.parametrize("field_name", ["first_name", "last_name"])
-def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
-    field_name, user_gql_client, group, service
+@pytest.mark.parametrize(
+    "field_name,exact_search",
+    [
+        ("first_name", False),
+        ("last_name", False),
+        ("national_identification_number", True),
+    ],
+)
+def test_staff_user_can_filter_profiles_by_a_field(
+    field_name, exact_search, user_gql_client, group, service
 ):
     vpi_1, vpi_2 = VerifiedPersonalInformationFactory.create_batch(2)
     profile_1, profile_2 = vpi_1.profile, vpi_2.profile
@@ -176,9 +183,12 @@ def test_staff_user_can_filter_profiles_by_any_first_or_last_name(
         }
     }
 
-    for q in [getattr(profile_2, field_name), getattr(vpi_2, field_name)]:
+    for q in [
+        getattr(d, field_name) for d in [profile_2, vpi_2] if hasattr(d, field_name)
+    ]:
+        search_term = q if exact_search else q[1:].upper()
         executed = user_gql_client.execute(
-            query, variables={"searchString": q[1:].upper()}, service=service,
+            query, variables={"searchString": search_term}, service=service,
         )
         assert "errors" not in executed
         assert executed["data"] == expected_data
