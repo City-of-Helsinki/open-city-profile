@@ -71,7 +71,7 @@ django-searchable-encrypted-fields==0.1.3
     # via -r requirements.in
 django-thesaurus==0.0.2
     # via -r requirements.in
-django==2.2.13
+django==2.2.18
     # via
     #   -r requirements.in
     #   django-admin-sortable
