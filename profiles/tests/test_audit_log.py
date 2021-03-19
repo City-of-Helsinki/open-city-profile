@@ -170,7 +170,7 @@ def test_actor_is_resolved_in_graphql_call(
 ):
     user = profile.user
 
-    do_graphql_call_as_user(live_server, user, MY_PROFILE_QUERY)
+    do_graphql_call_as_user(live_server, user, query=MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
@@ -187,7 +187,7 @@ class TestIPAddressLogging:
         user = profile.user
 
         do_graphql_call_as_user(
-            live_server, user, MY_PROFILE_QUERY, extra_request_args=request_args
+            live_server, user, query=MY_PROFILE_QUERY, extra_request_args=request_args
         )
         audit_logs = cap_audit_log.get_logs()
         assert len(audit_logs) == 1
