@@ -19,11 +19,6 @@ def enable_audit_log():
     settings.AUDIT_LOGGING_ENABLED = True
 
 
-@pytest.fixture()
-def enable_audit_log_username():
-    settings.AUDIT_LOG_USERNAME = True
-
-
 @pytest.fixture
 def cap_audit_log(caplog):
     def get_logs(self):
@@ -66,8 +61,6 @@ def assert_common_fields(
         "profile_part": target_profile_part,
         "user_id": str(target_profile.user.uuid),
     }
-    if settings.AUDIT_LOG_USERNAME:
-        expected_target["user_name"] = target_profile.user.username
     assert audit_event["target"] == expected_target
 
 
@@ -148,7 +141,7 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
     assert_common_fields(audit_logs[0], profile, "DELETE")
 
 
-def test_audit_log_create(enable_audit_log_username, cap_audit_log):
+def test_audit_log_create(cap_audit_log):
     profile = ProfileFactory()
     audit_logs = cap_audit_log.get_logs()
     assert (
@@ -167,9 +160,7 @@ MY_PROFILE_QUERY = """
 """
 
 
-def test_actor_is_resolved_in_graphql_call(
-    enable_audit_log_username, live_server, profile, cap_audit_log
-):
+def test_actor_is_resolved_in_graphql_call(live_server, profile, cap_audit_log):
     user = profile.user
 
     do_graphql_call_as_user(live_server, user, query=MY_PROFILE_QUERY)
@@ -178,7 +169,6 @@ def test_actor_is_resolved_in_graphql_call(
     log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
-    assert log_message["audit_event"]["actor"]["user_name"] == user.username
 
 
 def test_actor_service(live_server, user, group, service_client_id, cap_audit_log):

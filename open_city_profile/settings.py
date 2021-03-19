@@ -49,7 +49,6 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
-    AUDIT_LOG_USERNAME=(bool, False),
     AUDIT_LOG_FILENAME=(str, ""),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
@@ -328,7 +327,6 @@ if "SECRET_KEY" not in locals():
             )
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
-AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
 AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
 
 if AUDIT_LOG_FILENAME:

@@ -88,11 +88,6 @@ def setup_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = False
 
 
-@pytest.fixture(autouse=True)
-def setup_log_username(settings):
-    settings.AUDIT_LOG_USERNAME = False
-
-
 class ProfileWithVerifiedPersonalInformationTestBase:
     ADDRESS_FIELD_NAMES = {
         "permanent_address": ["street_address", "postal_code", "post_office"],

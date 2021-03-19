@@ -37,10 +37,6 @@ def _format_user_data(audit_event, field_name, user):
         audit_event[field_name]["user_id"] = (
             str(user.uuid) if hasattr(user, "uuid") else None
         )
-        if settings.AUDIT_LOG_USERNAME:
-            audit_event[field_name]["user_name"] = (
-                user.username if hasattr(user, "username") else None
-            )
 
 
 def log(action, instance):
