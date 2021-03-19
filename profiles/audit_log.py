@@ -78,10 +78,7 @@ def log(action, instance):
 
         service = get_current_service()
         if service:
-            message["audit_event"]["actor_service"] = {
-                "id": str(service.name),
-                "name": str(service.label),
-            }
+            message["audit_event"]["actor"]["service_name"] = service.name
 
         ip_address = get_original_client_ip()
         if ip_address:

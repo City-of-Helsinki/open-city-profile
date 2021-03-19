@@ -50,7 +50,7 @@ def staff_required(required_permission="view"):
                 )
 
             service = context.service
-            set_current_service(service.service_type)
+            set_current_service(service)
 
             try:
                 if context.user.has_perm(

@@ -208,11 +208,8 @@ def test_actor_service(live_server, user, group, service_client_id, cap_audit_lo
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
-    service_log = log_message["audit_event"]["actor_service"]
-    assert service_log == {
-        "id": service.service_type.name,
-        "name": service.service_type.label,
-    }
+    actor_log = log_message["audit_event"]["actor"]
+    assert actor_log["service_name"] == service.name
 
 
 class TestIPAddressLogging:
