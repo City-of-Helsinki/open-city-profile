@@ -78,8 +78,6 @@ def log(action, instance):
 
         ip_address = get_original_client_ip()
         if ip_address:
-            message["audit_event"]["profilebe"] = {
-                "ip_address": ip_address,
-            }
+            message["audit_event"]["actor"]["ip_address"] = ip_address
 
         logger.info(json.dumps(message))

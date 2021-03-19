@@ -215,7 +215,7 @@ class TestIPAddressLogging:
         audit_logs = cap_audit_log.get_logs()
         assert len(audit_logs) == 1
         log_message = audit_logs[0]
-        assert log_message["audit_event"]["profilebe"]["ip_address"] == expected_ip
+        assert log_message["audit_event"]["actor"]["ip_address"] == expected_ip
 
     @pytest.mark.parametrize(
         "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
