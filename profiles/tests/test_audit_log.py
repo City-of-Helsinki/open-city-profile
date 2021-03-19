@@ -57,8 +57,8 @@ def assert_common_fields(
     assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
 
     expected_target = {
-        "profile_id": str(target_profile.pk),
-        "profile_part": target_profile_part,
+        "id": str(target_profile.pk),
+        "type": target_profile_part,
         "user_id": str(target_profile.user.uuid),
     }
     assert audit_event["target"] == expected_target

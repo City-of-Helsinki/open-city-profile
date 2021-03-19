@@ -61,10 +61,7 @@ def log(action, instance):
                 "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
                 "actor": {"role": _resolve_role(current_user, profile)},
                 "operation": action,
-                "target": {
-                    "profile_id": profile_id,
-                    "profile_part": _profile_part(instance),
-                },
+                "target": {"id": profile_id, "type": _profile_part(instance)},
             }
         }
 
