@@ -112,4 +112,19 @@ def user_has_staff_perms_to_view_profile(
 
 def requester_has_service_permission(request, permission):
     service = getattr(request, "service", None)
-    return service and request.user.has_perm(permission, service)
+
+    if not service:
+        return False
+
+    if not hasattr(request, "_service_permission_cache"):
+        request._service_permission_cache = dict()
+
+    cache_key = f"{request.user.id}:{service.name}:{permission}"
+
+    result = request._service_permission_cache.get(cache_key)
+
+    if result is None:
+        result = request.user.has_perm(permission, service)
+        request._service_permission_cache[cache_key] = result
+
+    return result
