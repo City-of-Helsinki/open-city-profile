@@ -69,16 +69,16 @@ env = environ.Env(
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-version = env.str("VERSION")
-if version is None:
+VERSION = env.str("VERSION")
+if VERSION is None:
     try:
-        version = subprocess.check_output(["git", "describe", "--always"]).strip()
+        VERSION = subprocess.check_output(["git", "describe", "--always"]).strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
-        version = None
+        VERSION = None
 
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
-    release=version,
+    release=VERSION,
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
@@ -155,7 +155,7 @@ ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
-    "helusers.apps.HelusersAdminConfig",
+    "open_city_profile.apps.OpenCityProfileAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
