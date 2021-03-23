@@ -1,6 +1,8 @@
 import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 
 import pytest
 from django.conf import settings
@@ -64,26 +66,37 @@ def assert_common_fields(
     assert audit_event["target"] == expected_target
 
 
+@dataclass
+class ProfileWithRelated:
+    profile: Profile
+    related_part: Optional[Any]
+    related_name: Optional[str]
+    profile_part_name: Optional[str]
+
+
 @pytest.fixture(
     params=[
-        (ProfileFactory, (None, None)),
-        (SensitiveDataFactory, ("sensitivedata", "sensitive data")),
+        (ProfileFactory, None, None),
+        (SensitiveDataFactory, "sensitivedata", "sensitive data"),
     ]
 )
 def profile_with_related(request):
-    factory, related_info = request.param
+    factory, related_name, profile_part_name = request.param
     created = factory()
-    if related_info[0]:
+    if related_name:
         profile = getattr(created, "profile")
         related_part = created
     else:
         profile = created
         related_part = None
-    return profile, related_part, related_info
+
+    return ProfileWithRelated(profile, related_part, related_name, profile_part_name)
 
 
 def test_audit_log_read(profile_with_related, cap_audit_log):
-    _, _, (related_name, profile_part_name) = profile_with_related
+    related_name = profile_with_related.related_name
+    profile_part_name = profile_with_related.profile_part_name
+
     profile_from_db = Profile.objects.select_related(related_name).first()
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1 + (2 if related_name else 0)
@@ -103,7 +116,11 @@ def test_audit_log_read(profile_with_related, cap_audit_log):
 
 
 def test_audit_log_update(profile_with_related, cap_audit_log):
-    profile, related_part, (related_name, profile_part_name) = profile_with_related
+    profile = profile_with_related.profile
+    related_part = profile_with_related.related_part
+    related_name = profile_with_related.related_name
+    profile_part_name = profile_with_related.profile_part_name
+
     profile.first_name = "John"
     profile.save()
     if related_part:
@@ -120,7 +137,10 @@ def test_audit_log_update(profile_with_related, cap_audit_log):
 
 
 def test_audit_log_delete(profile_with_related, cap_audit_log):
-    profile, related_part, (related_name, profile_part_name) = profile_with_related
+    profile = profile_with_related.profile
+    related_name = profile_with_related.related_name
+    profile_part_name = profile_with_related.profile_part_name
+
     deleted_pk = profile.pk
     profile.delete()
     profile.pk = deleted_pk
