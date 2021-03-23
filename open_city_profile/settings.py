@@ -72,7 +72,9 @@ if os.path.exists(env_file):
 VERSION = env.str("VERSION")
 if VERSION is None:
     try:
-        VERSION = subprocess.check_output(["git", "describe", "--always"]).strip()
+        VERSION = subprocess.check_output(
+            ["git", "describe", "--always"], text=True
+        ).strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
         VERSION = None
 
