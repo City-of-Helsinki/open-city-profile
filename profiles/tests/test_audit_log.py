@@ -37,8 +37,21 @@ def cap_audit_log(caplog):
     return caplog
 
 
+def partition_logs_by_target_type(logs, target_type):
+    matches = []
+    rest = []
+
+    for log in logs:
+        if log["audit_event"]["target"]["type"] == target_type:
+            matches.append(log)
+        else:
+            rest.append(log)
+
+    return matches, rest
+
+
 def assert_common_fields(
-    log_message,
+    log_messages,
     target_profile,
     operation,
     actor_role="SYSTEM",
@@ -48,26 +61,32 @@ def assert_common_fields(
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
     leeway_ms = 20
 
-    audit_event = log_message["audit_event"]
+    if not isinstance(log_messages, list):
+        log_messages = [log_messages]
 
-    assert audit_event["origin"] == "PROFILE-BE"
-    assert audit_event["status"] == "SUCCESS"
-    assert audit_event["operation"] == operation
-    assert audit_event["actor"]["role"] == actor_role
+    assert len(log_messages) > 0
 
-    assert_almost_equal(audit_event["date_time_epoch"], now_ms_timestamp, leeway_ms)
+    for log_message in log_messages:
+        audit_event = log_message["audit_event"]
 
-    log_dt = datetime.strptime(
-        audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-    ).replace(tzinfo=timezone.utc)
-    assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
+        assert audit_event["origin"] == "PROFILE-BE"
+        assert audit_event["status"] == "SUCCESS"
+        assert audit_event["operation"] == operation
+        assert audit_event["actor"]["role"] == actor_role
 
-    expected_target = {
-        "id": str(target_profile.pk),
-        "type": target_profile_part,
-        "user_id": str(target_profile.user.uuid),
-    }
-    assert audit_event["target"] == expected_target
+        assert_almost_equal(audit_event["date_time_epoch"], now_ms_timestamp, leeway_ms)
+
+        log_dt = datetime.strptime(
+            audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+        ).replace(tzinfo=timezone.utc)
+        assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
+
+        expected_target = {
+            "id": str(target_profile.pk),
+            "type": target_profile_part,
+            "user_id": str(target_profile.user.uuid),
+        }
+        assert audit_event["target"] == expected_target
 
 
 @dataclass
@@ -108,26 +127,25 @@ def test_audit_log_read(profile_with_related, cap_audit_log):
 
     profile_from_db = Profile.objects.select_related(related_name).first()
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1 + (2 if related_name else 0)
 
-    assert_common_fields(audit_logs[0], profile_from_db, "READ")
     if profile_part_name:
-        # Audit logging the Profile related object READ causes another READ
-        # for the base Profile.
-        # This is unnecessary, but it's a feature of the current implementation.
-        assert_common_fields(audit_logs[1], profile_from_db, "READ")
+        related_logs, audit_logs = partition_logs_by_target_type(
+            audit_logs, profile_part_name
+        )
+
         assert_common_fields(
-            audit_logs[2],
+            related_logs,
             profile_from_db,
             "READ",
             target_profile_part=profile_part_name,
         )
 
+    assert_common_fields(audit_logs, profile_from_db, "READ")
+
 
 def test_audit_log_update(profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
     related_part = profile_with_related.related_part
-    related_name = profile_with_related.related_name
     profile_part_name = profile_with_related.profile_part_name
 
     profile.first_name = "John"
@@ -136,18 +154,21 @@ def test_audit_log_update(profile_with_related, cap_audit_log):
         related_part.save()
 
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1 + (1 if related_name else 0)
 
-    assert_common_fields(audit_logs[0], profile, "UPDATE")
     if profile_part_name:
-        assert_common_fields(
-            audit_logs[1], profile, "UPDATE", target_profile_part=profile_part_name
+        related_logs, audit_logs = partition_logs_by_target_type(
+            audit_logs, profile_part_name
         )
+
+        assert_common_fields(
+            related_logs, profile, "UPDATE", target_profile_part=profile_part_name
+        )
+
+    assert_common_fields(audit_logs, profile, "UPDATE")
 
 
 def test_audit_log_delete(profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
-    related_name = profile_with_related.related_name
     profile_part_name = profile_with_related.profile_part_name
 
     deleted_pk = profile.pk
@@ -161,13 +182,17 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
     audit_logs = list(
         filter(lambda e: e["audit_event"]["operation"] != "READ", audit_logs)
     )
-    assert len(audit_logs) == 1 + (1 if related_name else 0)
 
     if profile_part_name:
-        assert_common_fields(
-            audit_logs.pop(0), profile, "DELETE", target_profile_part=profile_part_name
+        related_logs, audit_logs = partition_logs_by_target_type(
+            audit_logs, profile_part_name
         )
-    assert_common_fields(audit_logs[0], profile, "DELETE")
+
+        assert_common_fields(
+            related_logs, profile, "DELETE", target_profile_part=profile_part_name
+        )
+
+    assert_common_fields(audit_logs, profile, "DELETE")
 
 
 def test_audit_log_create(cap_audit_log):
