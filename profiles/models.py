@@ -308,6 +308,11 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
+
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
+
 
 class VerifiedPersonalInformationPermanentForeignAddress(
     ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel
@@ -334,8 +339,13 @@ class VerifiedPersonalInformationPermanentForeignAddress(
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
+
     def is_empty(self):
         return not (self.street_address or self.additional_address or self.country_code)
+
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
 
 
 class DivisionOfInterest(models.Model):

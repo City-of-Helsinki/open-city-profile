@@ -143,6 +143,20 @@ def vpi_factory_with_addresses(*wanted_address_models):
             "verified personal information permanent address",
             ["verified personal information"],
         ),
+        (
+            vpi_factory_with_addresses(VerifiedPersonalInformationTemporaryAddress),
+            "verified_personal_information__temporary_address",
+            "verified personal information temporary address",
+            ["verified personal information"],
+        ),
+        (
+            vpi_factory_with_addresses(
+                VerifiedPersonalInformationPermanentForeignAddress
+            ),
+            "verified_personal_information__permanent_foreign_address",
+            "verified personal information permanent foreign address",
+            ["verified personal information"],
+        ),
     ]
 )
 def profile_with_related(request):
