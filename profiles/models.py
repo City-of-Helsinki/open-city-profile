@@ -293,6 +293,11 @@ class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
+
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
+
 
 class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
     RELATED_NAME = "temporary_address"

@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import pytest
 from django.conf import settings
@@ -10,7 +10,12 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
-from profiles.models import Profile
+from profiles.models import (
+    Profile,
+    VerifiedPersonalInformationPermanentAddress,
+    VerifiedPersonalInformationPermanentForeignAddress,
+    VerifiedPersonalInformationTemporaryAddress,
+)
 from services.tests.factories import ServiceConnectionFactory
 
 from .factories import (
@@ -95,40 +100,84 @@ class ProfileWithRelated:
     related_part: Optional[Any]
     related_name: Optional[str]
     profile_part_name: Optional[str]
+    additional_profile_part_names: List[str]
+
+    @property
+    def all_profile_part_names(self):
+        return [
+            name
+            for name in [self.profile_part_name] + self.additional_profile_part_names
+            if name is not None
+        ]
+
+
+def vpi_factory_with_addresses(*wanted_address_models):
+    def factory():
+        address_args = dict()
+        for address_model in [
+            VerifiedPersonalInformationPermanentAddress,
+            VerifiedPersonalInformationTemporaryAddress,
+            VerifiedPersonalInformationPermanentForeignAddress,
+        ]:
+            if address_model not in wanted_address_models:
+                address_args[address_model.RELATED_NAME] = None
+
+        return VerifiedPersonalInformationFactory(**address_args)
+
+    return factory
 
 
 @pytest.fixture(
     params=[
-        (ProfileFactory, None, None),
-        (SensitiveDataFactory, "sensitivedata", "sensitive data"),
+        (ProfileFactory, None, None, []),
+        (SensitiveDataFactory, "sensitivedata", "sensitive data", []),
         (
-            VerifiedPersonalInformationFactory,
+            vpi_factory_with_addresses(),
             "verified_personal_information",
             "verified personal information",
+            [],
+        ),
+        (
+            vpi_factory_with_addresses(VerifiedPersonalInformationPermanentAddress),
+            "verified_personal_information__permanent_address",
+            "verified personal information permanent address",
+            ["verified personal information"],
         ),
     ]
 )
 def profile_with_related(request):
-    factory, related_name, profile_part_name = request.param
+    (
+        factory,
+        related_name,
+        profile_part_name,
+        additional_profile_part_names,
+    ) = request.param
     created = factory()
     if related_name:
         profile = getattr(created, "profile")
-        related_part = created
+        related_part = profile
+        for field_name in related_name.split("__"):
+            related_part = getattr(related_part, field_name)
     else:
         profile = created
         related_part = None
 
-    return ProfileWithRelated(profile, related_part, related_name, profile_part_name)
+    return ProfileWithRelated(
+        profile,
+        related_part,
+        related_name,
+        profile_part_name,
+        additional_profile_part_names,
+    )
 
 
 def test_audit_log_read(profile_with_related, cap_audit_log):
     related_name = profile_with_related.related_name
-    profile_part_name = profile_with_related.profile_part_name
 
     profile_from_db = Profile.objects.select_related(related_name).first()
     audit_logs = cap_audit_log.get_logs()
 
-    if profile_part_name:
+    for profile_part_name in profile_with_related.all_profile_part_names:
         related_logs, audit_logs = partition_logs_by_target_type(
             audit_logs, profile_part_name
         )
@@ -169,7 +218,6 @@ def test_audit_log_update(profile_with_related, cap_audit_log):
 
 def test_audit_log_delete(profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
-    profile_part_name = profile_with_related.profile_part_name
 
     deleted_pk = profile.pk
     profile.delete()
@@ -183,7 +231,7 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
         filter(lambda e: e["audit_event"]["operation"] != "READ", audit_logs)
     )
 
-    if profile_part_name:
+    for profile_part_name in profile_with_related.all_profile_part_names:
         related_logs, audit_logs = partition_logs_by_target_type(
             audit_logs, profile_part_name
         )
