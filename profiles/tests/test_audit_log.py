@@ -59,7 +59,7 @@ def assert_common_fields(
 ):
     now_dt = datetime.now(tz=timezone.utc)
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
-    leeway_ms = 20
+    leeway_ms = 50
 
     if not isinstance(log_messages, list):
         log_messages = [log_messages]
