@@ -83,6 +83,12 @@ def service__service_type():
     return ServiceType.BERTH
 
 
+@pytest.fixture
+def service__implicit_connection():
+    """Service fixture has implicit service connection enabled by default"""
+    return True
+
+
 @pytest.fixture(autouse=True)
 def setup_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = False
