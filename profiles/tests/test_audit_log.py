@@ -340,8 +340,11 @@ def test_actor_service(live_server, user, group, service_client_id, cap_audit_lo
 class TestIPAddressLogging:
     @staticmethod
     def execute_ip_address_test(
-        live_server, profile, expected_ip, cap_audit_log, request_args=dict()
+        live_server, profile, expected_ip, cap_audit_log, request_args=None
     ):
+        if request_args is None:
+            request_args = {}
+
         user = profile.user
 
         do_graphql_call_as_user(
