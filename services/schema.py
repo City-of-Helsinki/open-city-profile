@@ -3,12 +3,9 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from graphene import relay
 from graphene_django.types import DjangoObjectType
-from graphql_jwt.decorators import login_required
 
-from open_city_profile.exceptions import (
-    ServiceAlreadyExistsError,
-    ServiceNotIdentifiedError,
-)
+from open_city_profile.exceptions import ServiceAlreadyExistsError
+from profiles.decorators import login_and_service_required
 
 from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection
@@ -73,22 +70,11 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
     service_connection = graphene.Field(ServiceConnectionType)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         service_connection_data = input.pop("service_connection")
-
-        service_data = service_connection_data.get("service")
-        service_type = service_data.get("type") if service_data else None
-        service = (
-            Service.objects.get(service_type=service_type) if service_type else None
-        )
-
-        if not service:
-            service = getattr(info.context, "service", None)
-
-        if not service:
-            raise ServiceNotIdentifiedError("No service identified")
+        service = info.context.service
 
         try:
             service_connection = ServiceConnection.objects.create(

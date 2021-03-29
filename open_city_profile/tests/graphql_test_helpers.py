@@ -5,6 +5,8 @@ import requests_mock
 from django.conf import settings
 from jose import jwt
 
+from services.tests.factories import ServiceClientIdFactory
+
 from .conftest import get_unix_timestamp_now
 from .keys import rsa_key
 
@@ -55,8 +57,11 @@ query {
 
 
 def do_graphql_call(
-    live_server, request_auth=None, query=_QUERY, extra_request_args=dict()
+    live_server, request_auth=None, query=_QUERY, extra_request_args=None
 ):
+    if extra_request_args is None:
+        extra_request_args = {}
+
     url = live_server.url + "/graphql/"
     payload = {
         "query": query,
@@ -79,15 +84,27 @@ def do_graphql_call(
     return body.get("data"), body.get("errors")
 
 
+_not_provided = object()
+
+
 def do_graphql_call_as_user(
-    live_server, user, service=None, query=_QUERY, extra_request_args=dict()
+    live_server, user, service=_not_provided, query=_QUERY, extra_request_args=None,
 ):
+    if extra_request_args is None:
+        extra_request_args = {}
+
     claims = {"sub": str(user.uuid)}
 
-    if service is not None:
+    service_client_id = None
+    if service is _not_provided:
+        service_client_id = ServiceClientIdFactory(
+            service__service_type=None, service__implicit_connection=True,
+        )
+    elif service:
         service_client_id = service.client_ids.first()
-        if service_client_id:
-            claims["azp"] = service_client_id.client_id
+
+    if service_client_id:
+        claims["azp"] = service_client_id.client_id
 
     return do_graphql_call(
         live_server,

@@ -13,6 +13,8 @@ from profiles.loaders import (
     PrimaryEmailForProfileLoader,
     PrimaryPhoneForProfileLoader,
 )
+from profiles.utils import set_current_service
+from services.models import Service
 
 
 class JWTMiddleware:
@@ -70,3 +72,49 @@ class GQLDataLoaders:
             self.cached_loaders = True
 
         return next(root, info, **kwargs)
+
+
+def determine_service_middleware(next, root, info, **kwargs):
+    """Determine service from the context or from a service type argument
+
+    The service read from an argument is only enabled for the duration of the resolve
+    and the original service is restored after the resolve has run. (Reading from an
+    argument is only for backwards compatibility and should be removed after the
+    "service_type" fields are removed)"""
+    if not hasattr(info.context, "service"):
+        info.context.service = None
+
+    # Determine service_type from the arguments
+    service_type = None
+    if "input" in kwargs:
+        input_argument = kwargs.get("input", {})
+        # Most of the mutations
+        if "service_type" in input_argument:
+            service_type = input_argument.get("service_type")
+        # AddServiceConnectionMutation
+        elif "service_connection" in input_argument:
+            service_type = (
+                input_argument.get("service_connection", {})
+                .get("service", {})
+                .get("type")
+            )
+    else:
+        # Queries
+        service_type = kwargs.get("service_type")
+
+    old_service = None
+    if service_type:
+        old_service = getattr(info.context, "service", None)
+        info.context.service = Service.objects.get(service_type=service_type)
+
+    if info.context.service:
+        set_current_service(info.context.service)
+
+    try:
+        return_value = next(root, info, **kwargs)
+    finally:
+        if old_service:
+            info.context.service = old_service
+            set_current_service(old_service)
+
+    return return_value

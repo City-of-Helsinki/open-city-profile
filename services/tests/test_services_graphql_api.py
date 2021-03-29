@@ -239,7 +239,7 @@ def test_not_identifying_service_for_add_service_connection_produces_service_not
         }
     """
 
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, service=None)
 
     assert_match_error_code(executed, SERVICE_NOT_IDENTIFIED_ERROR)
 
