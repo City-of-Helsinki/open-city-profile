@@ -27,8 +27,10 @@ from services.tests.factories import (
 
 
 @pytest.fixture
-def profile(user):
-    return ProfileFactory(user=user)
+def profile():
+    return ProfileFactory(
+        user=UserFactory()  # noqa: F405 Name may be defined from star imports
+    )
 
 
 @pytest.fixture

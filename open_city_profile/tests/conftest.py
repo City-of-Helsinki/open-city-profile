@@ -120,23 +120,23 @@ def _get_gql_client_with_error_formating():
 
 
 @pytest.fixture
-def anon_user_gql_client(anon_user):
+def anon_user_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = anon_user
+    gql_client.user = AnonymousUser()
     return gql_client
 
 
 @pytest.fixture
-def user_gql_client(user):
+def user_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = user
+    gql_client.user = UserFactory()
     return gql_client
 
 
 @pytest.fixture
-def superuser_gql_client(superuser):
+def superuser_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = superuser
+    gql_client.user = SuperuserFactory()
     return gql_client
 
 
