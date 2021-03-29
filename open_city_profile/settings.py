@@ -296,6 +296,7 @@ GRAPHENE = {
         if USE_HELUSERS_REQUEST_JWT_AUTH
         else "graphql_jwt.middleware.JSONWebTokenMiddleware",
         "open_city_profile.graphene.GQLDataLoaders",
+        "open_city_profile.graphene.determine_service_middleware",
     ],
 }
 

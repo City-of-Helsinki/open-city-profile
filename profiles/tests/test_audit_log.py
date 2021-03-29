@@ -276,15 +276,33 @@ MY_PROFILE_QUERY = """
 """
 
 
-def test_actor_is_resolved_in_graphql_call(live_server, profile, cap_audit_log):
+def test_actor_is_resolved_in_graphql_call(
+    live_server, profile, service_client_id, cap_audit_log
+):
+    service = service_client_id.service
+    ServiceConnectionFactory(profile=profile, service=service)
     user = profile.user
-
-    do_graphql_call_as_user(live_server, user, query=MY_PROFILE_QUERY)
+    do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
+
+
+def test_service_is_resolved_in_graphql_call(
+    live_server, profile, service_client_id, cap_audit_log
+):
+    user = profile.user
+    service = service_client_id.service
+    do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
+    assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
+    actor_log = log_message["audit_event"]["actor"]
+    assert "service_name" in actor_log
+    assert actor_log["service_name"] == service.name
 
 
 def test_actor_service(live_server, user, group, service_client_id, cap_audit_log):
