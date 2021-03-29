@@ -61,52 +61,92 @@ def youth_service(service_factory):
     )
 
 
-def test_user_can_download_profile(user_gql_client):
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
+def test_user_can_download_profile(
+    user_gql_client, service, mocker, with_serviceconnection
+):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    service_connection_created_at = None
+    if with_serviceconnection:
+        mocker.patch.object(
+            TunnistamoTokenExchange, "fetch_api_tokens", return_value=None
+        )
+        service_connection = ServiceConnectionFactory(profile=profile, service=service)
+        service_connection_created_at = service_connection.created_at.date().isoformat()
+
     primary_email = profile.emails.first()
 
-    expected_json = json.dumps(
-        {
-            "key": "DATA",
-            "children": [
-                {
-                    "key": "PROFILE",
-                    "children": [
-                        {"key": "FIRST_NAME", "value": profile.first_name},
-                        {"key": "LAST_NAME", "value": profile.last_name},
-                        {"key": "NICKNAME", "value": profile.nickname},
-                        {"key": "LANGUAGE", "value": profile.language},
-                        {"key": "CONTACT_METHOD", "value": profile.contact_method},
-                        {
-                            "key": "EMAILS",
-                            "children": [
-                                {
-                                    "key": "EMAIL",
-                                    "children": [
-                                        {
-                                            "key": "PRIMARY",
-                                            "value": primary_email.primary,
-                                        },
-                                        {
-                                            "key": "EMAIL_TYPE",
-                                            "value": primary_email.email_type.name,
-                                        },
-                                        {"key": "EMAIL", "value": primary_email.email},
-                                    ],
-                                }
-                            ],
-                        },
-                        {"key": "PHONES", "children": []},
-                        {"key": "ADDRESSES", "children": []},
-                        {"key": "SERVICE_CONNECTIONS", "children": []},
-                        {"key": "SUBSCRIPTIONS", "children": []},
-                    ],
-                }
-            ],
-        }
-    )
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, service=service)
+
+    if with_serviceconnection:
+        expected_json = json.dumps(
+            {
+                "key": "DATA",
+                "children": [
+                    {
+                        "key": "PROFILE",
+                        "children": [
+                            {"key": "FIRST_NAME", "value": profile.first_name},
+                            {"key": "LAST_NAME", "value": profile.last_name},
+                            {"key": "NICKNAME", "value": profile.nickname},
+                            {"key": "LANGUAGE", "value": profile.language},
+                            {"key": "CONTACT_METHOD", "value": profile.contact_method},
+                            {
+                                "key": "EMAILS",
+                                "children": [
+                                    {
+                                        "key": "EMAIL",
+                                        "children": [
+                                            {
+                                                "key": "PRIMARY",
+                                                "value": primary_email.primary,
+                                            },
+                                            {
+                                                "key": "EMAIL_TYPE",
+                                                "value": primary_email.email_type.name,
+                                            },
+                                            {
+                                                "key": "EMAIL",
+                                                "value": primary_email.email,
+                                            },
+                                        ],
+                                    }
+                                ],
+                            },
+                            {"key": "PHONES", "children": []},
+                            {"key": "ADDRESSES", "children": []},
+                            {
+                                "key": "SERVICE_CONNECTIONS",
+                                "children": [
+                                    {
+                                        "key": "SERVICECONNECTION",
+                                        "children": [
+                                            {"key": "SERVICE", "value": service.name},
+                                            {
+                                                "key": "CREATED_AT",
+                                                "value": service_connection_created_at,
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {"key": "SUBSCRIPTIONS", "children": []},
+                        ],
+                    }
+                ],
+            }
+        )
+        assert executed["data"]["downloadMyProfile"] == expected_json, executed
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"]["downloadMyProfile"] is None
+
+
+def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
-    assert expected_json == executed["data"]["downloadMyProfile"]
+
+    assert executed["data"]["downloadMyProfile"] is None
+    assert "errors" not in executed
 
 
 def test_user_can_download_profile_with_connected_services(
@@ -182,25 +222,37 @@ def test_user_can_download_profile_using_correct_api_tokens(
     assert executed["data"]["downloadMyProfile"]
 
 
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_user_can_delete_his_profile(
-    user_gql_client, youth_service, requests_mock, mocker
+    user_gql_client, youth_service, requests_mock, mocker, with_serviceconnection
 ):
     """Deletion is allowed when GDPR URL is set, and service returns a successful status."""
-    mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
-    )
     profile = ProfileFactory(user=user_gql_client.user)
     requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
-    ServiceConnectionFactory(profile=profile, service=youth_service)
 
-    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+    if with_serviceconnection:
+        ServiceConnectionFactory(profile=profile, service=youth_service)
+        mocker.patch.object(
+            TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        )
+
+    executed = user_gql_client.execute(
+        DELETE_MY_PROFILE_MUTATION, service=youth_service
+    )
 
     expected_data = {"deleteMyProfile": {"clientMutationId": None}}
-    assert dict(executed["data"]) == expected_data
-    with pytest.raises(Profile.DoesNotExist):
-        profile.refresh_from_db()
-    with pytest.raises(User.DoesNotExist):
-        user_gql_client.user.refresh_from_db()
+
+    if with_serviceconnection:
+        assert executed["data"] == expected_data
+
+        with pytest.raises(Profile.DoesNotExist):
+            profile.refresh_from_db()
+        with pytest.raises(User.DoesNotExist):
+            user_gql_client.user.refresh_from_db()
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"]["deleteMyProfile"] is None
+        assert Profile.objects.filter(pk=profile.pk).exists()
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(

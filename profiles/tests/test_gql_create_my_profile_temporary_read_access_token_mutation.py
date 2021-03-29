@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime, timedelta
 
+import pytest
 from django.utils import timezone
 
 from open_city_profile.consts import PERMISSION_DENIED_ERROR
-from open_city_profile.tests.asserts import assert_almost_equal
+from open_city_profile.tests.asserts import assert_almost_equal, assert_match_error_code
 from profiles.models import TemporaryReadAccessToken
+from services.tests.factories import ServiceConnectionFactory
 
 from .conftest import TemporaryProfileReadAccessTokenTestBase
 from .factories import ProfileFactory, TemporaryReadAccessTokenFactory
@@ -25,25 +27,32 @@ class TestTemporaryProfileReadAccessTokenCreation(
         }
     """
 
+    @pytest.mark.parametrize("with_serviceconnection", (True, False))
     def test_normal_user_can_create_temporary_read_access_token_for_profile(
-        self, user_gql_client
+        self, user_gql_client, service, with_serviceconnection
     ):
-        ProfileFactory(user=user_gql_client.user)
+        profile = ProfileFactory(user=user_gql_client.user)
+        if with_serviceconnection:
+            ServiceConnectionFactory(profile=profile, service=service)
 
-        executed = user_gql_client.execute(self.query)
+        executed = user_gql_client.execute(self.query, service=service)
 
-        token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
-            "temporaryReadAccessToken"
-        ]
+        if with_serviceconnection:
+            token_data = executed["data"]["createMyProfileTemporaryReadAccessToken"][
+                "temporaryReadAccessToken"
+            ]
 
-        # Check that an UUID can be parsed from the token
-        uuid.UUID(token_data["token"])
+            # Check that an UUID can be parsed from the token
+            uuid.UUID(token_data["token"])
 
-        actual_expiration_time = datetime.fromisoformat(token_data["expiresAt"])
-        expected_expiration_time = timezone.now() + timedelta(days=2)
-        assert_almost_equal(
-            actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
-        )
+            actual_expiration_time = datetime.fromisoformat(token_data["expiresAt"])
+            expected_expiration_time = timezone.now() + timedelta(days=2)
+            assert_almost_equal(
+                actual_expiration_time, expected_expiration_time, timedelta(seconds=1)
+            )
+        else:
+            assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+            assert executed["data"]["createMyProfileTemporaryReadAccessToken"] is None
 
     def test_anonymous_user_cannot_create_any_temporary_read_access_token_for_profile(
         self, anon_user_gql_client

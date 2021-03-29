@@ -295,6 +295,7 @@ def test_service_is_resolved_in_graphql_call(
 ):
     user = profile.user
     service = service_client_id.service
+    ServiceConnectionFactory(profile=profile, service=service)
     do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
