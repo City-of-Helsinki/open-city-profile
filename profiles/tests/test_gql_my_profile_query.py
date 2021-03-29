@@ -2,6 +2,7 @@ import pytest
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
+from services.tests.factories import ServiceConnectionFactory
 from subscriptions.models import Subscription
 from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
@@ -333,9 +334,54 @@ class TestProfileWithVerifiedPersonalInformation(
 
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
+    @pytest.mark.parametrize("with_serviceconnection", (True, False))
+    def test_service_connection_required(
+        self, user_gql_client, service, with_serviceconnection
+    ):
+        profile = ProfileFactory(user=user_gql_client.user)
+        VerifiedPersonalInformationFactory(profile=profile)
+        if with_serviceconnection:
+            ServiceConnectionFactory(profile=profile, service=service)
 
-def test_normal_user_can_query_his_own_profile(user_gql_client):
+        executed = user_gql_client.execute(
+            TestProfileWithVerifiedPersonalInformation.QUERY,
+            auth_token_payload={"loa": "substantial"},
+            service=service,
+        )
+
+        if with_serviceconnection:
+            assert not hasattr(executed, "errors")
+            assert isinstance(
+                executed["data"]["myProfile"]["verifiedPersonalInformation"], dict
+            )
+        else:
+            assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+            assert executed["data"]["myProfile"] is None
+
+
+def test_querying_non_existent_profile_doesnt_return_errors(user_gql_client, service):
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+            }
+        }
+    """
+    executed = user_gql_client.execute(query)
+
+    assert "errors" not in executed, executed["errors"]
+    assert executed["data"]["myProfile"] is None
+
+
+@pytest.mark.parametrize("with_service", (True, False))
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
+def test_normal_user_can_query_his_own_profile(
+    user_gql_client, service, with_service, with_serviceconnection
+):
     profile = ProfileFactory(user=user_gql_client.user)
+    if with_serviceconnection:
+        ServiceConnectionFactory(profile=profile, service=service)
 
     query = """
         {
@@ -348,8 +394,16 @@ def test_normal_user_can_query_his_own_profile(user_gql_client):
     expected_data = {
         "myProfile": {"firstName": profile.first_name, "lastName": profile.last_name}
     }
-    executed = user_gql_client.execute(query)
-    assert dict(executed["data"]) == expected_data
+    executed = user_gql_client.execute(query, service=service if with_service else None)
+
+    if with_service and with_serviceconnection:
+        assert executed["data"] == expected_data
+    elif not with_service:
+        assert_match_error_code(executed, "SERVICE_NOT_IDENTIFIED_ERROR")
+        assert executed["data"]["myProfile"] is None
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"]["myProfile"] is None
 
 
 def test_normal_user_can_query_his_own_profiles_sensitivedata(user_gql_client):

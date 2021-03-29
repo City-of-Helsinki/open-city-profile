@@ -5,16 +5,23 @@ from django.utils.translation import gettext_lazy as _
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import EmailType
 from profiles.models import Profile
 from services.enums import ServiceType
+from services.tests.factories import ServiceConnectionFactory
 
 from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFactory
 
 
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
 @pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
-def test_staff_user_can_update_a_profile(user_gql_client, group, service):
+def test_staff_user_can_update_a_profile(
+    user_gql_client, group, service, with_serviceconnection
+):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
+    if with_serviceconnection:
+        ServiceConnectionFactory(profile=profile, service=service)
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
     user = user_gql_client.user
@@ -122,7 +129,11 @@ def test_staff_user_can_update_a_profile(user_gql_client, group, service):
         }
     }
     executed = user_gql_client.execute(query, service=service)
-    assert executed["data"] == expected_data
+    if with_serviceconnection:
+        assert executed["data"] == expected_data
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"]["updateProfile"] is None
 
 
 @pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
@@ -131,6 +142,7 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
 ):
     """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
     profile = ProfileWithPrimaryEmailFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
@@ -172,6 +184,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    ServiceConnectionFactory(profile=profile, service=service)
 
     t = Template(
         """

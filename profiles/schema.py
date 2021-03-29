@@ -37,7 +37,7 @@ from open_city_profile.exceptions import (
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from open_city_profile.oidc import TunnistamoTokenExchange
-from profiles.decorators import staff_required
+from profiles.decorators import login_and_service_required, staff_required
 from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
@@ -67,7 +67,6 @@ from .utils import (
     delete_nested,
     requester_has_service_permission,
     update_nested,
-    user_has_staff_perms_to_view_profile,
 )
 
 User = get_user_model()
@@ -524,10 +523,11 @@ class ProfileNode(RestrictedProfileNode):
         return ServiceConnection.objects.filter(profile=self)
 
     def resolve_sensitivedata(self, info, **kwargs):
-        service = getattr(info.context, "service", None)
-        if (
-            not service and info.context.user == self.user
-        ) or info.context.user.has_perm("can_view_sensitivedata", service):
+        service = info.context.service
+
+        if info.context.user == self.user or info.context.user.has_perm(
+            "can_view_sensitivedata", service
+        ):
             return self.sensitivedata
         else:
             # TODO: We should return PermissionDenied as a partial error here.
@@ -549,7 +549,7 @@ class ProfileNode(RestrictedProfileNode):
                 "No permission to read verified personal information."
             )
 
-    @login_required
+    @login_and_service_required
     def __resolve_reference(self, info, **kwargs):
         profile = graphene.Node.get_node_from_global_id(
             info, self.id, only_type=ProfileNode
@@ -557,8 +557,12 @@ class ProfileNode(RestrictedProfileNode):
         if not profile:
             return None
 
+        service = info.context.service
         user = info.context.user
-        if user == profile.user or user_has_staff_perms_to_view_profile(user, profile):
+
+        if service.has_connection_to_profile(profile) and (
+            user == profile.user or user.has_perm("can_view_profiles", service)
+        ):
             return profile
         else:
             raise PermissionDenied(
@@ -931,13 +935,20 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     profile = graphene.Field(ProfileNode)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        profile = Profile.objects.get(user=info.context.user)
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
         subscription_data = profile_data.pop("subscriptions", [])
-        profile = Profile.objects.get(user=info.context.user)
+
         update_profile(profile, profile_data)
 
         if sensitive_data:
@@ -993,6 +1004,12 @@ class UpdateProfileMutation(relay.ClientIDMutation):
         profile = graphene.Node.get_node_from_global_id(
             info, profile_data.pop("id"), only_type=ProfileNode
         )
+
+        if not service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         sensitive_data = profile_data.pop("sensitivedata", None)
         update_profile(profile, profile_data)
 
@@ -1046,7 +1063,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         )
 
     @classmethod
-    @login_required
+    @login_and_service_required
     def mutate_and_get_payload(cls, root, info, **input):
         authorization_code = input["authorization_code"]
 
@@ -1054,6 +1071,11 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
             raise ProfileDoesNotExistError("Profile does not exist")
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         if profile.service_connections.exists():
             tte = TunnistamoTokenExchange()
@@ -1115,9 +1137,14 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
     temporary_read_access_token = graphene.Field(TemporaryReadAccessTokenNode)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     def mutate_and_get_payload(cls, root, info):
         profile = Profile.objects.get(user=info.context.user)
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         TemporaryReadAccessToken.objects.filter(
             profile=profile, created_at__gt=timezone.now() - F("validity_duration")
@@ -1207,9 +1234,19 @@ class Query(graphene.ObjectType):
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
 
-    @login_required
+    @login_and_service_required
     def resolve_my_profile(self, info, **kwargs):
-        return Profile.objects.filter(user=info.context.user).first()
+        try:
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            return None
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+        return profile
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
@@ -1221,10 +1258,18 @@ class Query(graphene.ObjectType):
         # TODO: Complete error handling for this OM-297
         return get_claimable_profile(token=kwargs["token"])
 
-    @login_required
+    @login_and_service_required
     def resolve_download_my_profile(self, info, **kwargs):
         authorization_code = kwargs["authorization_code"]
-        profile = Profile.objects.filter(user=info.context.user).first()
+        try:
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            return None
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         external_data = []
 
