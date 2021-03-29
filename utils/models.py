@@ -129,13 +129,6 @@ class SerializableMixin(models.Model):
         }
 
 
-class UpdateMixin:
-    def update(self, data):
-        for field, value in data.items():
-            setattr(self, field, value)
-        self.save(update_fields=data.keys())
-
-
 class ValidateOnSaveModel(models.Model):
     class Meta:
         abstract = True

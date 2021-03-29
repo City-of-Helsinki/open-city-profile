@@ -904,9 +904,13 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                 address_model = address_type["model"]
                 try:
                     address = getattr(information, address_name)
-                    address.update(address_input)
+                    for field, value in address_input.items():
+                        setattr(address, field, value)
+
                     if address.is_empty():
                         address.delete()
+                    else:
+                        address.save(update_fields=address_input.keys())
                 except address_model.DoesNotExist:
                     address = address_model(
                         verified_personal_information=information, **address_input

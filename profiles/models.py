@@ -20,7 +20,6 @@ from users.models import User
 from utils.models import (
     NullsToEmptyStringsModel,
     SerializableMixin,
-    UpdateMixin,
     UUIDModel,
     ValidateOnSaveModel,
 )
@@ -272,7 +271,7 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel):
+class EncryptedAddress(ValidateOnSaveModel, NullsToEmptyStringsModel):
     street_address = fields.EncryptedCharField(max_length=1024, blank=True)
     postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
     post_office = fields.EncryptedCharField(max_length=1024, blank=True)
@@ -315,7 +314,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
 
 
 class VerifiedPersonalInformationPermanentForeignAddress(
-    ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel
+    ValidateOnSaveModel, NullsToEmptyStringsModel
 ):
     RELATED_NAME = "permanent_foreign_address"
 
