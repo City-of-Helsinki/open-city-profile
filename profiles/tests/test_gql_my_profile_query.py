@@ -8,7 +8,7 @@ from subscriptions.tests.factories import (
     SubscriptionTypeFactory,
 )
 
-from .conftest import ProfileWithVerifiedPersonalInformationTestBase
+from .conftest import VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES
 from .factories import (
     AddressFactory,
     EmailFactory,
@@ -187,9 +187,7 @@ def test_normal_user_can_query_primary_contact_details(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-class TestProfileWithVerifiedPersonalInformation(
-    ProfileWithVerifiedPersonalInformationTestBase
-):
+class TestProfileWithVerifiedPersonalInformation:
     QUERY = """
         {
             myProfile {
@@ -288,7 +286,7 @@ class TestProfileWithVerifiedPersonalInformation(
         assert executed["data"] == expected_data
 
     @pytest.mark.parametrize(
-        "address_type", ProfileWithVerifiedPersonalInformationTestBase.ADDRESS_TYPES,
+        "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
     )
     def test_when_address_does_not_exist_returns_null(
         self, address_type, user_gql_client
@@ -303,7 +301,7 @@ class TestProfileWithVerifiedPersonalInformation(
         assert "errors" not in executed
 
         received_info = executed["data"]["myProfile"]["verifiedPersonalInformation"]
-        for at in self.ADDRESS_TYPES:
+        for at in VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES:
             received_address = received_info[to_graphql_name(at)]
             if at == address_type:
                 assert received_address is None

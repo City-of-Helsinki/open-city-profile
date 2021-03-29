@@ -88,17 +88,18 @@ def setup_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = False
 
 
-class ProfileWithVerifiedPersonalInformationTestBase:
-    ADDRESS_FIELD_NAMES = {
-        "permanent_address": ["street_address", "postal_code", "post_office"],
-        "temporary_address": ["street_address", "postal_code", "post_office"],
-        "permanent_foreign_address": [
-            "street_address",
-            "additional_address",
-            "country_code",
-        ],
-    }
-    ADDRESS_TYPES = ADDRESS_FIELD_NAMES.keys()
+VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES = {
+    "permanent_address": ["street_address", "postal_code", "post_office"],
+    "temporary_address": ["street_address", "postal_code", "post_office"],
+    "permanent_foreign_address": [
+        "street_address",
+        "additional_address",
+        "country_code",
+    ],
+}
+VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES = (
+    VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES.keys()
+)
 
 
 class TemporaryProfileReadAccessTokenTestBase:
