@@ -905,12 +905,14 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                 try:
                     address = getattr(information, address_name)
                     address.update(address_input)
+                    if address.is_empty():
+                        address.delete()
                 except address_model.DoesNotExist:
-                    address = address_model.objects.create(
+                    address = address_model(
                         verified_personal_information=information, **address_input
                     )
-                if address.is_empty():
-                    address.delete()
+                    if not address.is_empty():
+                        address.save()
 
         service_client_id = input.pop("service_client_id", None)
         if service_client_id:
