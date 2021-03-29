@@ -577,31 +577,27 @@ class TemporaryReadAccessTokenNode(DjangoObjectType):
         return self.expires_at()
 
 
-class EmailInput(graphene.InputObjectType):
+class CreateEmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
-
-
-class CreateEmailInput(EmailInput):
     email = graphene.String(description="Email address.", required=True)
     email_type = AllowedEmailType(description="Email address type.", required=True)
 
 
-class UpdateEmailInput(EmailInput):
+class UpdateEmailInput(graphene.InputObjectType):
+    primary = graphene.Boolean(description="Is this primary mail address.")
     id = graphene.ID(required=True)
     email = graphene.String(description="Email address.")
     email_type = AllowedEmailType(description="Email address type.")
 
 
-class PhoneInput(graphene.InputObjectType):
+class CreatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
-
-
-class CreatePhoneInput(PhoneInput):
     phone = graphene.String(description="Phone number.", required=True)
     phone_type = AllowedPhoneType(description="Phone number type.", required=True)
 
 
-class UpdatePhoneInput(PhoneInput):
+class UpdatePhoneInput(graphene.InputObjectType):
+    primary = graphene.Boolean(description="Is this primary phone number.")
     id = graphene.ID(required=True)
     phone = graphene.String(description="Phone number.")
     phone_type = AllowedPhoneType(description="Phone number type.")
