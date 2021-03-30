@@ -14,6 +14,7 @@ from profiles.models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
+from profiles.tests.factories import EmailFactory
 from services.enums import ServiceType
 
 from .conftest import (
@@ -279,11 +280,11 @@ def test_delete_an_address_if_it_no_longer_has_any_data(
     assert not hasattr(profile.verified_personal_information, address_type)
 
 
-def test_set_primary_email_for_a_new_profile(user_gql_client):
-    user_id = uuid.uuid1()
-    email_address = "test_email@domain.example"
+email_address = "test_email@domain.example"
 
-    input_data = {
+
+def primary_email_input_data(user_id):
+    return {
         "userId": str(user_id),
         "profile": {
             "primaryEmail": {"email": email_address},
@@ -291,6 +292,11 @@ def test_set_primary_email_for_a_new_profile(user_gql_client):
         },
     }
 
+
+def test_set_primary_email_for_a_new_profile(user_gql_client):
+    user_id = uuid.uuid1()
+
+    input_data = primary_email_input_data(user_id)
     profile = execute_successful_mutation(input_data, user_gql_client)
 
     assert profile.emails.count() == 1
@@ -299,6 +305,25 @@ def test_set_primary_email_for_a_new_profile(user_gql_client):
     assert email.primary is True
     assert email.email_type == EmailType.NONE
     assert email.verified is False
+
+
+def test_change_primary_email_for_an_existing_profile(user_gql_client):
+    old_email = EmailFactory()
+    user_id = old_email.profile.user.uuid
+
+    input_data = primary_email_input_data(user_id)
+    profile = execute_successful_mutation(input_data, user_gql_client)
+
+    assert profile.emails.count() == 2
+
+    email = profile.emails.get(primary=True)
+    assert email.email == email_address
+    assert email.email_type == EmailType.NONE
+    assert email.verified is False
+
+    email = profile.emails.get(pk=old_email.pk)
+    assert email.email == old_email.email
+    assert email.primary is False
 
 
 def service_input_data(user_id, service_client_id):
