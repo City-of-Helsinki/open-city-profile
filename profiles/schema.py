@@ -899,24 +899,23 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
         for address_type in address_types:
             address_input = address_type["input"]
-            if address_input:
-                address_name = address_type["name"]
-                address_model = address_type["model"]
-                try:
-                    address = getattr(information, address_name)
-                    for field, value in address_input.items():
-                        setattr(address, field, value)
+            if not address_input:
+                continue
 
-                    if address.is_empty():
-                        address.delete()
-                    else:
-                        address.save(update_fields=address_input.keys())
-                except address_model.DoesNotExist:
-                    address = address_model(
-                        verified_personal_information=information, **address_input
-                    )
-                    if not address.is_empty():
-                        address.save()
+            address_name = address_type["name"]
+            address_model = address_type["model"]
+            try:
+                address = getattr(information, address_name)
+            except address_model.DoesNotExist:
+                address = address_model(verified_personal_information=information)
+
+            for field, value in address_input.items():
+                setattr(address, field, value)
+
+            if not address.is_empty():
+                address.save()
+            elif address.id:
+                address.delete()
 
         service_client_id = input.pop("service_client_id", None)
         if service_client_id:
