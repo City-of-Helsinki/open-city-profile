@@ -6,6 +6,7 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles.enums import EmailType
 from profiles.models import (
     Profile,
     VerifiedPersonalInformation,
@@ -276,6 +277,28 @@ def test_delete_an_address_if_it_no_longer_has_any_data(
     profile = execute_successful_mutation(input_data, user_gql_client)
 
     assert not hasattr(profile.verified_personal_information, address_type)
+
+
+def test_set_primary_email_for_a_new_profile(user_gql_client):
+    user_id = uuid.uuid1()
+    email_address = "test_email@domain.example"
+
+    input_data = {
+        "userId": str(user_id),
+        "profile": {
+            "primaryEmail": {"email": email_address},
+            "verifiedPersonalInformation": {},
+        },
+    }
+
+    profile = execute_successful_mutation(input_data, user_gql_client)
+
+    assert profile.emails.count() == 1
+    email = profile.emails.first()
+    assert email.email == email_address
+    assert email.primary is True
+    assert email.email_type == EmailType.NONE
+    assert email.verified is False
 
 
 def service_input_data(user_id, service_client_id):

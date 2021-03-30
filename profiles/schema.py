@@ -824,9 +824,16 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     )
 
 
+class EmailInput(graphene.InputObjectType):
+    email = graphene.String(description="The email address.", required=True)
+
+
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
     verified_personal_information = graphene.InputField(
         VerifiedPersonalInformationInput, required=True
+    )
+    primary_email = graphene.InputField(
+        EmailInput, description="Sets the profile's primary email address."
     )
 
 
@@ -880,6 +887,14 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             address.delete()
 
     @staticmethod
+    def _handle_primary_email(profile, primary_email_input):
+        email_address = primary_email_input["email"]
+
+        profile.emails.create(
+            email=email_address, email_type=EmailType.NONE, primary=True,
+        )
+
+    @staticmethod
     @permission_required("profiles.manage_verified_personal_information")
     @transaction.atomic
     def mutate(parent, info, input):
@@ -925,6 +940,12 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             service = Service.objects.get(client_ids__client_id=service_client_id)
             profile.service_connections.update_or_create(
                 service=service, defaults={"enabled": True}
+            )
+
+        primary_email_input = profile_input.pop("primary_email", None)
+        if primary_email_input:
+            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_primary_email(
+                profile, primary_email_input
             )
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(

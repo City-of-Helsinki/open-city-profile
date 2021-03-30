@@ -175,6 +175,10 @@ type DeleteMyProfileMutationPayload {
   clientMutationId: String
 }
 
+input EmailInput {
+  email: String!
+}
+
 type EmailNode implements Node {
   primary: Boolean!
   id: ID!
@@ -311,6 +315,7 @@ type ProfileNodeEdge {
 
 input ProfileWithVerifiedPersonalInformationInput {
   verifiedPersonalInformation: VerifiedPersonalInformationInput!
+  primaryEmail: EmailInput
 }
 
 type ProfileWithVerifiedPersonalInformationOutput implements Node {
