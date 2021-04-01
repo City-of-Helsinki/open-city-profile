@@ -890,12 +890,15 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
     def _handle_primary_email(profile, primary_email_input):
         email_address = primary_email_input["email"]
 
-        email = profile.emails.create(email=email_address, email_type=EmailType.NONE)
+        email, email_created = profile.emails.get_or_create(
+            email=email_address, defaults={"email_type": EmailType.NONE}
+        )
 
-        profile.emails.update(primary=False)
+        profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
 
-        email.primary = True
-        email.save()
+        if not email.primary:
+            email.primary = True
+            email.save()
 
     @staticmethod
     @permission_required("profiles.manage_verified_personal_information")

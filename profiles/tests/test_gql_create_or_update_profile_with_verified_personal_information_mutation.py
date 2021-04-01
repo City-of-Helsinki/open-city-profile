@@ -283,11 +283,11 @@ def test_delete_an_address_if_it_no_longer_has_any_data(
 email_address = "test_email@domain.example"
 
 
-def primary_email_input_data(user_id):
+def primary_email_input_data(user_id, email=email_address):
     return {
         "userId": str(user_id),
         "profile": {
-            "primaryEmail": {"email": email_address},
+            "primaryEmail": {"email": email},
             "verifiedPersonalInformation": {},
         },
     }
@@ -324,6 +324,23 @@ def test_change_primary_email_for_an_existing_profile(user_gql_client):
     email = profile.emails.get(pk=old_email.pk)
     assert email.email == old_email.email
     assert email.primary is False
+
+
+@pytest.mark.parametrize("old_is_primary", (True, False))
+def test_existing_primary_email_remains_when_trying_to_set_the_same_email_as_a_primary_email(
+    old_is_primary, user_gql_client
+):
+    old_email = EmailFactory(email_type=EmailType.PERSONAL, primary=old_is_primary)
+    user_id = old_email.profile.user.uuid
+
+    input_data = primary_email_input_data(user_id, old_email.email)
+    profile = execute_successful_mutation(input_data, user_gql_client)
+
+    assert profile.emails.count() == 1
+    email = profile.emails.first()
+    assert email.email == old_email.email
+    assert email.primary is True
+    assert email.email_type == old_email.email_type
 
 
 def service_input_data(user_id, service_client_id):
