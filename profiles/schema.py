@@ -865,6 +865,21 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
     Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
 
     @staticmethod
+    def _handle_address(vpi, address_name, address_model, address_input):
+        try:
+            address = getattr(vpi, address_name)
+        except address_model.DoesNotExist:
+            address = address_model(verified_personal_information=vpi)
+
+        for field, value in address_input.items():
+            setattr(address, field, value)
+
+        if not address.is_empty():
+            address.save()
+        elif address.id:
+            address.delete()
+
+    @staticmethod
     @permission_required("profiles.manage_verified_personal_information")
     @transaction.atomic
     def mutate(parent, info, input):
@@ -889,7 +904,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
         profile, created = Profile.objects.get_or_create(user=user)
 
-        information, created = VerifiedPersonalInformation.objects.update_or_create(
+        vpi, created = VerifiedPersonalInformation.objects.update_or_create(
             profile=profile, defaults=verified_personal_information_input
         )
 
@@ -900,18 +915,10 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
             address_name = address_type["name"]
             address_model = address_type["model"]
-            try:
-                address = getattr(information, address_name)
-            except address_model.DoesNotExist:
-                address = address_model(verified_personal_information=information)
 
-            for field, value in address_input.items():
-                setattr(address, field, value)
-
-            if not address.is_empty():
-                address.save()
-            elif address.id:
-                address.delete()
+            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_address(
+                vpi, address_name, address_model, address_input
+            )
 
         service_client_id = input.pop("service_client_id", None)
         if service_client_id:
