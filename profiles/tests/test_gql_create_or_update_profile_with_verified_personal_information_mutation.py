@@ -343,6 +343,20 @@ def test_existing_primary_email_remains_when_trying_to_set_the_same_email_as_a_p
     assert email.email_type == old_email.email_type
 
 
+@pytest.mark.parametrize(
+    "test_email", ("", " ", "not_an_email", " extra_white_space@address.example")
+)
+def test_deny_invalid_primary_email_address(test_email, user_gql_client):
+    user_id = uuid.uuid1()
+
+    input_data = primary_email_input_data(user_id, test_email)
+
+    executed = execute_mutation(input_data, user_gql_client)
+
+    assert_match_error_code(executed, "VALIDATION_ERROR")
+    assert executed["data"]["prof"] is None
+
+
 def service_input_data(user_id, service_client_id):
     user_id = str(user_id)
     return {
