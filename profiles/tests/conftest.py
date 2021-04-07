@@ -18,7 +18,6 @@ from profiles.tests.factories import (
     VerifiedPersonalInformationFactory,
     VocabularyFactory,
 )
-from services.enums import ServiceType
 from services.tests.factories import (
     ServiceClientIdFactory,
     ServiceConnectionFactory,
@@ -77,18 +76,6 @@ def address_data(primary=False):
 register(ServiceFactory)
 register(ServiceConnectionFactory)
 register(ServiceClientIdFactory)
-
-
-@pytest.fixture
-def service__service_type():
-    """Service fixture has berth type by default."""
-    return ServiceType.BERTH
-
-
-@pytest.fixture
-def service__implicit_connection():
-    """Service fixture has implicit service connection enabled by default"""
-    return True
 
 
 @pytest.fixture(autouse=True)
