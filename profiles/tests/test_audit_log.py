@@ -16,7 +16,8 @@ from profiles.models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
-from services.tests.factories import ServiceConnectionFactory
+from services.enums import ServiceType
+from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from .factories import (
     ProfileFactory,
@@ -335,6 +336,52 @@ def test_actor_service(live_server, user, group, service_client_id, cap_audit_lo
     assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
     actor_log = log_message["audit_event"]["actor"]
     assert actor_log["service_name"] == service.name
+
+
+def test_actor_multiple_services(
+    live_server, user, group, service_client_id, cap_audit_log
+):
+    profile = ProfileFactory()
+    service = service_client_id.service
+    service2 = ServiceFactory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    ServiceConnectionFactory(profile=profile, service=service)
+    ServiceConnectionFactory(profile=profile, service=service2)
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_profiles", group, service2)
+
+    query = """
+        {
+            youthProfiles: profiles(serviceType: YOUTH_MEMBERSHIP) {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+            berthProfiles: profiles {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+
+    cap_audit_log.clear()
+
+    do_graphql_call_as_user(live_server, user, service=service, query=query)
+
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 2
+    assert_common_fields(audit_logs, profile, "READ", actor_role="ADMIN")
+
+    service_names = {
+        audit_log.get("audit_event", {}).get("actor", {}).get("service_name")
+        for audit_log in audit_logs
+    }
+    assert service_names == {service.name, service2.name}
 
 
 class TestIPAddressLogging:
