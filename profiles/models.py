@@ -31,6 +31,7 @@ from .enums import (
     RepresentationType,
     RepresentativeConfirmationDegree,
 )
+from .fields import CallableHashKeyEncryptedSearchField
 
 
 def get_user_media_folder(instance, filename):
@@ -228,6 +229,10 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
+def get_national_identification_number_hash_key():
+    return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
+
+
 class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
@@ -242,8 +247,8 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
     _national_identification_number_data = fields.EncryptedCharField(
         max_length=1024, blank=True,
     )
-    national_identification_number = fields.SearchField(
-        hash_key=settings.SALT_NATIONAL_IDENTIFICATION_NUMBER,
+    national_identification_number = CallableHashKeyEncryptedSearchField(
+        hash_key=get_national_identification_number_hash_key,
         encrypted_field_name="_national_identification_number_data",
         blank=True,
         help_text="Finnish national identification number.",
