@@ -88,9 +88,12 @@ class Service(TranslatableModel):
     def __str__(self):
         return self.safe_translation_getter("title", super().__str__())
 
-    def has_connection_to_profile(self, profile):
-        """Has this service an implicit or explicit connection to a profile"""
-        if self.implicit_connection:
+    def has_connection_to_profile(self, profile, allow_implicit=True):
+        """Has this service an implicit or explicit connection to a profile
+
+        Checking can be limited only to explicit connection by setting
+        allow_implicit to False. By default, implicit connection is checked."""
+        if allow_implicit and self.implicit_connection:
             return True
 
         return self.serviceconnection_set.filter(profile=profile).exists()

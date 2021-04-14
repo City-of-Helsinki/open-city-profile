@@ -1005,7 +1005,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             info, profile_data.pop("id"), only_type=ProfileNode
         )
 
-        if not service.has_connection_to_profile(profile):
+        if not service.has_connection_to_profile(profile, allow_implicit=False):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )

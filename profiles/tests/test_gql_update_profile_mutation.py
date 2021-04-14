@@ -15,13 +15,19 @@ from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFact
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize("implicit_serviceconnection", (True, False))
 @pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
 def test_staff_user_can_update_a_profile(
-    user_gql_client, group, service, with_serviceconnection
+    user_gql_client, group, service, with_serviceconnection, implicit_serviceconnection
 ):
+    if implicit_serviceconnection:
+        service.implicit_connection = True
+        service.save()
+
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     if with_serviceconnection:
         ServiceConnectionFactory(profile=profile, service=service)
+
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
     user = user_gql_client.user
