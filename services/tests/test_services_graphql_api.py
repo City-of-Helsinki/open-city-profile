@@ -1,5 +1,3 @@
-from string import Template
-
 from open_city_profile.consts import (
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     SERVICE_NOT_IDENTIFIED_ERROR,
@@ -85,10 +83,14 @@ def test_normal_user_can_query_own_services(
 def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
 
+    # service object with type is included in query just to ensure that it has NO affect
     query = """
         mutation {
             addServiceConnection(input: {
                 serviceConnection: {
+                    service: {
+                        type: GODCHILDREN_OF_CULTURE
+                    }
                     enabled: false
                 }
             }) {
@@ -111,72 +113,6 @@ def test_normal_user_can_add_service(user_gql_client, service):
         }
     }
     executed = user_gql_client.execute(query, service=service)
-    assert executed["data"] == expected_data
-
-
-def test_normal_user_can_add_service_using_service_type_input_field(
-    user_gql_client, service_factory
-):
-    ProfileFactory(user=user_gql_client.user)
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    request_service = service_factory(service_type=None)
-
-    t = Template(
-        """
-        mutation {
-            add1: addServiceConnection(input: {
-                serviceConnection: {
-                    service: {
-                        type: ${service_type_1}
-                    }
-                    enabled: false
-                }
-            }) {
-                serviceConnection {
-                    service {
-                        type
-                    }
-                    enabled
-                }
-            }
-
-            add2: addServiceConnection(input: {
-                serviceConnection: {
-                    service: {
-                        type: ${service_type_2}
-                    }
-                }
-            }) {
-                serviceConnection {
-                    service {
-                        type
-                    }
-                    enabled
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type_1=service_berth.service_type.name,
-        service_type_2=service_youth.service_type.name,
-    )
-    expected_data = {
-        "add1": {
-            "serviceConnection": {
-                "service": {"type": service_berth.service_type.name},
-                "enabled": False,
-            }
-        },
-        "add2": {
-            "serviceConnection": {
-                "service": {"type": service_youth.service_type.name},
-                "enabled": True,
-            }
-        },
-    }
-    executed = user_gql_client.execute(query, service=request_service)
     assert executed["data"] == expected_data
 
 

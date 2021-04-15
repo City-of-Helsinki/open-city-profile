@@ -16,11 +16,13 @@ def test_staff_user_can_create_a_profile(
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
 
+    # serviceType is included in query just to ensure that it has NO affect
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
+                    serviceType: GODCHILDREN_OF_CULTURE,
                     profile: {
                         firstName: "${first_name}",
                         lastName: "${last_name}",
@@ -148,44 +150,6 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
     )
     query = t.substitute(first_name="John")
     executed = user_gql_client.execute(query, service=service)
-    assert "errors" in executed
-    assert executed["errors"][0]["message"] == _(
-        "You do not have permission to perform this action."
-    )
-
-
-def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_of(
-    user_gql_client, service_factory
-):
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory(name="youth_membership")
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service_youth)
-
-    t = Template(
-        """
-        mutation {
-            createProfile(
-                input: {
-                    serviceType: ${service_type},
-                    profile: {
-                        firstName: "${first_name}",
-                    }
-                }
-            ) {
-                profile {
-                    firstName
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type=service_berth.service_type.name, first_name="John"
-    )
-    executed = user_gql_client.execute(query, service=service_youth)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."

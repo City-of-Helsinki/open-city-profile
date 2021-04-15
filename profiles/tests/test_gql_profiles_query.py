@@ -87,9 +87,10 @@ def test_staff_user_with_group_access_can_query_profiles(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
 
+    # serviceType is included in query just to ensure that it has NO affect
     query = """
         {
-            profiles {
+            profiles(serviceType: GODCHILDREN_OF_CULTURE) {
                 edges {
                     node {
                         firstName
@@ -851,47 +852,3 @@ def test_not_specifying_requesters_service_results_in_permission_denied_error(
     """
     executed = user_gql_client.execute(query)
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-
-
-def test_service_type_argument_temporarily_overrides_the_requesters_service(
-    user_gql_client, group, service_factory
-):
-    profile_berth = ProfileFactory()
-    profile_youth = ProfileFactory()
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    ServiceConnectionFactory(profile=profile_berth, service=service_berth)
-    ServiceConnectionFactory(profile=profile_youth, service=service_youth)
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
-    assign_perm("can_view_profiles", group, service_youth)
-
-    t = Template(
-        """
-        {
-            berthProfiles: profiles(serviceType: ${service_type}) {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-
-            youthProfiles: profiles {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
-    expected_data = {
-        "berthProfiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]},
-        "youthProfiles": {"edges": [{"node": {"firstName": profile_youth.first_name}}]},
-    }
-    executed = user_gql_client.execute(query, service=service_youth)
-    assert executed["data"] == expected_data
