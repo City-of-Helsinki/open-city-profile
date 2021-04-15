@@ -27,6 +27,7 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
                     "gdpr_url",
                     "gdpr_query_scope",
                     "gdpr_delete_scope",
+                    "implicit_connection",
                 )
             },
         ),
