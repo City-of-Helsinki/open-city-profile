@@ -57,8 +57,7 @@ class ServiceInput(graphene.InputObjectType):
 
 class ServiceConnectionInput(graphene.InputObjectType):
     service = ServiceInput(
-        description="**DEPRECATED**: requester's service is determined by authentication, "
-        "but for now it can still be overridden by this argument."
+        description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication."
     )
     enabled = graphene.Boolean()
 

@@ -730,8 +730,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         )
         profile = CreateProfileInput(required=True)
 
@@ -1023,8 +1022,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         )
         profile = UpdateProfileInput(required=True)
 
@@ -1199,8 +1197,7 @@ class Query(graphene.ObjectType):
         id=graphene.Argument(graphene.ID, required=True),
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         ),
         description="Get profile by profile ID.\n\nRequires `staff` credentials for the requester's service."
         "The profile must have an active connection to the requester's service, otherwise "
@@ -1230,8 +1227,7 @@ class Query(graphene.ObjectType):
         ProfileNode,
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         ),
         description="Search for profiles. The results are filtered based on the given parameters. The results are "
         "paged using Relay.\n\nRequires `staff` credentials for the requester's service."
