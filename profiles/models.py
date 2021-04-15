@@ -14,8 +14,7 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
-from services.enums import ServiceType
-from services.models import Service, ServiceConnection
+from services.models import ServiceConnection
 from users.models import User
 from utils.models import (
     NullsToEmptyStringsModel,
@@ -158,7 +157,7 @@ class Profile(UUIDModel, SerializableMixin):
 
     @classmethod
     @transaction.atomic
-    def import_customer_data(cls, data):
+    def import_customer_data(cls, data, service):
         """
         Imports list of customers of the following shape:
         {
@@ -209,11 +208,10 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.phones.create(
                         phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0
                     )
-                ServiceConnection.objects.create(
-                    profile=profile,
-                    service=Service.objects.get(service_type=ServiceType.BERTH),
-                    enabled=False,
-                )
+                if service:
+                    ServiceConnection.objects.create(
+                        profile=profile, service=service, enabled=False,
+                    )
                 result[item["customer_id"]] = profile.pk
             except Exception as err:
                 msg = (

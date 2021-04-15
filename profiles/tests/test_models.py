@@ -6,8 +6,6 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
-from services.enums import ServiceType
-
 from ..models import Email, Profile, TemporaryReadAccessToken
 from .factories import (
     EmailFactory,
@@ -117,15 +115,12 @@ def test_import_customer_data_with_valid_data_set(service):
         },
     ]
     assert Profile.objects.count() == 0
-    result = Profile.import_customer_data(data)
+    result = Profile.import_customer_data(data, service)
     assert len(result.keys()) == 2
     profiles = Profile.objects.all()
     assert len(profiles) == 2
     for profile in profiles:
-        assert (
-            profile.service_connections.first().service.service_type
-            == ServiceType.BERTH
-        )
+        assert profile.service_connections.first().service == service
 
 
 def test_import_customer_data_with_missing_customer_id():
@@ -154,12 +149,12 @@ def test_import_customer_data_with_missing_customer_id():
     ]
     assert Profile.objects.count() == 0
     with pytest.raises(Exception) as e:
-        Profile.import_customer_data(data)
+        Profile.import_customer_data(data, "")
     assert str(e.value) == "Could not import unknown customer, index: 0"
     assert Profile.objects.count() == 0
 
 
-def test_import_customer_data_with_missing_email(service):
+def test_import_customer_data_with_missing_email():
     data = [
         {
             "customer_id": "321457",
@@ -175,7 +170,7 @@ def test_import_customer_data_with_missing_email(service):
         }
     ]
     assert Profile.objects.count() == 0
-    Profile.import_customer_data(data)
+    Profile.import_customer_data(data, "")
     assert Profile.objects.count() == 1
 
 
