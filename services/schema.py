@@ -11,7 +11,10 @@ from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection
 
 AllowedServiceType = graphene.Enum.from_enum(
-    ServiceType, description=lambda e: e.label if e else ""
+    ServiceType,
+    description=lambda e: e.label if e else "",
+    deprecation_reason=lambda e: "The whole ServiceType enum is deprecated and shouldn't be used anymore. "
+    "There are different replacements in various places, depending on how this type was used.",
 )
 
 
@@ -24,7 +27,9 @@ class AllowedDataFieldNode(DjangoObjectType):
 
 
 class ServiceNode(DjangoObjectType):
-    type = AllowedServiceType(source="service_type")
+    type = AllowedServiceType(
+        source="service_type", deprecation_reason="See 'name' field for a replacement.",
+    )
     title = graphene.String()
     description = graphene.String()
 

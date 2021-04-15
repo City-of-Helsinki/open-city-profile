@@ -394,7 +394,7 @@ type ServiceNode implements Node {
   gdprQueryScope: String!
   gdprDeleteScope: String!
   serviceconnectionSet(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection!
-  type: ServiceType
+  type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
   title: String
   description: String
 }
@@ -410,10 +410,10 @@ type ServiceNodeEdge {
 }
 
 enum ServiceType {
-  HKI_MY_DATA
-  BERTH
-  YOUTH_MEMBERSHIP
-  GODCHILDREN_OF_CULTURE
+  HKI_MY_DATA @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  BERTH @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  YOUTH_MEMBERSHIP @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  GODCHILDREN_OF_CULTURE @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
 }
 
 input SubscriptionInputType {
