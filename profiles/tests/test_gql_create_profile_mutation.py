@@ -63,6 +63,7 @@ ${email_input}
                             node {
                                 service {
                                     type
+                                    name
                                 }
                             }
                         }
@@ -119,7 +120,16 @@ ${email_input}
                     else []
                 },
                 "serviceConnections": {
-                    "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
+                    "edges": [
+                        {
+                            "node": {
+                                "service": {
+                                    "type": service.service_type.name,
+                                    "name": service.name,
+                                }
+                            }
+                        }
+                    ]
                 },
             }
         }

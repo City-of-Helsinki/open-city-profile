@@ -3,7 +3,6 @@ from open_city_profile.consts import (
     SERVICE_NOT_IDENTIFIED_ERROR,
 )
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
@@ -26,6 +25,7 @@ def test_normal_user_can_query_own_services(
                         node {
                             service {
                                 type
+                                name
                                 title
                                 description
                                 allowedDataFields {
@@ -50,7 +50,8 @@ def test_normal_user_can_query_own_services(
                     {
                         "node": {
                             "service": {
-                                "type": ServiceType.BERTH.name,
+                                "type": service.service_type.name,
+                                "name": service.name,
                                 "title": service.title,
                                 "description": service.description,
                                 "allowedDataFields": {
@@ -97,6 +98,7 @@ def test_normal_user_can_add_service(user_gql_client, service):
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                     enabled
                 }
@@ -107,7 +109,7 @@ def test_normal_user_can_add_service(user_gql_client, service):
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {
-                "service": {"type": service.service_type.name},
+                "service": {"type": service.service_type.name, "name": service.name},
                 "enabled": False,
             }
         }
@@ -130,6 +132,7 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                 }
             }
@@ -138,7 +141,9 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
 
     expected_data = {
         "addServiceConnection": {
-            "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
+            "serviceConnection": {
+                "service": {"type": service.service_type.name, "name": service.name}
+            }
         }
     }
     executed = user_gql_client.execute(query, service=service)
@@ -169,6 +174,7 @@ def test_not_identifying_service_for_add_service_connection_produces_service_not
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                 }
             }
@@ -200,6 +206,7 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
                         node {
                             service {
                                 type
+                                name
                                 gdprQueryScope
                                 gdprDeleteScope
                             }
@@ -218,6 +225,7 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
                         "node": {
                             "service": {
                                 "type": service.service_type.name,
+                                "name": service.name,
                                 "gdprQueryScope": query_scope,
                                 "gdprDeleteScope": delete_scope,
                             }

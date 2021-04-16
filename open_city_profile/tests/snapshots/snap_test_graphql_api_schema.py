@@ -387,6 +387,7 @@ input ServiceInput {
 
 type ServiceNode implements Node {
   id: ID!
+  name: String!
   allowedDataFields(before: String, after: String, first: Int, last: Int): AllowedDataFieldNodeConnection!
   createdAt: DateTime!
   gdprUrl: String!

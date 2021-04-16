@@ -32,6 +32,7 @@ class ServiceNode(DjangoObjectType):
         model = Service
         fields = (
             "id",
+            "name",
             "allowed_data_fields",
             "created_at",
             "gdpr_url",
