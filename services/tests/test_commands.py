@@ -15,6 +15,7 @@ def test_command_generate_services_adds_all_services():
     assert Service.objects.count() == len(ServiceType)
 
 
+@pytest.mark.parametrize("service__name", ["berth"])
 def test_command_generate_services_adds_only_missing_services(service):
     assert Service.objects.count() == 1
     call_command("generate_services")

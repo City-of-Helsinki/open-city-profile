@@ -9,7 +9,6 @@ from guardian.shortcuts import assign_perm
 
 from profiles.enums import AddressType, EmailType, PhoneType
 from profiles.models import Address, Email, Phone, Profile
-from services.enums import ServiceType
 from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
 
@@ -73,52 +72,66 @@ def generate_data_fields():
             data_field.save()
 
 
-SERVICE_TRANSLATIONS = {
-    ServiceType.BERTH: {
-        "title": {"en": "Boat berths", "fi": "Venepaikka", "sv": "Båtplatser"},
-        "description": {
-            "en": "Boat berths in Helsinki city boat harbours.",
-            "fi": "Venepaikat helsingin kaupungin venesatamissa.",
-            "sv": "Båtplatser i Helsingfors båthamnar.",
+SERVICES = [
+    {
+        "name": "berth",
+        "translations": {
+            "en": {
+                "title": "Boat berths",
+                "description": "Boat berths in Helsinki city boat harbours.",
+            },
+            "fi": {
+                "title": "Venepaikka",
+                "description": "Venepaikat helsingin kaupungin venesatamissa.",
+            },
+            "sv": {
+                "title": "Båtplatser",
+                "description": "Båtplatser i Helsingfors båthamnar.",
+            },
         },
     },
-    ServiceType.YOUTH_MEMBERSHIP: {
-        "title": {
-            "en": "Youth service membership",
-            "fi": "Nuorisopalveluiden jäsenkortti",
-            "sv": "Ungdomstjänstmedlemskap",
-        },
-        "description": {
-            "en": (
-                "With youth service membership you get to participate in all activities offered by Helsinki city "
-                "community centers."
-            ),
-            "fi": (
-                "Nuorisopalveluiden Jäsenkortilla pääset mukaan nuorisotalojen toimintaan. Saat etuja kaupungin "
-                "kulttuuritapahtumissa ja paikoissa."
-            ),
-            "sv": (
-                "Med medlemskap i ungdomstjänsten får du delta i alla aktiviteter som erbjuds av Helsingfors "
-                "ungdomscenter."
-            ),
-        },
-    },
-    ServiceType.GODCHILDREN_OF_CULTURE: {
-        "title": {
-            "en": "Culture Kids",
-            "fi": "Kulttuurin kummilapset",
-            "sv": "Kulturens fadderbarn",
-        },
-        "description": {
-            "en": "Culture kids -service provides free cultural experiences for children born in Helsinki in 2020.",
-            "fi": (
-                "Kulttuurin kummilapset -palvelu tarjoaa ilmaisia kulttuurielämyksiä vuodesta 2020 alkaen ",
-                "Helsingissä syntyville lapsille.",
-            ),
-            "sv": "Kulturens fadderbarn - tjänsten ger gratis kulturupplevelser för barn födda i Helsingfors 2020.",
+    {
+        "name": "youth_membership",
+        "translations": {
+            "en": {
+                "title": "Youth service membership",
+                "description": "With youth service membership you get to participate in all activities "
+                "offered by Helsinki city community centers.",
+            },
+            "fi": {
+                "title": "Nuorisopalveluiden jäsenkortti",
+                "description": "Nuorisopalveluiden Jäsenkortilla pääset mukaan nuorisotalojen toimintaan. "
+                "Saat etuja kaupungin kulttuuritapahtumissa ja paikoissa.",
+            },
+            "sv": {
+                "title": "Ungdomstjänstmedlemskap",
+                "description": "Med medlemskap i ungdomstjänsten får du delta i alla aktiviteter som "
+                "erbjuds av Helsingfors ungdomscenter.",
+            },
         },
     },
-}
+    {
+        "name": "godchildren_of_culture",
+        "translations": {
+            "en": {
+                "title": "Culture Kids",
+                "description": "Culture kids -service provides free cultural experiences for children "
+                "born in Helsinki in 2020.",
+            },
+            "fi": {
+                "title": "Kulttuurin kummilapset",
+                "description": "Kulttuurin kummilapset -palvelu tarjoaa ilmaisia kulttuurielämyksiä "
+                "vuodesta 2020 alkaen Helsingissä syntyville lapsille.",
+            },
+            "sv": {
+                "title": "Kulturens fadderbarn",
+                "description": "Kulturens fadderbarn - tjänsten ger gratis kulturupplevelser för barn "
+                "födda i Helsingfors 2020.",
+            },
+        },
+    },
+    {"name": "hki_my_data"},
+]
 
 
 @transaction.atomic
@@ -128,25 +141,19 @@ def generate_services():
     Also assigns allowed data fields for each created service.
     """
     services = []
-    for service_type in ServiceType:
-        service = Service.objects.filter(service_type=service_type).first()
-        if not service:
-            service = Service(service_type=service_type, title=service_type.name)
-            if service_type in SERVICE_TRANSLATIONS:
-                for language in ["fi", "en", "sv"]:
-                    service.set_current_language(language)
-                    service.title = SERVICE_TRANSLATIONS[service_type]["title"][
-                        language
-                    ]
-                    service.description = SERVICE_TRANSLATIONS[service_type][
-                        "description"
-                    ][language]
+    for service_spec in SERVICES:
+        service_name = service_spec["name"]
+        try:
+            service = Service.objects.get(name=service_name)
+        except Service.DoesNotExist:
+            service = Service(name=service_name, title=service_name)
+            for language, translations in service_spec.get("translations", {}).items():
+                service.set_current_language(language)
+                for field, text in translations.items():
+                    setattr(service, field, text)
             service.save()
             for field in AllowedDataField.objects.all():
-                if (
-                    field.field_name != "ssn"
-                    or service.service_type == ServiceType.BERTH
-                ):
+                if field.field_name != "ssn" or service.name == "berth":
                     service.allowed_data_fields.add(field)
         services.append(service)
     return services
