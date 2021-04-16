@@ -29,27 +29,23 @@ def test_command_add_object_permissions_with_correct_arguments_output(
     assert not user.has_perm("can_manage_profiles", service)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_view_profiles",
     ]
     call_command("add_object_permission", *args, stdout=out)
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_manage_profiles",
     ]
     call_command("add_object_permission", *args, stdout=out)
     assert (
-        "Permission can_view_profiles added for {0} on service {1}".format(
-            group.name, ServiceType.BERTH.name.capitalize()
-        )
+        f"Permission can_view_profiles added for {group.name} on service {service.name}"
         in out.getvalue()
     )
     assert (
-        "Permission can_manage_profiles added for {0} on service {1}".format(
-            group.name, ServiceType.BERTH.name.capitalize()
-        )
+        f"Permission can_manage_profiles added for {group.name} on service {service.name}"
         in out.getvalue()
     )
     assert user.has_perm("can_view_profiles", service)
@@ -62,7 +58,7 @@ def test_command_add_object_permissions_errors_out_when_invalid_permission_given
     user.groups.add(group)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_manage_profiles_invalid",
     ]
@@ -77,7 +73,7 @@ def test_command_add_object_permissions_errors_out_when_invalid_group_name_given
     user.groups.add(group)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         "InvalidGroup",
         "can_manage_profiles",
     ]
@@ -86,18 +82,18 @@ def test_command_add_object_permissions_errors_out_when_invalid_group_name_given
     assert not user.has_perm("can_manage_profiles", service)
 
 
-def test_command_add_object_permissions_throws_error_when_invalid_service_type_given(
+def test_command_add_object_permissions_errors_out_when_invalid_service_given(
     user, service, group
 ):
     user.groups.add(group)
     out = StringIO()
     args = [
-        "BERTH_INVALID",
+        "INVALID",
         group.name,
         "can_manage_profiles",
     ]
-    with pytest.raises(KeyError):
-        call_command("add_object_permission", *args, stdout=out)
+    call_command("add_object_permission", *args, stdout=out)
+    assert "Invalid service given" in out.getvalue()
     assert not user.has_perm("can_manage_profiles", service)
 
 
