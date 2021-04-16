@@ -1,11 +1,15 @@
+import pytest
+
 from open_city_profile.consts import (
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     SERVICE_NOT_IDENTIFIED_ERROR,
 )
 from open_city_profile.tests.asserts import assert_match_error_code
+from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_query_own_services(
     user_gql_client, service, allowed_data_field_factory
 ):
@@ -81,6 +85,7 @@ def test_normal_user_can_query_own_services(
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
 
@@ -118,6 +123,7 @@ def test_normal_user_can_add_service(user_gql_client, service):
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_cannot_add_service_multiple_times_mutation(
     user_gql_client, service
 ):
@@ -192,7 +198,9 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
     query_scope = "query_scope"
     delete_scope = "delete_scope"
     service = service_factory(
-        gdpr_query_scope=query_scope, gdpr_delete_scope=delete_scope
+        service_type=ServiceType.BERTH,
+        gdpr_query_scope=query_scope,
+        gdpr_delete_scope=delete_scope,
     )
     profile = ProfileFactory(user=user_gql_client.user)
 

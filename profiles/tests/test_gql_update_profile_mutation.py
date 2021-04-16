@@ -16,7 +16,6 @@ from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFact
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 @pytest.mark.parametrize("implicit_serviceconnection", (True, False))
-@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
 def test_staff_user_can_update_a_profile(
     user_gql_client, group, service, with_serviceconnection, implicit_serviceconnection
 ):
@@ -142,7 +141,6 @@ def test_staff_user_can_update_a_profile(
         assert executed["data"]["updateProfile"] is None
 
 
-@pytest.mark.parametrize("service__service_type", [ServiceType.YOUTH_MEMBERSHIP])
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
     user_gql_client, group, service
 ):

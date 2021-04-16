@@ -24,10 +24,10 @@ def test_generate_services_without_service_type(service_factory):
 
 @pytest.mark.django_db(transaction=True)
 def test_add_service_with_duplicate_service_type(service_factory):
-    service_factory()
+    service_factory(service_type=ServiceType.BERTH)
     assert Service.objects.count() == 1
     with pytest.raises(IntegrityError):
-        service_factory()
+        service_factory(service_type=ServiceType.BERTH)
     assert Service.objects.count() == 1
 
 

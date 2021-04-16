@@ -8,11 +8,9 @@ from services.models import (
     ServiceConnection,
 )
 
-from ..enums import ServiceType
-
 
 class ServiceFactory(factory.django.DjangoModelFactory):
-    service_type = ServiceType.BERTH
+    service_type = None
     name = factory.Sequence(lambda n: "service %d" % n)
 
     @factory.lazy_attribute
