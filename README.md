@@ -78,8 +78,7 @@ Prerequisites:
        * `GroupName` is the name of the group to whom the permission is give
        * `can_view_profiles` is the name of the permission
    * Permissions can be removed as follows:
-     * `docker exec profile-backend python manage.py remove_object_permission BERTH
-     VeneAdmin can_view_profiles`
+     * `docker exec profile-backend python manage.py remove_object_permission ServiceName GroupName can_view_profiles`
 
 6. Seed development data
     * **Note!** This command will flush the database.

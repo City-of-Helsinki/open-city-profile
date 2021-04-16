@@ -107,27 +107,23 @@ def test_command_remove_object_permissions_with_correct_arguments_output(
     assert user.has_perm("can_manage_profiles", service)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_view_profiles",
     ]
     call_command("remove_object_permission", *args, stdout=out)
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_manage_profiles",
     ]
     call_command("remove_object_permission", *args, stdout=out)
     assert (
-        "Permission can_view_profiles removed for {0} on service {1}".format(
-            group.name, ServiceType.BERTH.name.capitalize()
-        )
+        f"Permission can_view_profiles removed for {group.name} on service {service.name}"
         in out.getvalue()
     )
     assert (
-        "Permission can_manage_profiles removed for {0} on service {1}".format(
-            group.name, ServiceType.BERTH.name.capitalize()
-        )
+        f"Permission can_manage_profiles removed for {group.name} on service {service.name}"
         in out.getvalue()
     )
     assert not user.has_perm("can_view_profiles", service)
@@ -142,7 +138,7 @@ def test_command_remove_object_permissions_errors_out_when_invalid_permission_gi
     assert user.has_perm("can_manage_profiles", service)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         group.name,
         "can_manage_profiles_invalid",
     ]
@@ -159,7 +155,7 @@ def test_command_remove_object_permissions_errors_out_when_invalid_group_name_gi
     assert user.has_perm("can_manage_profiles", service)
     out = StringIO()
     args = [
-        ServiceType.BERTH.name,
+        service.name,
         "InvalidGroup",
         "can_manage_profiles",
     ]
@@ -168,7 +164,7 @@ def test_command_remove_object_permissions_errors_out_when_invalid_group_name_gi
     assert user.has_perm("can_manage_profiles", service)
 
 
-def test_command_remove_object_permissions_throws_error_when_invalid_service_type_given(
+def test_command_remove_object_permissions_errors_out_when_invalid_service_given(
     user, service, group
 ):
     user.groups.add(group)
@@ -176,10 +172,10 @@ def test_command_remove_object_permissions_throws_error_when_invalid_service_typ
     assert user.has_perm("can_manage_profiles", service)
     out = StringIO()
     args = [
-        "BERTH_INVALID",
+        "INVALID",
         group.name,
         "can_manage_profiles",
     ]
-    with pytest.raises(KeyError):
-        call_command("remove_object_permission", *args, stdout=out)
+    call_command("remove_object_permission", *args, stdout=out)
+    assert "Invalid service given" in out.getvalue()
     assert user.has_perm("can_manage_profiles", service)
