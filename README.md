@@ -88,7 +88,7 @@ Prerequisites:
     * Command will generate:
       * All available services
       * One group per service (with `can_manage_profiles` permissions)
-      * One user per group (with username `{service_type}_user`)
+      * One user per group (with username `{group.name}_user`)
       * Profiles
         * With user
         * With email, phone number and address
