@@ -89,6 +89,7 @@ SERVICES = [
                 "description": "Båtplatser i Helsingfors båthamnar.",
             },
         },
+        "allowed_data_fields": ["name", "email", "address", "phone", "ssn"],
     },
     {
         "name": "youth_membership",
@@ -109,6 +110,7 @@ SERVICES = [
                 "erbjuds av Helsingfors ungdomscenter.",
             },
         },
+        "allowed_data_fields": ["name", "email", "address", "phone"],
     },
     {
         "name": "godchildren_of_culture",
@@ -129,8 +131,12 @@ SERVICES = [
                 "födda i Helsingfors 2020.",
             },
         },
+        "allowed_data_fields": ["name", "email", "address", "phone"],
     },
-    {"name": "hki_my_data"},
+    {
+        "name": "hki_my_data",
+        "allowed_data_fields": ["name", "email", "address", "phone"],
+    },
 ]
 
 
@@ -152,9 +158,12 @@ def generate_services():
                 for field, text in translations.items():
                     setattr(service, field, text)
             service.save()
-            for field in AllowedDataField.objects.all():
-                if field.field_name != "ssn" or service.name == "berth":
-                    service.allowed_data_fields.add(field)
+
+            allowed_data_fields = service_spec.get("allowed_data_fields", [])
+            for field in AllowedDataField.objects.filter(
+                field_name__in=allowed_data_fields
+            ):
+                service.allowed_data_fields.add(field)
         services.append(service)
     return services
 
