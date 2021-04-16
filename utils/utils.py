@@ -157,7 +157,7 @@ def generate_groups_for_services(services=tuple()):
     """Create groups for given services unless they already exist."""
     groups = []
     for service in services:
-        group, created = Group.objects.get_or_create(name=service.service_type.value)
+        group, created = Group.objects.get_or_create(name=service.name)
         groups.append(group)
     return groups
 
@@ -169,7 +169,7 @@ def assign_permissions(groups=tuple()):
     """
     available_permissions = [item[0] for item in Service._meta.permissions]
     for group in groups:
-        service = Service.objects.get(service_type=group.name)
+        service = Service.objects.get(name=group.name)
         if service:
             for permission in available_permissions:
                 assign_perm(permission, group, service)

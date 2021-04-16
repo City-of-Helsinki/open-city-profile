@@ -47,7 +47,7 @@ def test_generate_group_for_service(times, service):
 def test_assign_permissions(times, user, service):
     available_permissions = [item[0] for item in Service._meta.permissions]
     # assign_permissions expects a Group and a Service exist with the same name.
-    group = GroupFactory(name=service.service_type)
+    group = GroupFactory(name=service.name)
     user.groups.add(group)
 
     for permission in available_permissions:
