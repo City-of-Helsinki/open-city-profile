@@ -258,6 +258,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     user.groups.add(group_berth)
     user.groups.add(group_youth)
     assign_perm("can_manage_profiles", group_berth, service_berth)
+    assign_perm("can_manage_profiles", group_youth, service_youth)
     assign_perm("can_manage_sensitivedata", group_youth, service_youth)
     assign_perm("can_view_sensitivedata", group_youth, service_youth)
 
