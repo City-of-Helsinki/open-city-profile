@@ -87,6 +87,10 @@ def get_current_service():
     return _get_current_request_attr("service")
 
 
+def get_current_client_id():
+    return _get_current_request_attr("client_id")
+
+
 def requester_has_service_permission(request, permission):
     service = getattr(request, "service", None)
 

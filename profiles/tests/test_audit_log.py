@@ -304,6 +304,8 @@ def test_service_is_resolved_in_graphql_call(
     actor_log = log_message["audit_event"]["actor"]
     assert "service_name" in actor_log
     assert actor_log["service_name"] == service.name
+    assert "client_id" in actor_log
+    assert actor_log["client_id"] == service_client_id.client_id
 
 
 def test_actor_service(live_server, user, group, service_client_id, cap_audit_log):
@@ -336,6 +338,8 @@ def test_actor_service(live_server, user, group, service_client_id, cap_audit_lo
     assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
     actor_log = log_message["audit_event"]["actor"]
     assert actor_log["service_name"] == service.name
+    assert "client_id" in actor_log
+    assert actor_log["client_id"] == service_client_id.client_id
 
 
 class TestIPAddressLogging:

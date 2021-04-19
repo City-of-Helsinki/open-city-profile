@@ -5,7 +5,12 @@ from datetime import datetime, timezone
 from django.conf import settings
 from django.utils.text import camel_case_to_spaces
 
-from .utils import get_current_service, get_current_user, get_original_client_ip
+from .utils import (
+    get_current_client_id,
+    get_current_service,
+    get_current_user,
+    get_original_client_ip,
+)
 
 
 def should_audit(model):
@@ -76,6 +81,9 @@ def log(action, instance):
         service = get_current_service()
         if service:
             message["audit_event"]["actor"]["service_name"] = service.name
+        client_id = get_current_client_id()
+        if client_id:
+            message["audit_event"]["actor"]["client_id"] = client_id
 
         ip_address = get_original_client_ip()
         if ip_address:
