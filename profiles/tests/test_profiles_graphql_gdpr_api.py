@@ -1,4 +1,3 @@
-import copy
 import json
 
 import pytest
@@ -20,7 +19,6 @@ from users.models import User
 from ..models import Profile
 from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
 
-GDPR_URL = "https://example.com/"
 AUTHORIZATION_CODE = "code123"
 DOWNLOAD_MY_PROFILE_MUTATION = """
     {
@@ -34,10 +32,13 @@ DELETE_MY_PROFILE_MUTATION = """
         }
     }
 """
-QUERY_SCOPE = "https://api.hel.fi/auth/api.gdprquery"
-DELETE_SCOPE = "https://api.hel.fi/auth/api.gdprdelete"
+SCOPE_1 = "https://api.hel.fi/auth/api-1"
+SCOPE_2 = "https://api.hel.fi/auth/api-2"
+API_TOKEN_1 = "api_token_1"
+API_TOKEN_2 = "api_token_2"
 GDPR_API_TOKENS = {
-    "https://api.hel.fi/auth/api": "api_token",
+    SCOPE_1: API_TOKEN_1,
+    SCOPE_2: API_TOKEN_2,
 }
 
 
@@ -45,9 +46,9 @@ GDPR_API_TOKENS = {
 def berth_service(service_factory):
     return service_factory(
         service_type=ServiceType.BERTH,
-        gdpr_url=GDPR_URL,
-        gdpr_query_scope=QUERY_SCOPE,
-        gdpr_delete_scope=DELETE_SCOPE,
+        gdpr_url="https://example-1.com/",
+        gdpr_query_scope=f"{SCOPE_1}.gdprquery",
+        gdpr_delete_scope=f"{SCOPE_1}.gdprdelete",
     )
 
 
@@ -55,9 +56,9 @@ def berth_service(service_factory):
 def youth_service(service_factory):
     return service_factory(
         service_type=ServiceType.YOUTH_MEMBERSHIP,
-        gdpr_url=GDPR_URL,
-        gdpr_query_scope=QUERY_SCOPE,
-        gdpr_delete_scope=DELETE_SCOPE,
+        gdpr_url="https://example-2.com/",
+        gdpr_query_scope=f"{SCOPE_2}.gdprquery",
+        gdpr_delete_scope=f"{SCOPE_2}.gdprdelete",
     )
 
 
@@ -188,19 +189,15 @@ def test_user_can_download_profile_using_correct_api_tokens(
 ):
     def mock_download_gdpr_data(self, api_token: str):
         if (
-            self.service.service_type == ServiceType.BERTH and api_token == "api_token"
+            self.service.service_type == ServiceType.BERTH and api_token == API_TOKEN_1
         ) or (
             self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
-            and api_token == "youth_token"
+            and api_token == API_TOKEN_2
         ):
             return {}
 
         raise Exception("Wrong token used!")
 
-    youth_service.gdpr_query_scope = "https://api.hel.fi/auth/jassariapi.gdprquery"
-    youth_service.save()
-    tokens = copy.copy(GDPR_API_TOKENS)
-    tokens["https://api.hel.fi/auth/jassariapi"] = "youth_token"
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=berth_service)
     ServiceConnectionFactory(profile=profile, service=youth_service)
@@ -211,7 +208,7 @@ def test_user_can_download_profile_using_correct_api_tokens(
         side_effect=mock_download_gdpr_data,
     )
     mocked_token_exchange = mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=tokens
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
@@ -228,7 +225,9 @@ def test_user_can_delete_his_profile(
 ):
     """Deletion is allowed when GDPR URL is set, and service returns a successful status."""
     profile = ProfileFactory(user=user_gql_client.user)
-    requests_mock.delete(f"{GDPR_URL}{profile.pk}", json={}, status_code=204)
+    requests_mock.delete(
+        f"{youth_service.gdpr_url}{profile.pk}", json={}, status_code=204
+    )
 
     if with_serviceconnection:
         ServiceConnectionFactory(profile=profile, service=youth_service)
@@ -291,7 +290,8 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
 
 
 @pytest.mark.parametrize(
-    "gdpr_url, response_status", [("", 204), ("", 405), (GDPR_URL, 405)]
+    "gdpr_url, response_status",
+    [("", 204), ("", 405), ("https://gdpr-url.example/", 405)],
 )
 def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
     user_gql_client, youth_service, requests_mock, gdpr_url, response_status, mocker
@@ -304,7 +304,7 @@ def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
     )
     profile = ProfileFactory(user=user_gql_client.user)
     requests_mock.delete(
-        f"{GDPR_URL}{profile.pk}", json={}, status_code=response_status
+        f"{gdpr_url}{profile.pk}", json={}, status_code=response_status
     )
     youth_service.gdpr_url = gdpr_url
     youth_service.save()
@@ -333,19 +333,15 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
 ):
     def mock_delete_gdpr_data(self, api_token, dry_run=False):
         if (
-            self.service.service_type == ServiceType.BERTH and api_token == "api_token"
+            self.service.service_type == ServiceType.BERTH and api_token == API_TOKEN_1
         ) or (
             self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
-            and api_token == "youth_token"
+            and api_token == API_TOKEN_2
         ):
             return True
 
         raise Exception("Wrong token used!")
 
-    youth_service.gdpr_delete_scope = "https://api.hel.fi/auth/jassariapi.gdprdelete"
-    youth_service.save()
-    tokens = copy.copy(GDPR_API_TOKENS)
-    tokens["https://api.hel.fi/auth/jassariapi"] = "youth_token"
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=berth_service)
     ServiceConnectionFactory(profile=profile, service=youth_service)
@@ -356,7 +352,7 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
         side_effect=mock_delete_gdpr_data,
     )
     mocked_token_exchange = mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=tokens
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
