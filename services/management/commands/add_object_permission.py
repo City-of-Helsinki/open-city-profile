@@ -1,50 +1,19 @@
-from django.contrib.auth.models import Group
-from django.core.management.base import BaseCommand
 from guardian.shortcuts import assign_perm
 
-from services.models import Service
+from services.management.commands.object_permission_command import (
+    ObjectPermissionCommand,
+)
 
-available_permissions = [item[0] for item in Service._meta.permissions]
 
-
-class Command(BaseCommand):
+class Command(ObjectPermissionCommand):
     help = "Add service permissions for groups"
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "service", type=str, help="Service, identified by its name",
-        )
-        parser.add_argument(
-            "group_name",
-            type=str,
-            help="Group name (must match group name in the model)",
-        )
-        parser.add_argument(
-            "permission",
-            type=str,
-            help="Permission (options: {})".format(", ".join(available_permissions)),
-        )
-
-    def handle(self, *args, **kwargs):
-        try:
-            if kwargs["permission"] not in available_permissions:
-                raise ValueError
-            service_name = kwargs["service"]
-            service = Service.objects.get(name=service_name)
-            group = Group.objects.get(name=kwargs["group_name"])
-            permission = kwargs["permission"]
-            assign_perm(permission, group, service)
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "Permission {} added for {} on service {}".format(
-                        permission, group, service.name
-                    )
+    def do_handle(self, permission, group, service):
+        assign_perm(permission, group, service)
+        self.stdout.write(
+            self.style.SUCCESS(
+                "Permission {} added for {} on service {}".format(
+                    permission, group, service.name
                 )
             )
-
-        except Service.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Invalid service given"))
-        except Group.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Invalid group_name given"))
-        except ValueError:
-            self.stdout.write(self.style.ERROR("Invalid permission given"))
+        )
