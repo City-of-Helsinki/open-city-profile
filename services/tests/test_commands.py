@@ -4,21 +4,21 @@ import pytest
 from django.core.management import call_command, CommandError
 from guardian.shortcuts import assign_perm
 
-from services.enums import ServiceType
 from services.models import Service
+from utils.utils import SERVICES
 
 
 def test_command_generate_services_adds_all_services():
     assert Service.objects.count() == 0
     call_command("generate_services")
-    assert Service.objects.count() == len(ServiceType)
+    assert Service.objects.count() == len(SERVICES)
 
 
 @pytest.mark.parametrize("service__name", ["berth"])
 def test_command_generate_services_adds_only_missing_services(service):
     assert Service.objects.count() == 1
     call_command("generate_services")
-    assert Service.objects.count() == len(ServiceType)
+    assert Service.objects.count() == len(SERVICES)
 
 
 def test_command_add_object_permissions_with_correct_arguments_output(

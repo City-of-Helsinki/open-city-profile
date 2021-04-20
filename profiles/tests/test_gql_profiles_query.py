@@ -8,7 +8,6 @@ from guardian.shortcuts import assign_perm
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import AddressType, EmailType, PhoneType
-from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 from subscriptions.models import Subscription
 from subscriptions.tests.factories import (
@@ -803,8 +802,8 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 ):
     profile_berth = ProfileFactory()
     profile_youth = ProfileFactory()
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory()
+    service_youth = service_factory()
     ServiceConnectionFactory(profile=profile_berth, service=service_berth)
     ServiceConnectionFactory(profile=profile_youth, service=service_youth)
     user = user_gql_client.user

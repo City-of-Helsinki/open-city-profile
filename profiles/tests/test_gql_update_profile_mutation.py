@@ -8,7 +8,6 @@ from guardian.shortcuts import assign_perm
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import EmailType
 from profiles.models import Profile
-from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 
 from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFactory
@@ -184,10 +183,9 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
 
 
 def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
-    user_gql_client, service_factory
+    user_gql_client, service
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
-    service = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
     ServiceConnectionFactory(profile=profile, service=service)
 
     t = Template(

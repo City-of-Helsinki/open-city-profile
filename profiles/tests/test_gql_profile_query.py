@@ -7,7 +7,6 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 
 from ..schema import ProfileNode
@@ -93,7 +92,7 @@ def test_staff_user_cannot_query_a_profile_without_a_connection_to_their_service
     user_gql_client, profile, group, service_factory
 ):
     service_berth = service_factory()
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_youth = service_factory()
     ServiceConnectionFactory(profile=profile, service=service_berth)
     user = user_gql_client.user
     user.groups.add(group)

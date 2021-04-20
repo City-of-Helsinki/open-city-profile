@@ -6,7 +6,6 @@ from guardian.shortcuts import get_group_perms
 
 from open_city_profile.tests.factories import GroupFactory
 from profiles.models import Profile
-from services.enums import ServiceType
 from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
 from utils.utils import (
@@ -19,6 +18,7 @@ from utils.utils import (
     generate_profiles,
     generate_service_connections,
     generate_services,
+    SERVICES,
 )
 
 
@@ -28,8 +28,8 @@ def test_generate_services(times):
     assert Service.objects.count() == 0
     for i in range(times):
         services = generate_services()
-    assert len(services) == len(ServiceType)
-    assert Service.objects.count() == len(ServiceType)
+    assert len(services) == len(SERVICES)
+    assert Service.objects.count() == len(SERVICES)
 
 
 @pytest.mark.parametrize("times", [1, 2])
@@ -86,7 +86,7 @@ def test_create_user_returns_existing_user():
 
 
 def test_generates_group_admins():
-    group = GroupFactory(name=ServiceType.BERTH.value)
+    group = GroupFactory(name="group_name")
     assert group.user_set.count() == 0
     generate_group_admins([group], faker=Faker())
     assert group.user_set.count() == 1

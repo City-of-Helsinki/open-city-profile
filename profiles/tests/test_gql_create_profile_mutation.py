@@ -225,8 +225,8 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
 def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
     user_gql_client, service_factory
 ):
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_berth = service_factory()
+    service_youth = service_factory()
     group_berth = GroupFactory(name=ServiceType.BERTH.value)
     group_youth = GroupFactory(name="youth_membership")
     user = user_gql_client.user

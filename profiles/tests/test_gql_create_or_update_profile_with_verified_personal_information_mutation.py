@@ -15,7 +15,6 @@ from profiles.models import (
     VerifiedPersonalInformationTemporaryAddress,
 )
 from profiles.tests.factories import EmailFactory
-from services.enums import ServiceType
 
 from .conftest import (
     VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES,
@@ -398,8 +397,8 @@ def test_add_new_service_connections(
     service_factory, service_client_id_factory, user_gql_client
 ):
     user_id = uuid.uuid1()
-    service1 = service_factory(service_type=ServiceType.BERTH)
-    service2 = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service1 = service_factory()
+    service2 = service_factory()
     service_client_id_factory(service=service1)
     service_client_id_factory(service=service2)
 

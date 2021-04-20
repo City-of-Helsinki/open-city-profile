@@ -59,9 +59,7 @@ class GraphQLClient(GrapheneClient):
             context.service = None
 
         if service is _not_provided:
-            context.service = ServiceFactory(
-                service_type=None, implicit_connection=True,
-            )
+            context.service = ServiceFactory(implicit_connection=True)
         elif service:
             context.service = service
 

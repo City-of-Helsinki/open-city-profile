@@ -11,7 +11,6 @@ from open_city_profile.consts import (
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.enums import ServiceType
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
@@ -45,7 +44,7 @@ GDPR_API_TOKENS = {
 @pytest.fixture
 def berth_service(service_factory):
     return service_factory(
-        service_type=ServiceType.BERTH,
+        name="service-1",
         gdpr_url="https://example-1.com/",
         gdpr_query_scope=f"{SCOPE_1}.gdprquery",
         gdpr_delete_scope=f"{SCOPE_1}.gdprdelete",
@@ -55,7 +54,7 @@ def berth_service(service_factory):
 @pytest.fixture
 def youth_service(service_factory):
     return service_factory(
-        service_type=ServiceType.YOUTH_MEMBERSHIP,
+        name="service-2",
         gdpr_url="https://example-2.com/",
         gdpr_query_scope=f"{SCOPE_2}.gdprquery",
         gdpr_delete_scope=f"{SCOPE_2}.gdprdelete",
@@ -156,7 +155,7 @@ def test_user_can_download_profile_with_connected_services(
     expected = {"key": "BERTH", "children": [{"key": "CUSTOMERID", "value": "123"}]}
 
     def mock_download_gdpr_data(self, api_token: str):
-        if self.service.service_type == ServiceType.BERTH:
+        if self.service.name == berth_service.name:
             return expected
         else:
             return {}
@@ -188,11 +187,8 @@ def test_user_can_download_profile_using_correct_api_tokens(
     user_gql_client, youth_service, berth_service, mocker
 ):
     def mock_download_gdpr_data(self, api_token: str):
-        if (
-            self.service.service_type == ServiceType.BERTH and api_token == API_TOKEN_1
-        ) or (
-            self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
-            and api_token == API_TOKEN_2
+        if (self.service.name == berth_service.name and api_token == API_TOKEN_1) or (
+            self.service.name == youth_service.name and api_token == API_TOKEN_2
         ):
             return {}
 
@@ -263,7 +259,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     """
 
     def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        if self.service.service_type == ServiceType.BERTH and not dry_run:
+        if self.service.name == berth_service.name and not dry_run:
             raise requests.HTTPError("Such big fail! :(")
 
     mocker.patch.object(
@@ -284,7 +280,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     expected_data = {"deleteMyProfile": None}
 
     assert ServiceConnection.objects.count() == 1
-    assert ServiceConnection.objects.first().service.service_type == ServiceType.BERTH
+    assert ServiceConnection.objects.first().service == berth_service
     assert dict(executed["data"]) == expected_data
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_FAILED_ERROR)
 
@@ -332,11 +328,8 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     user_gql_client, youth_service, berth_service, mocker
 ):
     def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        if (
-            self.service.service_type == ServiceType.BERTH and api_token == API_TOKEN_1
-        ) or (
-            self.service.service_type == ServiceType.YOUTH_MEMBERSHIP
-            and api_token == API_TOKEN_2
+        if (self.service.name == berth_service.name and api_token == API_TOKEN_1) or (
+            self.service.name == youth_service.name and api_token == API_TOKEN_2
         ):
             return True
 
