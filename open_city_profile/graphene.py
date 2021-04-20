@@ -13,7 +13,6 @@ from profiles.loaders import (
     PrimaryEmailForProfileLoader,
     PrimaryPhoneForProfileLoader,
 )
-from profiles.utils import set_current_service
 
 
 class JWTMiddleware:
@@ -76,8 +75,5 @@ class GQLDataLoaders:
 def determine_service_middleware(next, root, info, **kwargs):
     if not hasattr(info.context, "service"):
         info.context.service = None
-
-    if info.context.service:
-        set_current_service(info.context.service)
 
     return next(root, info, **kwargs)

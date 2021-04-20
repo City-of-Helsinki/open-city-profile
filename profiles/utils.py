@@ -55,17 +55,17 @@ def clear_thread_locals():
     _thread_locals.__dict__.clear()
 
 
-def set_current_service(service):
-    _thread_locals.service = service
-
-
 def get_current_request():
     return getattr(_thread_locals, "request", None)
 
 
-def get_current_user():
+def _get_current_request_attr(attrname):
     request = get_current_request()
-    return getattr(request, "user", None) if request else None
+    return getattr(request, attrname, None) if request else None
+
+
+def get_current_user():
+    return _get_current_request_attr("user")
 
 
 def get_original_client_ip():
@@ -84,7 +84,7 @@ def get_original_client_ip():
 
 
 def get_current_service():
-    return getattr(_thread_locals, "service", None)
+    return _get_current_request_attr("service")
 
 
 def requester_has_service_permission(request, permission):
