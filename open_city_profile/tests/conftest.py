@@ -55,6 +55,9 @@ class GraphQLClient(GrapheneClient):
                 context.user, auth_token_payload or {}
             )
 
+        if not hasattr(context, "service"):
+            context.service = None
+
         if service is _not_provided:
             context.service = ServiceFactory(
                 service_type=None, implicit_connection=True,

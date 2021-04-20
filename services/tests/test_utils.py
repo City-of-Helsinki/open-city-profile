@@ -20,7 +20,8 @@ def test_service_can_not_be_determined(req, user_auth):
     if user_auth:
         req.user_auth = user_auth
     set_service_to_request(req)
-    assert not hasattr(req, "service")
+
+    assert req.service is None
     assert not hasattr(req, "service_client_id")
 
 

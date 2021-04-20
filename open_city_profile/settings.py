@@ -292,11 +292,7 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
     "MIDDLEWARE": [
-        # JSONWebTokenMiddleware must run before determine_service_middleware
-        # so that JSONWebTokenMiddleware will set the service in the context
-        # before the determine_service_middleware is run. determine_service_middleware
-        # is defined here first because the Middleware are run in reverse order.
-        "open_city_profile.graphene.determine_service_middleware",
+        # NOTE: Graphene runs its middlewares in reverse order!
         "open_city_profile.graphene.JWTMiddleware"
         if USE_HELUSERS_REQUEST_JWT_AUTH
         else "graphql_jwt.middleware.JSONWebTokenMiddleware",

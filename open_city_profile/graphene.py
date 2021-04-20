@@ -70,10 +70,3 @@ class GQLDataLoaders:
             self.cached_loaders = True
 
         return next(root, info, **kwargs)
-
-
-def determine_service_middleware(next, root, info, **kwargs):
-    if not hasattr(info.context, "service"):
-        info.context.service = None
-
-    return next(root, info, **kwargs)

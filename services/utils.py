@@ -2,7 +2,10 @@ from services.models import ServiceClientId
 
 
 def set_service_to_request(request):
-    if not hasattr(request, "service") and hasattr(request, "user_auth"):
+    if not hasattr(request, "service"):
+        request.service = None
+
+    if request.service is None and hasattr(request, "user_auth"):
         client_id = request.user_auth.data.get("azp")
         if not client_id:
             return
