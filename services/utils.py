@@ -18,5 +18,5 @@ def set_service_to_request(request):
         if not service_client_id:
             return
 
-        request.service_client_id = service_client_id
+        request.client_id = service_client_id.client_id
         request.service = service_client_id.service
