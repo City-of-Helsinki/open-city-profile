@@ -1383,9 +1383,8 @@ class Mutation(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
-        "Requires authentication.\n\nPossible error codes:\n\n* "
-        "`CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR`: Returned if the profile is connected to "
-        "Berth service.\n\n* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
+        "Requires authentication.\n\nPossible error codes:\n\n"
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
         "the currently authenticated user.\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes
