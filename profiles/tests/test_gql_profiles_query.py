@@ -137,7 +137,7 @@ def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, s
 
 query_template = Template(
     """
-        query getBerthProfiles($$searchString: String) {
+        query getProfiles($$searchString: String) {
             profiles(${search_arg_name}: $$searchString) {
                 count
                 totalCount
@@ -231,7 +231,7 @@ def test_staff_user_can_sort_profiles(user_gql_client, group, service):
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "-firstName") {
                 edges {
                     node {
@@ -294,7 +294,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
 
     t = Template(
         """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "${order_by}") {
                 edges {
                     node {
@@ -341,7 +341,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by email
 
     query = """
-        query getBerthProfiles($email: String) {
+        query getProfiles($email: String) {
             profiles(emails_Email: $email) {
                 count
                 totalCount
@@ -359,7 +359,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by email_type
 
     query = """
-        query getBerthProfiles($emailType: String) {
+        query getProfiles($emailType: String) {
             profiles(emails_EmailType: $emailType) {
                 count
                 totalCount
@@ -377,7 +377,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(emails_Primary: $primary) {
                 count
                 totalCount
@@ -395,7 +395,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by verified
 
     query = """
-        query getBerthProfiles($verified: Boolean) {
+        query getProfiles($verified: Boolean) {
             profiles(emails_Verified: $verified) {
                 count
                 totalCount
@@ -426,7 +426,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by phone
 
     query = """
-        query getBerthProfiles($phone: String) {
+        query getProfiles($phone: String) {
             profiles(phones_Phone: $phone) {
                 count
                 totalCount
@@ -444,7 +444,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by phone_type
 
     query = """
-        query getBerthProfiles($phoneType: String) {
+        query getProfiles($phoneType: String) {
             profiles(phones_PhoneType: $phoneType) {
                 count
                 totalCount
@@ -462,7 +462,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(phones_Primary: $primary) {
                 count
                 totalCount
@@ -514,7 +514,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by address
 
     query = """
-        query getBerthProfiles($address: String) {
+        query getProfiles($address: String) {
             profiles(addresses_Address: $address) {
                 count
                 totalCount
@@ -532,7 +532,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by postal_code
 
     query = """
-        query getBerthProfiles($postalCode: String) {
+        query getProfiles($postalCode: String) {
             profiles(addresses_PostalCode: $postalCode) {
                 count
                 totalCount
@@ -550,7 +550,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by city
 
     query = """
-        query getBerthProfiles($city: String) {
+        query getProfiles($city: String) {
             profiles(addresses_City: $city) {
                 count
                 totalCount
@@ -568,7 +568,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by country code
 
     query = """
-        query getBerthProfiles($countryCode: String) {
+        query getProfiles($countryCode: String) {
             profiles(addresses_CountryCode: $countryCode) {
                 count
                 totalCount
@@ -586,7 +586,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by address_type
 
     query = """
-        query getBerthProfiles($addressType: String) {
+        query getProfiles($addressType: String) {
             profiles(addresses_AddressType: $addressType) {
                 count
                 totalCount
@@ -604,7 +604,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(addresses_Primary: $primary) {
                 count
                 totalCount
@@ -697,7 +697,7 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles($subscriptionType: String, $postalCode: String) {
+        query getProfiles($subscriptionType: String, $postalCode: String) {
             profiles(
                 enabledSubscriptions: $subscriptionType,
                 addresses_PostalCode: $postalCode
@@ -755,7 +755,7 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "firstName", first: 1) {
                 pageInfo {
                     endCursor
@@ -779,7 +779,7 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
 
     query = """
-        query getBerthProfiles($endCursor: String) {
+        query getProfiles($endCursor: String) {
             profiles(first: 1, after: $endCursor) {
                 edges {
                     node {
