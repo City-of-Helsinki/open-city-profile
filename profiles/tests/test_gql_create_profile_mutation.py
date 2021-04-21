@@ -225,17 +225,19 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
 def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
     user_gql_client, service_factory
 ):
-    service_berth = service_factory()
-    service_youth = service_factory()
-    group_berth = GroupFactory(name=ServiceType.BERTH.value)
-    group_youth = GroupFactory(name="youth_membership")
     user = user_gql_client.user
-    user.groups.add(group_berth)
-    user.groups.add(group_youth)
-    assign_perm("can_manage_profiles", group_berth, service_berth)
-    assign_perm("can_manage_profiles", group_youth, service_youth)
-    assign_perm("can_manage_sensitivedata", group_youth, service_youth)
-    assign_perm("can_view_sensitivedata", group_youth, service_youth)
+
+    entitled_service = service_factory()
+    entitled_group = GroupFactory(name="entitled_group")
+    assign_perm("can_manage_profiles", entitled_group, entitled_service)
+    assign_perm("can_manage_sensitivedata", entitled_group, entitled_service)
+    assign_perm("can_view_sensitivedata", entitled_group, entitled_service)
+    user.groups.add(entitled_group)
+
+    unentitled_service = service_factory()
+    unentitled_group = GroupFactory(name="unentitled_group")
+    assign_perm("can_manage_profiles", unentitled_group, unentitled_service)
+    user.groups.add(unentitled_group)
 
     t = Template(
         """
@@ -262,7 +264,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     )
     query = t.substitute(first_name="John", ssn="121282-123E")
 
-    executed = user_gql_client.execute(query, service=service_berth)
+    executed = user_gql_client.execute(query, service=unentitled_service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."

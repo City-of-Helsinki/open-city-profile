@@ -91,12 +91,13 @@ def test_staff_user_cannot_query_a_profile_without_id(
 def test_staff_user_cannot_query_a_profile_without_a_connection_to_their_service(
     user_gql_client, profile, group, service_factory
 ):
-    service_berth = service_factory()
-    service_youth = service_factory()
-    ServiceConnectionFactory(profile=profile, service=service_berth)
     user = user_gql_client.user
+    staff_user_service = service_factory()
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_youth)
+    assign_perm("can_view_profiles", group, staff_user_service)
+
+    other_service = service_factory()
+    ServiceConnectionFactory(profile=profile, service=other_service)
 
     t = Template(
         """
@@ -112,7 +113,7 @@ def test_staff_user_cannot_query_a_profile_without_a_connection_to_their_service
     query = t.substitute(
         id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id),
     )
-    executed = user_gql_client.execute(query, service=service_youth)
+    executed = user_gql_client.execute(query, service=staff_user_service)
     assert "errors" in executed
     assert "code" in executed["errors"][0]["extensions"]
     assert executed["errors"][0]["extensions"]["code"] == OBJECT_DOES_NOT_EXIST_ERROR

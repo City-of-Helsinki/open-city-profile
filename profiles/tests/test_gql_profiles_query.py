@@ -800,15 +800,17 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     user_gql_client, group, service_factory
 ):
-    profile_berth = ProfileFactory()
-    profile_youth = ProfileFactory()
-    service_berth = service_factory()
-    service_youth = service_factory()
-    ServiceConnectionFactory(profile=profile_berth, service=service_berth)
-    ServiceConnectionFactory(profile=profile_youth, service=service_youth)
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
+
+    entitled_profile = ProfileFactory()
+    entitled_service = service_factory()
+    ServiceConnectionFactory(profile=entitled_profile, service=entitled_service)
+    assign_perm("can_view_profiles", group, entitled_service)
+
+    unentitled_profile = ProfileFactory()
+    unentitled_service = service_factory()
+    ServiceConnectionFactory(profile=unentitled_profile, service=unentitled_service)
 
     query = """
         {
@@ -822,13 +824,13 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
         }
     """
 
-    executed = user_gql_client.execute(query, service=service_berth)
+    executed = user_gql_client.execute(query, service=entitled_service)
     expected_data = {
-        "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
+        "profiles": {"edges": [{"node": {"firstName": entitled_profile.first_name}}]}
     }
     assert executed["data"] == expected_data
 
-    executed = user_gql_client.execute(query, service=service_youth)
+    executed = user_gql_client.execute(query, service=unentitled_service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
