@@ -59,18 +59,20 @@ def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_download_gdpr_data_with_valid_service_and_url(
-    requests_mock, youth_profile_response, service, profile
-):
+def test_download_gdpr_data_with_valid_service_and_url(requests_mock, service, profile):
+    service_response = {
+        "some": "json",
+    }
+
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
     requests_mock.get(
         f"{GDPR_URL}{profile.pk}",
-        json=youth_profile_response,
+        json=service_response,
         request_headers={"authorization": "Bearer token"},
     )
 
     response = service_connection.download_gdpr_data(api_token="token")
-    assert response == youth_profile_response
+    assert response == service_response
 
 
 def test_download_gdpr_data_returns_empty_dict_if_no_url(
