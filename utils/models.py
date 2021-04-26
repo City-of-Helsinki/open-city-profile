@@ -2,7 +2,6 @@ import uuid
 
 from django.db import models
 from django.db.models.fields.reverse_related import OneToOneRel
-from encrypted_fields import fields
 
 
 class UUIDModel(models.Model):
@@ -136,46 +135,3 @@ class ValidateOnSaveModel(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
-
-
-class NullsToEmptyStringsModel(models.Model):
-    """A Model that ensures that all of its string fields (e.g. CharField)
-    that are configured as not-null, have an empty string instead of a None
-    value. This verification happens in the clean() method."""
-
-    class Meta:
-        abstract = True
-
-    @classmethod
-    def _non_nullable_string_field_names(cls):
-        if not hasattr(cls, "_cached_non_nullable_string_field_names"):
-
-            def is_non_nullable_string_field(field):
-                return isinstance(field, models.CharField) and not field.null
-
-            names = set()
-            excluded_names = set()
-
-            for field in cls._meta.fields:
-                if isinstance(field, fields.SearchField):
-                    encrypted_field = field.model._meta.get_field(
-                        field.encrypted_field_name
-                    )
-                    if is_non_nullable_string_field(encrypted_field):
-                        names.add(field.attname)
-                    excluded_names.add(encrypted_field.attname)
-                elif is_non_nullable_string_field(field):
-                    names.add(field.attname)
-
-            names -= excluded_names
-
-            setattr(cls, "_cached_non_nullable_string_field_names", names)
-        return cls._cached_non_nullable_string_field_names
-
-    def clean(self):
-        super().clean()
-
-        for field_name in self._non_nullable_string_field_names():
-            value = getattr(self, field_name)
-            if value is None:
-                setattr(self, field_name, "")

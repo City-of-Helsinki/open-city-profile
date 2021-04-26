@@ -16,13 +16,12 @@ from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
-from utils.fields import CallableHashKeyEncryptedSearchField
-from utils.models import (
-    NullsToEmptyStringsModel,
-    SerializableMixin,
-    UUIDModel,
-    ValidateOnSaveModel,
+from utils.fields import (
+    NonNullCallableHashKeyEncryptedSearchField,
+    NonNullCharField,
+    NonNullEncryptedCharField,
 )
+from utils.models import SerializableMixin, UUIDModel, ValidateOnSaveModel
 
 from .enums import (
     AddressType,
@@ -231,33 +230,33 @@ def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
+class VerifiedPersonalInformation(ValidateOnSaveModel):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
-    first_name = models.CharField(
+    first_name = NonNullCharField(
         max_length=1024, blank=True, help_text="First name(s)."
     )
-    last_name = models.CharField(max_length=1024, blank=True, help_text="Last name.")
-    given_name = fields.EncryptedCharField(
+    last_name = NonNullCharField(max_length=1024, blank=True, help_text="Last name.")
+    given_name = NonNullEncryptedCharField(
         max_length=1024, blank=True, help_text="The name the person is called with."
     )
-    _national_identification_number_data = fields.EncryptedCharField(
+    _national_identification_number_data = NonNullEncryptedCharField(
         max_length=1024, blank=True,
     )
-    national_identification_number = CallableHashKeyEncryptedSearchField(
+    national_identification_number = NonNullCallableHashKeyEncryptedSearchField(
         hash_key=get_national_identification_number_hash_key,
         encrypted_field_name="_national_identification_number_data",
         blank=True,
         help_text="Finnish national identification number.",
     )
-    email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
-    municipality_of_residence = fields.EncryptedCharField(
+    email = NonNullEncryptedCharField(max_length=1024, blank=True, help_text="Email.")
+    municipality_of_residence = NonNullEncryptedCharField(
         max_length=1024,
         blank=True,
         help_text="Official municipality of residence in Finland as a free form text.",
     )
-    municipality_of_residence_number = fields.EncryptedCharField(
+    municipality_of_residence_number = NonNullEncryptedCharField(
         max_length=4,
         blank=True,
         help_text="Official municipality of residence in Finland as an official number.",
@@ -274,10 +273,10 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel, NullsToEmptyStringsModel):
-    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
-    postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
-    post_office = fields.EncryptedCharField(max_length=1024, blank=True)
+class EncryptedAddress(ValidateOnSaveModel):
+    street_address = NonNullEncryptedCharField(max_length=1024, blank=True)
+    postal_code = NonNullEncryptedCharField(max_length=1024, blank=True)
+    post_office = NonNullEncryptedCharField(max_length=1024, blank=True)
 
     class Meta:
         abstract = True
@@ -316,22 +315,20 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(
-    ValidateOnSaveModel, NullsToEmptyStringsModel
-):
+class VerifiedPersonalInformationPermanentForeignAddress(ValidateOnSaveModel):
     RELATED_NAME = "permanent_foreign_address"
 
-    street_address = fields.EncryptedCharField(
+    street_address = NonNullEncryptedCharField(
         max_length=1024,
         blank=True,
         help_text="Street address or whatever is the _first part_ of the address.",
     )
-    additional_address = fields.EncryptedCharField(
+    additional_address = NonNullEncryptedCharField(
         max_length=1024,
         blank=True,
         help_text="Additional address information, perhaps town, county, state, country etc.",
     )
-    country_code = fields.EncryptedCharField(
+    country_code = NonNullEncryptedCharField(
         max_length=3, blank=True, help_text="An ISO 3166-1 country code."
     )
 

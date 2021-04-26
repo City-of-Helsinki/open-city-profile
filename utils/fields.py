@@ -1,6 +1,28 @@
 import hashlib
 
-from encrypted_fields.fields import is_hashed_already, SEARCH_HASH_PREFIX, SearchField
+from django.db import models
+from encrypted_fields.fields import (
+    EncryptedCharField,
+    is_hashed_already,
+    SEARCH_HASH_PREFIX,
+    SearchField,
+)
+
+
+class NoneToEmptyValueMixin(models.Field):
+    def pre_save(self, model_instance, add):
+        value = super().pre_save(model_instance, add)
+        if value is None:
+            value = ""
+        return value
+
+
+class NonNullCharField(models.CharField, NoneToEmptyValueMixin):
+    """CharField that automatically turns nulls into empty strings"""
+
+
+class NonNullEncryptedCharField(EncryptedCharField, NoneToEmptyValueMixin):
+    """EncryptedCharField that automatically turns nulls into empty strings"""
 
 
 class CallableHashKeyEncryptedSearchField(SearchField):
@@ -26,3 +48,9 @@ class CallableHashKeyEncryptedSearchField(SearchField):
 
         v = value + hash_key
         return SEARCH_HASH_PREFIX + hashlib.sha256(v.encode()).hexdigest()
+
+
+class NonNullCallableHashKeyEncryptedSearchField(
+    CallableHashKeyEncryptedSearchField, NoneToEmptyValueMixin
+):
+    """CallableHashKeyEncryptedSearchField that automatically turns nulls into empty strings"""
