@@ -16,6 +16,7 @@ from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
+from utils.fields import CallableHashKeyEncryptedSearchField
 from utils.models import (
     NullsToEmptyStringsModel,
     SerializableMixin,
@@ -30,7 +31,6 @@ from .enums import (
     RepresentationType,
     RepresentativeConfirmationDegree,
 )
-from .fields import CallableHashKeyEncryptedSearchField
 from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
