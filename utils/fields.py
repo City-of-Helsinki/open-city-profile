@@ -1,6 +1,16 @@
 import hashlib
 
+from django.db import models
 from encrypted_fields.fields import is_hashed_already, SEARCH_HASH_PREFIX, SearchField
+
+
+class NullToEmptyValueMixin(models.Field):
+    def pre_save(self, model_instance, add):
+        value = super().pre_save(model_instance, add)
+        if value is None:
+            value = ""
+            setattr(model_instance, self.attname, value)
+        return value
 
 
 class CallableHashKeyEncryptedSearchField(SearchField):

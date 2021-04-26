@@ -16,13 +16,8 @@ from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
-from utils.fields import CallableHashKeyEncryptedSearchField
-from utils.models import (
-    NullsToEmptyStringsModel,
-    SerializableMixin,
-    UUIDModel,
-    ValidateOnSaveModel,
-)
+from utils.fields import CallableHashKeyEncryptedSearchField, NullToEmptyValueMixin
+from utils.models import SerializableMixin, UUIDModel, ValidateOnSaveModel
 
 from .enums import (
     AddressType,
@@ -234,51 +229,67 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
+class NullToEmptyCharField(NullToEmptyValueMixin, models.CharField):
+    """CharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedCharField(NullToEmptyValueMixin, fields.EncryptedCharField):
+    """EncryptedCharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedSearchField(
+    NullToEmptyValueMixin, CallableHashKeyEncryptedSearchField
+):
+    """EncryptedSearchField with automatic null-to-empty-string functionality"""
+
+
 def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
+class VerifiedPersonalInformation(ValidateOnSaveModel):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
-    first_name = models.CharField(
+    first_name = NullToEmptyCharField(
         max_length=100,
         blank=True,
         help_text="First name(s).",
         validators=[validate_visible_latin_characters_only],
     )
-    last_name = models.CharField(
+    last_name = NullToEmptyCharField(
         max_length=100,
         blank=True,
         help_text="Last name.",
         validators=[validate_visible_latin_characters_only],
     )
-    given_name = fields.EncryptedCharField(
+    given_name = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
         help_text="The name the person is called with.",
         validators=[validate_visible_latin_characters_only],
     )
-    _national_identification_number_data = fields.EncryptedCharField(
+    _national_identification_number_data = NullToEmptyEncryptedCharField(
         max_length=1024,
         blank=True,
         validators=[validate_finnish_national_identification_number],
     )
-    national_identification_number = CallableHashKeyEncryptedSearchField(
+    national_identification_number = NullToEmptyEncryptedSearchField(
         hash_key=get_national_identification_number_hash_key,
         encrypted_field_name="_national_identification_number_data",
         blank=True,
         help_text="Finnish national identification number.",
     )
-    email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
-    municipality_of_residence = fields.EncryptedCharField(
+    email = NullToEmptyEncryptedCharField(
+        max_length=1024, blank=True, help_text="Email."
+    )
+    municipality_of_residence = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
         help_text="Official municipality of residence in Finland as a free form text.",
         validators=[validate_visible_latin_characters_only],
     )
-    municipality_of_residence_number = fields.EncryptedCharField(
+    municipality_of_residence_number = NullToEmptyEncryptedCharField(
         max_length=3,
         blank=True,
         help_text="Official municipality of residence in Finland as an official number.",
@@ -296,14 +307,14 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel, NullsToEmptyStringsModel):
-    street_address = fields.EncryptedCharField(
+class EncryptedAddress(ValidateOnSaveModel):
+    street_address = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
-    postal_code = fields.EncryptedCharField(
+    postal_code = NullToEmptyEncryptedCharField(
         max_length=1024, blank=True, validators=[validate_finnish_postal_code],
     )
-    post_office = fields.EncryptedCharField(
+    post_office = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
 
@@ -344,24 +355,22 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(
-    ValidateOnSaveModel, NullsToEmptyStringsModel
-):
+class VerifiedPersonalInformationPermanentForeignAddress(ValidateOnSaveModel):
     RELATED_NAME = "permanent_foreign_address"
 
-    street_address = fields.EncryptedCharField(
+    street_address = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
         help_text="Street address or whatever is the _first part_ of the address.",
         validators=[validate_visible_latin_characters_only],
     )
-    additional_address = fields.EncryptedCharField(
+    additional_address = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
         help_text="Additional address information, perhaps town, county, state, country etc.",
         validators=[validate_visible_latin_characters_only],
     )
-    country_code = fields.EncryptedCharField(
+    country_code = NullToEmptyEncryptedCharField(
         max_length=3,
         blank=True,
         help_text="An ISO 3166-1 country code.",
