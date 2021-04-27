@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from services.models import Service
 
@@ -36,8 +36,8 @@ class ObjectPermissionCommand(BaseCommand):
 
             self.do_handle(permission, group, service)
         except Service.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Invalid service given"))
+            raise CommandError("Invalid service given")
         except Group.DoesNotExist:
-            self.stdout.write(self.style.ERROR("Invalid group_name given"))
+            raise CommandError("Invalid group_name given")
         except ValueError:
-            self.stdout.write(self.style.ERROR("Invalid permission given"))
+            raise CommandError("Invalid permission given")

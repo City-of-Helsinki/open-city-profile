@@ -1,7 +1,7 @@
 from io import StringIO
 
 import pytest
-from django.core.management import call_command
+from django.core.management import call_command, CommandError
 from guardian.shortcuts import assign_perm
 
 from services.enums import ServiceType
@@ -56,14 +56,13 @@ def test_command_add_object_permissions_errors_out_when_invalid_permission_given
     user, service, group
 ):
     user.groups.add(group)
-    out = StringIO()
     args = [
         service.name,
         group.name,
         "can_manage_profiles_invalid",
     ]
-    call_command("add_object_permission", *args, stdout=out)
-    assert "Invalid permission given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid permission given"):
+        call_command("add_object_permission", *args)
     assert not user.has_perm("can_manage_profiles_invalid", service)
 
 
@@ -71,14 +70,13 @@ def test_command_add_object_permissions_errors_out_when_invalid_group_name_given
     user, service, group
 ):
     user.groups.add(group)
-    out = StringIO()
     args = [
         service.name,
         "InvalidGroup",
         "can_manage_profiles",
     ]
-    call_command("add_object_permission", *args, stdout=out)
-    assert "Invalid group_name given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid group_name given"):
+        call_command("add_object_permission", *args)
     assert not user.has_perm("can_manage_profiles", service)
 
 
@@ -86,14 +84,13 @@ def test_command_add_object_permissions_errors_out_when_invalid_service_given(
     user, service, group
 ):
     user.groups.add(group)
-    out = StringIO()
     args = [
         "INVALID",
         group.name,
         "can_manage_profiles",
     ]
-    call_command("add_object_permission", *args, stdout=out)
-    assert "Invalid service given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid service given"):
+        call_command("add_object_permission", *args)
     assert not user.has_perm("can_manage_profiles", service)
 
 
@@ -136,14 +133,13 @@ def test_command_remove_object_permissions_errors_out_when_invalid_permission_gi
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     assert user.has_perm("can_manage_profiles", service)
-    out = StringIO()
     args = [
         service.name,
         group.name,
         "can_manage_profiles_invalid",
     ]
-    call_command("remove_object_permission", *args, stdout=out)
-    assert "Invalid permission given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid permission given"):
+        call_command("remove_object_permission", *args)
     assert user.has_perm("can_manage_profiles", service)
 
 
@@ -153,14 +149,13 @@ def test_command_remove_object_permissions_errors_out_when_invalid_group_name_gi
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     assert user.has_perm("can_manage_profiles", service)
-    out = StringIO()
     args = [
         service.name,
         "InvalidGroup",
         "can_manage_profiles",
     ]
-    call_command("remove_object_permission", *args, stdout=out)
-    assert "Invalid group_name given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid group_name given"):
+        call_command("remove_object_permission", *args)
     assert user.has_perm("can_manage_profiles", service)
 
 
@@ -170,12 +165,11 @@ def test_command_remove_object_permissions_errors_out_when_invalid_service_given
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
     assert user.has_perm("can_manage_profiles", service)
-    out = StringIO()
     args = [
         "INVALID",
         group.name,
         "can_manage_profiles",
     ]
-    call_command("remove_object_permission", *args, stdout=out)
-    assert "Invalid service given" in out.getvalue()
+    with pytest.raises(CommandError, match="Invalid service given"):
+        call_command("remove_object_permission", *args)
     assert user.has_perm("can_manage_profiles", service)
