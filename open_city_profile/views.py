@@ -69,6 +69,15 @@ sentry_ignored_errors = (
 error_codes = {**error_codes_shared, **error_codes_profile}
 
 
+def _get_error_code(exception):
+    """Get the most specific error code for the exception via superclass"""
+    for exception in exception.mro():
+        try:
+            return error_codes[exception]
+        except KeyError:
+            continue
+
+
 class GraphQLView(BaseGraphQLView):
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send some of them to Sentry"""
@@ -99,23 +108,19 @@ class GraphQLView(BaseGraphQLView):
 
     @staticmethod
     def format_error(error):
-        def get_error_code(exception):
-            """Get the most specific error code for the exception via superclass"""
-            for exception in exception.mro():
-                try:
-                    return error_codes[exception]
-                except KeyError:
-                    continue
-
-        try:
-            error_code = get_error_code(error.original_error.__class__)
-        except AttributeError:
-            error_code = GENERAL_ERROR
         formatted_error = super(GraphQLView, GraphQLView).format_error(error)
-        if error_code and isinstance(formatted_error, dict):
-            if "extensions" not in formatted_error:
-                formatted_error["extensions"] = {}
 
-            if "code" not in formatted_error["extensions"]:
-                formatted_error["extensions"]["code"] = error_code
+        if isinstance(formatted_error, dict):
+            try:
+                error_code = _get_error_code(error.original_error.__class__)
+            except AttributeError:
+                error_code = GENERAL_ERROR
+
+            if error_code:
+                if "extensions" not in formatted_error:
+                    formatted_error["extensions"] = {}
+
+                if "code" not in formatted_error["extensions"]:
+                    formatted_error["extensions"]["code"] = error_code
+
         return formatted_error
