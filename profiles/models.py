@@ -307,7 +307,7 @@ class VerifiedPersonalInformation(ValidateOnSaveModel):
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel):
+class EncryptedAddress(models.Model):
     street_address = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
@@ -355,7 +355,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(ValidateOnSaveModel):
+class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = NullToEmptyEncryptedCharField(

@@ -23,6 +23,7 @@ from graphene_django import DjangoConnectionField
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
+from graphene_validator.decorators import validated
 from graphql_jwt.decorators import login_required, permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
@@ -46,6 +47,7 @@ from subscriptions.schema import (
     SubscriptionNode,
     UpdateMySubscriptionMutation,
 )
+from utils.validation import model_field_validation
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import (
@@ -53,6 +55,7 @@ from .models import (
     ClaimToken,
     Contact,
     Email,
+    EncryptedAddress,
     Phone,
     Profile,
     SensitiveData,
@@ -781,6 +784,18 @@ class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
         description="Post office. Max length 1024 characters."
     )
 
+    @staticmethod
+    def validate_street_address(value, info, **input):
+        return model_field_validation(EncryptedAddress, "street_address", value)
+
+    @staticmethod
+    def validate_postal_code(value, info, **input):
+        return model_field_validation(EncryptedAddress, "postal_code", value)
+
+    @staticmethod
+    def validate_post_office(value, info, **input):
+        return model_field_validation(EncryptedAddress, "post_office", value)
+
 
 class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
     street_address = graphene.String(
@@ -793,6 +808,26 @@ class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
     country_code = graphene.String(
         description="An ISO 3166-1 country code. Max length 3 characters."
     )
+
+    @staticmethod
+    def validate_street_address(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress, "street_address", value
+        )
+
+    @staticmethod
+    def validate_additional_address(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress,
+            "additional_address",
+            value,
+        )
+
+    @staticmethod
+    def validate_country_code(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress, "country_code", value
+        )
 
 
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
@@ -866,6 +901,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
+@validated
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
     class Arguments:
         input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(

@@ -5,6 +5,12 @@ from encrypted_fields.fields import is_hashed_already, SEARCH_HASH_PREFIX, Searc
 
 
 class NullToEmptyValueMixin(models.Field):
+    def to_python(self, value):
+        value = super().to_python(value)
+        if value is None:
+            value = ""
+        return value
+
     def pre_save(self, model_instance, add):
         value = super().pre_save(model_instance, add)
         if value is None:
