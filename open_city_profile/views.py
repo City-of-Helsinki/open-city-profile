@@ -112,12 +112,10 @@ class GraphQLView(BaseGraphQLView):
         except AttributeError:
             error_code = GENERAL_ERROR
         formatted_error = super(GraphQLView, GraphQLView).format_error(error)
-        if error_code and (
-            isinstance(formatted_error, dict)
-            and not (
-                "extensions" in formatted_error
-                and "code" in formatted_error["extensions"]
-            )
-        ):
-            formatted_error["extensions"] = {"code": error_code}
+        if error_code and isinstance(formatted_error, dict):
+            if "extensions" not in formatted_error:
+                formatted_error["extensions"] = {}
+
+            if "code" not in formatted_error["extensions"]:
+                formatted_error["extensions"]["code"] = error_code
         return formatted_error
