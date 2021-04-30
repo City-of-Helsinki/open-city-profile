@@ -273,7 +273,7 @@ class VerifiedPersonalInformation(ValidateOnSaveModel):
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel):
+class EncryptedAddress(models.Model):
     street_address = NonNullEncryptedCharField(max_length=1024, blank=True)
     postal_code = NonNullEncryptedCharField(max_length=1024, blank=True)
     post_office = NonNullEncryptedCharField(max_length=1024, blank=True)
@@ -315,7 +315,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(ValidateOnSaveModel):
+class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = NonNullEncryptedCharField(

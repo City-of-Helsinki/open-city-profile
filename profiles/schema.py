@@ -23,6 +23,7 @@ from graphene_django import DjangoConnectionField
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
+from graphene_validator.decorators import validated
 from graphql_jwt.decorators import login_required, permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
@@ -46,6 +47,7 @@ from subscriptions.schema import (
     SubscriptionNode,
     UpdateMySubscriptionMutation,
 )
+from utils.decorators import field_validations
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import (
@@ -770,6 +772,11 @@ class CreateProfileMutation(relay.ClientIDMutation):
         return CreateProfileMutation(profile=profile)
 
 
+@field_validations(
+    street_address=(VerifiedPersonalInformationPermanentAddress, "street_address"),
+    postal_code=(VerifiedPersonalInformationPermanentAddress, "postal_code"),
+    post_office=(VerifiedPersonalInformationPermanentAddress, "post_office"),
+)
 class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
     street_address = graphene.String(
         description="Street address with possible house number etc. Max length 1024 characters."
@@ -782,6 +789,17 @@ class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
     )
 
 
+@field_validations(
+    street_address=(
+        VerifiedPersonalInformationPermanentForeignAddress,
+        "street_address",
+    ),
+    additional_address=(
+        VerifiedPersonalInformationPermanentForeignAddress,
+        "additional_address",
+    ),
+    country_code=(VerifiedPersonalInformationPermanentForeignAddress, "country_code"),
+)
 class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
     street_address = graphene.String(
         description="Street address or whatever is the _first part_ of the address. Max length 1024 characters."
@@ -866,6 +884,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
+@validated
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
     class Arguments:
         input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(

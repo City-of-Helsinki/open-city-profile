@@ -1,3 +1,4 @@
+import graphene_validator.errors
 import sentry_sdk
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
@@ -44,6 +45,7 @@ error_codes_shared = {
     JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     ValidationError: VALIDATION_ERROR,
+    graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
     CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }

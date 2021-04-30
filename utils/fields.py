@@ -10,10 +10,15 @@ from encrypted_fields.fields import (
 
 
 class NoneToEmptyValueMixin(models.Field):
+    def clean(self, value, model_instance):
+        if value is None:
+            value = ""  # TODO should this insert the new value to the model?
+        return super().clean(value, model_instance)
+
     def pre_save(self, model_instance, add):
         value = super().pre_save(model_instance, add)
         if value is None:
-            value = ""
+            value = ""  # TODO should this insert the new value to the model?
         return value
 
 
