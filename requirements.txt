@@ -197,7 +197,7 @@ requests==2.25.1
     #   pyjwkest
     #   requests-cache
     #   requests-oauthlib
-rsa==4.0
+rsa==4.7
     # via python-jose
 rx==1.6.1
     # via graphql-core
