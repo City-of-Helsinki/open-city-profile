@@ -190,14 +190,14 @@ class ValidationTestBase:
     @staticmethod
     def passes_validation(instance):
         try:
-            instance.save()
+            instance.full_clean()
         except ValidationError as err:
             assert err is None
 
     @staticmethod
     def fails_validation(instance):
         with pytest.raises(ValidationError):
-            instance.save()
+            instance.full_clean()
 
     @staticmethod
     def execute_string_field_max_length_validation_test(

@@ -2,7 +2,7 @@
 
 from django.db import migrations
 import encrypted_fields.fields
-import profiles.fields
+import utils.fields
 import profiles.models
 
 
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="verifiedpersonalinformation",
             name="national_identification_number",
-            field=profiles.fields.CallableHashKeyEncryptedSearchField(
+            field=utils.fields.CallableHashKeyEncryptedSearchField(
                 blank=True,
                 db_index=True,
                 encrypted_field_name="_national_identification_number_data",

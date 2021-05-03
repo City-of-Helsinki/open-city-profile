@@ -1,6 +1,6 @@
 from encrypted_fields.fields import SearchField
 
-from profiles.fields import CallableHashKeyEncryptedSearchField
+from utils.fields import CallableHashKeyEncryptedSearchField
 
 
 def test_callable_hash_key():

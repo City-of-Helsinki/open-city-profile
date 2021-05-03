@@ -111,10 +111,13 @@ graphene-django==2.10.1
     #   django-graphql-jwt
 graphene-federation==0.1.0
     # via -r requirements.in
+git+https://github.com/City-of-Helsinki/graphene-validator.git@wip-prototyping
+    # via -r requirements.in
 graphene==2.1.8
     # via
     #   graphene-django
     #   graphene-federation
+    #   graphene-validator
 graphql-core==2.2.1
     # via
     #   django-graphql-jwt
