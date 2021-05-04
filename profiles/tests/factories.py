@@ -53,8 +53,8 @@ class VerifiedPersonalInformationTemporaryAddressFactory(EncryptedAddressFactory
 class VerifiedPersonalInformationPermanentForeignAddressFactory(
     factory.django.DjangoModelFactory
 ):
-    street_address = factory.Faker("street_address", locale="jp_JP")
-    additional_address = factory.Faker("address", locale="jp_JP")
+    street_address = factory.Faker("street_address")
+    additional_address = factory.Faker("city")
     country_code = factory.Faker("country_code", representation="alpha-2")
 
     class Meta:
