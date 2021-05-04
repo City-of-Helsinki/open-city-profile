@@ -230,6 +230,21 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
             info, field_name, max_length
         )
 
+    @pytest.mark.parametrize(
+        "field_name,invalid_value",
+        [
+            ("first_name", "Jiří"),
+            ("last_name", "Šlégr"),
+            ("given_name", "Ávži"),
+            ("municipality_of_residence", "Hurtteváárááš"),
+        ],
+    )
+    def test_string_field_accepted_characters(self, field_name, invalid_value):
+        info = VerifiedPersonalInformationFactory()
+        setattr(info, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(info)
+
 
 @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
 class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
@@ -243,6 +258,18 @@ class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
         self.execute_string_field_max_length_validation_test(
             address, field_name, max_length
         )
+
+    @pytest.mark.parametrize(
+        "field_name,invalid_value",
+        [("street_address", "Kuldīgas iela 1"), ("post_office", "Čuđevuáčču")],
+    )
+    def test_string_field_accepted_characters(
+        self, address_type, field_name, invalid_value
+    ):
+        address = getattr(VerifiedPersonalInformationFactory(), address_type)
+        setattr(address, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(address)
 
 
 class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
@@ -258,6 +285,16 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
         self.execute_string_field_max_length_validation_test(
             address, field_name, max_length
         )
+
+    @pytest.mark.parametrize(
+        "field_name,invalid_value",
+        [("street_address", "368 Nad Zámečkem"), ("additional_address", "Košiře")],
+    )
+    def test_string_field_accepted_characters(self, field_name, invalid_value):
+        address = VerifiedPersonalInformationFactory().permanent_foreign_address
+        setattr(address, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(address)
 
 
 class TestTemporaryReadAccessTokenValidityDuration:
