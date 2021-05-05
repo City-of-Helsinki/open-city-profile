@@ -217,7 +217,6 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
             ("first_name", 100),
             ("last_name", 100),
             ("given_name", 100),
-            ("national_identification_number", 1024),
             ("email", 1024),
             ("municipality_of_residence", 100),
             ("municipality_of_residence_number", 4),
@@ -242,6 +241,13 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
     def test_string_field_accepted_characters(self, field_name, invalid_value):
         info = VerifiedPersonalInformationFactory()
         setattr(info, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(info)
+
+    @pytest.mark.parametrize("invalid_value", ["150977_5554"])
+    def test_national_identification_number(self, invalid_value):
+        info = VerifiedPersonalInformationFactory()
+        info.national_identification_number = invalid_value
 
         ValidationTestBase.fails_validation(info)
 

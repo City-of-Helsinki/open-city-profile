@@ -1,6 +1,7 @@
 import re
 
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 
 # Unicode blocks:
@@ -21,3 +22,16 @@ def validate_visible_latin_characters_only(value: str) -> None:
             code="unaccepted_characters",
             params={"value": value},
         )
+
+
+# This is not a perfect Finnish personal identity code validator.
+# It checks the allowed characters, but e.g. doesn't notice
+# non-existing dates or calculate the checksum.
+_finnish_national_identification_number_validator = RegexValidator(
+    regex="^[0-3][0-9][0-1][0-9]{3}[A+-][0-9]{3}[0-9A-Y]$",
+    message=_("Invalid Finnish personal identity code"),
+)
+
+
+def validate_finnish_national_identification_number(value: str) -> None:
+    _finnish_national_identification_number_validator(value)

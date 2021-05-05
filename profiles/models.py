@@ -31,7 +31,10 @@ from .enums import (
     RepresentativeConfirmationDegree,
 )
 from .fields import CallableHashKeyEncryptedSearchField
-from .validators import validate_visible_latin_characters_only
+from .validators import (
+    validate_finnish_national_identification_number,
+    validate_visible_latin_characters_only,
+)
 
 
 def get_user_media_folder(instance, filename):
@@ -255,7 +258,9 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         validators=[validate_visible_latin_characters_only],
     )
     _national_identification_number_data = fields.EncryptedCharField(
-        max_length=1024, blank=True,
+        max_length=1024,
+        blank=True,
+        validators=[validate_finnish_national_identification_number],
     )
     national_identification_number = CallableHashKeyEncryptedSearchField(
         hash_key=get_national_identification_number_hash_key,
