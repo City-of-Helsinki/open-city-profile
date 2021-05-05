@@ -261,8 +261,7 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
 @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
 class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
     @pytest.mark.parametrize(
-        "field_name,max_length",
-        [("street_address", 100), ("postal_code", 1024), ("post_office", 100)],
+        "field_name,max_length", [("street_address", 100), ("post_office", 100)],
     )
     def test_string_field_max_length(self, address_type, field_name, max_length):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
@@ -280,6 +279,13 @@ class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
     ):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
         setattr(address, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(address)
+
+    @pytest.mark.parametrize("invalid_value", ["1234", "1234X", "123456"])
+    def test_postal_code(self, address_type, invalid_value):
+        address = getattr(VerifiedPersonalInformationFactory(), address_type)
+        address.postal_code = invalid_value
 
         ValidationTestBase.fails_validation(address)
 

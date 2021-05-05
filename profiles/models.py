@@ -34,6 +34,7 @@ from .fields import CallableHashKeyEncryptedSearchField
 from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
+    validate_finnish_postal_code,
     validate_visible_latin_characters_only,
 )
 
@@ -298,7 +299,9 @@ class EncryptedAddress(ValidateOnSaveModel, NullsToEmptyStringsModel):
     street_address = fields.EncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
-    postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
+    postal_code = fields.EncryptedCharField(
+        max_length=1024, blank=True, validators=[validate_finnish_postal_code],
+    )
     post_office = fields.EncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )

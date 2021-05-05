@@ -44,3 +44,12 @@ _finnish_municipality_of_residence_number_validator = RegexValidator(
 
 def validate_finnish_municipality_of_residence_number(value: str) -> None:
     _finnish_municipality_of_residence_number_validator(value)
+
+
+_finnish_postal_code_validator = RegexValidator(
+    regex="^[0-9]{5}$", message=_("Must be exactly five digits")
+)
+
+
+def validate_finnish_postal_code(value: str) -> None:
+    _finnish_postal_code_validator(value)
