@@ -219,7 +219,6 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
             ("given_name", 100),
             ("email", 1024),
             ("municipality_of_residence", 100),
-            ("municipality_of_residence_number", 4),
         ],
     )
     def test_string_field_max_length(self, field_name, max_length):
@@ -248,6 +247,13 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
     def test_national_identification_number(self, invalid_value):
         info = VerifiedPersonalInformationFactory()
         info.national_identification_number = invalid_value
+
+        ValidationTestBase.fails_validation(info)
+
+    @pytest.mark.parametrize("invalid_value", ["12", "1234", "aaa"])
+    def test_municipality_of_residence_number(self, invalid_value):
+        info = VerifiedPersonalInformationFactory()
+        info.municipality_of_residence_number = invalid_value
 
         ValidationTestBase.fails_validation(info)
 

@@ -35,3 +35,12 @@ _finnish_national_identification_number_validator = RegexValidator(
 
 def validate_finnish_national_identification_number(value: str) -> None:
     _finnish_national_identification_number_validator(value)
+
+
+_finnish_municipality_of_residence_number_validator = RegexValidator(
+    regex="^[0-9]{3}$", message=_("Must be exactly three digits")
+)
+
+
+def validate_finnish_municipality_of_residence_number(value: str) -> None:
+    _finnish_municipality_of_residence_number_validator(value)

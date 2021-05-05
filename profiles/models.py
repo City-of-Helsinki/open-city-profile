@@ -32,6 +32,7 @@ from .enums import (
 )
 from .fields import CallableHashKeyEncryptedSearchField
 from .validators import (
+    validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
     validate_visible_latin_characters_only,
 )
@@ -276,9 +277,10 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         validators=[validate_visible_latin_characters_only],
     )
     municipality_of_residence_number = fields.EncryptedCharField(
-        max_length=4,
+        max_length=3,
         blank=True,
         help_text="Official municipality of residence in Finland as an official number.",
+        validators=[validate_finnish_municipality_of_residence_number],
     )
 
     audit_log = True
