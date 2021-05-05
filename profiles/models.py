@@ -237,19 +237,19 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
     first_name = models.CharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="First name(s).",
         validators=[validate_visible_latin_characters_only],
     )
     last_name = models.CharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="Last name.",
         validators=[validate_visible_latin_characters_only],
     )
     given_name = fields.EncryptedCharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="The name the person is called with.",
         validators=[validate_visible_latin_characters_only],
@@ -265,7 +265,7 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
     )
     email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
     municipality_of_residence = fields.EncryptedCharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="Official municipality of residence in Finland as a free form text.",
         validators=[validate_visible_latin_characters_only],
@@ -289,11 +289,11 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
 
 class EncryptedAddress(ValidateOnSaveModel, NullsToEmptyStringsModel):
     street_address = fields.EncryptedCharField(
-        max_length=1024, blank=True, validators=[validate_visible_latin_characters_only]
+        max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
     postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
     post_office = fields.EncryptedCharField(
-        max_length=1024, blank=True, validators=[validate_visible_latin_characters_only]
+        max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
 
     class Meta:
@@ -339,13 +339,13 @@ class VerifiedPersonalInformationPermanentForeignAddress(
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = fields.EncryptedCharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="Street address or whatever is the _first part_ of the address.",
         validators=[validate_visible_latin_characters_only],
     )
     additional_address = fields.EncryptedCharField(
-        max_length=1024,
+        max_length=100,
         blank=True,
         help_text="Additional address information, perhaps town, county, state, country etc.",
         validators=[validate_visible_latin_characters_only],

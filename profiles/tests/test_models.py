@@ -214,12 +214,12 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
     @pytest.mark.parametrize(
         "field_name,max_length",
         [
-            ("first_name", 1024),
-            ("last_name", 1024),
-            ("given_name", 1024),
+            ("first_name", 100),
+            ("last_name", 100),
+            ("given_name", 100),
             ("national_identification_number", 1024),
             ("email", 1024),
-            ("municipality_of_residence", 1024),
+            ("municipality_of_residence", 100),
             ("municipality_of_residence_number", 4),
         ],
     )
@@ -250,7 +250,7 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
 class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
     @pytest.mark.parametrize(
         "field_name,max_length",
-        [("street_address", 1024), ("postal_code", 1024), ("post_office", 1024)],
+        [("street_address", 100), ("postal_code", 1024), ("post_office", 100)],
     )
     def test_string_field_max_length(self, address_type, field_name, max_length):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
@@ -277,7 +277,7 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
 ):
     @pytest.mark.parametrize(
         "field_name,max_length",
-        [("street_address", 1024), ("additional_address", 1024), ("country_code", 3)],
+        [("street_address", 100), ("additional_address", 100), ("country_code", 3)],
     )
     def test_string_field_max_length(self, field_name, max_length):
         address = VerifiedPersonalInformationFactory().permanent_foreign_address
