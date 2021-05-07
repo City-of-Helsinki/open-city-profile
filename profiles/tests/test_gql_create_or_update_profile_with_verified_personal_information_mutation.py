@@ -76,8 +76,8 @@ def execute_successful_profile_creation_test(user_id, gql_client):
                     "postOffice": "Temporary City",
                 },
                 "permanentForeignAddress": {
-                    "streetAddress": "〒100-8994",
-                    "additionalAddress": "東京都中央区八重洲1-5-3",
+                    "streetAddress": "Permanent foreign address",
+                    "additionalAddress": "Additional foreign address",
                     "countryCode": "JP",
                 },
             },
@@ -104,8 +104,8 @@ def execute_successful_profile_creation_test(user_id, gql_client):
     assert temporary_address.postal_code == "98765"
     assert temporary_address.post_office == "Temporary City"
     permanent_foreign_address = verified_personal_information.permanent_foreign_address
-    assert permanent_foreign_address.street_address == "〒100-8994"
-    assert permanent_foreign_address.additional_address == "東京都中央区八重洲1-5-3"
+    assert permanent_foreign_address.street_address == "Permanent foreign address"
+    assert permanent_foreign_address.additional_address == "Additional foreign address"
     assert permanent_foreign_address.country_code == "JP"
 
 
