@@ -19,6 +19,7 @@ djangorestframework
 drf-oidc-auth==0.10.0
 graphene-django>=2.10.1
 graphene-federation
+iso3166
 pillow
 psycopg2
 pyyaml>=5.3

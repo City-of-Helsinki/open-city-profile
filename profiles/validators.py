@@ -3,6 +3,7 @@ import re
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
+from iso3166 import countries_by_alpha2, countries_by_alpha3, countries_by_numeric
 
 # Unicode blocks:
 #   Basic Latin:        U+0000-U+007F
@@ -53,3 +54,15 @@ _finnish_postal_code_validator = RegexValidator(
 
 def validate_finnish_postal_code(value: str) -> None:
     _finnish_postal_code_validator(value)
+
+
+def validate_iso_3166_country_code(value: str) -> None:
+    if isinstance(value, str):
+        key = value.upper()
+        for index in [countries_by_alpha2, countries_by_alpha3, countries_by_numeric]:
+            if index.get(key):
+                return
+
+    raise ValidationError(
+        _("Invalid country code: %(value)s"), code="invalid", params={"value": value},
+    )

@@ -294,8 +294,7 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
     ValidationTestBase
 ):
     @pytest.mark.parametrize(
-        "field_name,max_length",
-        [("street_address", 100), ("additional_address", 100), ("country_code", 3)],
+        "field_name,max_length", [("street_address", 100), ("additional_address", 100)],
     )
     def test_string_field_max_length(self, field_name, max_length):
         address = VerifiedPersonalInformationFactory().permanent_foreign_address
@@ -311,6 +310,13 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
     def test_string_field_accepted_characters(self, field_name, invalid_value):
         address = VerifiedPersonalInformationFactory().permanent_foreign_address
         setattr(address, field_name, invalid_value)
+
+        ValidationTestBase.fails_validation(address)
+
+    @pytest.mark.parametrize("invalid_country_code", ["Finland", "Suomi", "123"])
+    def test_country_codes(self, invalid_country_code):
+        address = VerifiedPersonalInformationFactory().permanent_foreign_address
+        address.country_code = invalid_country_code
 
         ValidationTestBase.fails_validation(address)
 

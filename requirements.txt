@@ -125,6 +125,8 @@ graphql-relay==2.0.0
     # via graphene
 idna==2.9
     # via requests
+iso3166==1.0.1
+    # via -r requirements.in
 isodate==0.6.0
     # via rdflib
 itsdangerous==1.1.0

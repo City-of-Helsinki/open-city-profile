@@ -35,6 +35,7 @@ from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
     validate_finnish_postal_code,
+    validate_iso_3166_country_code,
     validate_visible_latin_characters_only,
 )
 
@@ -361,7 +362,10 @@ class VerifiedPersonalInformationPermanentForeignAddress(
         validators=[validate_visible_latin_characters_only],
     )
     country_code = fields.EncryptedCharField(
-        max_length=3, blank=True, help_text="An ISO 3166-1 country code."
+        max_length=3,
+        blank=True,
+        help_text="An ISO 3166-1 country code.",
+        validators=[validate_iso_3166_country_code],
     )
 
     verified_personal_information = models.OneToOneField(
