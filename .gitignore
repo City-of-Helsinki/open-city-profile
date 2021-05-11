@@ -35,7 +35,6 @@
 .npm
 .nyc_output
 .Python
-.python-version
 .ropeproject
 .scrapy
 .spyderproject
