@@ -36,7 +36,7 @@ decorator==4.4.2
     #   traitlets
 distlib==0.3.0
     # via virtualenv
-ecdsa==0.13.3
+ecdsa==0.16.1
     # via python-jose
 entrypoints==0.3
     # via flake8
@@ -165,6 +165,7 @@ rsa==4.7.2
     # via python-jose
 six==1.14.0
     # via
+    #   ecdsa
     #   freezegun
     #   packaging
     #   python-dateutil

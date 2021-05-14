@@ -94,7 +94,7 @@ djangorestframework==3.12.4
     #   drf-oidc-auth
 drf-oidc-auth==0.10.0
     # via -r requirements.in
-ecdsa==0.13.3
+ecdsa==0.16.1
     # via python-jose
 et-xmlfile==1.0.1
     # via openpyxl
@@ -208,6 +208,7 @@ six==1.14.0
     # via
     #   django-anymail
     #   django-munigeo
+    #   ecdsa
     #   graphene
     #   graphene-django
     #   graphql-core
