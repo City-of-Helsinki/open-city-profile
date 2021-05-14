@@ -16,10 +16,6 @@ certifi==2020.4.5.1
     #   sentry-sdk
 chardet==3.0.4
     # via requests
-coreapi==2.3.3
-    # via -r requirements.in
-coreschema==0.0.4
-    # via coreapi
 defusedxml==0.6.0
     # via odfpy
 deprecation==2.1.0
@@ -134,14 +130,10 @@ isodate==0.6.0
     # via rdflib
 itsdangerous==1.1.0
     # via requests-cache
-itypes==1.1.0
-    # via coreapi
 jdcal==1.4.1
     # via openpyxl
 jinja2==2.10.1
-    # via
-    #   coreschema
-    #   django-ilmoitin
+    # via django-ilmoitin
 lockfile==0.12.2
     # via django-mailer
 markuppy==1.14
@@ -197,7 +189,6 @@ requests-oauthlib==1.3.0
 requests==2.25.1
     # via
     #   -r requirements.in
-    #   coreapi
     #   django-anymail
     #   django-helusers
     #   django-munigeo
@@ -231,8 +222,6 @@ sqlparse==0.3.0
     # via django
 tablib[html,ods,xls,xlsx,yaml]==1.1.0
     # via django-import-export
-uritemplate==3.0.0
-    # via coreapi
 url-normalize==1.4.3
     # via requests-cache
 urllib3==1.25.11
