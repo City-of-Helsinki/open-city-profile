@@ -18,7 +18,11 @@ def _multi_validation_error_from_django_validation_error(django_error):
     errors = []
 
     for err in django_error.error_list:
-        msg = err.message % err.params
+        msg = str(err.message)
+        try:
+            msg = msg % err.params
+        except TypeError:
+            pass
         errors.append({"code": err.code, "message": msg})
 
     return MultiValidationError(errors)

@@ -53,36 +53,43 @@ def execute_successful_mutation(input_data, gql_client):
     return Profile.objects.get(pk=profile_id)
 
 
-def execute_successful_profile_creation_test(user_id, gql_client):
-    input_data = {
-        "userId": str(user_id),
-        "profile": {
-            "verifiedPersonalInformation": {
-                "firstName": "John",
-                "lastName": "Smith",
-                "givenName": "Johnny",
-                "nationalIdentificationNumber": "220202A1234",
-                "email": "john.smith@domain.example",
-                "municipalityOfResidence": "Helsinki",
-                "municipalityOfResidenceNumber": "091",
-                "permanentAddress": {
-                    "streetAddress": "Permanent Street 1",
-                    "postalCode": "12345",
-                    "postOffice": "Permanent City",
-                },
-                "temporaryAddress": {
-                    "streetAddress": "Temporary Street 2",
-                    "postalCode": "98765",
-                    "postOffice": "Temporary City",
-                },
-                "permanentForeignAddress": {
-                    "streetAddress": "Permanent foreign address",
-                    "additionalAddress": "Additional foreign address",
-                    "countryCode": "JP",
-                },
-            },
+def generate_input_data(user_id, overrides={}):
+    vpi_data = {
+        "firstName": "John",
+        "lastName": "Smith",
+        "givenName": "Johnny",
+        "nationalIdentificationNumber": "220202A1234",
+        "email": "john.smith@domain.example",
+        "municipalityOfResidence": "Helsinki",
+        "municipalityOfResidenceNumber": "091",
+        "permanentAddress": {
+            "streetAddress": "Permanent Street 1",
+            "postalCode": "12345",
+            "postOffice": "Permanent City",
+        },
+        "temporaryAddress": {
+            "streetAddress": "Temporary Street 2",
+            "postalCode": "98765",
+            "postOffice": "Temporary City",
+        },
+        "permanentForeignAddress": {
+            "streetAddress": "Permanent foreign address",
+            "additionalAddress": "Additional foreign address",
+            "countryCode": "JP",
         },
     }
+    vpi_data.update(overrides)
+
+    input_data = {
+        "userId": str(user_id),
+        "profile": {"verifiedPersonalInformation": vpi_data},
+    }
+
+    return input_data
+
+
+def execute_successful_profile_creation_test(user_id, gql_client):
+    input_data = generate_input_data(user_id)
 
     profile = execute_successful_mutation(input_data, gql_client)
 
@@ -439,27 +446,49 @@ def test_enable_existing_disabled_service_connection(
     )
 
 
-def execute_mutation_with_invalid_input(gql_client):
-    input_data = {
-        "userId": "03117666-117D-4F6B-80B1-A3A92B389711",
-        "profile": {
-            "verifiedPersonalInformation": {
-                "permanentForeignAddress": {"countryCode": "France"}
-            }
-        },
-    }
+@pytest.mark.parametrize(
+    "field_name",
+    [
+        "firstName",
+        "lastName",
+        "givenName",
+        "nationalIdentificationNumber",
+        "email",
+        "municipalityOfResidence",
+        "municipalityOfResidenceNumber",
+    ],
+)
+def test_invalid_input_causes_a_validation_error(user_gql_client, field_name):
+    input_data = generate_input_data(uuid.uuid1(), overrides={field_name: "x" * 1025})
+    executed = execute_mutation(input_data, user_gql_client)
 
-    return execute_mutation(input_data, gql_client)
+    assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
 
 
-def test_invalid_input_causes_a_validation_error(user_gql_client):
-    executed = execute_mutation_with_invalid_input(user_gql_client)
+@pytest.mark.parametrize(
+    "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
+)
+@pytest.mark.parametrize("address_field_index", [0, 1, 2])
+def test_invalid_address_input_causes_a_validation_error(
+    user_gql_client, address_type, address_field_index,
+):
+    address_field_name = VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES[
+        address_type
+    ][address_field_index]
+    address_fields = {to_graphql_name(address_field_name): "x" * 101}
+
+    input_data = generate_input_data(
+        uuid.uuid1(), overrides={to_graphql_name(address_type): address_fields},
+    )
+    executed = execute_mutation(input_data, user_gql_client)
+
     assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
 
 
 @pytest.mark.django_db(transaction=True)
 def test_database_stays_unmodified_when_mutation_is_not_completed(user_gql_client):
-    execute_mutation_with_invalid_input(user_gql_client)
+    input_data = generate_input_data(uuid.uuid1(), overrides={"first": "x" * 101})
+    execute_mutation(input_data, user_gql_client)
 
     assert Profile.objects.count() == 0
     assert VerifiedPersonalInformation.objects.count() == 0
