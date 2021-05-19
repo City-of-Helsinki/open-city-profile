@@ -88,9 +88,10 @@ django==2.2.22
     #   django-reversion
     #   django-searchable-encrypted-fields
     #   django-thesaurus
+    #   djangorestframework
     #   drf-oidc-auth
     #   graphene-django
-djangorestframework==3.10.1
+djangorestframework==3.11.2
     # via
     #   -r requirements.in
     #   django-parler-rest
