@@ -17,7 +17,7 @@ from thesaurus.models import Concept
 from services.models import ServiceConnection
 from users.models import User
 from utils.fields import CallableHashKeyEncryptedSearchField, NullToEmptyValueMixin
-from utils.models import SerializableMixin, UUIDModel, ValidateOnSaveModel
+from utils.models import SerializableMixin, UUIDModel
 
 from .enums import (
     AddressType,
@@ -247,7 +247,7 @@ def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(ValidateOnSaveModel):
+class VerifiedPersonalInformation(models.Model):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )

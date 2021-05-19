@@ -861,6 +861,40 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
         description="The temporary foreign (i.e. not in Finland) residency address.",
     )
 
+    @staticmethod
+    def validate_first_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "first_name", value)
+
+    @staticmethod
+    def validate_last_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "last_name", value)
+
+    @staticmethod
+    def validate_given_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "given_name", value)
+
+    @staticmethod
+    def validate_national_identification_number(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "national_identification_number", value
+        )
+
+    @staticmethod
+    def validate_email(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "email", value)
+
+    @staticmethod
+    def validate_municipality_of_residence(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "municipality_of_residence", value
+        )
+
+    @staticmethod
+    def validate_municipality_of_residence_number(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "municipality_of_residence_number", value
+        )
+
 
 class EmailInput(graphene.InputObjectType):
     email = graphene.String(description="The email address.", required=True)
