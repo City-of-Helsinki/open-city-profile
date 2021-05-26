@@ -337,6 +337,17 @@ AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
 
 if AUDIT_LOG_FILENAME:
+    if "X" in AUDIT_LOG_FILENAME:
+        import random
+        import re
+        import string
+
+        system_random = random.SystemRandom()
+        char_pool = string.ascii_lowercase + string.digits
+        AUDIT_LOG_FILENAME = re.sub(
+            "X", lambda x: system_random.choice(char_pool), AUDIT_LOG_FILENAME
+        )
+
     _audit_log_handler = {
         "level": "INFO",
         "class": "logging.handlers.RotatingFileHandler",
