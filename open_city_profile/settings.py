@@ -343,6 +343,7 @@ if AUDIT_LOG_FILENAME:
         "filename": AUDIT_LOG_FILENAME,
         "maxBytes": 100_000_000,
         "backupCount": 1,
+        "delay": True,
     }
 else:
     _audit_log_handler = {
