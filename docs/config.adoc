@@ -1,0 +1,11 @@
+= Configuration
+
+The service can be configured by setting various environment variables.
+
+== Audit events
+
+Audit events are produced using the https://docs.python.org/3/library/logging.html[Python logging module].
+
+By default audit event production is disabled. In order to enable audit event production, set `AUDIT_LOGGING_ENABLED` to `True`.
+
+By default audit event output is sent to `stdout`. It's possible to send the output to a file instead, by setting the `AUDIT_LOG_FILENAME` to the desired filename. The filename may be randomized by including capital "X" characters in it. The "X"s get replaced by random characters.

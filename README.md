@@ -22,6 +22,9 @@ functions of Venepaikka service.
 
 Open city profile is implemented using Django and it provides a GraphQL API.
 
+## Configuration
+
+See [docs/config.adoc](docs/config.adoc).
 
 ## Development with [Docker](https://docs.docker.com/)
 
