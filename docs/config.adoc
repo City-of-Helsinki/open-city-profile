@@ -1,4 +1,5 @@
 = Configuration
+:toc: preamble
 
 The service can be configured by setting various environment variables.
 
