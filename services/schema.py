@@ -3,18 +3,18 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from graphene import relay
 from graphene_django.types import DjangoObjectType
-from graphql_jwt.decorators import login_required
 
-from open_city_profile.exceptions import (
-    ServiceAlreadyExistsError,
-    ServiceNotIdentifiedError,
-)
+from open_city_profile.exceptions import ServiceAlreadyExistsError
+from profiles.decorators import login_and_service_required
 
 from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection
 
 AllowedServiceType = graphene.Enum.from_enum(
-    ServiceType, description=lambda e: e.label if e else ""
+    ServiceType,
+    description=lambda e: e.label if e else "",
+    deprecation_reason=lambda e: "The whole ServiceType enum is deprecated and shouldn't be used anymore. "
+    "There are different replacements in various places, depending on how this type was used.",
 )
 
 
@@ -27,7 +27,9 @@ class AllowedDataFieldNode(DjangoObjectType):
 
 
 class ServiceNode(DjangoObjectType):
-    type = AllowedServiceType(source="service_type")
+    type = AllowedServiceType(
+        source="service_type", deprecation_reason="See 'name' field for a replacement.",
+    )
     title = graphene.String()
     description = graphene.String()
 
@@ -35,6 +37,7 @@ class ServiceNode(DjangoObjectType):
         model = Service
         fields = (
             "id",
+            "name",
             "allowed_data_fields",
             "created_at",
             "gdpr_url",
@@ -60,8 +63,7 @@ class ServiceInput(graphene.InputObjectType):
 
 class ServiceConnectionInput(graphene.InputObjectType):
     service = ServiceInput(
-        description="**DEPRECATED**: requester's service is determined by authentication, "
-        "but for now it can still be overridden by this argument."
+        description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication."
     )
     enabled = graphene.Boolean()
 
@@ -73,22 +75,11 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
     service_connection = graphene.Field(ServiceConnectionType)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         service_connection_data = input.pop("service_connection")
-
-        service_data = service_connection_data.get("service")
-        service_type = service_data.get("type") if service_data else None
-        service = (
-            Service.objects.get(service_type=service_type) if service_type else None
-        )
-
-        if not service:
-            service = getattr(info.context, "service", None)
-
-        if not service:
-            raise ServiceNotIdentifiedError("No service identified")
+        service = info.context.service
 
         try:
             service_connection = ServiceConnection.objects.create(

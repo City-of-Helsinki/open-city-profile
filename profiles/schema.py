@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import F, OuterRef, Subquery
+from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.utils.translation import override
 from django.utils.translation import ugettext_lazy as _
@@ -23,6 +23,7 @@ from graphene_django import DjangoConnectionField
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
+from graphene_validator.decorators import validated
 from graphql_jwt.decorators import login_required, permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
@@ -37,7 +38,7 @@ from open_city_profile.exceptions import (
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from open_city_profile.oidc import TunnistamoTokenExchange
-from profiles.decorators import staff_required
+from profiles.decorators import login_and_service_required, staff_required
 from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
@@ -46,6 +47,7 @@ from subscriptions.schema import (
     SubscriptionNode,
     UpdateMySubscriptionMutation,
 )
+from utils.validation import model_field_validation
 
 from .enums import AddressType, EmailType, PhoneType
 from .models import (
@@ -53,6 +55,7 @@ from .models import (
     ClaimToken,
     Contact,
     Email,
+    EncryptedAddress,
     Phone,
     Profile,
     SensitiveData,
@@ -65,8 +68,8 @@ from .models import (
 from .utils import (
     create_nested,
     delete_nested,
+    requester_has_service_permission,
     update_nested,
-    user_has_staff_perms_to_view_profile,
 )
 
 User = get_user_model()
@@ -244,6 +247,7 @@ class ProfileFilter(FilterSet):
             "first_name",
             "last_name",
             "nickname",
+            "national_identification_number",
             "emails__email",
             "emails__email_type",
             "emails__primary",
@@ -265,9 +269,12 @@ class ProfileFilter(FilterSet):
         label="Profile ids for selecting the exact profiles to return. "
         '**Note:** these are raw UUIDs, not "relay opaque identifiers".'
     )
-    first_name = CharFilter(lookup_expr="icontains")
-    last_name = CharFilter(lookup_expr="icontains")
+    first_name = CharFilter(method="filter_by_name_icontains")
+    last_name = CharFilter(method="filter_by_name_icontains")
     nickname = CharFilter(lookup_expr="icontains")
+    national_identification_number = CharFilter(
+        method="filter_by_nin_exact", label="Searches by full match only."
+    )
     emails__email = CharFilter(lookup_expr="icontains")
     emails__email_type = ChoiceFilter(choices=EmailType.choices())
     emails__primary = BooleanFilter()
@@ -291,6 +298,28 @@ class ProfileFilter(FilterSet):
             ("language", "language"),
         )
     )
+
+    def filter_by_name_icontains(self, queryset, name, value):
+        name_filter = Q(**{f"{name}__icontains": value})
+
+        if requester_has_service_permission(
+            self.request, "can_view_verified_personal_information"
+        ):
+            name_filter |= Q(
+                **{f"verified_personal_information__{name}__icontains": value}
+            )
+
+        return queryset.filter(name_filter)
+
+    def filter_by_nin_exact(self, queryset, name, value):
+        if requester_has_service_permission(
+            self.request, "can_view_verified_personal_information"
+        ):
+            return queryset.filter(
+                verified_personal_information__national_identification_number=value
+            )
+        else:
+            return queryset.none()
 
     def get_enabled_subscriptions(self, queryset, name, value):
         """
@@ -369,6 +398,11 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
             "municipality_of_residence",
             "municipality_of_residence_number",
         )
+
+    # Need to set the national_identification_number field explicitly as non-null
+    # because django-searchable-encrypted-fields SearchFields are always nullable
+    # and you can't change it.
+    national_identification_number = graphene.NonNull(graphene.String)
 
     permanent_address = graphene.Field(
         VerifiedPersonalInformationAddressNode,
@@ -481,53 +515,34 @@ class ProfileNode(RestrictedProfileNode):
         ServiceConnectionType, description="List of the profile's connected services."
     )
     subscriptions = DjangoFilterConnectionField(SubscriptionNode)
+    verified_personal_information = graphene.Field(
+        VerifiedPersonalInformationNode,
+        description="Personal information that has been verified to be true. "
+        "Can result into `PERMISSION_DENIED_ERROR` if the requester has no required "
+        "privileges to access this information.",
+    )
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
 
     def resolve_sensitivedata(self, info, **kwargs):
-        service = getattr(info.context, "service", None)
-        if (
-            not service and info.context.user == self.user
-        ) or info.context.user.has_perm("can_view_sensitivedata", service):
+        service = info.context.service
+
+        if info.context.user == self.user or info.context.user.has_perm(
+            "can_view_sensitivedata", service
+        ):
             return self.sensitivedata
         else:
             # TODO: We should return PermissionDenied as a partial error here.
             return None
 
-    @login_required
-    def __resolve_reference(self, info, **kwargs):
-        profile = graphene.Node.get_node_from_global_id(
-            info, self.id, only_type=ProfileNode
-        )
-        if not profile:
-            return None
-
-        user = info.context.user
-        if user == profile.user or user_has_staff_perms_to_view_profile(user, profile):
-            return profile
-        else:
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
-
-
-class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
-    class Meta:
-        model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
-        interfaces = (relay.Node,)
-        connection_class = ProfilesConnection
-        filterset_class = ProfileFilter
-
-    verified_personal_information = graphene.Field(
-        VerifiedPersonalInformationNode,
-        description="Personal information that has been verified to be true.",
-    )
-
     def resolve_verified_personal_information(self, info, **kwargs):
         loa = info.context.user_auth.data.get("loa")
-        if loa in ["substantial", "high"]:
+        if (
+            info.context.user == self.user and loa in ["substantial", "high"]
+        ) or requester_has_service_permission(
+            info.context, "can_view_verified_personal_information"
+        ):
             try:
                 return self.verified_personal_information
             except VerifiedPersonalInformation.DoesNotExist:
@@ -535,6 +550,26 @@ class ProfileWithVerifiedPersonalInformationNode(ProfileNode):
         else:
             raise PermissionDenied(
                 "No permission to read verified personal information."
+            )
+
+    @login_and_service_required
+    def __resolve_reference(self, info, **kwargs):
+        profile = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=ProfileNode
+        )
+        if not profile:
+            return None
+
+        service = info.context.service
+        user = info.context.user
+
+        if service.has_connection_to_profile(profile) and (
+            user == profile.user or user.has_perm("can_view_profiles", service)
+        ):
+            return profile
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
             )
 
 
@@ -549,31 +584,27 @@ class TemporaryReadAccessTokenNode(DjangoObjectType):
         return self.expires_at()
 
 
-class EmailInput(graphene.InputObjectType):
+class CreateEmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
-
-
-class CreateEmailInput(EmailInput):
     email = graphene.String(description="Email address.", required=True)
     email_type = AllowedEmailType(description="Email address type.", required=True)
 
 
-class UpdateEmailInput(EmailInput):
+class UpdateEmailInput(graphene.InputObjectType):
+    primary = graphene.Boolean(description="Is this primary mail address.")
     id = graphene.ID(required=True)
     email = graphene.String(description="Email address.")
     email_type = AllowedEmailType(description="Email address type.")
 
 
-class PhoneInput(graphene.InputObjectType):
+class CreatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
-
-
-class CreatePhoneInput(PhoneInput):
     phone = graphene.String(description="Phone number.", required=True)
     phone_type = AllowedPhoneType(description="Phone number type.", required=True)
 
 
-class UpdatePhoneInput(PhoneInput):
+class UpdatePhoneInput(graphene.InputObjectType):
+    primary = graphene.Boolean(description="Is this primary phone number.")
     id = graphene.ID(required=True)
     phone = graphene.String(description="Phone number.")
     phone_type = AllowedPhoneType(description="Phone number type.")
@@ -702,8 +733,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         )
         profile = CreateProfileInput(required=True)
 
@@ -745,46 +775,74 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
 class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
     street_address = graphene.String(
-        description="Street address with possible house number etc. Max length 1024 characters."
+        description="Street address with possible house number etc. Max length 100 characters."
     )
     postal_code = graphene.String(
-        description="Postal code. Max length 1024 characters."
+        description="Finnish postal code, exactly five digits."
     )
-    post_office = graphene.String(
-        description="Post office. Max length 1024 characters."
-    )
+    post_office = graphene.String(description="Post office. Max length 100 characters.")
+
+    @staticmethod
+    def validate_street_address(value, info, **input):
+        return model_field_validation(EncryptedAddress, "street_address", value)
+
+    @staticmethod
+    def validate_postal_code(value, info, **input):
+        return model_field_validation(EncryptedAddress, "postal_code", value)
+
+    @staticmethod
+    def validate_post_office(value, info, **input):
+        return model_field_validation(EncryptedAddress, "post_office", value)
 
 
 class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
     street_address = graphene.String(
-        description="Street address or whatever is the _first part_ of the address. Max length 1024 characters."
+        description="Street address or whatever is the _first part_ of the address. Max length 100 characters."
     )
     additional_address = graphene.String(
         description="Additional address information, perhaps town, county, state, country etc. "
-        "Max length 1024 characters."
+        "Max length 100 characters."
     )
-    country_code = graphene.String(
-        description="An ISO 3166-1 country code. Max length 3 characters."
-    )
+    country_code = graphene.String(description="An ISO 3166-1 country code.")
+
+    @staticmethod
+    def validate_street_address(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress, "street_address", value
+        )
+
+    @staticmethod
+    def validate_additional_address(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress,
+            "additional_address",
+            value,
+        )
+
+    @staticmethod
+    def validate_country_code(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentForeignAddress, "country_code", value
+        )
 
 
 class VerifiedPersonalInformationInput(graphene.InputObjectType):
     first_name = graphene.String(
-        description="First name(s). Max length 1024 characters."
+        description="First name(s). Max length 100 characters."
     )
-    last_name = graphene.String(description="Last name. Max length 1024 characters.")
+    last_name = graphene.String(description="Last name. Max length 100 characters.")
     given_name = graphene.String(
-        description="The name the person is called with. Max length 1024 characters."
+        description="The name the person is called with. Max length 100 characters."
     )
     national_identification_number = graphene.String(
-        description="Can be social security number or other person identifier. Max length 1024 characters."
+        description="Finnish personal identity code."
     )
     email = graphene.String(description="Email. Max length 1024 characters.")
     municipality_of_residence = graphene.String(
-        description="Official municipality of residence in Finland as a free form text. Max length 1024 characters."
+        description="Official municipality of residence in Finland as a free form text. Max length 100 characters."
     )
     municipality_of_residence_number = graphene.String(
-        description="Official municipality of residence in Finland as an official number. Max length 4 characters."
+        description="Official municipality of residence in Finland as an official number, exactly three digits."
     )
     permanent_address = graphene.InputField(
         VerifiedPersonalInformationAddressInput,
@@ -799,10 +857,51 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
         description="The temporary foreign (i.e. not in Finland) residency address.",
     )
 
+    @staticmethod
+    def validate_first_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "first_name", value)
+
+    @staticmethod
+    def validate_last_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "last_name", value)
+
+    @staticmethod
+    def validate_given_name(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "given_name", value)
+
+    @staticmethod
+    def validate_national_identification_number(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "national_identification_number", value
+        )
+
+    @staticmethod
+    def validate_email(value, info, **input):
+        return model_field_validation(VerifiedPersonalInformation, "email", value)
+
+    @staticmethod
+    def validate_municipality_of_residence(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "municipality_of_residence", value
+        )
+
+    @staticmethod
+    def validate_municipality_of_residence_number(value, info, **input):
+        return model_field_validation(
+            VerifiedPersonalInformation, "municipality_of_residence_number", value
+        )
+
+
+class EmailInput(graphene.InputObjectType):
+    email = graphene.String(description="The email address.", required=True)
+
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
     verified_personal_information = graphene.InputField(
         VerifiedPersonalInformationInput, required=True
+    )
+    primary_email = graphene.InputField(
+        EmailInput, description="Sets the profile's primary email address."
     )
 
 
@@ -832,6 +931,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
+@validated
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
     class Arguments:
         input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
@@ -839,6 +939,35 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
         )
 
     Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+
+    @staticmethod
+    def _handle_address(vpi, address_name, address_model, address_input):
+        try:
+            address = getattr(vpi, address_name)
+        except address_model.DoesNotExist:
+            address = address_model(verified_personal_information=vpi)
+
+        for field, value in address_input.items():
+            setattr(address, field, value)
+
+        if not address.is_empty():
+            address.save()
+        elif address.id:
+            address.delete()
+
+    @staticmethod
+    def _handle_primary_email(profile, primary_email_input):
+        email_address = primary_email_input["email"]
+
+        email, email_created = profile.emails.get_or_create(
+            email=email_address, defaults={"email_type": EmailType.NONE}
+        )
+
+        profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
+
+        if not email.primary:
+            email.primary = True
+            email.save()
 
     @staticmethod
     @permission_required("profiles.manage_verified_personal_information")
@@ -865,30 +994,33 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
         profile, created = Profile.objects.get_or_create(user=user)
 
-        information, created = VerifiedPersonalInformation.objects.update_or_create(
+        vpi, created = VerifiedPersonalInformation.objects.update_or_create(
             profile=profile, defaults=verified_personal_information_input
         )
 
         for address_type in address_types:
             address_input = address_type["input"]
-            if address_input:
-                address_name = address_type["name"]
-                address_model = address_type["model"]
-                try:
-                    address = getattr(information, address_name)
-                    address.update(address_input)
-                except address_model.DoesNotExist:
-                    address = address_model.objects.create(
-                        verified_personal_information=information, **address_input
-                    )
-                if address.is_empty():
-                    address.delete()
+            if not address_input:
+                continue
+
+            address_name = address_type["name"]
+            address_model = address_type["model"]
+
+            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_address(
+                vpi, address_name, address_model, address_input
+            )
 
         service_client_id = input.pop("service_client_id", None)
         if service_client_id:
             service = Service.objects.get(client_ids__client_id=service_client_id)
             profile.service_connections.update_or_create(
                 service=service, defaults={"enabled": True}
+            )
+
+        primary_email_input = profile_input.pop("primary_email", None)
+        if primary_email_input:
+            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_primary_email(
+                profile, primary_email_input
             )
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
@@ -903,13 +1035,20 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     profile = graphene.Field(ProfileNode)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        profile = Profile.objects.get(user=info.context.user)
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
         subscription_data = profile_data.pop("subscriptions", [])
-        profile = Profile.objects.get(user=info.context.user)
+
         update_profile(profile, profile_data)
 
         if sensitive_data:
@@ -949,8 +1088,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         )
         profile = UpdateProfileInput(required=True)
 
@@ -965,6 +1103,12 @@ class UpdateProfileMutation(relay.ClientIDMutation):
         profile = graphene.Node.get_node_from_global_id(
             info, profile_data.pop("id"), only_type=ProfileNode
         )
+
+        if not service.has_connection_to_profile(profile, allow_implicit=False):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         sensitive_data = profile_data.pop("sensitivedata", None)
         update_profile(profile, profile_data)
 
@@ -1018,7 +1162,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         )
 
     @classmethod
-    @login_required
+    @login_and_service_required
     def mutate_and_get_payload(cls, root, info, **input):
         authorization_code = input["authorization_code"]
 
@@ -1026,6 +1170,11 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
             raise ProfileDoesNotExistError("Profile does not exist")
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         if profile.service_connections.exists():
             tte = TunnistamoTokenExchange()
@@ -1087,9 +1236,14 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
     temporary_read_access_token = graphene.Field(TemporaryReadAccessTokenNode)
 
     @classmethod
-    @login_required
+    @login_and_service_required
     def mutate_and_get_payload(cls, root, info):
         profile = Profile.objects.get(user=info.context.user)
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         TemporaryReadAccessToken.objects.filter(
             profile=profile, created_at__gt=timezone.now() - F("validity_duration")
@@ -1109,8 +1263,7 @@ class Query(graphene.ObjectType):
         id=graphene.Argument(graphene.ID, required=True),
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         ),
         description="Get profile by profile ID.\n\nRequires `staff` credentials for the requester's service."
         "The profile must have an active connection to the requester's service, otherwise "
@@ -1118,7 +1271,7 @@ class Query(graphene.ObjectType):
     )
     # TODO: Add the complete list of error codes
     my_profile = graphene.Field(
-        ProfileWithVerifiedPersonalInformationNode,
+        ProfileNode,
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )
@@ -1140,8 +1293,7 @@ class Query(graphene.ObjectType):
         ProfileNode,
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**DEPRECATED**: requester's service is determined by authentication, "
-            "but for now it can still be overridden by this argument.",
+            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",
         ),
         description="Search for profiles. The results are filtered based on the given parameters. The results are "
         "paged using Relay.\n\nRequires `staff` credentials for the requester's service."
@@ -1179,9 +1331,19 @@ class Query(graphene.ObjectType):
             pk=relay.Node.from_global_id(kwargs["id"])[1]
         )
 
-    @login_required
+    @login_and_service_required
     def resolve_my_profile(self, info, **kwargs):
-        return Profile.objects.filter(user=info.context.user).first()
+        try:
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            return None
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+        return profile
 
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
@@ -1193,10 +1355,18 @@ class Query(graphene.ObjectType):
         # TODO: Complete error handling for this OM-297
         return get_claimable_profile(token=kwargs["token"])
 
-    @login_required
+    @login_and_service_required
     def resolve_download_my_profile(self, info, **kwargs):
         authorization_code = kwargs["authorization_code"]
-        profile = Profile.objects.filter(user=info.context.user).first()
+        try:
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            return None
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
         external_data = []
 
@@ -1279,9 +1449,8 @@ class Mutation(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
-        "Requires authentication.\n\nPossible error codes:\n\n* "
-        "`CANNOT_DELETE_PROFILE_WHILE_SERVICE_CONNECTED_ERROR`: Returned if the profile is connected to "
-        "Berth service.\n\n* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
+        "Requires authentication.\n\nPossible error codes:\n\n"
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
         "the currently authenticated user.\n\n* `TODO`"
     )
     # TODO: Add the complete list of error codes

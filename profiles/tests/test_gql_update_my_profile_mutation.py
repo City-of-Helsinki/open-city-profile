@@ -1,8 +1,11 @@
 from string import Template
 
+import pytest
 from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import INVALID_EMAIL_FORMAT_ERROR
+from open_city_profile.tests.asserts import assert_match_error_code
+from services.tests.factories import ServiceConnectionFactory
 from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
     SubscriptionTypeFactory,
@@ -18,8 +21,14 @@ from .factories import (
 )
 
 
-def test_normal_user_can_update_profile(user_gql_client, email_data, profile_data):
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
+def test_normal_user_can_update_profile(
+    user_gql_client, email_data, profile_data, service, with_serviceconnection
+):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    if with_serviceconnection:
+        ServiceConnectionFactory(profile=profile, service=service)
+
     email = profile.emails.first()
 
     t = Template(
@@ -87,8 +96,12 @@ def test_normal_user_can_update_profile(user_gql_client, email_data, profile_dat
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation)
-    assert dict(executed["data"]) == expected_data
+    executed = user_gql_client.execute(mutation, service=service)
+    if with_serviceconnection:
+        assert executed["data"] == expected_data
+    else:
+        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+        assert executed["data"]["updateMyProfile"] is None
 
 
 def test_normal_user_can_update_profile_without_email(user_gql_client, profile_data):

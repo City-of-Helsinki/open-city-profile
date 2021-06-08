@@ -47,9 +47,9 @@ env = environ.Env(
     MAIL_MAILGUN_API=(str, ""),
     NOTIFICATIONS_ENABLED=(bool, False),
     FIELD_ENCRYPTION_KEYS=(list, []),
+    SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
-    AUDIT_LOG_USERNAME=(bool, False),
     AUDIT_LOG_FILENAME=(str, ""),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
@@ -69,16 +69,18 @@ env = environ.Env(
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-version = env.str("VERSION")
-if version is None:
+VERSION = env.str("VERSION")
+if VERSION is None:
     try:
-        version = subprocess.check_output(["git", "describe", "--always"]).strip()
+        VERSION = subprocess.check_output(
+            ["git", "describe", "--always"], text=True
+        ).strip()
     except (FileNotFoundError, subprocess.CalledProcessError):
-        version = None
+        VERSION = None
 
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
-    release=version,
+    release=VERSION,
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
@@ -133,6 +135,9 @@ STATIC_ROOT = var_root("static")
 MEDIA_URL = env.str("MEDIA_URL")
 STATIC_URL = env.str("STATIC_URL")
 FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS")
+SALT_NATIONAL_IDENTIFICATION_NUMBER = env.str("SALT_NATIONAL_IDENTIFICATION_NUMBER")
+if not SALT_NATIONAL_IDENTIFICATION_NUMBER and DEBUG:
+    SALT_NATIONAL_IDENTIFICATION_NUMBER = "DEBUG_SALT"
 
 ROOT_URLCONF = "open_city_profile.urls"
 WSGI_APPLICATION = "open_city_profile.wsgi.application"
@@ -152,7 +157,7 @@ ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
-    "helusers.apps.HelusersAdminConfig",
+    "open_city_profile.apps.OpenCityProfileAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -169,7 +174,6 @@ INSTALLED_APPS = [
     "users",
     "profiles",
     "reversion",
-    "youths",
     "django_ilmoitin",
     "mailer",
     "graphene_django",
@@ -288,6 +292,7 @@ MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
     "MIDDLEWARE": [
+        # NOTE: Graphene runs its middlewares in reverse order!
         "open_city_profile.graphene.JWTMiddleware"
         if USE_HELUSERS_REQUEST_JWT_AUTH
         else "graphql_jwt.middleware.JSONWebTokenMiddleware",
@@ -329,16 +334,27 @@ if "SECRET_KEY" not in locals():
             )
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
-AUDIT_LOG_USERNAME = env.bool("AUDIT_LOG_USERNAME")
 AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
 
 if AUDIT_LOG_FILENAME:
+    if "X" in AUDIT_LOG_FILENAME:
+        import random
+        import re
+        import string
+
+        system_random = random.SystemRandom()
+        char_pool = string.ascii_lowercase + string.digits
+        AUDIT_LOG_FILENAME = re.sub(
+            "X", lambda x: system_random.choice(char_pool), AUDIT_LOG_FILENAME
+        )
+
     _audit_log_handler = {
         "level": "INFO",
         "class": "logging.handlers.RotatingFileHandler",
         "filename": AUDIT_LOG_FILENAME,
         "maxBytes": 100_000_000,
         "backupCount": 1,
+        "delay": True,
     }
 else:
     _audit_log_handler = {

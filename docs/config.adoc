@@ -1,0 +1,101 @@
+= Configuration
+:toc: preamble
+
+The service can be configured by setting various environment variables.
+
+== Standard Django configuration
+
+The following environment variables set directly the https://docs.djangoproject.com/en/2.2/ref/settings/[Django setting] with the same name:
+
+- https://docs.djangoproject.com/en/2.2/ref/settings/#allowed-hosts[`ALLOWED_HOSTS`]. Default is empty list.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#csrf-cookie-name[`CSRF_COOKIE_NAME`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#csrf-cookie-path[`CSRF_COOKIE_PATH`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#csrf-cookie-secure[`CSRF_COOKIE_SECURE`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#csrf-trusted-origins[`CSRF_TRUSTED_ORIGINS`]. Default is empty list.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#debug[`DEBUG`]. Default is `True`.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#default-from-email[`DEFAULT_FROM_EMAIL`]. Default is "\no-reply@hel.fi". See also the other <<Email,email>> settings.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#force-script-name[`FORCE_SCRIPT_NAME`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#media-url[`MEDIA_URL`]. Default is "/media/".
+- https://docs.djangoproject.com/en/2.2/ref/settings/#secret-key[`SECRET_KEY`]. If `DEBUG` is `True`, default is "xxx", otherwise empty string (which prevents Django from starting, so you need to set this).
+- https://docs.djangoproject.com/en/2.2/ref/settings/#session-cookie-name[`SESSION_COOKIE_NAME`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#session-cookie-path[`SESSION_COOKIE_PATH`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#session-cookie-secure[`SESSION_COOKIE_SECURE`]. Default is to use the Django default.
+- https://docs.djangoproject.com/en/2.2/ref/settings/#static-url[`STATIC_URL`]. Default is "/static/".
+- https://docs.djangoproject.com/en/2.2/ref/settings/#use-x-forwarded-host[`USE_X_FORWARDED_HOST`]. Default is to use the Django default.
+
+The following environment variables can be used to affect some standard Django settings, but somewhat indirectly:
+
+- `CACHE_URL`: Configures the https://docs.djangoproject.com/en/2.2/ref/settings/#caches["default" cache] using https://django-environ.readthedocs.io[Django-environ]. Default is "locmemcache://".
+- `DATABASE_URL`: Configures the https://docs.djangoproject.com/en/2.2/ref/settings/#databases["default" database connection] using https://django-environ.readthedocs.io[Django-environ]. Default is "postgres://open_city_profile:open_city_profile@localhost/open_city_profile".
+- `EMAIL_URL`: Configures email for Django using https://django-environ.readthedocs.io/en/latest/#email-settings[Django-environ]. Default is "consolemail://".
+- `VAR_ROOT`: Provides a base path for the https://docs.djangoproject.com/en/2.2/ref/settings/#media-root[`MEDIA_ROOT`] and https://docs.djangoproject.com/en/2.2/ref/settings/#static-root[`STATIC_ROOT`] Django settings. `MEDIA_ROOT` will be set to `${VAR_ROOT}/media` and `STATIC_ROOT` to `${VAR_ROOT}/static`. If run with Docker (determined by checking that the project is in an `/app` directory), `VAR_ROOT` defaults to `/var`. Otherwise it defaults to a path called `var` under the project directory.
+
+== Authentication server(s)
+
+This project uses https://github.com/City-of-Helsinki/django-helusers[Django-helusers] for doing authentication. The following environment variables correspond directly to Django-helusers settings:
+
+- `TOKEN_AUTH_ACCEPTED_AUDIENCE`: Corresponds to `OIDC_API_TOKEN_AUTH.AUDIENCE`. Default is empty.
+- `TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX`: Corresponds to `OIDC_API_TOKEN_AUTH. API_SCOPE_PREFIX`. Default is empty.
+- `TOKEN_AUTH_REQUIRE_SCOPE`: Corresponds to `OIDC_API_TOKEN_AUTH. REQUIRE_API_SCOPE_FOR_AUTHENTICATION`. Default is `False`.
+
+The following environment variables configure authentication in other ways:
+
+- `TOKEN_AUTH_AUTHSERVER_URL`: Sets the "main" authentication server's URL. The URL needs to be exactly what the authentication server reports as its `issuer` value. Default is empty.
+- `ADDITIONAL_AUTHSERVER_URLS`: Sets additional authentication server URLs as a list of strings. JWTs signed by these servers are accepted for authentication. The URLs need to be exactly what the authentication servers report as their `issuer` value. Default is empty list.
+
+== Audit events
+
+Audit events are produced using the https://docs.python.org/3/library/logging.html[Python logging module].
+
+By default audit event production is disabled. In order to enable audit event production, set `AUDIT_LOGGING_ENABLED` to `True`.
+
+By default audit event output is sent to `stdout`. It's possible to send the output to a file instead, by setting the `AUDIT_LOG_FILENAME` to the desired filename. The filename may be randomized by including capital "X" characters in it. The "X"s get replaced by random characters.
+
+== Database encryption
+
+https://pypi.org/project/django-searchable-encrypted-fields[Django-searchable-encrypted-fields] library is used to encrypt some data in the database. Read that library's documentation to learn what needs to be considered when handling these encryption keys and other values.
+
+- `FIELD_ENCRYPTION_KEYS`: Used to encrypt/decrypt some data in the database. Corresponds directly to the setting with same name in django-searchable-encrypted-fields. Must be set to a valid value.
+- `SALT_NATIONAL_IDENTIFICATION_NUMBER`: Used as additional salt in calculating search keys for the national identification number field in Profile. Given as the `hash_key` argument to django-searchable-encrypted-fields's `SearchField` instance. If not given and `DEBUG` is `True`, defaults to "DEBUG_SALT".
+
+== GDPR API
+
+GDPR API functionality needs to communicate with an authentication server. The implementation uses https://github.com/City-of-Helsinki/tunnistamo[Tunnistamo] specific endpoints, so this works only with Tunnistamo.
+
+All the following environment variables are required for the GDPR API functionality to work correctly.
+
+First of all, `TOKEN_AUTH_AUTHSERVER_URL` is used as the authentication server, so that environment variable needs to point to the correct Tunnistamo instance.
+
+- `OIDC_CLIENT_ID`: Client id to use in the authorization code flow.
+- `OIDC_CLIENT_SECRET`: Client secret to use in the authorization code flow.
+- `GDPR_AUTH_CALLBACK_URL`: Callback URL should be the same which is used by the UI for fetching OAuth/OIDC authorization token for using the GDPR API.
+- `TUNNISTAMO_API_TOKENS_URL`: Tunnistamo URL from which the backend will fetch API tokens for GDPR API use.
+
+== Email
+
+- `MAILER_EMAIL_BACKEND`: https://pypi.org/project/django-mailer/[Django-mailer] is used to queue emails. This lets you set your actual email backend. The default is "django.core.mail.backends.console.EmailBackend".
+
+https://mailgun.com/[Mailgun] is the only supported email sending service. https://anymail.readthedocs.io[Anymail] is used as email backend to communicate with Mailgun. If you want to send email, set `MAILER_EMAIL_BACKEND` to "anymail.backends.mailgun.EmailBackend". See https://anymail.readthedocs.io/en/stable/esps/mailgun/[Mailgun configuration in Anymail]. These settings are supported:
+
+- `MAIL_MAILGUN_API`: The URL of the Mailgun API to call. Corresponds to `MAILGUN_API_URL` Anymail setting.
+- `MAIL_MAILGUN_KEY`: The API key for Mailgun. Corresponds to `MAILGUN_API_KEY` Anymail setting.
+- `MAIL_MAILGUN_DOMAIN`: Sender's domain. Corresponds to `MAILGUN_SENDER_DOMAIN` Anymail setting.
+
+== Feature flags
+
+- `ENABLE_GRAPHIQL`: Enables GraphiQL testing user interface. If `DEBUG` is `True`, this setting has no effect and GraphiQL is always enabled. Default is `False`.
+- `USE_HELUSERS_REQUEST_JWT_AUTH`: There is an older and a newer implementation for doing JWT based authentication. Both of them use https://github.com/City-of-Helsinki/django-helusers[django-helusers] for doing the heavy lifting. The older implementation depends on Django REST Framework, the newer doesn't. Setting this to `True` takes the newer implementation into use. By default the old implementation is used. It's encouraged to use the new implementation. The old one (and this setting) will be removed at some point.
+- `USE_X_FORWARDED_FOR`: Affects the way how a requester's IP address is figured out. If set to `True`, the `X-Forwarded-For` HTTP header is used as one option. Default is `False`.
+
+== Sentry
+
+It's possible to report errors to Sentry.
+
+- `SENTRY_DSN`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#dsn[Sentry DSN]. If this is not set, nothing is sent to Sentry.
+- `SENTRY_ENVIRONMENT`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#environment[Sentry environment]. Default is "development".
+- `VERSION`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#release[Sentry release]. See `VERSION` in <<Miscellaneous>>.
+
+== Miscellaneous
+
+- `VERSION`: Sets a version for the installation. Default is the output of `git describe --always` command, if it succeeds, otherwise `None`.
+- `TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES`: For how long a temporary profile read access token is valid after creation. Value is in minutes. Default is 48 hours.

@@ -22,6 +22,9 @@ functions of Venepaikka service.
 
 Open city profile is implemented using Django and it provides a GraphQL API.
 
+## Configuration
+
+See [docs/config.adoc](docs/config.adoc).
 
 ## Development with [Docker](https://docs.docker.com/)
 
@@ -73,15 +76,12 @@ Prerequisites:
 5. Set permissions for service staff members if needed:
    * Create group(s) (via Django admin) and add user(s) to the group
    * Create service permissions for group manually via Django admin or for example:
-     * `docker exec profile-backend python manage.py add_object_permission BERTH
-     VeneAdmin can_view_profiles`
-     * where:
-       * `service_type=BERTH`
-       * `group_name=VeneAdmin`
-       * `permission=can_view_profiles`
+     * `docker exec profile-backend python manage.py add_object_permission ServiceName GroupName can_view_profiles`,  where:
+       * `ServiceName` is the name of the Service the permission is given for
+       * `GroupName` is the name of the group to whom the permission is give
+       * `can_view_profiles` is the name of the permission
    * Permissions can be removed as follows:
-     * `docker exec profile-backend python manage.py remove_object_permission BERTH
-     VeneAdmin can_view_profiles`
+     * `docker exec profile-backend python manage.py remove_object_permission ServiceName GroupName can_view_profiles`
 
 6. Seed development data
     * **Note!** This command will flush the database.
@@ -91,7 +91,7 @@ Prerequisites:
     * Command will generate:
       * All available services
       * One group per service (with `can_manage_profiles` permissions)
-      * One user per group (with username `{service_type}_user`)
+      * One user per group (with username `{group.name}_user`)
       * Profiles
         * With user
         * With email, phone number and address

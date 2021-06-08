@@ -3,7 +3,7 @@ from functools import reduce
 
 from django import forms
 from django.contrib import admin, messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms.models import ModelForm
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -24,6 +24,7 @@ from profiles.models import (
     VerifiedPersonalInformation,
 )
 from services.admin import ServiceConnectionInline
+from services.models import Service
 from subscriptions.admin import SubscriptionInline
 
 
@@ -112,6 +113,7 @@ class AddressAdminInline(admin.StackedInline):
 
 class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     model = VerifiedPersonalInformation
+    exclude = ("_national_identification_number_data",)
     readonly_fields = (
         "get_permanent_address",
         "get_temporary_address",
@@ -158,6 +160,12 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
 
 class ImportProfilesFromJsonForm(forms.Form):
     json_file = forms.FileField(required=True, label="Please select a json file")
+    service = forms.ModelChoiceField(
+        required=False,
+        queryset=Service.objects.all(),
+        to_field_name="name",
+        label="Connect imported profiles to service",
+    )
 
 
 @admin.register(Profile)
@@ -195,11 +203,17 @@ class ExtendedProfileAdmin(VersionAdmin):
     def upload_json(self, request):
         try:
             if request.method == "POST":
-                data = json.loads(request.FILES["json_file"].read())
-                result = Profile.import_customer_data(data)
-                response = JsonResponse(result)
-                response["Content-Disposition"] = "attachment; filename=export.json"
-                return response
+                form = ImportProfilesFromJsonForm(request.POST, request.FILES)
+                if form.is_valid():
+                    data = json.loads(request.FILES["json_file"].read())
+                    service = form.cleaned_data["service"]
+                    result = Profile.import_customer_data(data, service)
+                    response = JsonResponse(result)
+                    response["Content-Disposition"] = "attachment; filename=export.json"
+
+                    return response
+                else:
+                    raise ValidationError(form.errors.as_text())
             else:
                 form = ImportProfilesFromJsonForm()
                 return render(

@@ -14,3 +14,9 @@ Since a GraphQL mutation for example can modify half a dozen different models, u
 *In admin UI:* profiles | verified personal information | Can manage verified personal information
 *In code:* `profiles.manage_verified_personal_information`
 *Purpose:* Needed to access the `createOrUpdateProfileWithVerifiedPersonalInformation` mutation.
+
+[%hardbreaks]
+*In admin UI:* services | service | Can view verified personal information
+*In code:* `services.can_view_verified_personal_information`
+*Purpose:* Needed to read verified personal information of other `Profiles` than the requester's own.
+*Note:* Use object permissions. Add the permission to the `Service` object for the users or groups that should have access.

@@ -18,7 +18,6 @@ from profiles.tests.factories import (
     VerifiedPersonalInformationFactory,
     VocabularyFactory,
 )
-from services.enums import ServiceType
 from services.tests.factories import (
     ServiceClientIdFactory,
     ServiceConnectionFactory,
@@ -27,8 +26,10 @@ from services.tests.factories import (
 
 
 @pytest.fixture
-def profile(user):
-    return ProfileFactory(user=user)
+def profile():
+    return ProfileFactory(
+        user=UserFactory()  # noqa: F405 Name may be defined from star imports
+    )
 
 
 @pytest.fixture
@@ -77,33 +78,23 @@ register(ServiceConnectionFactory)
 register(ServiceClientIdFactory)
 
 
-@pytest.fixture
-def service__service_type():
-    """Service fixture has berth type by default."""
-    return ServiceType.BERTH
-
-
 @pytest.fixture(autouse=True)
 def setup_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = False
 
 
-@pytest.fixture(autouse=True)
-def setup_log_username(settings):
-    settings.AUDIT_LOG_USERNAME = False
-
-
-class ProfileWithVerifiedPersonalInformationTestBase:
-    ADDRESS_FIELD_NAMES = {
-        "permanent_address": ["street_address", "postal_code", "post_office"],
-        "temporary_address": ["street_address", "postal_code", "post_office"],
-        "permanent_foreign_address": [
-            "street_address",
-            "additional_address",
-            "country_code",
-        ],
-    }
-    ADDRESS_TYPES = ADDRESS_FIELD_NAMES.keys()
+VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES = {
+    "permanent_address": ["street_address", "postal_code", "post_office"],
+    "temporary_address": ["street_address", "postal_code", "post_office"],
+    "permanent_foreign_address": [
+        "street_address",
+        "additional_address",
+        "country_code",
+    ],
+}
+VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES = (
+    VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES.keys()
+)
 
 
 class TemporaryProfileReadAccessTokenTestBase:

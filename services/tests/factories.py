@@ -8,14 +8,19 @@ from services.models import (
     ServiceConnection,
 )
 
-from ..enums import ServiceType
-
 
 class ServiceFactory(factory.django.DjangoModelFactory):
-    service_type = ServiceType.BERTH
+    service_type = None
     name = factory.Sequence(lambda n: "service %d" % n)
-    title = "Berth"
-    description = "Service for Berth Reservations"
+
+    @factory.lazy_attribute
+    def title(self):
+        return f"{self.name} title"
+
+    @factory.lazy_attribute
+    def description(self):
+        return f"{self.name} description"
+
     gdpr_url = ""
 
     class Meta:

@@ -20,15 +20,18 @@ def test_service_can_not_be_determined(req, user_auth):
     if user_auth:
         req.user_auth = user_auth
     set_service_to_request(req)
-    assert not hasattr(req, "service")
+
+    assert req.service is None
     assert not hasattr(req, "service_client_id")
 
 
 def test_when_client_id_is_found_then_service_is_added_to_request(
     req, service_client_id
 ):
-    req.user_auth = UserAuth({"azp": service_client_id.client_id})
+    client_id = service_client_id.client_id
+
+    req.user_auth = UserAuth({"azp": client_id})
     set_service_to_request(req)
 
-    assert req.service_client_id == service_client_id
+    assert req.client_id == client_id
     assert req.service == service_client_id.service

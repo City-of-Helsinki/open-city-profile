@@ -2,18 +2,11 @@ import pytest
 import requests
 from django.db.utils import IntegrityError
 
-from ..enums import ServiceType
 from ..exceptions import MissingGDPRUrlException
 from ..models import Service, ServiceConnection
 from .factories import ProfileFactory, ServiceConnectionFactory
 
 GDPR_URL = "https://example.com/"
-
-
-def test_generate_services_from_enum():
-    for service_type in ServiceType:
-        Service.objects.create(service_type=service_type)
-    assert Service.objects.count() == len(ServiceType)
 
 
 def test_generate_services_without_service_type(service_factory):
@@ -23,11 +16,11 @@ def test_generate_services_without_service_type(service_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_add_service_with_duplicate_service_type(service_factory):
-    service_factory()
+def test_add_service_with_duplicate_name(service_factory):
+    service_factory(name="service_name")
     assert Service.objects.count() == 1
     with pytest.raises(IntegrityError):
-        service_factory()
+        service_factory(name="service_name")
     assert Service.objects.count() == 1
 
 
@@ -51,8 +44,8 @@ def test_connect_same_service_with_different_profile(service):
 
 def test_connect_two_different_services_for_same_profile(service_factory):
     profile = ProfileFactory()
-    service_1 = service_factory(service_type=ServiceType.BERTH)
-    service_2 = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
+    service_1 = service_factory()
+    service_2 = service_factory()
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
     assert ServiceConnection.objects.count() == 2
@@ -66,18 +59,20 @@ def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_download_gdpr_data_with_valid_service_and_url(
-    requests_mock, youth_profile_response, service, profile
-):
+def test_download_gdpr_data_with_valid_service_and_url(requests_mock, service, profile):
+    service_response = {
+        "some": "json",
+    }
+
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
     requests_mock.get(
         f"{GDPR_URL}{profile.pk}",
-        json=youth_profile_response,
+        json=service_response,
         request_headers={"authorization": "Bearer token"},
     )
 
     response = service_connection.download_gdpr_data(api_token="token")
-    assert response == youth_profile_response
+    assert response == service_response
 
 
 def test_download_gdpr_data_returns_empty_dict_if_no_url(

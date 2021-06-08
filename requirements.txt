@@ -16,10 +16,6 @@ certifi==2020.4.5.1
     #   sentry-sdk
 chardet==3.0.4
     # via requests
-coreapi==2.3.3
-    # via -r requirements.in
-coreschema==0.0.4
-    # via coreapi
 defusedxml==0.6.0
     # via odfpy
 deprecation==2.1.0
@@ -36,7 +32,7 @@ django-enumfields==1.0.0
     # via -r requirements.in
 django-environ==0.4.5
     # via -r requirements.in
-django-filter==2.2.0
+django-filter==2.4.0
     # via -r requirements.in
 django-graphql-jwt==0.2.2
     # via -r requirements.in
@@ -71,7 +67,7 @@ django-searchable-encrypted-fields==0.1.3
     # via -r requirements.in
 django-thesaurus==0.0.2
     # via -r requirements.in
-django==2.2.13
+django==2.2.22
     # via
     #   -r requirements.in
     #   django-admin-sortable
@@ -88,16 +84,17 @@ django==2.2.13
     #   django-reversion
     #   django-searchable-encrypted-fields
     #   django-thesaurus
+    #   djangorestframework
     #   drf-oidc-auth
     #   graphene-django
-djangorestframework==3.10.1
+djangorestframework==3.12.4
     # via
     #   -r requirements.in
     #   django-parler-rest
     #   drf-oidc-auth
 drf-oidc-auth==0.10.0
     # via -r requirements.in
-ecdsa==0.13.3
+ecdsa==0.16.1
     # via python-jose
 et-xmlfile==1.0.1
     # via openpyxl
@@ -111,10 +108,13 @@ graphene-django==2.10.1
     #   django-graphql-jwt
 graphene-federation==0.1.0
     # via -r requirements.in
+git+https://github.com/City-of-Helsinki/graphene-validator.git@main
+    # via -r requirements.in
 graphene==2.1.8
     # via
     #   graphene-django
     #   graphene-federation
+    #   graphene-validator
 graphql-core==2.2.1
     # via
     #   django-graphql-jwt
@@ -125,16 +125,16 @@ graphql-relay==2.0.0
     # via graphene
 idna==2.9
     # via requests
+iso3166==1.0.1
+    # via -r requirements.in
 isodate==0.6.0
     # via rdflib
-itypes==1.1.0
-    # via coreapi
+itsdangerous==1.1.0
+    # via requests-cache
 jdcal==1.4.1
     # via openpyxl
-jinja2==2.10.1
-    # via
-    #   coreschema
-    #   django-ilmoitin
+jinja2==2.11.3
+    # via django-ilmoitin
 lockfile==0.12.2
     # via django-mailer
 markuppy==1.14
@@ -149,7 +149,7 @@ openpyxl==3.0.3
     # via tablib
 packaging==20.3
     # via deprecation
-pillow==7.1.0
+pillow==8.2.0
     # via -r requirements.in
 promise==2.2.1
     # via
@@ -176,28 +176,27 @@ python-jose==3.0.1
     # via django-helusers
 pytz==2019.1
     # via django
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via
     #   -r requirements.in
     #   django-munigeo
     #   tablib
 rdflib==4.2.2
     # via django-thesaurus
-requests-cache==0.5.0
+requests-cache==0.6.3
     # via django-munigeo
 requests-oauthlib==1.3.0
     # via -r requirements.in
 requests==2.25.1
     # via
     #   -r requirements.in
-    #   coreapi
     #   django-anymail
     #   django-helusers
     #   django-munigeo
     #   pyjwkest
     #   requests-cache
     #   requests-oauthlib
-rsa==4.0
+rsa==4.7.2
     # via python-jose
 rx==1.6.1
     # via graphql-core
@@ -209,6 +208,7 @@ six==1.14.0
     # via
     #   django-anymail
     #   django-munigeo
+    #   ecdsa
     #   graphene
     #   graphene-django
     #   graphql-core
@@ -219,12 +219,13 @@ six==1.14.0
     #   pyjwkest
     #   python-jose
     #   singledispatch
+    #   url-normalize
 sqlparse==0.3.0
     # via django
 tablib[html,ods,xls,xlsx,yaml]==1.1.0
     # via django-import-export
-uritemplate==3.0.0
-    # via coreapi
+url-normalize==1.4.3
+    # via requests-cache
 urllib3==1.25.11
     # via
     #   requests

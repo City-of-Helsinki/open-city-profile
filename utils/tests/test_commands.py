@@ -2,18 +2,17 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 
 from profiles.models import Profile
-from services.enums import ServiceType
 from services.models import AllowedDataField, Service
 from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
 from users.models import User
-from utils.utils import DATA_FIELD_VALUES
+from utils.utils import DATA_FIELD_VALUES, SERVICES
 
 
 def test_command_seed_data_works_without_arguments():
     call_command("seed_data")
 
-    assert Service.objects.count() == len(ServiceType)
-    assert Group.objects.count() == len(ServiceType)
+    assert Service.objects.count() == len(SERVICES)
+    assert Group.objects.count() == len(SERVICES)
     assert User.objects.filter(is_superuser=True).count() == 0
     assert AllowedDataField.objects.count() == len(DATA_FIELD_VALUES)
     assert SubscriptionType.objects.count() == 3
@@ -33,7 +32,7 @@ def test_command_seed_data_initializes_development_data():
     normal_users = 50
     assert (
         User.objects.count()
-        == normal_users + len(ServiceType) + admin_users + anonymous_users
+        == normal_users + len(SERVICES) + admin_users + anonymous_users
     )
     assert Profile.objects.count() == normal_users
     assert User.objects.filter(is_superuser=True).count() == admin_users

@@ -5,7 +5,12 @@ from datetime import datetime, timezone
 from django.conf import settings
 from django.utils.text import camel_case_to_spaces
 
-from .utils import get_current_service, get_current_user, get_original_client_ip
+from .utils import (
+    get_current_client_id,
+    get_current_service,
+    get_current_user,
+    get_original_client_ip,
+)
 
 
 def should_audit(model):
@@ -37,10 +42,6 @@ def _format_user_data(audit_event, field_name, user):
         audit_event[field_name]["user_id"] = (
             str(user.uuid) if hasattr(user, "uuid") else None
         )
-        if settings.AUDIT_LOG_USERNAME:
-            audit_event[field_name]["user_name"] = (
-                user.username if hasattr(user, "username") else None
-            )
 
 
 def log(action, instance):
@@ -53,7 +54,11 @@ def log(action, instance):
 
         current_time = datetime.now(tz=timezone.utc)
         current_user = get_current_user()
-        profile = instance.resolve_profile()
+        profile = (
+            instance.profile
+            if hasattr(instance, "profile")
+            else instance.resolve_profile()
+        )
         profile_id = str(profile.pk) if profile else None
         target_user = profile.user if profile and profile.user else None
 
@@ -65,10 +70,7 @@ def log(action, instance):
                 "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
                 "actor": {"role": _resolve_role(current_user, profile)},
                 "operation": action,
-                "target": {
-                    "profile_id": profile_id,
-                    "profile_part": _profile_part(instance),
-                },
+                "target": {"id": profile_id, "type": _profile_part(instance)},
             }
         }
 
@@ -78,15 +80,13 @@ def log(action, instance):
 
         service = get_current_service()
         if service:
-            message["audit_event"]["actor_service"] = {
-                "id": str(service.name),
-                "name": str(service.label),
-            }
+            message["audit_event"]["actor"]["service_name"] = service.name
+        client_id = get_current_client_id()
+        if client_id:
+            message["audit_event"]["actor"]["client_id"] = client_id
 
         ip_address = get_original_client_ip()
         if ip_address:
-            message["audit_event"]["profilebe"] = {
-                "ip_address": ip_address,
-            }
+            message["audit_event"]["actor"]["ip_address"] = ip_address
 
         logger.info(json.dumps(message))

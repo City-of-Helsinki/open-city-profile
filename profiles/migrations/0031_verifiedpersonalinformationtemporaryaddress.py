@@ -3,7 +3,6 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import encrypted_fields.fields
-import utils.models
 
 
 class Migration(migrations.Migration):
@@ -53,6 +52,5 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={"abstract": False,},
-            bases=(models.Model, utils.models.UpdateMixin),
         ),
     ]

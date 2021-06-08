@@ -14,16 +14,10 @@ from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
-from services.enums import ServiceType
-from services.models import Service, ServiceConnection
+from services.models import ServiceConnection
 from users.models import User
-from utils.models import (
-    NullsToEmptyStringsModel,
-    SerializableMixin,
-    UpdateMixin,
-    UUIDModel,
-    ValidateOnSaveModel,
-)
+from utils.fields import CallableHashKeyEncryptedSearchField, NullToEmptyValueMixin
+from utils.models import SerializableMixin, UUIDModel
 
 from .enums import (
     AddressType,
@@ -31,6 +25,13 @@ from .enums import (
     PhoneType,
     RepresentationType,
     RepresentativeConfirmationDegree,
+)
+from .validators import (
+    validate_finnish_municipality_of_residence_number,
+    validate_finnish_national_identification_number,
+    validate_finnish_postal_code,
+    validate_iso_3166_country_code,
+    validate_visible_latin_characters_only,
 )
 
 
@@ -158,7 +159,7 @@ class Profile(UUIDModel, SerializableMixin):
 
     @classmethod
     @transaction.atomic
-    def import_customer_data(cls, data):
+    def import_customer_data(cls, data, service):
         """
         Imports list of customers of the following shape:
         {
@@ -209,11 +210,10 @@ class Profile(UUIDModel, SerializableMixin):
                     profile.phones.create(
                         phone=phone, phone_type=PhoneType.MOBILE, primary=index == 0
                     )
-                ServiceConnection.objects.create(
-                    profile=profile,
-                    service=Service.objects.get(service_type=ServiceType.BERTH),
-                    enabled=False,
-                )
+                if service:
+                    ServiceConnection.objects.create(
+                        profile=profile, service=service, enabled=False,
+                    )
                 result[item["customer_id"]] = profile.pk
             except Exception as err:
                 msg = (
@@ -229,33 +229,74 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
-class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel):
+class NullToEmptyCharField(NullToEmptyValueMixin, models.CharField):
+    """CharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedCharField(NullToEmptyValueMixin, fields.EncryptedCharField):
+    """EncryptedCharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedSearchField(
+    NullToEmptyValueMixin, CallableHashKeyEncryptedSearchField
+):
+    """EncryptedSearchField with automatic null-to-empty-string functionality"""
+
+
+def get_national_identification_number_hash_key():
+    return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
+
+
+class VerifiedPersonalInformation(models.Model):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
-    first_name = models.CharField(
-        max_length=1024, blank=True, help_text="First name(s)."
+    first_name = NullToEmptyCharField(
+        max_length=100,
+        blank=True,
+        help_text="First name(s).",
+        validators=[validate_visible_latin_characters_only],
     )
-    last_name = models.CharField(max_length=1024, blank=True, help_text="Last name.")
-    given_name = fields.EncryptedCharField(
-        max_length=1024, blank=True, help_text="The name the person is called with."
+    last_name = NullToEmptyCharField(
+        max_length=100,
+        blank=True,
+        help_text="Last name.",
+        validators=[validate_visible_latin_characters_only],
     )
-    national_identification_number = fields.EncryptedCharField(
+    given_name = NullToEmptyEncryptedCharField(
+        max_length=100,
+        blank=True,
+        help_text="The name the person is called with.",
+        validators=[validate_visible_latin_characters_only],
+    )
+    _national_identification_number_data = NullToEmptyEncryptedCharField(
         max_length=1024,
+        blank=True,
+        validators=[validate_finnish_national_identification_number],
+    )
+    national_identification_number = NullToEmptyEncryptedSearchField(
+        hash_key=get_national_identification_number_hash_key,
+        encrypted_field_name="_national_identification_number_data",
         blank=True,
         help_text="Finnish national identification number.",
     )
-    email = fields.EncryptedCharField(max_length=1024, blank=True, help_text="Email.")
-    municipality_of_residence = fields.EncryptedCharField(
-        max_length=1024,
+    email = NullToEmptyEncryptedCharField(
+        max_length=1024, blank=True, help_text="Email."
+    )
+    municipality_of_residence = NullToEmptyEncryptedCharField(
+        max_length=100,
         blank=True,
         help_text="Official municipality of residence in Finland as a free form text.",
+        validators=[validate_visible_latin_characters_only],
     )
-    municipality_of_residence_number = fields.EncryptedCharField(
-        max_length=4,
+    municipality_of_residence_number = NullToEmptyEncryptedCharField(
+        max_length=3,
         blank=True,
         help_text="Official municipality of residence in Finland as an official number.",
+        validators=[validate_finnish_municipality_of_residence_number],
     )
+
+    audit_log = True
 
     class Meta:
         permissions = [
@@ -266,10 +307,16 @@ class VerifiedPersonalInformation(ValidateOnSaveModel, NullsToEmptyStringsModel)
         ]
 
 
-class EncryptedAddress(ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel):
-    street_address = fields.EncryptedCharField(max_length=1024, blank=True)
-    postal_code = fields.EncryptedCharField(max_length=1024, blank=True)
-    post_office = fields.EncryptedCharField(max_length=1024, blank=True)
+class EncryptedAddress(models.Model):
+    street_address = NullToEmptyEncryptedCharField(
+        max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
+    )
+    postal_code = NullToEmptyEncryptedCharField(
+        max_length=1024, blank=True, validators=[validate_finnish_postal_code],
+    )
+    post_office = NullToEmptyEncryptedCharField(
+        max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
+    )
 
     class Meta:
         abstract = True
@@ -287,6 +334,11 @@ class VerifiedPersonalInformationPermanentAddress(EncryptedAddress):
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
+
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
+
 
 class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
     RELATED_NAME = "temporary_address"
@@ -297,24 +349,32 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
 
-class VerifiedPersonalInformationPermanentForeignAddress(
-    ValidateOnSaveModel, UpdateMixin, NullsToEmptyStringsModel
-):
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
+
+
+class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
     RELATED_NAME = "permanent_foreign_address"
 
-    street_address = fields.EncryptedCharField(
-        max_length=1024,
+    street_address = NullToEmptyEncryptedCharField(
+        max_length=100,
         blank=True,
         help_text="Street address or whatever is the _first part_ of the address.",
+        validators=[validate_visible_latin_characters_only],
     )
-    additional_address = fields.EncryptedCharField(
-        max_length=1024,
+    additional_address = NullToEmptyEncryptedCharField(
+        max_length=100,
         blank=True,
         help_text="Additional address information, perhaps town, county, state, country etc.",
+        validators=[validate_visible_latin_characters_only],
     )
-    country_code = fields.EncryptedCharField(
-        max_length=3, blank=True, help_text="An ISO 3166-1 country code."
+    country_code = NullToEmptyEncryptedCharField(
+        max_length=3,
+        blank=True,
+        help_text="An ISO 3166-1 country code.",
+        validators=[validate_iso_3166_country_code],
     )
 
     verified_personal_information = models.OneToOneField(
@@ -323,8 +383,13 @@ class VerifiedPersonalInformationPermanentForeignAddress(
         related_name=RELATED_NAME,
     )
 
+    audit_log = True
+
     def is_empty(self):
         return not (self.street_address or self.additional_address or self.country_code)
+
+    def resolve_profile(self):
+        return self.verified_personal_information.profile
 
 
 class DivisionOfInterest(models.Model):

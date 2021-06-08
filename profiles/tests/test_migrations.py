@@ -118,3 +118,31 @@ def test_verified_personal_information_searchable_names_migration(migration_test
         create_data,
         verify_migration,
     )
+
+
+def test_verified_personal_information_searchable_national_identification_number_migration(
+    migration_test_db,
+):
+    ID_NUMBER = "010199-1234"
+
+    def create_data(apps):
+        Profile = apps.get_model(app, "Profile")
+        VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
+        profile = Profile.objects.create()
+        VerifiedPersonalInformation.objects.create(
+            profile=profile, national_identification_number=ID_NUMBER
+        )
+
+    def verify_migration(apps):
+        VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
+        vpi = VerifiedPersonalInformation.objects.get(
+            national_identification_number=ID_NUMBER
+        )
+        assert vpi.national_identification_number == ID_NUMBER
+
+    execute_migration_test(
+        "0036_start_using_raw_verifiedpersonalinformation_names",
+        "0038_start_using_searchable_national_identification_number",
+        create_data,
+        verify_migration,
+    )

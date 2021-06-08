@@ -6,10 +6,11 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.test import RequestFactory
 from graphene.test import Client as GrapheneClient
+from graphene_django.settings import graphene_settings
+from graphene_django.views import instantiate_middleware
 from graphql import build_client_schema, introspection_query
 from helusers.authz import UserAuthorization
 
-from open_city_profile.graphene import GQLDataLoaders
 from open_city_profile.schema import schema
 from open_city_profile.tests.factories import (
     GroupFactory,
@@ -17,16 +18,27 @@ from open_city_profile.tests.factories import (
     UserFactory,
 )
 from open_city_profile.views import GraphQLView
+from services.tests.factories import ServiceFactory
+
+_not_provided = object()
 
 
 class GraphQLClient(GrapheneClient):
     def execute(
-        self, *args, auth_token_payload=None, service=None, context=None, **kwargs
+        self,
+        *args,
+        auth_token_payload=None,
+        service=_not_provided,
+        context=None,
+        **kwargs
     ):
         """
-        Custom wrapper on the execute method, allows adding the
-        GQL DataLoaders middleware, since it has to be added to make
-        the DataLoaders available through the context.
+        Custom execute method which adds all of the middlewares defined in the
+        settings to the execution. Additionally adds a default service with
+        implicit_connection enabled to the context if no service is provided.
+
+        e.g. GQL DataLoaders middleware is used to make the DataLoaders
+        available through the context.
         """
         if context is None:
             context = RequestFactory().post("/graphql")
@@ -43,11 +55,19 @@ class GraphQLClient(GrapheneClient):
                 context.user, auth_token_payload or {}
             )
 
-        if service is not None:
+        if not hasattr(context, "service"):
+            context.service = None
+
+        if service is _not_provided:
+            context.service = ServiceFactory(implicit_connection=True)
+        elif service:
             context.service = service
 
         return super().execute(
-            *args, context=context, middleware=[GQLDataLoaders()], **kwargs
+            *args,
+            context=context,
+            middleware=list(instantiate_middleware(graphene_settings.MIDDLEWARE)),
+            **kwargs
         )
 
 
@@ -101,23 +121,23 @@ def _get_gql_client_with_error_formating():
 
 
 @pytest.fixture
-def anon_user_gql_client(anon_user):
+def anon_user_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = anon_user
+    gql_client.user = AnonymousUser()
     return gql_client
 
 
 @pytest.fixture
-def user_gql_client(user):
+def user_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = user
+    gql_client.user = UserFactory()
     return gql_client
 
 
 @pytest.fixture
-def superuser_gql_client(superuser):
+def superuser_gql_client():
     gql_client = _get_gql_client_with_error_formating()
-    gql_client.user = superuser
+    gql_client.user = SuperuserFactory()
     return gql_client
 
 

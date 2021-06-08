@@ -5,9 +5,9 @@ import pytest
 from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import AddressType, EmailType, PhoneType
-from services.enums import ServiceType
 from services.tests.factories import ServiceConnectionFactory
 from subscriptions.models import Subscription
 from subscriptions.tests.factories import (
@@ -15,7 +15,13 @@ from subscriptions.tests.factories import (
     SubscriptionTypeFactory,
 )
 
-from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
+from .factories import (
+    AddressFactory,
+    EmailFactory,
+    PhoneFactory,
+    ProfileFactory,
+    VerifiedPersonalInformationFactory,
+)
 
 
 def test_normal_user_can_not_query_profiles(user_gql_client, service):
@@ -80,9 +86,10 @@ def test_staff_user_with_group_access_can_query_profiles(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
 
+    # serviceType is included in query just to ensure that it has NO affect
     query = """
         {
-            profiles {
+            profiles(serviceType: GODCHILDREN_OF_CULTURE) {
                 edges {
                     node {
                         firstName
@@ -128,27 +135,85 @@ def test_staff_user_can_filter_profiles_by_profile_ids(user_gql_client, group, s
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_first_name(user_gql_client, group, service):
-    profile_1, profile_2 = ProfileFactory.create_batch(2)
+query_template = Template(
+    """
+        query getProfiles($$searchString: String) {
+            profiles(${search_arg_name}: $$searchString) {
+                count
+                totalCount
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+)
+
+
+@pytest.mark.parametrize(
+    "field_name,exact_search",
+    [
+        ("first_name", False),
+        ("last_name", False),
+        ("national_identification_number", True),
+    ],
+)
+def test_staff_user_can_filter_profiles_by_a_field(
+    field_name, exact_search, user_gql_client, group, service
+):
+    vpi_1, vpi_2 = VerifiedPersonalInformationFactory.create_batch(2)
+    profile_1, profile_2 = vpi_1.profile, vpi_2.profile
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_verified_personal_information", group, service)
 
-    query = """
-        query getBerthProfiles($firstName: String) {
-            profiles(firstName: $firstName) {
-                count
-                totalCount
-            }
+    gql_field_name = to_graphql_name(field_name)
+    query = query_template.substitute(search_arg_name=gql_field_name)
+
+    expected_data = {
+        "profiles": {
+            "count": 1,
+            "totalCount": 2,
+            "edges": [{"node": {"firstName": profile_2.first_name}}],
         }
-    """
+    }
 
-    expected_data = {"profiles": {"count": 1, "totalCount": 2}}
+    for q in [
+        getattr(d, field_name) for d in [profile_2, vpi_2] if hasattr(d, field_name)
+    ]:
+        search_term = q if exact_search else q[1:].upper()
+        executed = user_gql_client.execute(
+            query, variables={"searchString": search_term}, service=service,
+        )
+        assert "errors" not in executed
+        assert executed["data"] == expected_data
+
+
+@pytest.mark.parametrize(
+    "field_name", ["first_name", "last_name", "national_identification_number"]
+)
+def test_staff_user_can_not_filter_profiles_by_verified_personal_information_without_required_permission(
+    field_name, user_gql_client, group, service
+):
+    vpi = VerifiedPersonalInformationFactory()
+    ServiceConnectionFactory(profile=vpi.profile, service=service)
+
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+
+    gql_field_name = to_graphql_name(field_name)
+    query = query_template.substitute(search_arg_name=gql_field_name)
+
+    expected_data = {"profiles": {"count": 0, "totalCount": 1, "edges": []}}
 
     executed = user_gql_client.execute(
-        query, variables={"firstName": profile_2.first_name}, service=service,
+        query, variables={"searchString": getattr(vpi, field_name)}, service=service,
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
@@ -166,7 +231,7 @@ def test_staff_user_can_sort_profiles(user_gql_client, group, service):
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "-firstName") {
                 edges {
                     node {
@@ -229,7 +294,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
 
     t = Template(
         """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "${order_by}") {
                 edges {
                     node {
@@ -276,7 +341,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by email
 
     query = """
-        query getBerthProfiles($email: String) {
+        query getProfiles($email: String) {
             profiles(emails_Email: $email) {
                 count
                 totalCount
@@ -294,7 +359,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by email_type
 
     query = """
-        query getBerthProfiles($emailType: String) {
+        query getProfiles($emailType: String) {
             profiles(emails_EmailType: $emailType) {
                 count
                 totalCount
@@ -312,7 +377,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(emails_Primary: $primary) {
                 count
                 totalCount
@@ -330,7 +395,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     # filter by verified
 
     query = """
-        query getBerthProfiles($verified: Boolean) {
+        query getProfiles($verified: Boolean) {
             profiles(emails_Verified: $verified) {
                 count
                 totalCount
@@ -361,7 +426,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by phone
 
     query = """
-        query getBerthProfiles($phone: String) {
+        query getProfiles($phone: String) {
             profiles(phones_Phone: $phone) {
                 count
                 totalCount
@@ -379,7 +444,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by phone_type
 
     query = """
-        query getBerthProfiles($phoneType: String) {
+        query getProfiles($phoneType: String) {
             profiles(phones_PhoneType: $phoneType) {
                 count
                 totalCount
@@ -397,7 +462,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(phones_Primary: $primary) {
                 count
                 totalCount
@@ -449,7 +514,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by address
 
     query = """
-        query getBerthProfiles($address: String) {
+        query getProfiles($address: String) {
             profiles(addresses_Address: $address) {
                 count
                 totalCount
@@ -467,7 +532,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by postal_code
 
     query = """
-        query getBerthProfiles($postalCode: String) {
+        query getProfiles($postalCode: String) {
             profiles(addresses_PostalCode: $postalCode) {
                 count
                 totalCount
@@ -485,7 +550,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by city
 
     query = """
-        query getBerthProfiles($city: String) {
+        query getProfiles($city: String) {
             profiles(addresses_City: $city) {
                 count
                 totalCount
@@ -503,7 +568,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by country code
 
     query = """
-        query getBerthProfiles($countryCode: String) {
+        query getProfiles($countryCode: String) {
             profiles(addresses_CountryCode: $countryCode) {
                 count
                 totalCount
@@ -521,7 +586,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by address_type
 
     query = """
-        query getBerthProfiles($addressType: String) {
+        query getProfiles($addressType: String) {
             profiles(addresses_AddressType: $addressType) {
                 count
                 totalCount
@@ -539,7 +604,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     # filter by primary
 
     query = """
-        query getBerthProfiles($primary: Boolean) {
+        query getProfiles($primary: Boolean) {
             profiles(addresses_Primary: $primary) {
                 count
                 totalCount
@@ -632,7 +697,7 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles($subscriptionType: String, $postalCode: String) {
+        query getProfiles($subscriptionType: String, $postalCode: String) {
             profiles(
                 enabledSubscriptions: $subscriptionType,
                 addresses_PostalCode: $postalCode
@@ -690,7 +755,7 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getBerthProfiles {
+        query getProfiles {
             profiles(orderBy: "firstName", first: 1) {
                 pageInfo {
                     endCursor
@@ -714,7 +779,7 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
 
     query = """
-        query getBerthProfiles($endCursor: String) {
+        query getProfiles($endCursor: String) {
             profiles(first: 1, after: $endCursor) {
                 edges {
                     node {
@@ -735,15 +800,17 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
     user_gql_client, group, service_factory
 ):
-    profile_berth = ProfileFactory()
-    profile_youth = ProfileFactory()
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    ServiceConnectionFactory(profile=profile_berth, service=service_berth)
-    ServiceConnectionFactory(profile=profile_youth, service=service_youth)
     user = user_gql_client.user
     user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
+
+    entitled_profile = ProfileFactory()
+    entitled_service = service_factory()
+    ServiceConnectionFactory(profile=entitled_profile, service=entitled_service)
+    assign_perm("can_view_profiles", group, entitled_service)
+
+    unentitled_profile = ProfileFactory()
+    unentitled_service = service_factory()
+    ServiceConnectionFactory(profile=unentitled_profile, service=unentitled_service)
 
     query = """
         {
@@ -757,13 +824,13 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
         }
     """
 
-    executed = user_gql_client.execute(query, service=service_berth)
+    executed = user_gql_client.execute(query, service=entitled_service)
     expected_data = {
-        "profiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]}
+        "profiles": {"edges": [{"node": {"firstName": entitled_profile.first_name}}]}
     }
     assert executed["data"] == expected_data
 
-    executed = user_gql_client.execute(query, service=service_youth)
+    executed = user_gql_client.execute(query, service=unentitled_service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -786,47 +853,3 @@ def test_not_specifying_requesters_service_results_in_permission_denied_error(
     """
     executed = user_gql_client.execute(query)
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-
-
-def test_service_type_argument_temporarily_overrides_the_requesters_service(
-    user_gql_client, group, service_factory
-):
-    profile_berth = ProfileFactory()
-    profile_youth = ProfileFactory()
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    ServiceConnectionFactory(profile=profile_berth, service=service_berth)
-    ServiceConnectionFactory(profile=profile_youth, service=service_youth)
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_view_profiles", group, service_berth)
-    assign_perm("can_view_profiles", group, service_youth)
-
-    t = Template(
-        """
-        {
-            berthProfiles: profiles(serviceType: ${service_type}) {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-
-            youthProfiles: profiles {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(service_type=ServiceType.BERTH.name)
-    expected_data = {
-        "berthProfiles": {"edges": [{"node": {"firstName": profile_berth.first_name}}]},
-        "youthProfiles": {"edges": [{"node": {"firstName": profile_youth.first_name}}]},
-    }
-    executed = user_gql_client.execute(query, service=service_youth)
-    assert executed["data"] == expected_data

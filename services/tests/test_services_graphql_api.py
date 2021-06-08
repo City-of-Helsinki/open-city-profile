@@ -1,4 +1,4 @@
-from string import Template
+import pytest
 
 from open_city_profile.consts import (
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
@@ -9,6 +9,7 @@ from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_query_own_services(
     user_gql_client, service, allowed_data_field_factory
 ):
@@ -28,6 +29,7 @@ def test_normal_user_can_query_own_services(
                         node {
                             service {
                                 type
+                                name
                                 title
                                 description
                                 allowedDataFields {
@@ -52,7 +54,8 @@ def test_normal_user_can_query_own_services(
                     {
                         "node": {
                             "service": {
-                                "type": ServiceType.BERTH.name,
+                                "type": service.service_type.name,
+                                "name": service.name,
                                 "title": service.title,
                                 "description": service.description,
                                 "allowedDataFields": {
@@ -82,19 +85,25 @@ def test_normal_user_can_query_own_services(
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
 
+    # service object with type is included in query just to ensure that it has NO affect
     query = """
         mutation {
             addServiceConnection(input: {
                 serviceConnection: {
+                    service: {
+                        type: GODCHILDREN_OF_CULTURE
+                    }
                     enabled: false
                 }
             }) {
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                     enabled
                 }
@@ -105,7 +114,7 @@ def test_normal_user_can_add_service(user_gql_client, service):
     expected_data = {
         "addServiceConnection": {
             "serviceConnection": {
-                "service": {"type": service.service_type.name},
+                "service": {"type": service.service_type.name, "name": service.name},
                 "enabled": False,
             }
         }
@@ -114,72 +123,7 @@ def test_normal_user_can_add_service(user_gql_client, service):
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_add_service_using_service_type_input_field(
-    user_gql_client, service_factory
-):
-    ProfileFactory(user=user_gql_client.user)
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    request_service = service_factory(service_type=None)
-
-    t = Template(
-        """
-        mutation {
-            add1: addServiceConnection(input: {
-                serviceConnection: {
-                    service: {
-                        type: ${service_type_1}
-                    }
-                    enabled: false
-                }
-            }) {
-                serviceConnection {
-                    service {
-                        type
-                    }
-                    enabled
-                }
-            }
-
-            add2: addServiceConnection(input: {
-                serviceConnection: {
-                    service: {
-                        type: ${service_type_2}
-                    }
-                }
-            }) {
-                serviceConnection {
-                    service {
-                        type
-                    }
-                    enabled
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type_1=service_berth.service_type.name,
-        service_type_2=service_youth.service_type.name,
-    )
-    expected_data = {
-        "add1": {
-            "serviceConnection": {
-                "service": {"type": service_berth.service_type.name},
-                "enabled": False,
-            }
-        },
-        "add2": {
-            "serviceConnection": {
-                "service": {"type": service_youth.service_type.name},
-                "enabled": True,
-            }
-        },
-    }
-    executed = user_gql_client.execute(query, service=request_service)
-    assert executed["data"] == expected_data
-
-
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_cannot_add_service_multiple_times_mutation(
     user_gql_client, service
 ):
@@ -194,6 +138,7 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                 }
             }
@@ -202,7 +147,9 @@ def test_normal_user_cannot_add_service_multiple_times_mutation(
 
     expected_data = {
         "addServiceConnection": {
-            "serviceConnection": {"service": {"type": ServiceType.BERTH.name}}
+            "serviceConnection": {
+                "service": {"type": service.service_type.name, "name": service.name}
+            }
         }
     }
     executed = user_gql_client.execute(query, service=service)
@@ -233,13 +180,14 @@ def test_not_identifying_service_for_add_service_connection_produces_service_not
                 serviceConnection {
                     service {
                         type
+                        name
                     }
                 }
             }
         }
     """
 
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, service=None)
 
     assert_match_error_code(executed, SERVICE_NOT_IDENTIFIED_ERROR)
 
@@ -250,7 +198,9 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
     query_scope = "query_scope"
     delete_scope = "delete_scope"
     service = service_factory(
-        gdpr_query_scope=query_scope, gdpr_delete_scope=delete_scope
+        service_type=ServiceType.BERTH,
+        gdpr_query_scope=query_scope,
+        gdpr_delete_scope=delete_scope,
     )
     profile = ProfileFactory(user=user_gql_client.user)
 
@@ -264,6 +214,7 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
                         node {
                             service {
                                 type
+                                name
                                 gdprQueryScope
                                 gdprDeleteScope
                             }
@@ -282,6 +233,7 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
                         "node": {
                             "service": {
                                 "type": service.service_type.name,
+                                "name": service.name,
                                 "gdprQueryScope": query_scope,
                                 "gdprDeleteScope": delete_scope,
                             }

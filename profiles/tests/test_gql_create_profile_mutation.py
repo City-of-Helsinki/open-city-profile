@@ -9,6 +9,7 @@ from services.enums import ServiceType
 
 
 @pytest.mark.parametrize("with_email", [True, False])
+@pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_staff_user_can_create_a_profile(
     user_gql_client, email_data, phone_data, address_data, group, service, with_email,
 ):
@@ -16,11 +17,13 @@ def test_staff_user_can_create_a_profile(
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
 
+    # serviceType is included in query just to ensure that it has NO affect
     t = Template(
         """
         mutation {
             createProfile(
                 input: {
+                    serviceType: GODCHILDREN_OF_CULTURE,
                     profile: {
                         firstName: "${first_name}",
                         lastName: "${last_name}",
@@ -61,6 +64,7 @@ ${email_input}
                             node {
                                 service {
                                     type
+                                    name
                                 }
                             }
                         }
@@ -117,7 +121,16 @@ ${email_input}
                     else []
                 },
                 "serviceConnections": {
-                    "edges": [{"node": {"service": {"type": ServiceType.BERTH.name}}}]
+                    "edges": [
+                        {
+                            "node": {
+                                "service": {
+                                    "type": service.service_type.name,
+                                    "name": service.name,
+                                }
+                            }
+                        }
+                    ]
                 },
             }
         }
@@ -148,44 +161,6 @@ def test_normal_user_cannot_create_a_profile_using_create_profile_mutation(
     )
     query = t.substitute(first_name="John")
     executed = user_gql_client.execute(query, service=service)
-    assert "errors" in executed
-    assert executed["errors"][0]["message"] == _(
-        "You do not have permission to perform this action."
-    )
-
-
-def test_staff_user_cannot_override_service_with_argument_they_are_not_an_admin_of(
-    user_gql_client, service_factory
-):
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group = GroupFactory(name="youth_membership")
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service_youth)
-
-    t = Template(
-        """
-        mutation {
-            createProfile(
-                input: {
-                    serviceType: ${service_type},
-                    profile: {
-                        firstName: "${first_name}",
-                    }
-                }
-            ) {
-                profile {
-                    firstName
-                }
-            }
-        }
-    """
-    )
-    query = t.substitute(
-        service_type=service_berth.service_type.name, first_name="John"
-    )
-    executed = user_gql_client.execute(query, service=service_youth)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
@@ -250,16 +225,19 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
 def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitive_data_service_access(
     user_gql_client, service_factory
 ):
-    service_berth = service_factory(service_type=ServiceType.BERTH)
-    service_youth = service_factory(service_type=ServiceType.YOUTH_MEMBERSHIP)
-    group_berth = GroupFactory(name=ServiceType.BERTH.value)
-    group_youth = GroupFactory(name="youth_membership")
     user = user_gql_client.user
-    user.groups.add(group_berth)
-    user.groups.add(group_youth)
-    assign_perm("can_manage_profiles", group_berth, service_berth)
-    assign_perm("can_manage_sensitivedata", group_youth, service_youth)
-    assign_perm("can_view_sensitivedata", group_youth, service_youth)
+
+    entitled_service = service_factory()
+    entitled_group = GroupFactory(name="entitled_group")
+    assign_perm("can_manage_profiles", entitled_group, entitled_service)
+    assign_perm("can_manage_sensitivedata", entitled_group, entitled_service)
+    assign_perm("can_view_sensitivedata", entitled_group, entitled_service)
+    user.groups.add(entitled_group)
+
+    unentitled_service = service_factory()
+    unentitled_group = GroupFactory(name="unentitled_group")
+    assign_perm("can_manage_profiles", unentitled_group, unentitled_service)
+    user.groups.add(unentitled_group)
 
     t = Template(
         """
@@ -286,7 +264,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     )
     query = t.substitute(first_name="John", ssn="121282-123E")
 
-    executed = user_gql_client.execute(query, service=service_berth)
+    executed = user_gql_client.execute(query, service=unentitled_service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."

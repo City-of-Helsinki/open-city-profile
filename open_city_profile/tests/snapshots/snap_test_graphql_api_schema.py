@@ -175,6 +175,10 @@ type DeleteMyProfileMutationPayload {
   clientMutationId: String
 }
 
+input EmailInput {
+  email: String!
+}
+
 type EmailNode implements Node {
   primary: Boolean!
   id: ID!
@@ -294,6 +298,7 @@ type ProfileNode implements Node {
   sensitivedata: SensitiveDataNode
   serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
   subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection
+  verifiedPersonalInformation: VerifiedPersonalInformationNode
 }
 
 type ProfileNodeConnection {
@@ -310,26 +315,7 @@ type ProfileNodeEdge {
 
 input ProfileWithVerifiedPersonalInformationInput {
   verifiedPersonalInformation: VerifiedPersonalInformationInput!
-}
-
-type ProfileWithVerifiedPersonalInformationNode implements Node {
-  firstName: String!
-  lastName: String!
-  nickname: String!
-  image: String
-  language: Language
-  id: ID!
-  primaryEmail: EmailNode
-  primaryPhone: PhoneNode
-  primaryAddress: AddressNode
-  emails(before: String, after: String, first: Int, last: Int): EmailNodeConnection
-  phones(before: String, after: String, first: Int, last: Int): PhoneNodeConnection
-  addresses(before: String, after: String, first: Int, last: Int): AddressNodeConnection
-  contactMethod: ContactMethod
-  sensitivedata: SensitiveDataNode
-  serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
-  subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection
-  verifiedPersonalInformation: VerifiedPersonalInformationNode
+  primaryEmail: EmailInput
 }
 
 type ProfileWithVerifiedPersonalInformationOutput implements Node {
@@ -339,9 +325,9 @@ type ProfileWithVerifiedPersonalInformationOutput implements Node {
 type Query {
   subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection
   profile(id: ID!, serviceType: ServiceType): ProfileNode
-  myProfile: ProfileWithVerifiedPersonalInformationNode
+  myProfile: ProfileNode
   downloadMyProfile(authorizationCode: String!): JSONString
-  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
+  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
   claimableProfile(token: UUID!): ProfileNode
   profileWithAccessToken(token: UUID!): RestrictedProfileNode
   _entities(representations: [_Any]): [_Entity]
@@ -401,13 +387,14 @@ input ServiceInput {
 
 type ServiceNode implements Node {
   id: ID!
+  name: String!
   allowedDataFields(before: String, after: String, first: Int, last: Int): AllowedDataFieldNodeConnection!
   createdAt: DateTime!
   gdprUrl: String!
   gdprQueryScope: String!
   gdprDeleteScope: String!
   serviceconnectionSet(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection!
-  type: ServiceType
+  type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
   title: String
   description: String
 }
@@ -423,10 +410,10 @@ type ServiceNodeEdge {
 }
 
 enum ServiceType {
-  HKI_MY_DATA
-  BERTH
-  YOUTH_MEMBERSHIP
-  GODCHILDREN_OF_CULTURE
+  HKI_MY_DATA @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  BERTH @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  YOUTH_MEMBERSHIP @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  GODCHILDREN_OF_CULTURE @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
 }
 
 input SubscriptionInputType {

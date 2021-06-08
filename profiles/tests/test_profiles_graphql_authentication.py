@@ -17,10 +17,20 @@ def test_presenting_a_valid_access_token_grants_access(profile, live_server):
 
 @pytest.mark.parametrize("loa,returns_errors", [("substantial", False), ("low", True)])
 def test_jwt_claims_are_usable_in_field_resolvers(
-    loa, returns_errors, profile_with_verified_personal_information, live_server,
+    loa,
+    returns_errors,
+    profile_with_verified_personal_information,
+    live_server,
+    service_client_id,
+    service_connection_factory,
 ):
+    service = service_client_id.service
+    service_connection_factory(
+        profile=profile_with_verified_personal_information, service=service,
+    )
+
     user_uuid = profile_with_verified_personal_information.user.uuid
-    claims = {"sub": str(user_uuid), "loa": loa}
+    claims = {"sub": str(user_uuid), "loa": loa, "azp": service_client_id.client_id}
     query = """
         query {
             myProfile {

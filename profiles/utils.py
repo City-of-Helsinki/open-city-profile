@@ -1,16 +1,10 @@
 import threading
-from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from graphql_relay.node.node import from_global_id
 
 from open_city_profile.exceptions import InvalidEmailFormatError
-
-if TYPE_CHECKING:
-    import profiles.models
-    import users.models
-
 
 _thread_locals = threading.local()
 
@@ -61,17 +55,17 @@ def clear_thread_locals():
     _thread_locals.__dict__.clear()
 
 
-def set_current_service(service):
-    _thread_locals.service = service
-
-
 def get_current_request():
     return getattr(_thread_locals, "request", None)
 
 
-def get_current_user():
+def _get_current_request_attr(attrname):
     request = get_current_request()
-    return getattr(request, "user", None) if request else None
+    return getattr(request, attrname, None) if request else None
+
+
+def get_current_user():
+    return _get_current_request_attr("user")
 
 
 def get_original_client_ip():
@@ -90,21 +84,28 @@ def get_original_client_ip():
 
 
 def get_current_service():
-    return getattr(_thread_locals, "service", None)
+    return _get_current_request_attr("service")
 
 
-def user_has_staff_perms_to_view_profile(
-    user: "users.models.User", profile: "profiles.models.Profile"
-) -> bool:
-    """
-    Checks is passed user has "can_view_profiles" permissions
-    for any service connected to the passed profile.
-    """
+def get_current_client_id():
+    return _get_current_request_attr("client_id")
 
-    service_conns = profile.service_connections.all()
-    return any(
-        [
-            user.has_perm("can_view_profiles", service_conn.service)
-            for service_conn in service_conns
-        ]
-    )
+
+def requester_has_service_permission(request, permission):
+    service = getattr(request, "service", None)
+
+    if not service:
+        return False
+
+    if not hasattr(request, "_service_permission_cache"):
+        request._service_permission_cache = dict()
+
+    cache_key = f"{request.user.id}:{service.name}:{permission}"
+
+    result = request._service_permission_cache.get(cache_key)
+
+    if result is None:
+        result = request.user.has_perm(permission, service)
+        request._service_permission_cache[cache_key] = result
+
+    return result
