@@ -12,6 +12,7 @@ django-import-export
 django-munigeo
 django-parler
 django-reversion
+django-sanitized-dump
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
 djangorestframework
