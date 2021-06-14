@@ -16,6 +16,8 @@ certifi==2020.4.5.1
     #   sentry-sdk
 chardet==3.0.4
     # via requests
+database-sanitizer==1.1.0
+    # via django-sanitized-dump
 defusedxml==0.6.0
     # via odfpy
 deprecation==2.1.0
@@ -62,6 +64,8 @@ django-parler==1.9.2
     #   django-parler-rest
     #   django-thesaurus
 django-reversion==3.0.4
+    # via -r requirements.in
+django-sanitized-dump==1.2.1
     # via -r requirements.in
 django-searchable-encrypted-fields==0.1.3
     # via -r requirements.in
@@ -179,7 +183,9 @@ pytz==2019.1
 pyyaml==5.4.1
     # via
     #   -r requirements.in
+    #   database-sanitizer
     #   django-munigeo
+    #   django-sanitized-dump
     #   tablib
 rdflib==4.2.2
     # via django-thesaurus
@@ -206,8 +212,10 @@ singledispatch==3.4.0.3
     # via graphene-django
 six==1.14.0
     # via
+    #   database-sanitizer
     #   django-anymail
     #   django-munigeo
+    #   django-sanitized-dump
     #   ecdsa
     #   graphene
     #   graphene-django
