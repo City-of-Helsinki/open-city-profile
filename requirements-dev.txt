@@ -64,12 +64,6 @@ identify==1.4.15
     # via pre-commit
 idna==2.9
     # via requests
-importlib-metadata==1.6.0
-    # via
-    #   pluggy
-    #   pre-commit
-    #   pytest
-    #   virtualenv
 importmagic==0.1.7
     # via -r requirements-dev.in
 inflection==0.4.0
@@ -112,7 +106,7 @@ prompt-toolkit==3.0.5
     # via ipython
 ptyprocess==0.6.0
     # via pexpect
-py==1.8.1
+py==1.10.0
     # via pytest
 pyasn1==0.4.5
     # via rsa
@@ -202,8 +196,6 @@ wcwidth==0.1.9
     #   pytest
 yapf==0.30.0
     # via -r requirements-dev.in
-zipp==3.1.0
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
