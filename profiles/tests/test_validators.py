@@ -80,11 +80,11 @@ class TestISO3166CountryCode:
         with pytest.raises(ValidationError):
             validate_iso_3166_country_code(code)
 
-    @pytest.mark.parametrize("code", ["AX", "Fi", "zw"])
+    @pytest.mark.parametrize("code", ["AX", "FI", "ZW"])
     def test_accept_alpha_2_code(self, code):
         assert validate_iso_3166_country_code(code) is None
 
-    @pytest.mark.parametrize("code", ["DEU", "Npl", "zmb"])
+    @pytest.mark.parametrize("code", ["DEU", "NPL", "ZMB"])
     def test_accept_alpha_3_code(self, code):
         assert validate_iso_3166_country_code(code) is None
 
@@ -92,11 +92,19 @@ class TestISO3166CountryCode:
     def test_accept_numeric_3_code(self, code):
         assert validate_iso_3166_country_code(code) is None
 
-    @pytest.mark.parametrize("code", ["AA", "Gj", "vr"])
+    @pytest.mark.parametrize("code", ["Ax", "fi", "zW"])
+    def test_deny_alpha_2_code_with_incorrect_capitalisation(self, code):
+        self.execute_denied_code_test(code)
+
+    @pytest.mark.parametrize("code", ["AA", "GJ", "VR"])
     def test_deny_non_existing_alpha_2_code(self, code):
         self.execute_denied_code_test(code)
 
-    @pytest.mark.parametrize("code", ["FOO", "Bar", "zap"])
+    @pytest.mark.parametrize("code", ["Deu", "npl", "ZmB"])
+    def test_deny_alpha_3_code_with_incorrect_capitalisation(self, code):
+        self.execute_denied_code_test(code)
+
+    @pytest.mark.parametrize("code", ["FOO", "BAR", "ZAP"])
     def test_deny_non_existing_alpha_3_code(self, code):
         self.execute_denied_code_test(code)
 

@@ -58,9 +58,8 @@ def validate_finnish_postal_code(value: str) -> None:
 
 def validate_iso_3166_country_code(value: str) -> None:
     if isinstance(value, str):
-        key = value.upper()
         for index in [countries_by_alpha2, countries_by_alpha3, countries_by_numeric]:
-            if index.get(key):
+            if index.get(value):
                 return
 
     raise ValidationError(
