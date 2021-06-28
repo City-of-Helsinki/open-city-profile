@@ -112,7 +112,7 @@ prompt-toolkit==3.0.5
     # via ipython
 ptyprocess==0.6.0
     # via pexpect
-py==1.8.1
+py==1.10.0
     # via pytest
 pyasn1==0.4.5
     # via rsa
