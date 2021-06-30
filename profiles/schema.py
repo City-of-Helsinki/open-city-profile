@@ -844,7 +844,9 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     national_identification_number = graphene.String(
         description="Finnish personal identity code."
     )
-    email = graphene.String(description="Email. Max length 1024 characters.")
+    email = graphene.String(
+        description="**DEPRECATED**. This field is non-functional. It will be eventually removed."
+    )
     municipality_of_residence = graphene.String(
         description="Official municipality of residence in Finland as a free form text. Max length 100 characters."
     )
@@ -881,10 +883,6 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
         return model_field_validation(
             VerifiedPersonalInformation, "national_identification_number", value
         )
-
-    @staticmethod
-    def validate_email(value, info, **input):
-        return model_field_validation(VerifiedPersonalInformation, "email", value)
 
     @staticmethod
     def validate_municipality_of_residence(value, info, **input):
@@ -1001,6 +999,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
         profile, created = Profile.objects.get_or_create(user=user)
 
+        verified_personal_information_input.pop("email", None)
         vpi, created = VerifiedPersonalInformation.objects.update_or_create(
             profile=profile, defaults=verified_personal_information_input
         )
