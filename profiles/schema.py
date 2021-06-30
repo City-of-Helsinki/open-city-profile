@@ -394,7 +394,6 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
             "last_name",
             "given_name",
             "national_identification_number",
-            "email",
             "municipality_of_residence",
             "municipality_of_residence_number",
         )
@@ -403,6 +402,11 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
     # because django-searchable-encrypted-fields SearchFields are always nullable
     # and you can't change it.
     national_identification_number = graphene.NonNull(graphene.String)
+
+    email = graphene.NonNull(
+        graphene.String,
+        deprecation_reason="No email is provided here. This field will be eventually removed.",
+    )
 
     permanent_address = graphene.Field(
         VerifiedPersonalInformationAddressNode,
@@ -418,6 +422,9 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
         VerifiedPersonalInformationForeignAddressNode,
         description="The temporary foreign (i.e. not in Finland) residency address.",
     )
+
+    def resolve_email(self, info, **kwargs):
+        return ""
 
     def resolve_permanent_address(self, info, **kwargs):
         try:

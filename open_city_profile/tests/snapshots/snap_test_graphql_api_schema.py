@@ -602,9 +602,9 @@ type VerifiedPersonalInformationNode {
   lastName: String!
   givenName: String!
   nationalIdentificationNumber: String!
-  email: String!
   municipalityOfResidence: String!
   municipalityOfResidenceNumber: String!
+  email: String! @deprecated(reason: "No email is provided here. This field will be eventually removed.")
   permanentAddress: VerifiedPersonalInformationAddressNode
   temporaryAddress: VerifiedPersonalInformationAddressNode
   permanentForeignAddress: VerifiedPersonalInformationForeignAddressNode
