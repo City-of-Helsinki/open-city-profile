@@ -246,7 +246,6 @@ strategy:
     validity_duration: null
   profiles_verifiedpersonalinformation:
     _national_identification_number_data: "profile.encrypted_national_identification_number"
-    email: "profile.encrypted_email"
     first_name: "profile.first_name"
     given_name: "profile.encrypted_first_name"
     id: null

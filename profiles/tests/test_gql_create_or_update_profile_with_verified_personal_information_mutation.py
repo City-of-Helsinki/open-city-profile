@@ -89,14 +89,6 @@ def generate_input_data(user_id, overrides={}):
 
 
 def execute_successful_profile_creation_test(user_id, gql_client):
-    try:
-        existing_verified_personal_information = VerifiedPersonalInformation.objects.get(
-            profile__user__uuid=str(user_id)
-        )
-        old_email = existing_verified_personal_information.email
-    except VerifiedPersonalInformation.DoesNotExist:
-        old_email = ""
-
     input_data = generate_input_data(user_id)
 
     profile = execute_successful_mutation(input_data, gql_client)
@@ -107,7 +99,6 @@ def execute_successful_profile_creation_test(user_id, gql_client):
     assert verified_personal_information.last_name == "Smith"
     assert verified_personal_information.given_name == "Johnny"
     assert verified_personal_information.national_identification_number == "220202A1234"
-    assert verified_personal_information.email == old_email
     assert verified_personal_information.municipality_of_residence == "Helsinki"
     assert verified_personal_information.municipality_of_residence_number == "091"
     permanent_address = verified_personal_information.permanent_address
@@ -192,7 +183,6 @@ def test_all_basic_fields_can_be_set_to_null(user_gql_client):
     assert verified_personal_information.last_name == ""
     assert verified_personal_information.given_name == ""
     assert verified_personal_information.national_identification_number == ""
-    assert verified_personal_information.email == ""
     assert verified_personal_information.municipality_of_residence == ""
     assert verified_personal_information.municipality_of_residence_number == ""
 

@@ -280,9 +280,6 @@ class VerifiedPersonalInformation(models.Model):
         blank=True,
         help_text="Finnish national identification number.",
     )
-    email = NullToEmptyEncryptedCharField(
-        max_length=1024, blank=True, help_text="Email."
-    )
     municipality_of_residence = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,

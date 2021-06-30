@@ -217,7 +217,6 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
             ("first_name", 100),
             ("last_name", 100),
             ("given_name", 100),
-            ("email", 1024),
             ("municipality_of_residence", 100),
         ],
     )
