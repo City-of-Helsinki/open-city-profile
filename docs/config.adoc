@@ -84,7 +84,6 @@ https://mailgun.com/[Mailgun] is the only supported email sending service. https
 == Feature flags
 
 - `ENABLE_GRAPHIQL`: Enables GraphiQL testing user interface. If `DEBUG` is `True`, this setting has no effect and GraphiQL is always enabled. Default is `False`.
-- `USE_HELUSERS_REQUEST_JWT_AUTH`: There is an older and a newer implementation for doing JWT based authentication. Both of them use https://github.com/City-of-Helsinki/django-helusers[django-helusers] for doing the heavy lifting. The older implementation depends on Django REST Framework, the newer doesn't. Setting this to `True` takes the newer implementation into use. By default the old implementation is used. It's encouraged to use the new implementation. The old one (and this setting) will be removed at some point.
 - `USE_X_FORWARDED_FOR`: Affects the way how a requester's IP address is figured out. If set to `True`, the `X-Forwarded-For` HTTP header is used as one option. Default is `False`.
 
 == Sentry

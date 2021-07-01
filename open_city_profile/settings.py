@@ -64,7 +64,6 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(list, []),
     TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES=(int, 2 * 24 * 60),
     GDPR_AUTH_CALLBACK_URL=(str, ""),
-    USE_HELUSERS_REQUEST_JWT_AUTH=(bool, False),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -232,8 +231,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
 
-USE_HELUSERS_REQUEST_JWT_AUTH = env.bool("USE_HELUSERS_REQUEST_JWT_AUTH")
-
 OIDC_API_TOKEN_AUTH = {
     "AUDIENCE": env.list("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
     "API_SCOPE_PREFIX": env.str("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
@@ -241,24 +238,11 @@ OIDC_API_TOKEN_AUTH = {
     + env.list("ADDITIONAL_AUTHSERVER_URLS"),
     "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env.bool("TOKEN_AUTH_REQUIRE_SCOPE"),
 }
-if not USE_HELUSERS_REQUEST_JWT_AUTH:
-
-    def _list_to_string(value):
-        return value[0] if len(value) > 0 else ""
-
-    OIDC_API_TOKEN_AUTH["AUDIENCE"] = _list_to_string(OIDC_API_TOKEN_AUTH["AUDIENCE"])
-    OIDC_API_TOKEN_AUTH["ISSUER"] = _list_to_string(OIDC_API_TOKEN_AUTH["ISSUER"])
-
-OIDC_AUTH = {"OIDC_LEEWAY": 60 * 60}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 ]
-if not USE_HELUSERS_REQUEST_JWT_AUTH:
-    AUTHENTICATION_BACKENDS.insert(
-        1, "open_city_profile.oidc.GraphQLApiTokenAuthentication"
-    )
 
 # Profiles related settings
 
@@ -294,15 +278,10 @@ GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
     "MIDDLEWARE": [
         # NOTE: Graphene runs its middlewares in reverse order!
-        "open_city_profile.graphene.JWTMiddleware"
-        if USE_HELUSERS_REQUEST_JWT_AUTH
-        else "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "open_city_profile.graphene.JWTMiddleware",
         "open_city_profile.graphene.GQLDataLoaders",
     ],
 }
-
-if not USE_HELUSERS_REQUEST_JWT_AUTH:
-    GRAPHQL_JWT = {"JWT_AUTH_HEADER_PREFIX": "Bearer"}
 
 if "SECRET_KEY" not in locals():
     secret_file = os.path.join(BASE_DIR, ".django_secret")

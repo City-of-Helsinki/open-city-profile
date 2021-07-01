@@ -89,23 +89,17 @@ django==2.2.24
     #   django-searchable-encrypted-fields
     #   django-thesaurus
     #   djangorestframework
-    #   drf-oidc-auth
     #   graphene-django
 djangorestframework==3.12.4
     # via
     #   -r requirements.in
     #   django-parler-rest
-    #   drf-oidc-auth
-drf-oidc-auth==0.10.0
-    # via -r requirements.in
 ecdsa==0.16.1
     # via python-jose
 et-xmlfile==1.0.1
     # via openpyxl
 future==0.17.1
-    # via
-    #   pyjwkest
-    #   python-jose
+    # via python-jose
 graphene-django==2.10.1
     # via
     #   -r requirements.in
@@ -166,10 +160,6 @@ pyasn1==0.4.5
     # via rsa
 pycryptodome==3.9.1
     # via django-searchable-encrypted-fields
-pycryptodomex==3.8.2
-    # via pyjwkest
-pyjwkest==1.4.2
-    # via drf-oidc-auth
 pyjwt==1.7.1
     # via django-graphql-jwt
 pyparsing==2.4.7
@@ -199,7 +189,6 @@ requests==2.25.1
     #   django-anymail
     #   django-helusers
     #   django-munigeo
-    #   pyjwkest
     #   requests-cache
     #   requests-oauthlib
 rsa==4.7.2
@@ -224,7 +213,6 @@ six==1.14.0
     #   isodate
     #   packaging
     #   promise
-    #   pyjwkest
     #   python-jose
     #   singledispatch
     #   url-normalize
