@@ -28,6 +28,7 @@ from graphql_jwt.decorators import login_required, permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from open_city_profile.decorators import login_and_service_required, staff_required
 from open_city_profile.exceptions import (
     APINotImplementedError,
     ConnectedServiceDeletionFailedError,
@@ -38,7 +39,6 @@ from open_city_profile.exceptions import (
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from open_city_profile.oidc import TunnistamoTokenExchange
-from profiles.decorators import login_and_service_required, staff_required
 from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
