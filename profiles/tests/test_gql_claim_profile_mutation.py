@@ -5,6 +5,7 @@ from django.utils import timezone
 from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
+from open_city_profile.tests.asserts import assert_match_error_code
 
 from .factories import ClaimTokenFactory, ProfileFactory, ProfileWithPrimaryEmailFactory
 
@@ -126,3 +127,30 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_clie
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
+
+
+def test_anon_user_can_not_claim_claimable_profile(anon_user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(
+        user=None, first_name="John", last_name="Doe"
+    )
+    claim_token = ClaimTokenFactory(profile=profile)
+
+    t = Template(
+        """
+        mutation {
+            claimProfile(
+                input: {
+                    token: "${claimToken}"
+                }
+            ) {
+                profile {
+                    id
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+
+    executed = anon_user_gql_client.execute(query)
+    assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
