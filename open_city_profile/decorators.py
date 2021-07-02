@@ -50,6 +50,11 @@ def _require_service_permission(permission_name):
     return permission_checker
 
 
+@_use_context_tests(_require_authenticated)
+def login_required():
+    """Decorator for checking that the user is logged in"""
+
+
 @_use_context_tests(_require_authenticated, _require_service)
 def login_and_service_required():
     """Decorator for checking that the user is logged in and service is known"""

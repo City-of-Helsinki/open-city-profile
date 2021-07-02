@@ -3,9 +3,9 @@ from django.db import transaction
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
-from graphql_jwt.decorators import login_required
 
 import profiles.schema as profiles_schema
+from open_city_profile.decorators import login_required
 
 from .models import Subscription, SubscriptionType, SubscriptionTypeCategory
 
