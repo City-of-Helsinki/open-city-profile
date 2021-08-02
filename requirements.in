@@ -4,7 +4,6 @@ django-cors-headers
 django-enumfields
 django-environ
 django-filter
-django-graphql-jwt
 django-guardian
 django-helusers>=0.6
 django-ilmoitin>=0.2.0

@@ -36,8 +36,6 @@ django-environ==0.4.5
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
-django-graphql-jwt==0.2.2
-    # via -r requirements.in
 django-guardian==2.1.0
     # via -r requirements.in
 django-helusers==0.6.0
@@ -78,7 +76,6 @@ django==2.2.24
     #   django-anymail
     #   django-cors-headers
     #   django-filter
-    #   django-graphql-jwt
     #   django-helusers
     #   django-ilmoitin
     #   django-import-export
@@ -101,9 +98,7 @@ et-xmlfile==1.0.1
 future==0.17.1
     # via python-jose
 graphene-django==2.10.1
-    # via
-    #   -r requirements.in
-    #   django-graphql-jwt
+    # via -r requirements.in
 graphene-federation==0.1.0
     # via -r requirements.in
 git+https://github.com/City-of-Helsinki/graphene-validator.git@main
@@ -115,7 +110,6 @@ graphene==2.1.8
     #   graphene-validator
 graphql-core==2.2.1
     # via
-    #   django-graphql-jwt
     #   graphene
     #   graphene-django
     #   graphql-relay
@@ -160,8 +154,6 @@ pyasn1==0.4.5
     # via rsa
 pycryptodome==3.9.1
     # via django-searchable-encrypted-fields
-pyjwt==1.7.1
-    # via django-graphql-jwt
 pyparsing==2.4.7
     # via
     #   packaging
