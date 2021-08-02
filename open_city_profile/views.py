@@ -2,7 +2,6 @@ import graphene_validator.errors
 import sentry_sdk
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
-from graphql_jwt.exceptions import PermissionDenied as JwtPermissionDenied
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -42,7 +41,6 @@ error_codes_shared = {
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
     TokenExpiredError: TOKEN_EXPIRED_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
-    JwtPermissionDenied: PERMISSION_DENIED_ERROR,
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     ValidationError: VALIDATION_ERROR,
     graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
@@ -62,7 +60,6 @@ error_codes_profile = {
 
 sentry_ignored_errors = (
     ObjectDoesNotExist,
-    JwtPermissionDenied,
     PermissionDenied,
     Profile.sensitivedata.RelatedObjectDoesNotExist,
 )

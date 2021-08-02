@@ -24,13 +24,13 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphene_validator.decorators import validated
-from graphql_jwt.decorators import permission_required
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
 from open_city_profile.decorators import (
     login_and_service_required,
     login_required,
+    permission_required,
     staff_required,
 )
 from open_city_profile.exceptions import (

@@ -38,6 +38,16 @@ def _require_service(context):
         raise ServiceNotIdentifiedError("No service identified")
 
 
+def _require_permission(permission_name):
+    def permission_checker(context):
+        if not context.user.has_perm(permission_name):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+    return permission_checker
+
+
 def _require_service_permission(permission_name):
     def permission_checker(context):
         _require_service(context)
@@ -79,5 +89,15 @@ def staff_required(required_permission="view"):
     )
     def check_permission():
         f"""Decorator that checks for can_{required_permission}_profiles permission."""
+
+    return check_permission
+
+
+def permission_required(permission_name):
+    """Returns a decorator for checking that the user has the specified permission"""
+
+    @_use_context_tests(_require_permission(permission_name))
+    def check_permission():
+        f"""Decorator that checks for {permission_name} permission."""
 
     return check_permission
