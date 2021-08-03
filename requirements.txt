@@ -214,7 +214,7 @@ tablib[html,ods,xls,xlsx,yaml]==1.1.0
     # via django-import-export
 url-normalize==1.4.3
     # via requests-cache
-urllib3==1.25.11
+urllib3==1.26.6
     # via
     #   requests
     #   sentry-sdk
