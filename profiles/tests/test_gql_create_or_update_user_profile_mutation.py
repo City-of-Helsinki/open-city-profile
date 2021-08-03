@@ -59,7 +59,6 @@ def generate_input_data(user_id, overrides={}):
         "lastName": "Smith VPI",
         "givenName": "Johnny",
         "nationalIdentificationNumber": "220202A1234",
-        "email": "john.smith@domain.example",
         "municipalityOfResidence": "Helsinki",
         "municipalityOfResidenceNumber": "091",
         "permanentAddress": {
@@ -176,7 +175,6 @@ def test_all_basic_fields_can_be_set_to_null(user_gql_client):
                 "lastName": None,
                 "givenName": None,
                 "nationalIdentificationNumber": None,
-                "email": None,
                 "municipalityOfResidence": None,
                 "municipalityOfResidenceNumber": None,
             },

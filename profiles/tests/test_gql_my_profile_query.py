@@ -197,7 +197,6 @@ class TestProfileWithVerifiedPersonalInformation:
                     lastName
                     givenName
                     nationalIdentificationNumber
-                    email
                     municipalityOfResidence
                     municipalityOfResidenceNumber
                     permanentAddress {
@@ -260,7 +259,6 @@ class TestProfileWithVerifiedPersonalInformation:
                     "lastName": verified_personal_information.last_name,
                     "givenName": verified_personal_information.given_name,
                     "nationalIdentificationNumber": verified_personal_information.national_identification_number,
-                    "email": "",
                     "municipalityOfResidence": verified_personal_information.municipality_of_residence,
                     "municipalityOfResidenceNumber": verified_personal_information.municipality_of_residence_number,
                     "permanentAddress": {

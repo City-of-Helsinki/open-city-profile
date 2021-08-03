@@ -487,11 +487,6 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
     # and you can't change it.
     national_identification_number = graphene.NonNull(graphene.String)
 
-    email = graphene.NonNull(
-        graphene.String,
-        deprecation_reason="No email is provided here. This field will be eventually removed.",
-    )
-
     permanent_address = graphene.Field(
         VerifiedPersonalInformationAddressNode,
         description="The permanent residency address in Finland.",
@@ -506,9 +501,6 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
         VerifiedPersonalInformationForeignAddressNode,
         description="The temporary foreign (i.e. not in Finland) residency address.",
     )
-
-    def resolve_email(self, info, **kwargs):
-        return ""
 
     def resolve_permanent_address(self, info, **kwargs):
         try:
@@ -928,9 +920,6 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     national_identification_number = graphene.String(
         description="Finnish personal identity code."
     )
-    email = graphene.String(
-        description="**DEPRECATED**. This field is non-functional. It will be eventually removed."
-    )
     municipality_of_residence = graphene.String(
         description="Official municipality of residence in Finland as a free form text. Max length 100 characters."
     )
@@ -1073,7 +1062,6 @@ class CreateOrUpdateUserProfileMutationBase:
                 address_type["name"], None
             )
 
-        verified_personal_information_input.pop("email", None)
         vpi, created = VerifiedPersonalInformation.objects.update_or_create(
             profile=profile, defaults=verified_personal_information_input
         )
