@@ -65,6 +65,9 @@ jobs:
       - name: Coverage
         run: codecov
 
+      - name: Database sanitizer config
+        run: ./manage.py check_sanitizerconfig
+
   coding-style:
     name: Coding style
     runs-on: ubuntu-latest
