@@ -127,6 +127,16 @@ type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
   profile: ProfileWithVerifiedPersonalInformationOutput
 }
 
+input CreateOrUpdateUserProfileMutationInput {
+  userId: UUID!
+  serviceClientId: String
+  profile: ProfileWithVerifiedPersonalInformationInput!
+}
+
+type CreateOrUpdateUserProfileMutationPayload {
+  profile: ProfileNode
+}
+
 input CreatePhoneInput {
   primary: Boolean
   phone: String!
@@ -217,7 +227,8 @@ type Mutation {
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
   createProfile(input: CreateProfileMutationInput!): CreateProfileMutationPayload
-  createOrUpdateProfileWithVerifiedPersonalInformation(input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!): CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+  createOrUpdateProfileWithVerifiedPersonalInformation(input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!): CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload @deprecated(reason: "Renamed to createOrUpdateUserProfile")
+  createOrUpdateUserProfile(input: CreateOrUpdateUserProfileMutationInput!): CreateOrUpdateUserProfileMutationPayload
   updateMyProfile(input: UpdateMyProfileMutationInput!): UpdateMyProfileMutationPayload
   updateProfile(input: UpdateProfileMutationInput!): UpdateProfileMutationPayload
   deleteMyProfile(input: DeleteMyProfileMutationInput!): DeleteMyProfileMutationPayload

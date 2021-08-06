@@ -910,6 +910,19 @@ class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
     )
 
 
+class CreateOrUpdateUserProfileMutationInput(graphene.InputObjectType):
+    user_id = graphene.UUID(
+        required=True,
+        description="The **user id** of the user the Profile is or will be associated with.",
+    )
+    service_client_id = graphene.String(
+        description="Connect the profile to the service identified by this client id."
+    )
+    profile = graphene.InputField(
+        ProfileWithVerifiedPersonalInformationInput, required=True
+    )
+
+
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
     graphene.InputObjectType
 ):
@@ -930,21 +943,17 @@ class ProfileWithVerifiedPersonalInformationOutput(graphene.ObjectType):
         interfaces = (relay.Node,)
 
 
+class CreateOrUpdateUserProfileMutationPayload(graphene.ObjectType):
+    profile = graphene.Field(ProfileNode)
+
+
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     graphene.ObjectType
 ):
     profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
-@validated
-class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
-    class Arguments:
-        input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
-            required=True
-        )
-
-    Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
-
+class CreateOrUpdateUserProfileMutationBase:
     @staticmethod
     def _handle_address(vpi, address_name, address_model, address_input):
         try:
@@ -975,9 +984,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             email.save()
 
     @staticmethod
-    @permission_required("profiles.manage_verified_personal_information")
-    @transaction.atomic
-    def mutate(parent, info, input):
+    def _do_mutate(parent, info, input):
         user_id_input = input.pop("user_id")
         profile_input = input.pop("profile")
         verified_personal_information_input = profile_input.pop(
@@ -1012,7 +1019,7 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             address_name = address_type["name"]
             address_model = address_type["model"]
 
-            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_address(
+            CreateOrUpdateUserProfileMutationBase._handle_address(
                 vpi, address_name, address_model, address_input
             )
 
@@ -1025,9 +1032,44 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
 
         primary_email_input = profile_input.pop("primary_email", None)
         if primary_email_input:
-            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_primary_email(
+            CreateOrUpdateUserProfileMutationBase._handle_primary_email(
                 profile, primary_email_input
             )
+
+        return profile
+
+
+@validated
+class CreateOrUpdateUserProfileMutation(
+    CreateOrUpdateUserProfileMutationBase, graphene.Mutation
+):
+    class Arguments:
+        input = CreateOrUpdateUserProfileMutationInput(required=True)
+
+    Output = CreateOrUpdateUserProfileMutationPayload
+
+    @staticmethod
+    @permission_required("profiles.manage_verified_personal_information")
+    @transaction.atomic
+    def mutate(parent, info, input):
+        profile = CreateOrUpdateUserProfileMutationBase._do_mutate(parent, info, input)
+        return CreateOrUpdateUserProfileMutationPayload(profile=profile)
+
+
+@validated
+class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
+    class Arguments:
+        input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
+            required=True
+        )
+
+    Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+
+    @staticmethod
+    @permission_required("profiles.manage_verified_personal_information")
+    @transaction.atomic
+    def mutate(parent, info, input):
+        profile = CreateOrUpdateUserProfileMutationBase._do_mutate(parent, info, input)
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile
@@ -1427,6 +1469,19 @@ class Mutation(graphene.ObjectType):
     # fmt: off
     create_or_update_profile_with_verified_personal_information = (
         CreateOrUpdateProfileWithVerifiedPersonalInformationMutation.Field(
+            description="Creates a new or updates an existing profile with its "
+            "_verified personal information_ section for the specified user.\n\n"
+            "Requires elevated privileges.\n\n"
+            "Possible error codes:\n\n"
+            "* `PERMISSION_DENIED_ERROR`: "
+            "The current user doesn't have the reguired permissions to perform this action.\n"
+            "* `VALIDATION_ERROR`: "
+            "The given input doesn't pass validation.",
+            deprecation_reason="Renamed to createOrUpdateUserProfile",
+        )
+    )
+    create_or_update_user_profile = (
+        CreateOrUpdateUserProfileMutation.Field(
             description="Creates a new or updates an existing profile with its "
             "_verified personal information_ section for the specified user.\n\n"
             "Requires elevated privileges.\n\n"
