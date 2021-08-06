@@ -903,7 +903,7 @@ class EmailInput(graphene.InputObjectType):
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
     verified_personal_information = graphene.InputField(
-        VerifiedPersonalInformationInput, required=True
+        VerifiedPersonalInformationInput
     )
     primary_email = graphene.InputField(
         EmailInput, description="Sets the profile's primary email address."
@@ -970,6 +970,38 @@ class CreateOrUpdateUserProfileMutationBase:
             address.delete()
 
     @staticmethod
+    def _handle_verified_personal_information(
+        profile, verified_personal_information_input
+    ):
+        address_types = [
+            {"model": VerifiedPersonalInformationPermanentAddress},
+            {"model": VerifiedPersonalInformationTemporaryAddress},
+            {"model": VerifiedPersonalInformationPermanentForeignAddress},
+        ]
+        for address_type in address_types:
+            address_type["name"] = address_type["model"].RELATED_NAME
+            address_type["input"] = verified_personal_information_input.pop(
+                address_type["name"], None
+            )
+
+        verified_personal_information_input.pop("email", None)
+        vpi, created = VerifiedPersonalInformation.objects.update_or_create(
+            profile=profile, defaults=verified_personal_information_input
+        )
+
+        for address_type in address_types:
+            address_input = address_type["input"]
+            if not address_input:
+                continue
+
+            address_name = address_type["name"]
+            address_model = address_type["model"]
+
+            CreateOrUpdateUserProfileMutationBase._handle_address(
+                vpi, address_name, address_model, address_input
+            )
+
+    @staticmethod
     def _handle_primary_email(profile, primary_email_input):
         email_address = primary_email_input["email"]
 
@@ -988,39 +1020,16 @@ class CreateOrUpdateUserProfileMutationBase:
         user_id_input = input.pop("user_id")
         profile_input = input.pop("profile")
         verified_personal_information_input = profile_input.pop(
-            "verified_personal_information"
+            "verified_personal_information", None
         )
-
-        address_types = [
-            {"model": VerifiedPersonalInformationPermanentAddress},
-            {"model": VerifiedPersonalInformationTemporaryAddress},
-            {"model": VerifiedPersonalInformationPermanentForeignAddress},
-        ]
-        for address_type in address_types:
-            address_type["name"] = address_type["model"].RELATED_NAME
-            address_type["input"] = verified_personal_information_input.pop(
-                address_type["name"], None
-            )
 
         user, created = User.objects.get_or_create(uuid=user_id_input)
 
         profile, created = Profile.objects.get_or_create(user=user)
 
-        verified_personal_information_input.pop("email", None)
-        vpi, created = VerifiedPersonalInformation.objects.update_or_create(
-            profile=profile, defaults=verified_personal_information_input
-        )
-
-        for address_type in address_types:
-            address_input = address_type["input"]
-            if not address_input:
-                continue
-
-            address_name = address_type["name"]
-            address_model = address_type["model"]
-
-            CreateOrUpdateUserProfileMutationBase._handle_address(
-                vpi, address_name, address_model, address_input
+        if verified_personal_information_input:
+            CreateOrUpdateUserProfileMutationBase._handle_verified_personal_information(
+                profile, verified_personal_information_input
             )
 
         service_client_id = input.pop("service_client_id", None)
@@ -1482,8 +1491,7 @@ class Mutation(graphene.ObjectType):
     )
     create_or_update_user_profile = (
         CreateOrUpdateUserProfileMutation.Field(
-            description="Creates a new or updates an existing profile with its "
-            "_verified personal information_ section for the specified user.\n\n"
+            description="Creates a new or updates an existing profile for the specified user.\n\n"
             "Requires elevated privileges.\n\n"
             "Possible error codes:\n\n"
             "* `PERMISSION_DENIED_ERROR`: "

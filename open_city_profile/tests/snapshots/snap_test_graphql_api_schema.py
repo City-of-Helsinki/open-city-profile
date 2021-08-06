@@ -325,7 +325,7 @@ type ProfileNodeEdge {
 }
 
 input ProfileWithVerifiedPersonalInformationInput {
-  verifiedPersonalInformation: VerifiedPersonalInformationInput!
+  verifiedPersonalInformation: VerifiedPersonalInformationInput
   primaryEmail: EmailInput
 }
 

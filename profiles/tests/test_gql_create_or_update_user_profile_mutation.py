@@ -290,10 +290,7 @@ email_address = "test_email@domain.example"
 def primary_email_input_data(user_id, email=email_address):
     return {
         "userId": str(user_id),
-        "profile": {
-            "primaryEmail": {"email": email},
-            "verifiedPersonalInformation": {},
-        },
+        "profile": {"primaryEmail": {"email": email}},
     }
 
 
@@ -366,7 +363,7 @@ def service_input_data(user_id, service_client_id):
     return {
         "userId": user_id,
         "serviceClientId": service_client_id,
-        "profile": {"verifiedPersonalInformation": {"firstName": "John"}},
+        "profile": {},
     }
 
 
