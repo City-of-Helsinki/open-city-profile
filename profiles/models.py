@@ -458,7 +458,7 @@ class Email(Contact):
             profile=self.profile, primary=True,
         )
         if self.pk:
-            existing_primary_emails.exclude(pk=self.pk)
+            existing_primary_emails = existing_primary_emails.exclude(pk=self.pk)
         if existing_primary_emails.exists():
             raise ValidationError("Primary email already exists")
 

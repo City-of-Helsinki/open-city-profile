@@ -186,6 +186,12 @@ def test_should_not_allow_two_primary_emails(profile):
         EmailFactory(profile=profile, primary=True)
 
 
+def test_should_allow_changing_fields_of_an_existing_primary_email():
+    email = EmailFactory(primary=True)
+    email.verified = True
+    email.save()
+
+
 class ValidationTestBase:
     @staticmethod
     def passes_validation(instance):
