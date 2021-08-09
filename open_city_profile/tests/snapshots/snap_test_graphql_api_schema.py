@@ -187,6 +187,7 @@ type DeleteMyProfileMutationPayload {
 
 input EmailInput {
   email: String!
+  verified: Boolean
 }
 
 type EmailNode implements Node {

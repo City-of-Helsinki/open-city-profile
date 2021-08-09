@@ -903,6 +903,9 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
 
 class EmailInput(graphene.InputObjectType):
     email = graphene.String(description="The email address.", required=True)
+    verified = graphene.Boolean(
+        description="Sets whether the primary email address has been verified. If not given, defaults to False."
+    )
 
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
@@ -1010,9 +1013,11 @@ class CreateOrUpdateUserProfileMutationBase:
     @staticmethod
     def _handle_primary_email(profile, primary_email_input):
         email_address = primary_email_input["email"]
+        verified = primary_email_input.get("verified", False)
 
         email, email_created = profile.emails.get_or_create(
-            email=email_address, defaults={"email_type": EmailType.NONE}
+            email=email_address,
+            defaults={"email_type": EmailType.NONE, "verified": verified},
         )
 
         profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
