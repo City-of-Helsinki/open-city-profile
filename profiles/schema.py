@@ -902,6 +902,8 @@ class EmailInput(graphene.InputObjectType):
 
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
+    first_name = graphene.String(description="First name.")
+    last_name = graphene.String(description="Last name.")
     verified_personal_information = graphene.InputField(
         VerifiedPersonalInformationInput
     )
@@ -1022,10 +1024,13 @@ class CreateOrUpdateUserProfileMutationBase:
         verified_personal_information_input = profile_input.pop(
             "verified_personal_information", None
         )
+        primary_email_input = profile_input.pop("primary_email", None)
 
         user, created = User.objects.get_or_create(uuid=user_id_input)
 
-        profile, created = Profile.objects.get_or_create(user=user)
+        profile, created = Profile.objects.update_or_create(
+            user=user, defaults=profile_input
+        )
 
         if verified_personal_information_input:
             CreateOrUpdateUserProfileMutationBase._handle_verified_personal_information(
@@ -1039,7 +1044,6 @@ class CreateOrUpdateUserProfileMutationBase:
                 service=service, defaults={"enabled": True}
             )
 
-        primary_email_input = profile_input.pop("primary_email", None)
         if primary_email_input:
             CreateOrUpdateUserProfileMutationBase._handle_primary_email(
                 profile, primary_email_input

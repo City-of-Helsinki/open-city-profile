@@ -55,8 +55,8 @@ def execute_successful_mutation(input_data, gql_client):
 
 def generate_input_data(user_id, overrides={}):
     vpi_data = {
-        "firstName": "John",
-        "lastName": "Smith",
+        "firstName": "John VPI",
+        "lastName": "Smith VPI",
         "givenName": "Johnny",
         "nationalIdentificationNumber": "220202A1234",
         "email": "john.smith@domain.example",
@@ -82,7 +82,11 @@ def generate_input_data(user_id, overrides={}):
 
     input_data = {
         "userId": str(user_id),
-        "profile": {"verifiedPersonalInformation": vpi_data},
+        "profile": {
+            "firstName": "John BASIC",
+            "lastName": "Smith BASIC",
+            "verifiedPersonalInformation": vpi_data,
+        },
     }
 
     return input_data
@@ -94,9 +98,12 @@ def execute_successful_profile_creation_test(user_id, gql_client):
     profile = execute_successful_mutation(input_data, gql_client)
 
     assert profile.user.uuid == user_id
+    assert profile.first_name == "John BASIC"
+    assert profile.last_name == "Smith BASIC"
+
     verified_personal_information = profile.verified_personal_information
-    assert verified_personal_information.first_name == "John"
-    assert verified_personal_information.last_name == "Smith"
+    assert verified_personal_information.first_name == "John VPI"
+    assert verified_personal_information.last_name == "Smith VPI"
     assert verified_personal_information.given_name == "Johnny"
     assert verified_personal_information.national_identification_number == "220202A1234"
     assert verified_personal_information.municipality_of_residence == "Helsinki"

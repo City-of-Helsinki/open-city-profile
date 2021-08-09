@@ -325,6 +325,8 @@ type ProfileNodeEdge {
 }
 
 input ProfileWithVerifiedPersonalInformationInput {
+  firstName: String
+  lastName: String
   verifiedPersonalInformation: VerifiedPersonalInformationInput
   primaryEmail: EmailInput
 }
