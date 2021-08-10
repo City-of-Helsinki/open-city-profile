@@ -376,6 +376,26 @@ class AddressNode(ContactNode):
         )
         interfaces = (relay.Node,)
 
+    @login_and_service_required
+    def __resolve_reference(self, info, **kwargs):
+        address = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=AddressNode
+        )
+        if not address:
+            return None
+
+        service = info.context.service
+        user = info.context.user
+
+        if service.has_connection_to_profile(address.profile) and (
+            user == address.profile.user or user.has_perm("can_view_profiles", service)
+        ):
+            return address
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
 
 class VerifiedPersonalInformationAddressNode(graphene.ObjectType):
     street_address = graphene.String(
