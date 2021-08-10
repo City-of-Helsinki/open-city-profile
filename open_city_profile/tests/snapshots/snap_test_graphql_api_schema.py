@@ -626,7 +626,7 @@ type VerifiedPersonalInformationNode {
 
 scalar _Any
 
-union _Entity = ProfileNode
+union _Entity = AddressNode | ProfileNode
 
 type _Service {
   sdl: String

@@ -359,6 +359,7 @@ class PhoneNode(ContactNode):
         interfaces = (relay.Node,)
 
 
+@key(fields="id")
 class AddressNode(ContactNode):
     address_type = AllowedAddressType()
 
