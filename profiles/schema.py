@@ -1022,8 +1022,9 @@ class CreateOrUpdateUserProfileMutationBase:
 
         profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
 
-        if not email.primary:
+        if not email.primary or email.verified is not verified:
             email.primary = True
+            email.verified = verified
             email.save()
 
     @staticmethod
