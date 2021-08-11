@@ -7,38 +7,13 @@ from profiles.schema import ProfileNode
 from profiles.tests.factories import ProfileFactory
 from services.tests.factories import ServiceConnectionFactory
 
-
-def test_profile_node_exposes_key_for_federation_gateway(anon_user_gql_client):
-    query = """
-        query {
-            _service {
-                sdl
-            }
+GRAPHQL_SDL_QUERY = """
+    query {
+        _service {
+            sdl
         }
-    """
-
-    executed = anon_user_gql_client.execute(query)
-    assert (
-        'type ProfileNode implements Node  @key(fields: "id")'
-        in executed["data"]["_service"]["sdl"]
-    )
-
-
-def test_profile_connection_schema_matches_federated_schema(anon_user_gql_client):
-    query = """
-        query {
-            _service {
-                sdl
-            }
-        }
-    """
-
-    executed = anon_user_gql_client.execute(query)
-    assert (
-        "type ProfileNodeConnection {   pageInfo: PageInfo!   "
-        "edges: [ProfileNodeEdge]!   count: Int!   totalCount: Int! }"
-        in executed["data"]["_service"]["sdl"]
-    )
+    }
+"""
 
 
 PROFILE_ENTITY_QUERY = """
@@ -51,6 +26,23 @@ PROFILE_ENTITY_QUERY = """
         }
     }
 """
+
+
+def test_profile_node_exposes_key_for_federation_gateway(anon_user_gql_client):
+    executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
+    assert (
+        'type ProfileNode implements Node  @key(fields: "id")'
+        in executed["data"]["_service"]["sdl"]
+    )
+
+
+def test_profile_connection_schema_matches_federated_schema(anon_user_gql_client):
+    executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
+    assert (
+        "type ProfileNodeConnection {   pageInfo: PageInfo!   "
+        "edges: [ProfileNodeEdge]!   count: Int!   totalCount: Int! }"
+        in executed["data"]["_service"]["sdl"]
+    )
 
 
 def _create_profile_and_variables(with_serviceconnection, service, user=None):
