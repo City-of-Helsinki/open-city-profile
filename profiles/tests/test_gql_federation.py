@@ -28,12 +28,12 @@ PROFILE_ENTITY_QUERY = """
 """
 
 
-def test_profile_node_exposes_key_for_federation_gateway(anon_user_gql_client):
+@pytest.mark.parametrize("schema_type", ["ProfileNode", "AddressNode"])
+def test_node_exposes_key_for_federation_gateway(schema_type, anon_user_gql_client):
     executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
-    assert (
-        'type ProfileNode implements Node  @key(fields: "id")'
-        in executed["data"]["_service"]["sdl"]
-    )
+    type_definition = f'type {schema_type} implements Node  @key(fields: "id")'
+    sdl = executed["data"]["_service"]["sdl"]
+    assert type_definition in sdl
 
 
 def test_profile_connection_schema_matches_federated_schema(anon_user_gql_client):
