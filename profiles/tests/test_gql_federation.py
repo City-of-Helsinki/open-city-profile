@@ -45,6 +45,14 @@ def test_profile_connection_schema_matches_federated_schema(anon_user_gql_client
     )
 
 
+def test_address_connection_schema_matches_federated_schema(anon_user_gql_client):
+    executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
+    assert (
+        "type AddressNodeConnection {   pageInfo: PageInfo!   edges: [AddressNodeEdge]! }"
+        in executed["data"]["_service"]["sdl"]
+    )
+
+
 def _create_profile_and_variables(with_serviceconnection, service, user=None):
     profile = ProfileFactory(user=user)
     if with_serviceconnection:
