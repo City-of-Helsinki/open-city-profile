@@ -16,21 +16,13 @@ GRAPHQL_SDL_QUERY = """
 """
 
 
-PROFILE_ENTITY_QUERY = """
+ENTITY_QUERY = """
     query ($_representations: [_Any!]!) {
         _entities(representations: $_representations) {
             ... on ProfileNode {
                 id
                 firstName
             }
-        }
-    }
-"""
-
-
-ADDRESS_ENTITY_QUERY = """
-    query ($_representations: [_Any!]!) {
-        _entities(representations: $_representations) {
             ... on AddressNode {
                 id
                 address
@@ -106,9 +98,7 @@ def test_anonymous_user_can_not_resolve_profile_entity(
 ):
     profile, variables = _create_profile_and_variables(with_serviceconnection, service)
     executed = anon_user_gql_client.execute(
-        PROFILE_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
@@ -127,9 +117,7 @@ def test_owner_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        PROFILE_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     if with_service and with_serviceconnection:
@@ -149,9 +137,7 @@ def test_non_owner_user_can_not_resolve_profile_entity(
 ):
     profile, variables = _create_profile_and_variables(with_serviceconnection, service)
     executed = user_gql_client.execute(
-        PROFILE_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     if not with_service:
@@ -177,7 +163,7 @@ def test_staff_user_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        PROFILE_ENTITY_QUERY, variables=variables, service=service,
+        ENTITY_QUERY, variables=variables, service=service,
     )
 
     if with_serviceconnection:
@@ -194,9 +180,7 @@ def test_anonymous_user_can_not_resolve_address_entity(
 ):
     address, variables = _create_address_and_variables(with_serviceconnection, service)
     executed = anon_user_gql_client.execute(
-        ADDRESS_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
@@ -222,9 +206,7 @@ def test_owner_can_resolve_address_entity(
     }
 
     executed = user_gql_client.execute(
-        ADDRESS_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     if with_service and with_serviceconnection:
@@ -244,9 +226,7 @@ def test_non_owner_user_can_not_resolve_address_entity(
 ):
     address, variables = _create_address_and_variables(with_serviceconnection, service)
     executed = user_gql_client.execute(
-        ADDRESS_ENTITY_QUERY,
-        variables=variables,
-        service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None,
     )
 
     if not with_service:
@@ -278,7 +258,7 @@ def test_staff_user_can_resolve_address_entity(
         ]
     }
     executed = user_gql_client.execute(
-        ADDRESS_ENTITY_QUERY, variables=variables, service=service,
+        ENTITY_QUERY, variables=variables, service=service,
     )
 
     if with_serviceconnection:
