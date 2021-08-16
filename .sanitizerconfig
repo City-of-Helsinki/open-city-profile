@@ -79,6 +79,12 @@ strategy:
     ad_group_id: null
     group_id: null
     id: null
+  helusers_oidcbackchannellogoutevent:
+    created_at: null
+    id: null
+    iss: null
+    sid: null
+    sub: null
   mailer_dontsendentry:
     id: null
     to_address: "profile.email"

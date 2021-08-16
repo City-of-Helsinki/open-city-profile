@@ -38,7 +38,7 @@ django-filter==2.4.0
     # via -r requirements.in
 django-guardian==2.1.0
     # via -r requirements.in
-django-helusers==0.6.0
+django-helusers==0.7.0
     # via -r requirements.in
 django-ilmoitin==0.2.0
     # via -r requirements.in

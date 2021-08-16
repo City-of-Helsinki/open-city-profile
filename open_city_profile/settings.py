@@ -244,6 +244,8 @@ AUTHENTICATION_BACKENDS = [
     "guardian.backends.ObjectPermissionBackend",
 ]
 
+HELUSERS_BACK_CHANNEL_LOGOUT_ENABLED = True
+
 # Profiles related settings
 
 CONTACT_METHODS = (("email", "Email"), ("sms", "SMS"))
