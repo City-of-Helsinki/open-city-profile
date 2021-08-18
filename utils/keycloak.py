@@ -20,7 +20,10 @@ class KeycloakAdminClient:
 
         return self._session.get(well_known_url).json()
 
-    def _get_auth(self):
+    def _get_auth(self, force_renew=False):
+        if force_renew:
+            self._auth = None
+
         if not self._auth:
             token_endpoint_url = self._well_known["token_endpoint"]
             credentials_request = {
@@ -42,14 +45,23 @@ class KeycloakAdminClient:
             f"{self._server_url}/auth/admin/realms/{self._realm_name}/users/{user_id}"
         )
 
+    def _handle_request_with_auth(self, requester):
+        response = requester(self._get_auth())
+        if response.status_code == 401:
+            response = requester(self._get_auth(force_renew=True))
+        return response
+
     def get_user(self, user_id):
         url = self._single_user_url(user_id)
-        auth = self._get_auth()
 
-        return self._session.get(url, auth=auth).json()
+        response = self._handle_request_with_auth(
+            lambda auth: self._session.get(url, auth=auth)
+        )
+        return response.json()
 
     def update_user(self, user_id, update_data: dict):
         url = self._single_user_url(user_id)
-        auth = self._get_auth()
 
-        self._session.put(url, auth=auth, json=update_data)
+        self._handle_request_with_auth(
+            lambda auth: self._session.put(url, auth=auth, json=update_data)
+        )
