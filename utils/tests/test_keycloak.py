@@ -38,7 +38,7 @@ def keycloak_client():
 
 
 def setup_well_known():
-    req_mock.get(
+    return req_mock.get(
         f"{server_url}/auth/realms/{realm_name}/.well-known/openid-configuration",
         json={"token_endpoint": token_endpoint_url},
     )
@@ -53,7 +53,7 @@ def setup_client_credentials():
             "client_secret": [client_secret],
         }
 
-    req_mock.post(
+    return req_mock.post(
         token_endpoint_url,
         request_headers={"Content-Type": "application/x-www-form-urlencoded"},
         additional_matcher=body_matcher,
@@ -101,3 +101,17 @@ def test_update_single_user_data(keycloak_client):
     keycloak_client.update_user(user_id, user_data)
 
     assert update_mock.call_count == 1
+
+
+def test_remember_and_reuse_access_token(keycloak_client):
+    well_known_mock = setup_well_known()
+    client_credentials_mock = setup_client_credentials()
+    setup_user_response(user_id, user_data)
+    setup_update_user_response(user_id, user_data)
+
+    keycloak_client.get_user(user_id)
+    keycloak_client.update_user(user_id, user_data)
+    keycloak_client.get_user(user_id)
+
+    assert well_known_mock.call_count == 1
+    assert client_credentials_mock.call_count == 1
