@@ -12,7 +12,7 @@ class KeycloakAdminClient:
 
         self._session = requests.Session()
 
-    def get_user(self, user_id):
+    def _get_auth(self):
         well_known_url = f"{self._server_url}/auth/realms/{self._realm_name}/.well-known/openid-configuration"
         well_known = self._session.get(well_known_url).json()
 
@@ -27,6 +27,21 @@ class KeycloakAdminClient:
         ).json()
         access_token = client_credentials["access_token"]
 
-        url = f"{self._server_url}/auth/admin/realms/{self._realm_name}/users/{user_id}"
+        return BearerAuth(access_token)
 
-        return self._session.get(url, auth=BearerAuth(access_token)).json()
+    def _single_user_url(self, user_id):
+        return (
+            f"{self._server_url}/auth/admin/realms/{self._realm_name}/users/{user_id}"
+        )
+
+    def get_user(self, user_id):
+        url = self._single_user_url(user_id)
+        auth = self._get_auth()
+
+        return self._session.get(url, auth=auth).json()
+
+    def update_user(self, user_id, update_data: dict):
+        url = self._single_user_url(user_id)
+        auth = self._get_auth()
+
+        self._session.put(url, auth=auth, json=update_data)

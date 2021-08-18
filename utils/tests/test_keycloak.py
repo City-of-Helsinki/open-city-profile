@@ -15,6 +15,13 @@ access_token = "test-access-token"
 
 req_mock = None
 
+user_id = "test-user-id"
+user_data = {
+    "id": user_id,
+    "firstName": "John",
+    "lastName": "Smith",
+}
+
 
 @pytest.fixture(autouse=True)
 def global_requests_mock(requests_mock):
@@ -62,17 +69,35 @@ def setup_user_response(user_id, user_data):
     )
 
 
+def setup_update_user_response(user_id, update_data):
+    def body_matcher(request):
+        return request.json() == update_data
+
+    return req_mock.put(
+        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}",
+        request_headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+        additional_matcher=body_matcher,
+    )
+
+
 def test_fetch_single_user_data(keycloak_client):
     setup_well_known()
     setup_client_credentials()
-    user_id = "test-user-id"
-    user_data = {
-        "id": user_id,
-        "firstName": "John",
-        "lastName": "Smith",
-    }
     setup_user_response(user_id, user_data)
 
     received_user = keycloak_client.get_user(user_id)
 
     assert received_user == user_data
+
+
+def test_update_single_user_data(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    update_mock = setup_update_user_response(user_id, user_data)
+
+    keycloak_client.update_user(user_id, user_data)
+
+    assert update_mock.call_count == 1
