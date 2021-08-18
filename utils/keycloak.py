@@ -18,7 +18,9 @@ class KeycloakAdminClient:
     def _well_known(self):
         well_known_url = f"{self._server_url}/auth/realms/{self._realm_name}/.well-known/openid-configuration"
 
-        return self._session.get(well_known_url).json()
+        result = self._session.get(well_known_url)
+        result.raise_for_status()
+        return result.json()
 
     def _get_auth(self, force_renew=False):
         if force_renew:

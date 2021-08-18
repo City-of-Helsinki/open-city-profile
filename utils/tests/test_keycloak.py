@@ -1,6 +1,7 @@
 import urllib
 
 import pytest
+import requests
 
 from utils.keycloak import KeycloakAdminClient
 
@@ -38,9 +39,10 @@ def keycloak_client():
     return KeycloakAdminClient(server_url, realm_name, client_id, client_secret)
 
 
-def setup_well_known():
+def setup_well_known(status_code=200):
     return req_mock.get(
         f"{server_url}/auth/realms/{realm_name}/.well-known/openid-configuration",
+        status_code=status_code,
         json={"token_endpoint": token_endpoint_url},
     )
 
@@ -90,6 +92,13 @@ def setup_update_user_response(
         additional_matcher=body_matcher,
         status_code=status_code,
     )
+
+
+def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
+    setup_well_known(status_code=404)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.get_user(user_id)
 
 
 def test_fetch_single_user_data(keycloak_client):
