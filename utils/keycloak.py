@@ -33,9 +33,9 @@ class KeycloakAdminClient:
                 "client_id": self._client_id,
                 "client_secret": self._client_secret,
             }
-            client_credentials = self._session.post(
-                token_endpoint_url, data=credentials_request
-            ).json()
+            result = self._session.post(token_endpoint_url, data=credentials_request)
+            result.raise_for_status()
+            client_credentials = result.json()
             access_token = client_credentials["access_token"]
 
             self._auth = BearerAuth(access_token)

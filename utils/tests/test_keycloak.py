@@ -47,7 +47,7 @@ def setup_well_known(status_code=200):
     )
 
 
-def setup_client_credentials(response_access_tokens=None):
+def setup_client_credentials(response_access_tokens=None, status_code=200):
     def body_matcher(request):
         body = urllib.parse.parse_qs(request.text, strict_parsing=True)
         return body == {
@@ -58,7 +58,10 @@ def setup_client_credentials(response_access_tokens=None):
 
     if response_access_tokens is None:
         response_access_tokens = [access_token]
-    responses = [{"json": {"access_token": token}} for token in response_access_tokens]
+    responses = [
+        {"status_code": status_code, "json": {"access_token": token}}
+        for token in response_access_tokens
+    ]
 
     return req_mock.post(
         token_endpoint_url,
@@ -96,6 +99,14 @@ def setup_update_user_response(
 
 def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
     setup_well_known(status_code=404)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.get_user(user_id)
+
+
+def test_raise_exception_when_can_not_get_client_credentials(keycloak_client):
+    setup_well_known()
+    setup_client_credentials(status_code=400)
 
     with pytest.raises(requests.HTTPError):
         keycloak_client.get_user(user_id)
