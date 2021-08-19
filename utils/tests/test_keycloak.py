@@ -97,6 +97,13 @@ def setup_update_user_response(
     )
 
 
+def setup_send_verify_email_response(user_id):
+    return req_mock.put(
+        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
+        request_headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+
 def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
     setup_well_known(status_code=404)
 
@@ -148,6 +155,16 @@ def test_raise_exception_when_can_not_update_user_data(keycloak_client):
 
     with pytest.raises(requests.HTTPError):
         keycloak_client.update_user(user_id, user_data)
+
+
+def test_send_verify_email_to_user(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    send_email_mock = setup_send_verify_email_response(user_id)
+
+    keycloak_client.send_verify_email(user_id)
+
+    assert send_email_mock.call_count == 1
 
 
 def test_remember_and_reuse_access_token(keycloak_client):
