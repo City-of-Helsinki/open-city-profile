@@ -51,6 +51,7 @@ class KeycloakAdminClient:
         response = requester(self._get_auth())
         if response.status_code == 401:
             response = requester(self._get_auth(force_renew=True))
+        response.raise_for_status()
         return response
 
     def get_user(self, user_id):

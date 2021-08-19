@@ -122,6 +122,15 @@ def test_fetch_single_user_data(keycloak_client):
     assert received_user == user_data
 
 
+def test_raise_exception_when_can_not_fetch_user_data(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    setup_user_response(user_id, user_data, status_code=404)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.get_user(user_id)
+
+
 def test_update_single_user_data(keycloak_client):
     setup_well_known()
     setup_client_credentials()
@@ -130,6 +139,15 @@ def test_update_single_user_data(keycloak_client):
     keycloak_client.update_user(user_id, user_data)
 
     assert update_mock.call_count == 1
+
+
+def test_raise_exception_when_can_not_update_user_data(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    setup_update_user_response(user_id, user_data, status_code=501)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.update_user(user_id, user_data)
 
 
 def test_remember_and_reuse_access_token(keycloak_client):
