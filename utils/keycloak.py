@@ -72,6 +72,9 @@ class KeycloakAdminClient:
     def send_verify_email(self, user_id):
         url = self._single_user_url(user_id)
         url += f"/send-verify-email"
-        return self._session.put(
-            url, auth=self._get_auth(), params={"client_id": self._client_id}
+
+        return self._handle_request_with_auth(
+            lambda auth: self._session.put(
+                url, auth=auth, params={"client_id": self._client_id}
+            )
         )

@@ -97,10 +97,11 @@ def setup_update_user_response(
     )
 
 
-def setup_send_verify_email_response(user_id):
+def setup_send_verify_email_response(user_id, token=access_token, status_code=200):
     return req_mock.put(
         f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
-        request_headers={"Authorization": f"Bearer {access_token}"},
+        request_headers={"Authorization": f"Bearer {token}"},
+        status_code=status_code,
     )
 
 
@@ -167,6 +168,15 @@ def test_send_verify_email_to_user(keycloak_client):
     assert send_email_mock.call_count == 1
 
 
+def test_raise_exception_when_can_not_send_verify_email_to_user(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    setup_send_verify_email_response(user_id, status_code=404)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.send_verify_email(user_id)
+
+
 def test_remember_and_reuse_access_token(keycloak_client):
     well_known_mock = setup_well_known()
     client_credentials_mock = setup_client_credentials()
@@ -211,5 +221,22 @@ def test_renew_access_token_when_old_one_is_not_accepted_with_user_update(
     success_mock = setup_update_user_response(user_id, user_data, token=access_token)
 
     keycloak_client.update_user(user_id, user_data)
+
+    assert success_mock.call_count == 1
+
+
+def test_renew_access_token_when_old_one_is_not_accepted_with_verify_email_sending(
+    keycloak_client,
+):
+    setup_well_known()
+    setup_client_credentials(
+        response_access_tokens=[unaccepted_access_token, access_token]
+    )
+    setup_send_verify_email_response(
+        user_id, token=unaccepted_access_token, status_code=401
+    )
+    success_mock = setup_send_verify_email_response(user_id, token=access_token)
+
+    keycloak_client.send_verify_email(user_id)
 
     assert success_mock.call_count == 1
