@@ -205,6 +205,7 @@ MIDDLEWARE = [
     "reversion.middleware.RevisionMiddleware",
     "open_city_profile.middleware.JWTAuthentication",
     "profiles.middleware.SetCurrentRequest",
+    'hdiv_agent.core.frameworks.django.middleware.InputTaintMiddleware'
 ]
 
 TEMPLATES = [

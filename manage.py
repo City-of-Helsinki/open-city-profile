@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import hdiv_agent
+hdiv_agent.start()
 import os
 import sys
 
