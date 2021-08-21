@@ -519,43 +519,35 @@ def test_normal_user_can_update_address(user_gql_client, address_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_email(user_gql_client, email_data):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    email = profile.emails.first()
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            updateEmails: [
-                                {
-                                    id: "${email_id}",
-                                    emailType: ${email_type},
-                                    email:"${email}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                    email
-                                    emailType
-                                    primary
-                                }
-                            }
+UPDATE_EMAIL_MUTATION = """
+    mutation updateMyEmails($emailUpdates: [UpdateEmailInput]) {
+        updateMyProfile(
+            input: {
+                profile: {
+                    updateEmails: $emailUpdates
+                }
+            }
+        ) {
+            profile {
+                emails {
+                    edges {
+                        node {
+                            id
+                            email
+                            emailType
+                            primary
                         }
                     }
                 }
             }
-        """
-    )
+        }
+    }
+"""
+
+
+def test_normal_user_can_update_email(user_gql_client, email_data):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
 
     expected_data = {
         "updateMyProfile": {
@@ -576,13 +568,58 @@ def test_normal_user_can_update_email(user_gql_client, email_data):
         }
     }
 
-    mutation = t.substitute(
-        email_id=to_global_id(type="EmailNode", id=email.id),
-        email=email_data["email"],
-        email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
+    email_updates = [
+        {
+            "id": to_global_id(type="EmailNode", id=email.id),
+            "email": email_data["email"],
+            "emailType": email_data["email_type"],
+            "primary": str(email_data["primary"]).lower(),
+        }
+    ]
+    executed = user_gql_client.execute(
+        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
     )
-    executed = user_gql_client.execute(mutation)
+    assert dict(executed["data"]) == expected_data
+
+
+def test_normal_user_can_change_primary_email_to_another_one(user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile, primary=False)
+    email_2 = EmailFactory(profile=profile, primary=True)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailNode", id=email.id),
+                                "email": email.email,
+                                "emailType": email.email_type.name,
+                                "primary": True,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": to_global_id(type="EmailNode", id=email_2.id),
+                                "email": email_2.email,
+                                "emailType": email_2.email_type.name,
+                                "primary": False,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    email_updates = [
+        {"id": to_global_id(type="EmailNode", id=email.id), "primary": "true"}
+    ]
+    executed = user_gql_client.execute(
+        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
+    )
     assert dict(executed["data"]) == expected_data
 
 
@@ -950,82 +987,6 @@ def test_normal_user_can_change_primary_contact_details(
         postal_code=address_data["postal_code"],
         city=address_data["city"],
         address_type=address_data["address_type"],
-        primary="true",
-    )
-    executed = user_gql_client.execute(mutation)
-    assert dict(executed["data"]) == expected_data
-
-
-def test_normal_user_can_update_primary_contact_details(user_gql_client, email_data):
-    profile = ProfileFactory(user=user_gql_client.user)
-    email = EmailFactory(profile=profile, primary=False)
-    email_2 = EmailFactory(profile=profile, primary=True)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            updateEmails: [
-                                {
-                                    id: "${email_id}",
-                                    emailType: ${email_type},
-                                    email:"${email}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                    email
-                                    emailType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "emails": {
-                    "edges": [
-                        {
-                            "node": {
-                                "id": to_global_id(type="EmailNode", id=email.id),
-                                "email": email_data["email"],
-                                "emailType": email_data["email_type"],
-                                "primary": True,
-                            }
-                        },
-                        {
-                            "node": {
-                                "id": to_global_id(type="EmailNode", id=email_2.id),
-                                "email": email_2.email,
-                                "emailType": email_2.email_type.name,
-                                "primary": False,
-                            }
-                        },
-                    ]
-                }
-            }
-        }
-    }
-
-    mutation = t.substitute(
-        email_id=to_global_id(type="EmailNode", id=email.id),
-        email=email_data["email"],
-        email_type=email_data["email_type"],
         primary="true",
     )
     executed = user_gql_client.execute(mutation)
