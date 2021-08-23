@@ -4,7 +4,7 @@ import graphene
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
@@ -24,6 +24,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphene_validator.decorators import validated
+from graphql_relay import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
@@ -37,6 +38,7 @@ from open_city_profile.exceptions import (
     APINotImplementedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
+    InvalidEmailFormatError,
     MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
     TokenExpiredError,
@@ -69,12 +71,7 @@ from .models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
-from .utils import (
-    create_nested,
-    delete_nested,
-    requester_has_service_permission,
-    update_nested,
-)
+from .utils import requester_has_service_permission
 
 User = get_user_model()
 
@@ -94,6 +91,44 @@ def get_claimable_profile(token=None):
     if claim_token.expires_at and claim_token.expires_at < timezone.now():
         raise TokenExpiredError("Token for claiming this profile has expired")
     return Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
+
+
+def _create_nested(model, profile, data):
+    for add_input in filter(None, data):
+        item = model(profile=profile)
+        for field, value in add_input.items():
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+        try:
+            item.save()
+        except ValidationError:
+            if model.__name__ == "Email":
+                raise InvalidEmailFormatError("Email must be in valid email format")
+            else:
+                raise
+
+
+def _update_nested(model, profile, data):
+    for update_input in filter(None, data):
+        id = update_input.pop("id")
+        item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
+        for field, value in update_input.items():
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+        try:
+            item.save()
+        except ValidationError:
+            if model.__name__ == "Email":
+                raise InvalidEmailFormatError("Email must be in valid email format")
+            else:
+                raise
+
+
+def _delete_nested(model, profile, data):
+    for remove_id in filter(None, data):
+        model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
 
 
 def update_profile(profile, profile_data):
@@ -118,13 +153,13 @@ def update_profile(profile, profile_data):
     profile.save()
 
     for model, data in nested_to_create:
-        create_nested(model, profile, data)
+        _create_nested(model, profile, data)
 
     for model, data in nested_to_update:
-        update_nested(model, profile, data)
+        _update_nested(model, profile, data)
 
     for model, data in nested_to_delete:
-        delete_nested(model, profile, data)
+        _delete_nested(model, profile, data)
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -724,7 +759,7 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         profile.save()
 
         for model, data in nested_to_create:
-            create_nested(model, profile, data)
+            _create_nested(model, profile, data)
 
         return CreateMyProfileMutation(profile=profile)
 
@@ -788,7 +823,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
         profile.save()
 
         for model, data in nested_to_create:
-            create_nested(model, profile, data)
+            _create_nested(model, profile, data)
 
         if sensitivedata:
             if info.context.user.has_perm("can_manage_sensitivedata", service):
