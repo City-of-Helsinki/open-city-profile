@@ -1455,7 +1455,7 @@ class Query(graphene.ObjectType):
     def resolve_profile(self, info, **kwargs):
         service = info.context.service
         return Profile.objects.filter(service_connections__service=service).get(
-            pk=relay.Node.from_global_id(kwargs["id"])[1]
+            pk=from_global_id(kwargs["id"])[1]
         )
 
     @login_and_service_required
