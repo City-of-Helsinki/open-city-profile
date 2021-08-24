@@ -1,6 +1,6 @@
 from anymail.exceptions import AnymailError
+from django.conf import settings
 from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django_ilmoitin.utils import send_notification
 from sentry_sdk import capture_exception
 
@@ -8,7 +8,6 @@ from .enums import NotificationType, RepresentativeConfirmationDegree
 from .models import LegalRelationship
 
 
-@receiver(post_save, sender=LegalRelationship)
 def relationship_saved_handler(sender, instance, created, **kwargs):
     confirmed = instance.confirmation_degree != RepresentativeConfirmationDegree.NONE
 
@@ -45,3 +44,7 @@ def relationship_saved_handler(sender, instance, created, **kwargs):
             )
         except (OSError, AnymailError) as e:
             capture_exception(e)
+
+
+if settings.NOTIFICATIONS_ENABLED:
+    post_save.connect(relationship_saved_handler, sender=LegalRelationship)
