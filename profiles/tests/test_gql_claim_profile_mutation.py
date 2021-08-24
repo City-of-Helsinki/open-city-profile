@@ -7,7 +7,12 @@ from graphql_relay.node.node import to_global_id
 from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 
-from .factories import ClaimTokenFactory, ProfileFactory, ProfileWithPrimaryEmailFactory
+from .factories import (
+    ClaimTokenFactory,
+    EmailFactory,
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+)
 
 
 def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_client):
@@ -56,6 +61,67 @@ def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_clie
     profile.refresh_from_db()
     assert profile.user == user_gql_client.user
     assert profile.claim_tokens.count() == 0
+
+
+def test_changing_an_email_address_marks_it_unverified(user_gql_client):
+    profile = ProfileFactory(user=None)
+    email = EmailFactory(profile=profile, verified=True)
+    claim_token = ClaimTokenFactory(profile=profile)
+
+    claim_profile_mutation = """
+        mutation claimProfileWithEmailUpdates($token: UUID!, $emailUpdates: [UpdateEmailInput]) {
+            claimProfile(
+                input: {
+                    token: $token,
+                    profile: {
+                        updateEmails: $emailUpdates
+                    }
+                }
+            ) {
+                profile {
+                    emails {
+                        edges {
+                            node {
+                                id
+                                email
+                                verified
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    new_email_value = "new@email.example"
+
+    expected_data = {
+        "claimProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id("EmailNode", email.id),
+                                "email": new_email_value,
+                                "verified": False,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    variables = {
+        "token": str(claim_token.token),
+        "emailUpdates": [
+            {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+        ],
+    }
+
+    executed = user_gql_client.execute(claim_profile_mutation, variables=variables,)
+    assert executed["data"] == expected_data
 
 
 def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):

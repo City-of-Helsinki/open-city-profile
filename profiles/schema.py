@@ -109,11 +109,13 @@ def _create_nested(model, profile, data):
                 raise
 
 
-def _update_nested(model, profile, data):
+def _update_nested(model, profile, data, field_callback):
     for update_input in filter(None, data):
         id = update_input.pop("id")
         item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
         for field, value in update_input.items():
+            if field_callback:
+                field_callback(item, field, value)
             if field == "primary" and value is True:
                 model.objects.filter(profile=profile).update(primary=False)
             setattr(item, field, value)
@@ -132,15 +134,23 @@ def _delete_nested(model, profile, data):
 
 
 def update_profile(profile, profile_data):
+    def email_change_makes_it_unverified(item, field, value):
+        if field == "email" and item.email != value:
+            item.verified = False
+
     nested_to_create = [
         (Email, profile_data.pop("add_emails", [])),
         (Phone, profile_data.pop("add_phones", [])),
         (Address, profile_data.pop("add_addresses", [])),
     ]
     nested_to_update = [
-        (Email, profile_data.pop("update_emails", [])),
-        (Phone, profile_data.pop("update_phones", [])),
-        (Address, profile_data.pop("update_addresses", [])),
+        (
+            Email,
+            profile_data.pop("update_emails", []),
+            email_change_makes_it_unverified,
+        ),
+        (Phone, profile_data.pop("update_phones", []), None),
+        (Address, profile_data.pop("update_addresses", []), None),
     ]
     nested_to_delete = [
         (Email, profile_data.pop("remove_emails", [])),
@@ -155,8 +165,8 @@ def update_profile(profile, profile_data):
     for model, data in nested_to_create:
         _create_nested(model, profile, data)
 
-    for model, data in nested_to_update:
-        _update_nested(model, profile, data)
+    for model, data, field_callback in nested_to_update:
+        _update_nested(model, profile, data, field_callback)
 
     for model, data in nested_to_delete:
         _delete_nested(model, profile, data)

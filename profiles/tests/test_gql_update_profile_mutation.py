@@ -10,7 +10,12 @@ from profiles.enums import EmailType
 from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory
 
-from .factories import AddressFactory, PhoneFactory, ProfileWithPrimaryEmailFactory
+from .factories import (
+    AddressFactory,
+    EmailFactory,
+    PhoneFactory,
+    ProfileWithPrimaryEmailFactory,
+)
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
@@ -138,6 +143,73 @@ def test_staff_user_can_update_a_profile(
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["updateProfile"] is None
+
+
+def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, service):
+    email = EmailFactory(email="old@email.example", verified=True)
+    profile = email.profile
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_manage_profiles", group, service)
+
+    update_emails_mutation = """
+        mutation updateEmails($id: ID!, $emailUpdates: [UpdateEmailInput]) {
+            updateProfile(
+                input: {
+                    profile: {
+                        id: $id,
+                        updateEmails: $emailUpdates
+                    }
+                }
+            ) {
+                profile {
+                    emails {
+                        edges {
+                            node {
+                                id
+                                email
+                                verified
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    new_email_value = "new@email.example"
+
+    expected_data = {
+        "updateProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id("EmailNode", email.id),
+                                "email": new_email_value,
+                                "verified": False,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    variables = {
+        "id": to_global_id("ProfileNode", profile.id),
+        "emailUpdates": [
+            {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+        ],
+    }
+
+    executed = user_gql_client.execute(
+        update_emails_mutation, service=service, variables=variables,
+    )
+    assert executed["data"] == expected_data
 
 
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(

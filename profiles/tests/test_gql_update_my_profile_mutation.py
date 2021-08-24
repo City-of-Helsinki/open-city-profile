@@ -536,6 +536,7 @@ UPDATE_EMAIL_MUTATION = """
                             email
                             emailType
                             primary
+                            verified
                         }
                     }
                 }
@@ -560,6 +561,7 @@ def test_normal_user_can_update_email(user_gql_client, email_data):
                                 "email": email_data["email"],
                                 "emailType": email_data["email_type"],
                                 "primary": email_data["primary"],
+                                "verified": False,
                             }
                         }
                     ]
@@ -598,6 +600,7 @@ def test_normal_user_can_change_primary_email_to_another_one(user_gql_client):
                                 "email": email.email,
                                 "emailType": email.email_type.name,
                                 "primary": True,
+                                "verified": False,
                             }
                         },
                         {
@@ -606,6 +609,7 @@ def test_normal_user_can_change_primary_email_to_another_one(user_gql_client):
                                 "email": email_2.email,
                                 "emailType": email_2.email_type.name,
                                 "primary": False,
+                                "verified": False,
                             }
                         },
                     ]
@@ -616,6 +620,40 @@ def test_normal_user_can_change_primary_email_to_another_one(user_gql_client):
 
     email_updates = [
         {"id": to_global_id(type="EmailNode", id=email.id), "primary": "true"}
+    ]
+    executed = user_gql_client.execute(
+        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_changing_an_email_address_marks_it_unverified(user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email = EmailFactory(profile=profile, email="old@email.example", verified=True)
+    new_email_value = "new@email.example"
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id("EmailNode", email.id),
+                                "email": new_email_value,
+                                "emailType": email.email_type.name,
+                                "primary": email.primary,
+                                "verified": False,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    email_updates = [
+        {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
     ]
     executed = user_gql_client.execute(
         UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
