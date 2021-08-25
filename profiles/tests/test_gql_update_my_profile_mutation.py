@@ -575,7 +575,7 @@ def test_update_email(user_gql_client, email_data):
             "id": to_global_id(type="EmailNode", id=email.id),
             "email": email_data["email"],
             "emailType": email_data["email_type"],
-            "primary": str(email_data["primary"]).lower(),
+            "primary": email_data["primary"],
         }
     ]
     executed = user_gql_client.execute(
@@ -619,7 +619,7 @@ def test_change_primary_email_to_another_one(user_gql_client):
     }
 
     email_updates = [
-        {"id": to_global_id(type="EmailNode", id=email.id), "primary": "true"}
+        {"id": to_global_id(type="EmailNode", id=email.id), "primary": True}
     ]
     executed = user_gql_client.execute(
         UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
