@@ -22,7 +22,7 @@ from .factories import (
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
-def test_normal_user_can_update_profile(
+def test_update_profile(
     user_gql_client, email_data, profile_data, service, with_serviceconnection
 ):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
@@ -104,7 +104,7 @@ def test_normal_user_can_update_profile(
         assert executed["data"]["updateMyProfile"] is None
 
 
-def test_normal_user_can_update_profile_without_email(user_gql_client, profile_data):
+def test_update_profile_without_email(user_gql_client, profile_data):
     ProfileFactory(user=user_gql_client.user)
 
     t = Template(
@@ -146,7 +146,7 @@ def test_normal_user_can_update_profile_without_email(user_gql_client, profile_d
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_add_email(user_gql_client, email_data):
+def test_add_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
@@ -219,7 +219,7 @@ def test_normal_user_can_add_email(user_gql_client, email_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_cannot_add_invalid_email(user_gql_client, email_data):
+def test_not_add_invalid_email(user_gql_client, email_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
 
     t = Template(
@@ -262,7 +262,7 @@ def test_normal_user_cannot_add_invalid_email(user_gql_client, email_data):
     assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
-def test_normal_user_cannot_update_email_to_invalid_format(user_gql_client, email_data):
+def test_not_update_email_to_invalid_format(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
@@ -308,7 +308,7 @@ def test_normal_user_cannot_update_email_to_invalid_format(user_gql_client, emai
     assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
-def test_normal_user_can_add_phone(user_gql_client, phone_data):
+def test_add_phone(user_gql_client, phone_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
 
     t = Template(
@@ -370,7 +370,7 @@ def test_normal_user_can_add_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_add_address(user_gql_client, address_data):
+def test_add_address(user_gql_client, address_data):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
 
     t = Template(
@@ -444,7 +444,7 @@ def test_normal_user_can_add_address(user_gql_client, address_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_address(user_gql_client, address_data):
+def test_update_address(user_gql_client, address_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
@@ -546,7 +546,7 @@ UPDATE_EMAIL_MUTATION = """
 """
 
 
-def test_normal_user_can_update_email(user_gql_client, email_data):
+def test_update_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
@@ -584,7 +584,7 @@ def test_normal_user_can_update_email(user_gql_client, email_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_change_primary_email_to_another_one(user_gql_client):
+def test_change_primary_email_to_another_one(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     email = EmailFactory(profile=profile, primary=False)
     email_2 = EmailFactory(profile=profile, primary=True)
@@ -661,7 +661,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_phone(user_gql_client, phone_data):
+def test_update_phone(user_gql_client, phone_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
@@ -728,7 +728,7 @@ def test_normal_user_can_update_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_email(user_gql_client, email_data):
+def test_remove_email(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
@@ -793,7 +793,7 @@ def test_normal_user_can_remove_email(user_gql_client, email_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_all_emails(user_gql_client, email_data):
+def test_remove_all_emails(user_gql_client, email_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
@@ -838,7 +838,7 @@ def test_normal_user_can_remove_all_emails(user_gql_client, email_data):
     assert executed["data"] == expected_data
 
 
-def test_normal_user_can_remove_phone(user_gql_client, phone_data):
+def test_remove_phone(user_gql_client, phone_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
@@ -883,7 +883,7 @@ def test_normal_user_can_remove_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_remove_address(user_gql_client, address_data):
+def test_remove_address(user_gql_client, address_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
@@ -928,7 +928,7 @@ def test_normal_user_can_remove_address(user_gql_client, address_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_change_primary_contact_details(
+def test_change_primary_contact_details(
     user_gql_client, email_data, phone_data, address_data
 ):
     profile = ProfileFactory(user=user_gql_client.user)
@@ -1031,7 +1031,7 @@ def test_normal_user_can_change_primary_contact_details(
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_sensitive_data(user_gql_client):
+def test_update_sensitive_data(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     SensitiveDataFactory(profile=profile, ssn="010199-1234")
 
@@ -1075,7 +1075,7 @@ def test_normal_user_can_update_sensitive_data(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_update_subscriptions_via_profile(user_gql_client):
+def test_update_subscriptions_via_profile(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     category = SubscriptionTypeCategoryFactory()
     type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
