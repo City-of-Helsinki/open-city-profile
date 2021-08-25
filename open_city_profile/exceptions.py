@@ -27,10 +27,6 @@ class ConnectedServiceDeletionNotAllowedError(ProfileGraphQLError):
     """Deleting a connected service is not allowed."""
 
 
-class CannotPerformThisActionWithGivenServiceType(ProfileGraphQLError):
-    """Incorrect service type for given action"""
-
-
 class InvalidEmailFormatError(ProfileGraphQLError):
     """Email must be in valid email format"""
 
@@ -41,10 +37,6 @@ class ProfileMustHavePrimaryEmailError(ProfileGraphQLError):
 
 class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
-
-
-class ProfileHasNoPrimaryEmailError(ProfileGraphQLError):
-    """Profile does not have a primary email address"""
 
 
 class ServiceAlreadyExistsError(ProfileGraphQLError):

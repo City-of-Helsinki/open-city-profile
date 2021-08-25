@@ -5,7 +5,6 @@ from graphene_django.views import GraphQLView as BaseGraphQLView
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
-    CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
@@ -14,7 +13,6 @@ from open_city_profile.consts import (
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
-    PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
     PROFILE_MUST_HAVE_PRIMARY_EMAIL,
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     SERVICE_NOT_IDENTIFIED_ERROR,
@@ -23,14 +21,12 @@ from open_city_profile.consts import (
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
-    CannotPerformThisActionWithGivenServiceType,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
     MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
     ProfileGraphQLError,
-    ProfileHasNoPrimaryEmailError,
     ProfileMustHavePrimaryEmailError,
     ServiceAlreadyExistsError,
     ServiceNotIdentifiedError,
@@ -46,7 +42,6 @@ error_codes_shared = {
     APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     ValidationError: VALIDATION_ERROR,
     graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
-    CannotPerformThisActionWithGivenServiceType: CANNOT_PERFORM_THIS_ACTION_WITH_GIVEN_SERVICE_TYPE_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
 }
 
@@ -58,7 +53,6 @@ error_codes_profile = {
     MissingGDPRApiTokenError: MISSING_GDPR_API_TOKEN_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
-    ProfileHasNoPrimaryEmailError: PROFILE_HAS_NO_PRIMARY_EMAIL_ERROR,
 }
 
 sentry_ignored_errors = (
