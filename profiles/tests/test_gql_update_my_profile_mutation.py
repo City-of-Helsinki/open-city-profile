@@ -728,7 +728,7 @@ def test_update_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_remove_email(user_gql_client, email_data):
+def test_remove_email(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
@@ -783,17 +783,12 @@ def test_remove_email(user_gql_client, email_data):
         }
     }
 
-    mutation = t.substitute(
-        email_id=to_global_id(type="EmailNode", id=email.id),
-        email=email_data["email"],
-        email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
-    )
+    mutation = t.substitute(email_id=to_global_id(type="EmailNode", id=email.id))
     executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_remove_all_emails(user_gql_client, email_data):
+def test_remove_all_emails(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
@@ -838,7 +833,7 @@ def test_remove_all_emails(user_gql_client, email_data):
     assert executed["data"] == expected_data
 
 
-def test_remove_phone(user_gql_client, phone_data):
+def test_remove_phone(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
@@ -873,17 +868,12 @@ def test_remove_phone(user_gql_client, phone_data):
 
     expected_data = {"updateMyProfile": {"profile": {"phones": {"edges": []}}}}
 
-    mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneNode", id=phone.id),
-        phone=phone_data["phone"],
-        phone_type=phone_data["phone_type"],
-        primary=str(phone_data["primary"]).lower(),
-    )
+    mutation = t.substitute(phone_id=to_global_id(type="PhoneNode", id=phone.id))
     executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
-def test_remove_address(user_gql_client, address_data):
+def test_remove_address(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
@@ -918,12 +908,7 @@ def test_remove_address(user_gql_client, address_data):
 
     expected_data = {"updateMyProfile": {"profile": {"addresses": {"edges": []}}}}
 
-    mutation = t.substitute(
-        address_id=to_global_id(type="AddressNode", id=address.id),
-        address=address_data["address"],
-        address_type=address_data["address_type"],
-        primary=str(address_data["primary"]).lower(),
-    )
+    mutation = t.substitute(address_id=to_global_id(type="AddressNode", id=address.id))
     executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
