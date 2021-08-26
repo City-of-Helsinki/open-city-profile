@@ -145,6 +145,29 @@ def test_staff_user_can_update_a_profile(
         assert executed["data"]["updateProfile"] is None
 
 
+EMAILS_MUTATION = """
+    mutation updateEmails($profileInput: UpdateProfileInput!) {
+        updateProfile(
+            input: {
+                profile: $profileInput
+            }
+        ) {
+            profile {
+                emails {
+                    edges {
+                        node {
+                            id
+                            email
+                            verified
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
 def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, service):
     email = EmailFactory(email="old@email.example", verified=True)
     profile = email.profile
@@ -153,31 +176,6 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, s
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_manage_profiles", group, service)
-
-    update_emails_mutation = """
-        mutation updateEmails($id: ID!, $emailUpdates: [UpdateEmailInput]) {
-            updateProfile(
-                input: {
-                    profile: {
-                        id: $id,
-                        updateEmails: $emailUpdates
-                    }
-                }
-            ) {
-                profile {
-                    emails {
-                        edges {
-                            node {
-                                id
-                                email
-                                verified
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    """
 
     new_email_value = "new@email.example"
 
@@ -200,14 +198,16 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, s
     }
 
     variables = {
-        "id": to_global_id("ProfileNode", profile.id),
-        "emailUpdates": [
-            {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
-        ],
+        "profileInput": {
+            "id": to_global_id("ProfileNode", profile.id),
+            "updateEmails": [
+                {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+            ],
+        }
     }
 
     executed = user_gql_client.execute(
-        update_emails_mutation, service=service, variables=variables,
+        EMAILS_MUTATION, service=service, variables=variables,
     )
     assert executed["data"] == expected_data
 
