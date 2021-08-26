@@ -5,6 +5,7 @@ from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import INVALID_EMAIL_FORMAT_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles.models import Email
 from services.tests.factories import ServiceConnectionFactory
 from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
@@ -414,6 +415,98 @@ def test_change_primary_email_to_another_one(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_can_not_change_primary_email_to_non_primary(user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
+
+    email_updates = [
+        {"id": to_global_id(type="EmailNode", id=email.id), "primary": False}
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+    )
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
+def test_can_not_delete_primary_email(user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
+
+    email_deletes = [to_global_id(type="EmailNode", id=email.id)]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+    )
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
+def test_can_replace_a_primary_email_with_a_newly_created_one(
+    user_gql_client, email_data
+):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    old_primary_email = profile.emails.first()
+
+    email_creations = [
+        {
+            "email": email_data["email"],
+            "emailType": email_data["email_type"],
+            "primary": True,
+        }
+    ]
+    email_updates = [
+        {
+            "id": to_global_id(type="EmailNode", id=old_primary_email.id),
+            "primary": False,
+        }
+    ]
+
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION,
+        variables={
+            "profileInput": {
+                "addEmails": email_creations,
+                "updateEmails": email_updates,
+            }
+        },
+    )
+
+    new_primary_email = Email.objects.get(email=email_data["email"])
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "emails": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(
+                                    type="EmailNode", id=new_primary_email.id
+                                ),
+                                "email": email_data["email"],
+                                "emailType": email_data["email_type"],
+                                "primary": True,
+                                "verified": False,
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": to_global_id(
+                                    type="EmailNode", id=old_primary_email.id
+                                ),
+                                "email": old_primary_email.email,
+                                "emailType": old_primary_email.email_type.name,
+                                "primary": False,
+                                "verified": False,
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    assert executed["data"] == expected_data
+
+
 def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     email = EmailFactory(profile=profile, email="old@email.example", verified=True)
@@ -484,16 +577,16 @@ def test_remove_email(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_remove_all_emails(user_gql_client):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
-    primary_email = profile.emails.filter(primary=True).first()
-    email = profile.emails.filter(primary=False).first()
+def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    email1 = EmailFactory(profile=profile, primary=False)
+    email2 = EmailFactory(profile=profile, primary=False)
 
     expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
 
     email_deletes = [
-        to_global_id(type="EmailNode", id=primary_email.id),
-        to_global_id(type="EmailNode", id=email.id),
+        to_global_id(type="EmailNode", id=email1.id),
+        to_global_id(type="EmailNode", id=email2.id),
     ]
     executed = user_gql_client.execute(
         EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}

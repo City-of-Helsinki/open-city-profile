@@ -87,6 +87,40 @@ CLAIM_PROFILE_MUTATION = """
 """
 
 
+def test_can_not_change_primary_email_to_non_primary(user_gql_client):
+    profile = ProfileFactory(user=None)
+    email = EmailFactory(profile=profile, primary=True)
+    claim_token = ClaimTokenFactory(profile=profile)
+
+    variables = {
+        "token": str(claim_token.token),
+        "profileInput": {
+            "updateEmails": [
+                {"id": to_global_id(type="EmailNode", id=email.id), "primary": False}
+            ],
+        },
+    }
+
+    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
+def test_can_not_delete_primary_email(user_gql_client):
+    profile = ProfileFactory(user=None)
+    email = EmailFactory(profile=profile, primary=True)
+    claim_token = ClaimTokenFactory(profile=profile)
+
+    email_deletes = [to_global_id(type="EmailNode", id=email.id)]
+    executed = user_gql_client.execute(
+        CLAIM_PROFILE_MUTATION,
+        variables={
+            "token": str(claim_token.token),
+            "profileInput": {"removeEmails": email_deletes},
+        },
+    )
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
 def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     profile = ProfileFactory(user=None)
     email = EmailFactory(profile=profile, verified=True)

@@ -41,6 +41,7 @@ from open_city_profile.exceptions import (
     InvalidEmailFormatError,
     MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
+    ProfileMustHavePrimaryEmailError,
     TokenExpiredError,
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
@@ -158,6 +159,8 @@ def update_profile(profile, profile_data):
         (Address, profile_data.pop("remove_addresses", [])),
     ]
 
+    profile_had_primary_email = bool(profile.get_primary_email_value())
+
     for field, value in profile_data.items():
         setattr(profile, field, value)
     profile.save()
@@ -170,6 +173,11 @@ def update_profile(profile, profile_data):
 
     for model, data in nested_to_delete:
         _delete_nested(model, profile, data)
+
+    if profile_had_primary_email and not bool(profile.get_primary_email_value()):
+        raise ProfileMustHavePrimaryEmailError(
+            "Must maintain a primary email on a profile"
+        )
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -1586,14 +1594,18 @@ class Mutation(graphene.ObjectType):
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
-        "\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "\n* Phone\n\nRequires authentication.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
     )
     update_profile = UpdateProfileMutation.Field(
         description="Updates the profile with id given as an argument based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
         "\n* Phone\n\nIf sensitive data is given, associated data will also be created "
         "and linked to the profile **or** the existing data set will be updated if the profile is "
-        "already linked to it.\n\nRequires elevated privileges.\n\nPossible error codes:\n\n* `TODO`"
+        "already linked to it.\n\nRequires elevated privileges.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
     )
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(
@@ -1605,10 +1617,12 @@ class Mutation(graphene.ObjectType):
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
         description="Fetches a profile which has no linked user account yet by the given token and links the profile "
-        "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented"
-        " completely. If the authenticated user already has a profile, this mutation will respond with "
-        "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently "
-        "authenticated user already has a profile.\n\n* `TODO`"
+        "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented "
+        "completely. If the authenticated user already has a profile, this mutation will respond with "
+        "an error.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
+        "* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently authenticated user already has a profile."
     )
 
     create_my_profile_temporary_read_access_token = CreateMyProfileTemporaryReadAccessTokenMutation.Field(

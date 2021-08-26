@@ -186,6 +186,48 @@ EMAILS_MUTATION = """
 """
 
 
+def test_can_not_change_primary_email_to_non_primary(user_gql_client, service):
+    profile = ProfileWithPrimaryEmailFactory()
+    email = profile.emails.first()
+
+    setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+
+    email_updates = [
+        {"id": to_global_id(type="EmailNode", id=email.id), "primary": False}
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION,
+        service=service,
+        variables={
+            "profileInput": {
+                "id": to_global_id("ProfileNode", profile.id),
+                "updateEmails": email_updates,
+            }
+        },
+    )
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
+def test_can_not_delete_primary_email(user_gql_client, service):
+    profile = ProfileWithPrimaryEmailFactory()
+    email = profile.emails.first()
+
+    setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+
+    email_deletes = [to_global_id(type="EmailNode", id=email.id)]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION,
+        service=service,
+        variables={
+            "profileInput": {
+                "id": to_global_id("ProfileNode", profile.id),
+                "removeEmails": email_deletes,
+            }
+        },
+    )
+    assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
+
+
 def test_changing_an_email_address_marks_it_unverified(user_gql_client, service):
     email = EmailFactory(email="old@email.example", verified=True)
     profile = email.profile

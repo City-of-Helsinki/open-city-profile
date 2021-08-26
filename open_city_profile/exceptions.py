@@ -35,6 +35,10 @@ class InvalidEmailFormatError(ProfileGraphQLError):
     """Email must be in valid email format"""
 
 
+class ProfileMustHavePrimaryEmailError(ProfileGraphQLError):
+    """A profile must have a primary email"""
+
+
 class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
 
