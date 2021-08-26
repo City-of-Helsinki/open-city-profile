@@ -63,35 +63,34 @@ def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_clie
     assert profile.claim_tokens.count() == 0
 
 
-def test_changing_an_email_address_marks_it_unverified(user_gql_client):
-    profile = ProfileFactory(user=None)
-    email = EmailFactory(profile=profile, verified=True)
-    claim_token = ClaimTokenFactory(profile=profile)
-
-    claim_profile_mutation = """
-        mutation claimProfileWithEmailUpdates($token: UUID!, $emailUpdates: [UpdateEmailInput]) {
-            claimProfile(
-                input: {
-                    token: $token,
-                    profile: {
-                        updateEmails: $emailUpdates
-                    }
-                }
-            ) {
-                profile {
-                    emails {
-                        edges {
-                            node {
-                                id
-                                email
-                                verified
-                            }
+CLAIM_PROFILE_MUTATION = """
+    mutation claimProfileWithEmailUpdates($token: UUID!, $profileInput: ProfileInput) {
+        claimProfile(
+            input: {
+                token: $token,
+                profile: $profileInput
+            }
+        ) {
+            profile {
+                emails {
+                    edges {
+                        node {
+                            id
+                            email
+                            verified
                         }
                     }
                 }
             }
         }
-    """
+    }
+"""
+
+
+def test_changing_an_email_address_marks_it_unverified(user_gql_client):
+    profile = ProfileFactory(user=None)
+    email = EmailFactory(profile=profile, verified=True)
+    claim_token = ClaimTokenFactory(profile=profile)
 
     new_email_value = "new@email.example"
 
@@ -115,12 +114,14 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
 
     variables = {
         "token": str(claim_token.token),
-        "emailUpdates": [
-            {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
-        ],
+        "profileInput": {
+            "updateEmails": [
+                {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+            ]
+        },
     }
 
-    executed = user_gql_client.execute(claim_profile_mutation, variables=variables,)
+    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
     assert executed["data"] == expected_data
 
 
