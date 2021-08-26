@@ -6,6 +6,7 @@ from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_match_error_code
+from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import EmailType
 from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory
@@ -18,26 +19,43 @@ from .factories import (
 )
 
 
+def setup_profile_and_staff_user_to_service(
+    profile, user, service, can_view_sensitivedata=False, can_manage_sensitivedata=False
+):
+    if profile:
+        ServiceConnectionFactory(profile=profile, service=service)
+
+    group = GroupFactory()
+
+    assign_perm("can_manage_profiles", group, service)
+    if can_view_sensitivedata:
+        assign_perm("can_view_sensitivedata", group, service)
+    if can_manage_sensitivedata:
+        assign_perm("can_manage_sensitivedata", group, service)
+
+    user.groups.add(group)
+
+
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 @pytest.mark.parametrize("implicit_serviceconnection", (True, False))
 def test_staff_user_can_update_a_profile(
-    user_gql_client, group, service, with_serviceconnection, implicit_serviceconnection
+    user_gql_client, service, with_serviceconnection, implicit_serviceconnection
 ):
     if implicit_serviceconnection:
         service.implicit_connection = True
         service.save()
 
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
-    if with_serviceconnection:
-        ServiceConnectionFactory(profile=profile, service=service)
-
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
-    assign_perm("can_view_sensitivedata", group, service)
-    assign_perm("can_manage_sensitivedata", group, service)
+
+    setup_profile_and_staff_user_to_service(
+        profile if with_serviceconnection else None,
+        user_gql_client.user,
+        service,
+        can_view_sensitivedata=True,
+        can_manage_sensitivedata=True,
+    )
 
     data = {
         "first_name": "John",
@@ -168,14 +186,11 @@ EMAILS_MUTATION = """
 """
 
 
-def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, service):
+def test_changing_an_email_address_marks_it_unverified(user_gql_client, service):
     email = EmailFactory(email="old@email.example", verified=True)
     profile = email.profile
-    ServiceConnectionFactory(profile=profile, service=service)
 
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
+    setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
 
     new_email_value = "new@email.example"
 
@@ -213,15 +228,14 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, group, s
 
 
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
-    user_gql_client, group, service
+    user_gql_client, service
 ):
     """A staff user without can_manage_sensitivedata permission cannot update sensitive data."""
     profile = ProfileWithPrimaryEmailFactory()
-    ServiceConnectionFactory(profile=profile, service=service)
-    user = user_gql_client.user
-    user.groups.add(group)
-    assign_perm("can_manage_profiles", group, service)
-    assign_perm("can_view_sensitivedata", group, service)
+
+    setup_profile_and_staff_user_to_service(
+        profile, user_gql_client.user, service, can_view_sensitivedata=True
+    )
 
     t = Template(
         """
