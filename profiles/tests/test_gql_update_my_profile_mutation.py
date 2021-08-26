@@ -308,13 +308,11 @@ def test_not_update_email_to_invalid_format(user_gql_client, email_data):
     assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
-UPDATE_EMAIL_MUTATION = """
-    mutation updateMyEmails($emailUpdates: [UpdateEmailInput]) {
+EMAILS_MUTATION = """
+    mutation updateMyEmails($profileInput: ProfileInput!) {
         updateMyProfile(
             input: {
-                profile: {
-                    updateEmails: $emailUpdates
-                }
+                profile: $profileInput
             }
         ) {
             profile {
@@ -368,7 +366,7 @@ def test_update_email(user_gql_client, email_data):
         }
     ]
     executed = user_gql_client.execute(
-        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
+        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
     )
     assert dict(executed["data"]) == expected_data
 
@@ -411,7 +409,7 @@ def test_change_primary_email_to_another_one(user_gql_client):
         {"id": to_global_id(type="EmailNode", id=email.id), "primary": True}
     ]
     executed = user_gql_client.execute(
-        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
+        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
     )
     assert dict(executed["data"]) == expected_data
 
@@ -445,7 +443,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
         {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
     ]
     executed = user_gql_client.execute(
-        UPDATE_EMAIL_MUTATION, variables={"emailUpdates": email_updates}
+        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
     )
     assert dict(executed["data"]) == expected_data
 
@@ -454,35 +452,6 @@ def test_remove_email(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user, emails=2)
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            removeEmails: [
-                                "${email_id}"
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                    email
-                                    emailType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
 
     expected_data = {
         "updateMyProfile": {
@@ -497,6 +466,7 @@ def test_remove_email(user_gql_client):
                                 "email": primary_email.email,
                                 "emailType": primary_email.email_type.name,
                                 "primary": primary_email.primary,
+                                "verified": primary_email.verified,
                             }
                         }
                     ]
@@ -505,8 +475,12 @@ def test_remove_email(user_gql_client):
         }
     }
 
-    mutation = t.substitute(email_id=to_global_id(type="EmailNode", id=email.id))
-    executed = user_gql_client.execute(mutation)
+    email_deletes = [
+        to_global_id(type="EmailNode", id=email.id),
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+    )
     assert dict(executed["data"]) == expected_data
 
 
@@ -515,43 +489,15 @@ def test_remove_all_emails(user_gql_client):
     primary_email = profile.emails.filter(primary=True).first()
     email = profile.emails.filter(primary=False).first()
 
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            removeEmails: [
-                                "${primary_email_id}",
-                                "${email_id}",
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                    email
-                                    emailType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
     expected_data = {"updateMyProfile": {"profile": {"emails": {"edges": []}}}}
 
-    mutation = t.substitute(
-        primary_email_id=to_global_id(type="EmailNode", id=primary_email.id),
-        email_id=to_global_id(type="EmailNode", id=email.id),
+    email_deletes = [
+        to_global_id(type="EmailNode", id=primary_email.id),
+        to_global_id(type="EmailNode", id=email.id),
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
     )
-    executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
 
 
