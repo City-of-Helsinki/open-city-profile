@@ -1,11 +1,16 @@
 from anymail.exceptions import AnymailError
 from django.conf import settings
+from django.core.signals import setting_changed
 from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django_ilmoitin.utils import send_notification
 from sentry_sdk import capture_exception
 
+from utils.keycloak import KeycloakAdminClient
+
 from .enums import NotificationType, RepresentativeConfirmationDegree
 from .models import LegalRelationship
+from .schema import profile_updated
 
 
 def relationship_saved_handler(sender, instance, created, **kwargs):
@@ -48,3 +53,55 @@ def relationship_saved_handler(sender, instance, created, **kwargs):
 
 if settings.NOTIFICATIONS_ENABLED:
     post_save.connect(relationship_saved_handler, sender=LegalRelationship)
+
+
+_keycloak_admin_client = None
+
+
+def profile_changes_to_keycloak(sender, instance, **kwargs):
+    user_id = instance.user.uuid
+
+    updated_data = {
+        "firstName": instance.first_name,
+        "lastName": instance.last_name,
+    }
+
+    _keycloak_admin_client.update_user(user_id, updated_data)
+
+
+def _setup_profile_changes_to_keycloak():
+    global _keycloak_admin_client
+
+    if (
+        settings.KEYCLOAK_BASE_URL
+        and settings.KEYCLOAK_REALM
+        and settings.KEYCLOAK_CLIENT_ID
+        and settings.KEYCLOAK_CLIENT_SECRET
+    ):
+        _keycloak_admin_client = KeycloakAdminClient(
+            settings.KEYCLOAK_BASE_URL,
+            settings.KEYCLOAK_REALM,
+            settings.KEYCLOAK_CLIENT_ID,
+            settings.KEYCLOAK_CLIENT_SECRET,
+        )
+
+        profile_updated.connect(
+            profile_changes_to_keycloak, dispatch_uid="changes_to_keycloak"
+        )
+    else:
+        _keycloak_admin_client = None
+        profile_updated.disconnect(dispatch_uid="changes_to_keycloak")
+
+
+_setup_profile_changes_to_keycloak()
+
+
+@receiver(setting_changed)
+def _reload_settings(setting, **kwargs):
+    if setting in [
+        "KEYCLOAK_BASE_URL",
+        "KEYCLOAK_REALM",
+        "KEYCLOAK_CLIENT_ID",
+        "KEYCLOAK_CLIENT_SECRET",
+    ]:
+        _setup_profile_changes_to_keycloak()
