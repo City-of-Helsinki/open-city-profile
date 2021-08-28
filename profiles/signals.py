@@ -85,6 +85,12 @@ def profile_changes_to_keycloak(sender, instance, **kwargs):
 
     _keycloak_admin_client.update_user(user_id, updated_data)
 
+    if email_changed:
+        try:
+            _keycloak_admin_client.send_verify_email(user_id)
+        except Exception:
+            pass
+
 
 def _setup_profile_changes_to_keycloak():
     global _keycloak_admin_client
