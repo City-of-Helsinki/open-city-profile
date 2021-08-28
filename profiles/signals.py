@@ -61,10 +61,20 @@ _keycloak_admin_client = None
 def profile_changes_to_keycloak(sender, instance, **kwargs):
     user_id = instance.user.uuid
 
+    user_data = _keycloak_admin_client.get_user(user_id)
+
+    current_kc_data = {
+        "firstName": user_data.get("firstName"),
+        "lastName": user_data.get("lastName"),
+    }
+
     updated_data = {
         "firstName": instance.first_name,
         "lastName": instance.last_name,
     }
+
+    if current_kc_data == updated_data:
+        return
 
     _keycloak_admin_client.update_user(user_id, updated_data)
 

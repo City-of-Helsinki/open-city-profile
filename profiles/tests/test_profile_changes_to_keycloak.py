@@ -31,3 +31,19 @@ def test_changed_names_are_sent_to_keycloak(mocker):
     profile_updated.send(sender=profile.__class__, instance=profile)
 
     mocked_update_user.assert_called_once_with(user_id, new_values)
+
+
+def test_if_there_are_no_changes_then_nothing_is_sent_to_keycloak(mocker):
+    values = {"firstName": "First name", "lastName": "Last name"}
+
+    mocker.patch.object(
+        KeycloakAdminClient, "get_user", return_value=values,
+    )
+    mocked_update_user = mocker.patch.object(KeycloakAdminClient, "update_user")
+
+    profile = ProfileFactory(
+        first_name=values["firstName"], last_name=values["lastName"]
+    )
+    profile_updated.send(sender=profile.__class__, instance=profile)
+
+    mocked_update_user.assert_not_called()
