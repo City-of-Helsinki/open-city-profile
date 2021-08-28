@@ -66,15 +66,22 @@ def profile_changes_to_keycloak(sender, instance, **kwargs):
     current_kc_data = {
         "firstName": user_data.get("firstName"),
         "lastName": user_data.get("lastName"),
+        "email": user_data.get("email"),
     }
 
     updated_data = {
         "firstName": instance.first_name,
         "lastName": instance.last_name,
+        "email": instance.get_primary_email_value(),
     }
 
     if current_kc_data == updated_data:
         return
+
+    email_changed = current_kc_data["email"] != updated_data["email"]
+
+    if email_changed:
+        updated_data["emailVerified"] = False
 
     _keycloak_admin_client.update_user(user_id, updated_data)
 
