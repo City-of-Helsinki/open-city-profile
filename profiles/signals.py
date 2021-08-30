@@ -4,6 +4,7 @@ from django.core.signals import setting_changed
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_ilmoitin.utils import send_notification
+from requests import HTTPError
 from sentry_sdk import capture_exception
 
 from utils.keycloak import KeycloakAdminClient
@@ -64,7 +65,12 @@ def profile_changes_to_keycloak(sender, instance, **kwargs):
 
     user_id = instance.user.uuid
 
-    user_data = _keycloak_admin_client.get_user(user_id)
+    try:
+        user_data = _keycloak_admin_client.get_user(user_id)
+    except HTTPError as err:
+        if err.response.status_code == 404:
+            return
+        raise
 
     current_kc_data = {
         "firstName": user_data.get("firstName"),
