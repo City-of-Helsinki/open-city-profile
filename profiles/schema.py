@@ -1,5 +1,6 @@
 from itertools import chain
 
+import django.dispatch
 import graphene
 import requests
 from django.conf import settings
@@ -85,6 +86,9 @@ AllowedPhoneType = graphene.Enum.from_enum(
 AllowedAddressType = graphene.Enum.from_enum(
     AddressType, description=lambda e: e.label if e else ""
 )
+
+
+profile_updated = django.dispatch.Signal(providing_args=["instance"])
 
 
 def get_claimable_profile(token=None):
@@ -178,6 +182,8 @@ def update_profile(profile, profile_data):
         raise ProfileMustHavePrimaryEmailError(
             "Must maintain a primary email on a profile"
         )
+
+    profile_updated.send(sender=profile.__class__, instance=profile)
 
 
 def update_sensitivedata(profile, sensitive_data):

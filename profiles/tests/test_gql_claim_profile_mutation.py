@@ -6,6 +6,7 @@ from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles.models import Profile
 
 from .factories import (
     ClaimTokenFactory,
@@ -15,7 +16,9 @@ from .factories import (
 )
 
 
-def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_client):
+def test_user_can_claim_claimable_profile_without_existing_profile(
+    user_gql_client, profile_updated_listener
+):
     profile = ProfileWithPrimaryEmailFactory(
         user=None, first_name="John", last_name="Doe"
     )
@@ -61,6 +64,10 @@ def test_user_can_claim_claimable_profile_without_existing_profile(user_gql_clie
     profile.refresh_from_db()
     assert profile.user == user_gql_client.user
     assert profile.claim_tokens.count() == 0
+
+    profile_updated_listener.assert_called_once()
+    assert profile_updated_listener.call_args[1]["sender"] == Profile
+    assert profile_updated_listener.call_args[1]["instance"] == profile
 
 
 CLAIM_PROFILE_MUTATION = """
