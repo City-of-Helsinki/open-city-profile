@@ -59,6 +59,9 @@ _keycloak_admin_client = None
 
 
 def profile_changes_to_keycloak(sender, instance, **kwargs):
+    if not instance.user:
+        return
+
     user_id = instance.user.uuid
 
     user_data = _keycloak_admin_client.get_user(user_id)

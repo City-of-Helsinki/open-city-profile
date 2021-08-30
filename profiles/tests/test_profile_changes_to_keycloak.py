@@ -14,6 +14,17 @@ def setup_profile_change_handling(settings):
     settings.KEYCLOAK_CLIENT_SECRET = "test-keycloak-client-secret"
 
 
+def test_do_nothing_if_profile_has_no_user(mocker):
+    mocked_get_user = mocker.patch.object(KeycloakAdminClient, "get_user")
+    mocked_update_user = mocker.patch.object(KeycloakAdminClient, "update_user")
+    profile = ProfileFactory(user=None)
+
+    profile_updated.send(sender=profile.__class__, instance=profile)
+
+    mocked_get_user.assert_not_called()
+    mocked_update_user.assert_not_called()
+
+
 def test_changed_names_are_sent_to_keycloak(mocker):
     new_values = {
         "firstName": "New first name",
