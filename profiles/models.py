@@ -418,7 +418,7 @@ class Phone(Contact):
     profile = models.ForeignKey(
         Profile, related_name="phones", on_delete=models.CASCADE
     )
-    phone = models.CharField(max_length=255, null=True, blank=False, db_index=True)
+    phone = models.CharField(max_length=255, null=False, blank=False, db_index=True)
     phone_type = EnumField(
         PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
     )

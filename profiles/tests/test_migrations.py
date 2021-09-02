@@ -146,3 +146,36 @@ def test_verified_personal_information_searchable_national_identification_number
         create_data,
         verify_migration,
     )
+
+
+def test_phone_number_to_not_null_migration(migration_test_db):
+    NUM_PROFILES = 2
+    PHONE_NUMBER_LENGTH = 7
+
+    def create_data(apps):
+        Profile = apps.get_model(app, "Profile")
+        Phone = apps.get_model(app, "Phone")
+
+        for i in range(NUM_PROFILES):
+            profile = Profile.objects.create(first_name=str(i))
+            Phone.objects.create(profile=profile, phone=str(i) * PHONE_NUMBER_LENGTH)
+            Phone.objects.create(profile=profile, phone=None)
+
+    def verify_migration(apps):
+        Profile = apps.get_model(app, "Profile")
+        Phone = apps.get_model(app, "Phone")
+
+        assert Phone.objects.count() == NUM_PROFILES
+
+        for i in range(NUM_PROFILES):
+            profile = Profile.objects.get(first_name=str(i))
+            assert profile.phones.count() == 1
+            good_phone = Phone.objects.get(profile=profile)
+            assert good_phone.phone == str(i) * PHONE_NUMBER_LENGTH
+
+    execute_migration_test(
+        "0047_remove_verifiedpersonalinformation_email",
+        "0048_change_phone_number_to_not_null",
+        create_data,
+        verify_migration,
+    )

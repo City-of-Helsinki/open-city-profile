@@ -251,7 +251,7 @@ type PageInfo {
 type PhoneNode implements Node {
   primary: Boolean!
   id: ID!
-  phone: String
+  phone: String!
   phoneType: PhoneType
 }
 

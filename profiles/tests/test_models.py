@@ -9,6 +9,7 @@ from django.test import override_settings
 from ..models import Email, Profile, TemporaryReadAccessToken
 from .factories import (
     EmailFactory,
+    PhoneFactory,
     SensitiveDataFactory,
     VerifiedPersonalInformationFactory,
 )
@@ -211,6 +212,23 @@ class ValidationTestBase:
 
         setattr(instance, field_name, "x" * (max_length + 1))
         self.fails_validation(instance)
+
+
+class TestPhoneValidation(ValidationTestBase):
+    def test_valid_phone_instance_passes_validation(self):
+        instance = PhoneFactory()
+        self.passes_validation(instance)
+
+    @pytest.mark.parametrize("phone_number", [None, ""])
+    def test_invalid_phone_number(self, phone_number):
+        instance = PhoneFactory()
+        instance.phone = phone_number
+        self.fails_validation(instance)
+
+    def test_phone_number_max_length(self):
+        instance = PhoneFactory()
+
+        self.execute_string_field_max_length_validation_test(instance, "phone", 255)
 
 
 class TestVerifiedPersonalInformationValidation(ValidationTestBase):
