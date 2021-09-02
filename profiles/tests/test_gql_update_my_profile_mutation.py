@@ -605,105 +605,49 @@ def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
     assert executed["data"] == expected_data
 
 
-def test_add_phone(user_gql_client, phone_data):
-    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            addPhones: [
-                                {
-                                    phoneType: ${phone_type},
-                                    phone:"${phone}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        phones {
-                            edges {
-                                node {
-                                    phone
-                                    phoneType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
+PHONES_MUTATION = """
+    mutation updateMyPhones($profileInput: ProfileInput!) {
+        updateMyProfile(
+            input: {
+                profile: $profileInput
             }
-        """
-    )
-
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "phones": {
-                    "edges": [
-                        {
-                            "node": {
-                                "phone": phone_data["phone"],
-                                "phoneType": phone_data["phone_type"],
-                                "primary": phone_data["primary"],
-                            }
+        ) {
+            profile {
+                phones {
+                    edges {
+                        node {
+                            id
+                            phone
+                            phoneType
+                            primary
                         }
-                    ]
+                    }
                 }
             }
         }
     }
-
-    mutation = t.substitute(
-        phone=phone_data["phone"],
-        phone_type=phone_data["phone_type"],
-        primary=str(phone_data["primary"]).lower(),
-    )
-    executed = user_gql_client.execute(mutation)
-    assert dict(executed["data"]) == expected_data
+"""
 
 
-def test_update_phone(user_gql_client, phone_data):
+def test_add_phone(user_gql_client, phone_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    phone = PhoneFactory(profile=profile)
 
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            updatePhones: [
-                                {
-                                    id: "${phone_id}",
-                                    phoneType: ${phone_type},
-                                    phone:"${phone}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
+    executed = user_gql_client.execute(
+        PHONES_MUTATION,
+        variables={
+            "profileInput": {
+                "addPhones": [
+                    {
+                        "phone": phone_data["phone"],
+                        "phoneType": phone_data["phone_type"],
+                        "primary": phone_data["primary"],
                     }
-                ) {
-                    profile {
-                        phones {
-                            edges {
-                                node {
-                                    id
-                                    phone
-                                    phoneType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
+                ]
             }
-        """
+        },
     )
+
+    phone = profile.phones.get()
 
     expected_data = {
         "updateMyProfile": {
@@ -724,13 +668,48 @@ def test_update_phone(user_gql_client, phone_data):
         }
     }
 
-    mutation = t.substitute(
-        phone_id=to_global_id(type="PhoneNode", id=phone.id),
-        phone=phone_data["phone"],
-        phone_type=phone_data["phone_type"],
-        primary=str(phone_data["primary"]).lower(),
+    assert dict(executed["data"]) == expected_data
+
+
+def test_update_phone(user_gql_client, phone_data):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    phone = PhoneFactory(profile=profile)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "phones": {
+                    "edges": [
+                        {
+                            "node": {
+                                "id": to_global_id(type="PhoneNode", id=phone.id),
+                                "phone": phone_data["phone"],
+                                "phoneType": phone_data["phone_type"],
+                                "primary": phone_data["primary"],
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    executed = user_gql_client.execute(
+        PHONES_MUTATION,
+        variables={
+            "profileInput": {
+                "updatePhones": [
+                    {
+                        "id": to_global_id(type="PhoneNode", id=phone.id),
+                        "phone": phone_data["phone"],
+                        "phoneType": phone_data["phone_type"],
+                        "primary": phone_data["primary"],
+                    }
+                ]
+            }
+        },
     )
-    executed = user_gql_client.execute(mutation)
+
     assert dict(executed["data"]) == expected_data
 
 
@@ -738,39 +717,16 @@ def test_remove_phone(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            removePhones: [
-                                "${phone_id}"
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        phones {
-                            edges {
-                                node {
-                                    id
-                                    phone
-                                    phoneType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
     expected_data = {"updateMyProfile": {"profile": {"phones": {"edges": []}}}}
 
-    mutation = t.substitute(phone_id=to_global_id(type="PhoneNode", id=phone.id))
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(
+        PHONES_MUTATION,
+        variables={
+            "profileInput": {
+                "removePhones": [to_global_id(type="PhoneNode", id=phone.id)]
+            }
+        },
+    )
     assert dict(executed["data"]) == expected_data
 
 
