@@ -9,7 +9,7 @@ RUN mkdir /entrypoint
 
 COPY --chown=appuser:appuser requirements*.txt /app/
 
-COPY  ./hdiv_agent-1.0.0.dev1-cp37-cp37m-manylinux2010_x86_64.whl /root
+COPY ./hdiv_agent-1.0.0.dev2-cp37-cp37m-manylinux2010_x86_64.whl /root
 RUN mkdir -p /root/.config/hdiv/
 COPY ./hdiv_python_configurator.ini /root/.config/hdiv/hdiv_python_configurator.ini
 COPY ./license.hdiv /app/license.hdiv
@@ -28,7 +28,7 @@ RUN apt-install.sh \
     && pip install -U pip \
     && pip install --no-cache-dir -r /app/requirements.txt \
     && pip install --no-cache-dir -r /app/requirements-prod.txt \
-    && pip install --ignore-installed /root/hdiv_agent-1.0.0.dev1-cp37-cp37m-manylinux2010_x86_64.whl \
+    && pip install --ignore-installed /root/hdiv_agent-1.0.0.dev2-cp37-cp37m-manylinux2010_x86_64.whl \
     && apt-cleanup.sh build-essential pkg-config
 
 COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
