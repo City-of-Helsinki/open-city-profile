@@ -221,6 +221,10 @@ Project is using [Gitlab](https://gitlab.com/City-of-Helsinki/KuVa/github-mirror
 for automated builds and deployment into the test environment.
 The test environment is built automatically from the `develop` branch.
 
+## Anonymised Database dump
+
+See [docs/database_dump.adoc](docs/database_dump.adoc).
+
 ## Dependent services
 
 For a complete service the following additional components are also required:

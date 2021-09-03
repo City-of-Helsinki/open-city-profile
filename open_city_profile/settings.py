@@ -185,6 +185,7 @@ INSTALLED_APPS = [
     "subscriptions",
     "import_export",
     "open_city_profile.apps.OpenCityProfileConfig",
+    "sanitized_dump",
 ]
 
 MIDDLEWARE = [

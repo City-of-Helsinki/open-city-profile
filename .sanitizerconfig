@@ -1,0 +1,417 @@
+config:
+  addons: []
+strategy:
+  auth_group:
+    id: null
+    name: null
+  auth_group_permissions:
+    group_id: null
+    id: null
+    permission_id: null
+  auth_permission:
+    codename: null
+    content_type_id: null
+    id: null
+    name: null
+  django_admin_log:
+    action_flag: null
+    action_time: null
+    change_message: null
+    content_type_id: null
+    id: null
+    object_id: null
+    object_repr: "string.empty"
+    user_id: null
+  django_content_type:
+    app_label: null
+    id: null
+    model: null
+  django_ilmoitin_notificationtemplate:
+    admin_notification_subject: null
+    admin_notification_text: null
+    from_email: null
+    id: null
+    type: null
+  django_ilmoitin_notificationtemplate_admins_to_notify:
+    id: null
+    notificationtemplate_id: null
+    user_id: null
+  django_ilmoitin_notificationtemplate_translation:
+    body_html: null
+    body_text: null
+    id: null
+    language_code: null
+    master_id: null
+    subject: null
+  django_session:
+    expire_date: null
+    session_data: "string.empty"
+    session_key: null
+  django_site:
+    domain: null
+    id: null
+    name: null
+  geometry_columns:
+    coord_dimension: null
+    f_geometry_column: null
+    f_table_catalog: null
+    f_table_name: null
+    f_table_schema: null
+    srid: null
+    type: null
+  guardian_groupobjectpermission:
+    content_type_id: null
+    group_id: null
+    id: null
+    object_pk: null
+    permission_id: null
+  guardian_userobjectpermission:
+    content_type_id: null
+    id: null
+    object_pk: null
+    permission_id: null
+    user_id: null
+  helusers_adgroup:
+    display_name: null
+    id: null
+    name: null
+  helusers_adgroupmapping:
+    ad_group_id: null
+    group_id: null
+    id: null
+  mailer_dontsendentry:
+    id: null
+    to_address: "profile.email"
+    when_added: null
+  mailer_message:
+    id: null
+    message_data: "constant.null"
+    priority: null
+    when_added: null
+  mailer_messagelog:
+    id: null
+    log_message: null
+    message_data: "constant.null"
+    message_id: null
+    priority: null
+    result: null
+    when_added: null
+    when_attempted: null
+  munigeo_address:
+    id: null
+    letter: null
+    location: null
+    modified_at: null
+    number: null
+    number_end: null
+    street_id: null
+  munigeo_administrativedivision:
+    end: null
+    id: null
+    level: null
+    lft: null
+    modified_at: null
+    municipality_id: null
+    ocd_id: null
+    origin_id: null
+    parent_id: null
+    rght: null
+    service_point_id: null
+    start: null
+    tree_id: null
+    type_id: null
+  munigeo_administrativedivision_translation:
+    id: null
+    language_code: null
+    master_id: null
+    name: null
+  munigeo_administrativedivisiongeometry:
+    boundary: null
+    division_id: null
+    id: null
+  munigeo_administrativedivisiontype:
+    id: null
+    name: null
+    type: null
+  munigeo_building:
+    geometry: null
+    id: null
+    modified_at: null
+    municipality_id: null
+    origin_id: null
+  munigeo_building_addresses:
+    address_id: null
+    building_id: null
+    id: null
+  munigeo_municipality:
+    division_id: null
+    id: null
+  munigeo_municipality_translation:
+    id: null
+    language_code: null
+    master_id: null
+    name: null
+  munigeo_plan:
+    geometry: null
+    id: null
+    in_effect: null
+    municipality_id: null
+    origin_id: null
+  munigeo_poi:
+    category_id: null
+    description: null
+    id: null
+    location: null
+    municipality_id: null
+    name: null
+    origin_id: null
+    street_address: null
+    zip_code: null
+  munigeo_poicategory:
+    description: null
+    id: null
+    type: null
+  munigeo_street:
+    id: null
+    modified_at: null
+    municipality_id: null
+  munigeo_street_translation:
+    id: null
+    language_code: null
+    master_id: null
+    name: null
+  profiles_address:
+    address: "profile.street_address"
+    address_type: null
+    city: "profile.city"
+    country_code: "profile.country_code"
+    id: null
+    postal_code: "profile.postal_code"
+    primary: null
+    profile_id: null
+  profiles_claimtoken:
+    expires_at: null
+    id: null
+    profile_id: null
+    token: null
+  profiles_divisionofinterest:
+    division_id: null
+    id: null
+  profiles_email:
+    email: "profile.email"
+    email_type: null
+    id: null
+    primary: null
+    profile_id: null
+    verified: null
+  profiles_legalrelationship:
+    confirmation_degree: null
+    expiration: null
+    id: null
+    representative_id: null
+    representee_id: null
+    type: null
+  profiles_phone:
+    id: null
+    phone: "profile.phone"
+    phone_type: null
+    primary: null
+    profile_id: null
+  profiles_profile:
+    contact_method: null
+    first_name: "profile.first_name"
+    id: null
+    image: "constant.null"
+    language: null
+    last_name: "profile.last_name"
+    nickname: "string.empty"
+    user_id: null
+  profiles_profile_concepts_of_interest:
+    concept_id: null
+    id: null
+    profile_id: null
+  profiles_profile_divisions_of_interest:
+    administrativedivision_id: null
+    id: null
+    profile_id: null
+  profiles_sensitivedata:
+    id: null
+    profile_id: null
+    ssn: "profile.encrypted_national_identification_number"
+  profiles_temporaryreadaccesstoken:
+    created_at: null
+    id: null
+    profile_id: null
+    token: null
+    validity_duration: null
+  profiles_verifiedpersonalinformation:
+    _national_identification_number_data: "profile.encrypted_national_identification_number"
+    email: "profile.encrypted_email"
+    first_name: "profile.first_name"
+    given_name: "profile.encrypted_first_name"
+    id: null
+    last_name: "profile.last_name"
+    municipality_of_residence: "profile.encrypted_city"
+    municipality_of_residence_number: "profile.encrypted_municipality_number"
+    national_identification_number: "string.empty"
+    profile_id: null
+  profiles_verifiedpersonalinformationpermanentaddress:
+    id: null
+    post_office: "profile.encrypted_city"
+    postal_code: "profile.encrypted_postal_code"
+    street_address: "profile.encrypted_street_address"
+    verified_personal_information_id: null
+  profiles_verifiedpersonalinformationpermanentforeignaddress:
+    additional_address: "profile.encrypted_city"
+    country_code: "profile.encrypted_country_code"
+    id: null
+    street_address: "profile.encrypted_street_address"
+    verified_personal_information_id: null
+  profiles_verifiedpersonalinformationtemporaryaddress:
+    id: null
+    post_office: "profile.encrypted_city"
+    postal_code: "profile.encrypted_postal_code"
+    street_address: "profile.encrypted_street_address"
+    verified_personal_information_id: null
+  reversion_revision:
+    comment: "string.empty"
+    date_created: null
+    id: null
+    user_id: null
+  reversion_version:
+    content_type_id: null
+    db: null
+    format: null
+    id: null
+    object_id: null
+    object_repr: "string.empty"
+    revision_id: null
+    serialized_data: "constant.empty_json_list"
+  services_alloweddatafield:
+    field_name: null
+    id: null
+    order: null
+  services_alloweddatafield_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  services_service:
+    created_at: null
+    gdpr_delete_scope: null
+    gdpr_query_scope: null
+    gdpr_url: null
+    id: null
+    implicit_connection: null
+    name: null
+    service_type: null
+  services_service_allowed_data_fields:
+    alloweddatafield_id: null
+    id: null
+    service_id: null
+  services_service_translation:
+    description: null
+    id: null
+    language_code: null
+    master_id: null
+    title: null
+  services_serviceclientid:
+    client_id: null
+    id: null
+    service_id: null
+  services_serviceconnection:
+    created_at: null
+    enabled: null
+    id: null
+    profile_id: null
+    service_id: null
+  spatial_ref_sys:
+    auth_name: null
+    auth_srid: null
+    proj4text: null
+    srid: null
+    srtext: null
+  subscriptions_subscription:
+    created_at: null
+    enabled: null
+    id: null
+    profile_id: null
+    subscription_type_id: null
+  subscriptions_subscriptiontype:
+    code: null
+    created_at: null
+    id: null
+    order: null
+    subscription_type_category_id: null
+  subscriptions_subscriptiontype_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  subscriptions_subscriptiontypecategory:
+    code: null
+    created_at: null
+    id: null
+    order: null
+  subscriptions_subscriptiontypecategory_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  thesaurus_collection:
+    id: null
+  thesaurus_collection_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  thesaurus_concept:
+    code: null
+    id: null
+    vocabulary_id: null
+  thesaurus_concept_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  thesaurus_member:
+    collection_id: null
+    concept_id: null
+    id: null
+    parent_id: null
+  thesaurus_vocabulary:
+    collection_id: null
+    id: null
+    prefix: null
+    uri: null
+  thesaurus_vocabulary_translation:
+    id: null
+    label: null
+    language_code: null
+    master_id: null
+  users_user:
+    date_joined: null
+    department_name: null
+    email: "profile.email"
+    first_name: "profile.first_name"
+    id: null
+    is_active: null
+    is_staff: null
+    is_superuser: null
+    last_login: null
+    last_name: "profile.last_name"
+    password: null
+    username: null
+    uuid: null
+  users_user_ad_groups:
+    adgroup_id: null
+    id: null
+    user_id: null
+  users_user_groups:
+    group_id: null
+    id: null
+    user_id: null
+  users_user_user_permissions:
+    id: null
+    permission_id: null
+    user_id: null

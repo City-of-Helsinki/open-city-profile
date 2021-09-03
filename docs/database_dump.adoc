@@ -1,0 +1,17 @@
+= Anonymised Database Dump
+
+An anonymised database dump can be obtained by setting a suitable value to environment variable `SANITIZED_DUMP_FIELD_ENCRYPTION_KEYS` and running the `create_sanitized_dump` command. e.g.
+
+....
+export SANITIZED_DUMP_FIELD_ENCRYPTION_KEYS=000111222333444555666777888999aaabbbcccdddeeefff0001112223334445
+
+./manage.py create_sanitized_dump > dump.sql
+....
+
+The command is from https://pypi.org/project/django-sanitized-dump/[`django-sanitized-dump`] app which is enabled in the `INSTALLED_APPS` setting.
+
+The fields that are changed with random (or constant values) is configured in link:../.sanitizerconfig[`.sanitizerconfig`] file in the project root.
+
+The custom sanitizer functions used in the sanitizer config are defined in the link:../sanitizers/profile.py[sanitizers.profile] module. Random names, addresses, etc. are generated using the https://faker.readthedocs.io/en/master/[faker] library.
+
+The values of encrypted fields are replaced with a random value encrypted with the keys set in the environment variable named `SANITIZED_DUMP_FIELD_ENCRYPTION_KEYS`. The value should be compatible with the settings in the target deployment where the dump will be imported into. See the https://gitlab.com/guywillett/django-searchable-encrypted-fields#generating-encryption-keys[`django-searchable-encrypted-fields`] docs for more information.
