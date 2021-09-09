@@ -193,27 +193,24 @@ def test_should_allow_changing_fields_of_an_existing_primary_email():
 
 
 class ValidationTestBase:
-    @staticmethod
-    def passes_validation(instance):
+    def passes_validation(self, instance):
         try:
             instance.full_clean()
         except ValidationError as err:
             assert err is None
 
-    @staticmethod
-    def fails_validation(instance):
+    def fails_validation(self, instance):
         with pytest.raises(ValidationError):
             instance.full_clean()
 
-    @staticmethod
     def execute_string_field_max_length_validation_test(
-        instance, field_name, max_length
+        self, instance, field_name, max_length
     ):
         setattr(instance, field_name, "x" * max_length)
-        ValidationTestBase.passes_validation(instance)
+        self.passes_validation(instance)
 
         setattr(instance, field_name, "x" * (max_length + 1))
-        ValidationTestBase.fails_validation(instance)
+        self.fails_validation(instance)
 
 
 class TestVerifiedPersonalInformationValidation(ValidationTestBase):
@@ -246,21 +243,21 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
         info = VerifiedPersonalInformationFactory()
         setattr(info, field_name, invalid_value)
 
-        ValidationTestBase.fails_validation(info)
+        self.fails_validation(info)
 
     @pytest.mark.parametrize("invalid_value", ["150977_5554"])
     def test_national_identification_number(self, invalid_value):
         info = VerifiedPersonalInformationFactory()
         info.national_identification_number = invalid_value
 
-        ValidationTestBase.fails_validation(info)
+        self.fails_validation(info)
 
     @pytest.mark.parametrize("invalid_value", ["12", "1234", "aaa"])
     def test_municipality_of_residence_number(self, invalid_value):
         info = VerifiedPersonalInformationFactory()
         info.municipality_of_residence_number = invalid_value
 
-        ValidationTestBase.fails_validation(info)
+        self.fails_validation(info)
 
 
 @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
@@ -285,14 +282,14 @@ class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
         setattr(address, field_name, invalid_value)
 
-        ValidationTestBase.fails_validation(address)
+        self.fails_validation(address)
 
     @pytest.mark.parametrize("invalid_value", ["1234", "1234X", "123456"])
     def test_postal_code(self, address_type, invalid_value):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
         address.postal_code = invalid_value
 
-        ValidationTestBase.fails_validation(address)
+        self.fails_validation(address)
 
 
 class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
@@ -316,14 +313,14 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
         address = VerifiedPersonalInformationFactory().permanent_foreign_address
         setattr(address, field_name, invalid_value)
 
-        ValidationTestBase.fails_validation(address)
+        self.fails_validation(address)
 
     @pytest.mark.parametrize("invalid_country_code", ["Finland", "Suomi", "123"])
     def test_country_codes(self, invalid_country_code):
         address = VerifiedPersonalInformationFactory().permanent_foreign_address
         address.country_code = invalid_country_code
 
-        ValidationTestBase.fails_validation(address)
+        self.fails_validation(address)
 
 
 class TestTemporaryReadAccessTokenValidityDuration:
