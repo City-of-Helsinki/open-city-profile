@@ -1294,6 +1294,8 @@ class ClaimProfileMutation(relay.ClientIDMutation):
     @login_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        validate(cls, root, info, **input)
+
         profile_to_claim = get_claimable_profile(token=input["token"])
         if Profile.objects.filter(user=info.context.user).exists():
             # Logged in user has a profile

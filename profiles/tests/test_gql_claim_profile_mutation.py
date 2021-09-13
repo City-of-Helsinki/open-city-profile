@@ -14,6 +14,7 @@ from .factories import (
     ProfileFactory,
     ProfileWithPrimaryEmailFactory,
 )
+from .profile_input_validation import ProfileInputValidationBase
 
 
 def test_user_can_claim_claimable_profile_without_existing_profile(
@@ -164,6 +165,19 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
 
     executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
     assert executed["data"] == expected_data
+
+
+class TestProfileInputValidation(ProfileInputValidationBase):
+    def execute_query(self, user_gql_client, profile_input):
+        profile = ProfileFactory(user=None)
+        claim_token = ClaimTokenFactory(profile=profile)
+
+        variables = {
+            "token": str(claim_token.token),
+            "profileInput": profile_input,
+        }
+
+        return user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
 
 
 def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):
