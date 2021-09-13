@@ -782,6 +782,8 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
             (Address, profile_data.pop("add_addresses", [])),
         ]
 
+        sensitive_data = profile_data.pop("sensitivedata", None)
+
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
             setattr(profile, field, value)
@@ -789,6 +791,9 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         for model, data in nested_to_create:
             _create_nested(model, profile, data)
+
+        if sensitive_data:
+            update_sensitivedata(profile, sensitive_data)
 
         return CreateMyProfileMutation(profile=profile)
 
