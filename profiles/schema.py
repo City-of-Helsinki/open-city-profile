@@ -829,6 +829,14 @@ class CreateProfileMutation(relay.ClientIDMutation):
         service = info.context.service
         profile_data = input.pop("profile")
         sensitivedata = profile_data.pop("sensitivedata", None)
+
+        if sensitivedata and not info.context.user.has_perm(
+            "can_manage_sensitivedata", service
+        ):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
             (Phone, profile_data.pop("add_phones", [])),
@@ -842,13 +850,8 @@ class CreateProfileMutation(relay.ClientIDMutation):
             _create_nested(model, profile, data)
 
         if sensitivedata:
-            if info.context.user.has_perm("can_manage_sensitivedata", service):
-                SensitiveData.objects.create(profile=profile, **sensitivedata)
-                profile.refresh_from_db()
-            else:
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+            SensitiveData.objects.create(profile=profile, **sensitivedata)
+            profile.refresh_from_db()
 
         # create the service connection for the profile
         profile.service_connections.create(service=service)
@@ -1249,15 +1252,18 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             )
 
         sensitive_data = profile_data.pop("sensitivedata", None)
+
+        if sensitive_data and not info.context.user.has_perm(
+            "can_manage_sensitivedata", service
+        ):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
         update_profile(profile, profile_data)
 
         if sensitive_data:
-            if info.context.user.has_perm("can_manage_sensitivedata", service):
-                update_sensitivedata(profile, sensitive_data)
-            else:
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+            update_sensitivedata(profile, sensitive_data)
 
         return UpdateProfileMutation(profile=profile)
 
