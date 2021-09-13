@@ -1273,6 +1273,8 @@ class UpdateProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
+        validate(cls, root, info, **input)
+
         update_profile(profile, profile_data)
 
         if sensitive_data:

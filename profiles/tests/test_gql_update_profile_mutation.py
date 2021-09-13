@@ -9,7 +9,7 @@ from open_city_profile.tests.asserts import assert_match_error_code
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import EmailType
 from profiles.models import Profile
-from services.tests.factories import ServiceConnectionFactory
+from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 
 from .factories import (
     AddressFactory,
@@ -17,6 +17,7 @@ from .factories import (
     PhoneFactory,
     ProfileWithPrimaryEmailFactory,
 )
+from .profile_input_validation import ProfileInputValidationBase
 
 
 def setup_profile_and_staff_user_to_service(
@@ -277,6 +278,21 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
         EMAILS_MUTATION, service=service, variables=variables,
     )
     assert executed["data"] == expected_data
+
+
+class TestProfileInputValidation(ProfileInputValidationBase):
+    def execute_query(self, user_gql_client, profile_input):
+        profile = ProfileWithPrimaryEmailFactory()
+        service = ServiceFactory()
+
+        setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+
+        profile_input["id"] = to_global_id("ProfileNode", profile.id)
+        variables = {"profileInput": profile_input}
+
+        return user_gql_client.execute(
+            EMAILS_MUTATION, service=service, variables=variables,
+        )
 
 
 def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permission(
