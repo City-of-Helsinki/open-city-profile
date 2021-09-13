@@ -4,6 +4,8 @@ import pytest
 
 from open_city_profile.tests.asserts import assert_match_error_code
 
+from .profile_input_validation import ProfileInputValidationBase
+
 
 @pytest.mark.parametrize("email_is_primary", [True, False])
 def test_normal_user_can_create_profile(
@@ -98,6 +100,27 @@ def test_normal_user_can_create_profile_with_no_email(user_gql_client, email_dat
 
     executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
+
+
+class TestProfileInputValidation(ProfileInputValidationBase):
+    def execute_query(self, user_gql_client, profile_input):
+        mutation = """
+            mutation createMyProfile($profileInput: ProfileInput!) {
+                createMyProfile(
+                    input: {
+                        profile: $profileInput
+                    }
+                ) {
+                    profile {
+                        id
+                    }
+                }
+            }
+        """
+
+        variables = {"profileInput": profile_input}
+
+        return user_gql_client.execute(mutation, variables=variables)
 
 
 def test_anon_user_can_not_create_profile(anon_user_gql_client):

@@ -25,6 +25,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphene_validator.decorators import validated
+from graphene_validator.validation import validate
 from graphql_relay import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
@@ -682,8 +683,14 @@ class UpdateEmailInput(graphene.InputObjectType):
 
 class CreatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
-    phone = graphene.String(description="Phone number.", required=True)
+    phone = graphene.String(
+        description="Phone number. Must not be empty.", required=True
+    )
     phone_type = AllowedPhoneType(description="Phone number type.", required=True)
+
+    @staticmethod
+    def validate_phone(value, info, **input):
+        return model_field_validation(Phone, "phone", value)
 
 
 class UpdatePhoneInput(graphene.InputObjectType):
@@ -762,6 +769,8 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
     @login_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        validate(cls, root, info, **input)
+
         profile_data = input.pop("profile")
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
