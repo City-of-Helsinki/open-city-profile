@@ -399,7 +399,9 @@ class DivisionOfInterest(models.Model):
 
 class SensitiveData(SerializableMixin):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    ssn = fields.EncryptedCharField(max_length=11)
+    ssn = fields.EncryptedCharField(
+        max_length=11, validators=[validate_finnish_national_identification_number]
+    )
     serialize_fields = ({"name": "ssn"},)
     audit_log = True
 

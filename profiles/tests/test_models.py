@@ -231,6 +231,14 @@ class TestPhoneValidation(ValidationTestBase):
         self.execute_string_field_max_length_validation_test(instance, "phone", 255)
 
 
+class TestSensitiveDataValidation(ValidationTestBase):
+    def test_ssn(self):
+        sensitive_data = SensitiveDataFactory()
+        sensitive_data.ssn = "150977_5554"
+
+        self.fails_validation(sensitive_data)
+
+
 class TestVerifiedPersonalInformationValidation(ValidationTestBase):
     @pytest.mark.parametrize(
         "field_name,max_length",
