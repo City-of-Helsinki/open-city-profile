@@ -836,7 +836,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         service = info.context.service
-        profile_data = input.pop("profile")
+        profile_data = input.get("profile")
         sensitivedata = profile_data.pop("sensitivedata", None)
 
         if sensitivedata and not info.context.user.has_perm(
@@ -845,6 +845,8 @@ class CreateProfileMutation(relay.ClientIDMutation):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
+
+        validate(cls, root, info, **input)
 
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),

@@ -6,6 +6,9 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.factories import GroupFactory
 from services.enums import ServiceType
+from services.tests.factories import ServiceFactory
+
+from .profile_input_validation import ProfileInputValidationBase
 
 
 @pytest.mark.parametrize("with_email", [True, False])
@@ -269,3 +272,33 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
+
+
+class TestProfileInputValidation(ProfileInputValidationBase):
+    def execute_query(self, user_gql_client, profile_input):
+        user = user_gql_client.user
+        group = GroupFactory()
+        service = ServiceFactory()
+
+        user.groups.add(group)
+        assign_perm("can_manage_profiles", group, service)
+        assign_perm("can_manage_sensitivedata", group, service)
+        assign_perm("can_view_sensitivedata", group, service)
+
+        mutation = """
+            mutation createProfile($profileInput: CreateProfileInput!) {
+                createProfile(
+                    input: {
+                        profile: $profileInput
+                    }
+                ) {
+                    profile {
+                        id
+                    }
+                }
+            }
+        """
+
+        variables = {"profileInput": profile_input}
+
+        return user_gql_client.execute(mutation, service=service, variables=variables)
