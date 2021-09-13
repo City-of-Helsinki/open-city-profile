@@ -1198,6 +1198,8 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
+        validate(cls, root, info, **input)
+
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
         subscription_data = profile_data.pop("subscriptions", [])
