@@ -6,7 +6,7 @@ from graphql_relay.node.node import to_global_id
 from open_city_profile.consts import INVALID_EMAIL_FORMAT_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Email, Profile
-from profiles.tests.profile_input_validation import ProfileInputValidationBase
+from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
 from services.tests.factories import ServiceConnectionFactory
 from subscriptions.tests.factories import (
     SubscriptionTypeCategoryFactory,
@@ -731,10 +731,11 @@ def test_remove_phone(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-class TestProfileInputValidation(ProfileInputValidationBase):
-    def execute_query(self, user_gql_client, profile_input):
-        ProfileFactory(user=user_gql_client.user)
+class TestProfileInputValidation(ExistingProfileInputValidationBase):
+    def create_profile(self, user):
+        return ProfileFactory(user=user)
 
+    def execute_query(self, user_gql_client, profile_input):
         return user_gql_client.execute(
             PHONES_MUTATION, variables={"profileInput": profile_input},
         )

@@ -17,7 +17,7 @@ from .factories import (
     PhoneFactory,
     ProfileWithPrimaryEmailFactory,
 )
-from .profile_input_validation import ProfileInputValidationBase
+from .profile_input_validation import ExistingProfileInputValidationBase
 
 
 def setup_profile_and_staff_user_to_service(
@@ -280,14 +280,18 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
     assert executed["data"] == expected_data
 
 
-class TestProfileInputValidation(ProfileInputValidationBase):
+class TestProfileInputValidation(ExistingProfileInputValidationBase):
+    def create_profile(self, user):
+        return ProfileWithPrimaryEmailFactory()
+
     def execute_query(self, user_gql_client, profile_input):
-        profile = ProfileWithPrimaryEmailFactory()
         service = ServiceFactory()
 
-        setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+        setup_profile_and_staff_user_to_service(
+            self.profile, user_gql_client.user, service
+        )
 
-        profile_input["id"] = to_global_id("ProfileNode", profile.id)
+        profile_input["id"] = to_global_id("ProfileNode", self.profile.id)
         variables = {"profileInput": profile_input}
 
         return user_gql_client.execute(

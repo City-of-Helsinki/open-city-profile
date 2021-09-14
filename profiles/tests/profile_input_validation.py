@@ -1,4 +1,5 @@
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles.models import Profile
 
 
 class ProfileInputValidationBase:
@@ -13,6 +14,9 @@ class ProfileInputValidationBase:
             "execute_query needs to be implemented in a sub class."
         )
 
+    def _execute_query(self, user_gql_client, profile_input):
+        return self.execute_query(user_gql_client, profile_input)
+
     def test_adding_phone_with_empty_phone_number_causes_a_validation_error(
         self, user_gql_client, phone_data
     ):
@@ -20,6 +24,33 @@ class ProfileInputValidationBase:
             "addPhones": [{"phone": "", "phoneType": phone_data["phone_type"]}],
         }
 
-        executed = self.execute_query(user_gql_client, profile_input)
+        executed = self._execute_query(user_gql_client, profile_input)
 
         assert_match_error_code(executed, "VALIDATION_ERROR")
+
+
+class ExistingProfileInputValidationBase(ProfileInputValidationBase):
+    def create_profile(self, user_making_the_request) -> Profile:
+        """This method needs to be implemented by sub classes.
+
+        Creates and returns a pre-existing Profile for the test.
+        Receives the User making the GraphQL query as an argument.
+
+        This method is called before execute_query for a test method
+        is called. The created Profile is available as self.profile
+        in execute_query.
+        """
+        raise NotImplementedError(
+            "create_profile needs to be implemented in a sub class."
+        )
+
+    def _get_profile(self, user):
+        if not hasattr(self, "profile"):
+            self.profile = self.create_profile(user)
+
+        return self.profile
+
+    def _execute_query(self, user_gql_client, profile_input):
+        # Ensure Profile has been created
+        self._get_profile(user_gql_client.user)
+        return super()._execute_query(user_gql_client, profile_input)
