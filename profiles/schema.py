@@ -696,8 +696,12 @@ class CreatePhoneInput(graphene.InputObjectType):
 class UpdatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
     id = graphene.ID(required=True)
-    phone = graphene.String(description="Phone number.")
+    phone = graphene.String(description="Phone number. If provided, must not be empty.")
     phone_type = AllowedPhoneType(description="Phone number type.")
+
+    @staticmethod
+    def validate_phone(value, info, **input):
+        return model_field_validation(Phone, "phone", value)
 
 
 class AddressInput(graphene.InputObjectType):

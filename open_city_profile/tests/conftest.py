@@ -154,3 +154,8 @@ def get_unix_timestamp_now():
 @pytest.fixture
 def unix_timestamp_now():
     return get_unix_timestamp_now()
+
+
+@pytest.fixture(params=[None, ""])
+def empty_string_value(request):
+    return request.param

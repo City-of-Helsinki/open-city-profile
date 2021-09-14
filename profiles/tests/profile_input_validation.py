@@ -1,5 +1,9 @@
+from graphql_relay import to_global_id
+
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
+
+from .factories import PhoneFactory
 
 
 class ProfileInputValidationBase:
@@ -54,3 +58,22 @@ class ExistingProfileInputValidationBase(ProfileInputValidationBase):
         # Ensure Profile has been created
         self._get_profile(user_gql_client.user)
         return super()._execute_query(user_gql_client, profile_input)
+
+    def test_updating_phone_number_with_empty_phone_number_causes_a_validation_error(
+        self, user_gql_client, empty_string_value
+    ):
+        profile = self._get_profile(user_gql_client.user)
+        phone = PhoneFactory(profile=profile)
+
+        profile_input = {
+            "updatePhones": [
+                {
+                    "id": to_global_id(type="PhoneNode", id=phone.id),
+                    "phone": empty_string_value,
+                }
+            ],
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
