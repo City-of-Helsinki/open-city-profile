@@ -288,7 +288,7 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
         service = ServiceFactory()
 
         setup_profile_and_staff_user_to_service(
-            self.profile, user_gql_client.user, service
+            self.profile, user_gql_client.user, service, can_manage_sensitivedata=True
         )
 
         profile_input["id"] = to_global_id("ProfileNode", self.profile.id)

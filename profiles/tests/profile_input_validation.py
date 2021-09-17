@@ -32,6 +32,15 @@ class ProfileInputValidationBase:
 
         assert_match_error_code(executed, "VALIDATION_ERROR")
 
+    def test_giving_invalid_ssn_causes_a_validation_error(self, user_gql_client):
+        profile_input = {
+            "sensitivedata": {"ssn": "101010X1234"},
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
+
 
 class ExistingProfileInputValidationBase(ProfileInputValidationBase):
     def create_profile(self, user_making_the_request) -> Profile:

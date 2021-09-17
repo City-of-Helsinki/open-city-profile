@@ -530,7 +530,11 @@ class SensitiveDataNode(DjangoObjectType):
 
 
 class SensitiveDataFields(graphene.InputObjectType):
-    ssn = graphene.String(description="Social security number.")
+    ssn = graphene.String(description="Finnish personal identity code.")
+
+    @staticmethod
+    def validate_ssn(value, info, **input):
+        return model_field_validation(SensitiveData, "ssn", value)
 
 
 class RestrictedProfileNode(DjangoObjectType):
@@ -846,7 +850,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **input):
         service = info.context.service
         profile_data = input.get("profile")
-        sensitivedata = profile_data.pop("sensitivedata", None)
+        sensitivedata = profile_data.get("sensitivedata", None)
 
         if sensitivedata and not info.context.user.has_perm(
             "can_manage_sensitivedata", service
@@ -862,6 +866,8 @@ class CreateProfileMutation(relay.ClientIDMutation):
             (Phone, profile_data.pop("add_phones", [])),
             (Address, profile_data.pop("add_addresses", [])),
         ]
+
+        profile_data.pop("sensitivedata", None)
 
         profile = Profile(**profile_data)
         profile.save()
@@ -1273,7 +1279,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
-        sensitive_data = profile_data.pop("sensitivedata", None)
+        sensitive_data = profile_data.get("sensitivedata", None)
 
         if sensitive_data and not info.context.user.has_perm(
             "can_manage_sensitivedata", service
@@ -1283,6 +1289,8 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             )
 
         validate(cls, root, info, **input)
+
+        profile_data.pop("sensitivedata", None)
 
         update_profile(profile, profile_data)
 
