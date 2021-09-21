@@ -68,6 +68,7 @@ env = environ.Env(
     KEYCLOAK_REALM=(str, ""),
     KEYCLOAK_CLIENT_ID=(str, ""),
     KEYCLOAK_CLIENT_SECRET=(str, ""),
+    VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST=(list, []),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -256,6 +257,12 @@ CONTACT_METHODS = (("email", "Email"), ("sms", "SMS"))
 
 TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES = env.int(
     "TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES"
+)
+
+# List of values of the amr claim that give the staff user access
+# to verified personal information. If empty, any amr value grants access.
+VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST = env.list(
+    "VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST"
 )
 
 # Django-parler
