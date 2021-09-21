@@ -152,25 +152,16 @@ query_template = Template(
 )
 
 
-@pytest.mark.parametrize(
-    "field_name,exact_search",
-    [
-        ("first_name", False),
-        ("last_name", False),
-        ("national_identification_number", True),
-    ],
-)
+@pytest.mark.parametrize("field_name", ["first_name", "last_name"])
 def test_staff_user_can_filter_profiles_by_a_field(
-    field_name, exact_search, user_gql_client, group, service
+    field_name, user_gql_client, group, service
 ):
-    vpi_1, vpi_2 = VerifiedPersonalInformationFactory.create_batch(2)
-    profile_1, profile_2 = vpi_1.profile, vpi_2.profile
+    profile_1, profile_2 = ProfileFactory.create_batch(2)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
-    assign_perm("can_view_verified_personal_information", group, service)
 
     gql_field_name = to_graphql_name(field_name)
     query = query_template.substitute(search_arg_name=gql_field_name)
@@ -183,40 +174,63 @@ def test_staff_user_can_filter_profiles_by_a_field(
         }
     }
 
-    for q in [
-        getattr(d, field_name) for d in [profile_2, vpi_2] if hasattr(d, field_name)
-    ]:
-        search_term = q if exact_search else q[1:].upper()
-        executed = user_gql_client.execute(
-            query, variables={"searchString": search_term}, service=service,
-        )
-        assert "errors" not in executed
-        assert executed["data"] == expected_data
+    search_term = getattr(profile_2, field_name)[1:].upper()
+    executed = user_gql_client.execute(
+        query, variables={"searchString": search_term}, service=service,
+    )
+    assert "errors" not in executed
+    assert executed["data"] == expected_data
 
 
-@pytest.mark.parametrize(
-    "field_name", ["first_name", "last_name", "national_identification_number"]
-)
-def test_staff_user_can_not_filter_profiles_by_verified_personal_information_without_required_permission(
-    field_name, user_gql_client, group, service
+@pytest.mark.parametrize("amr_claim_value", [None, 0, "authmethod1", "foo"])
+@pytest.mark.parametrize("has_needed_permission", [True, False])
+def test_staff_user_filter_profiles_by_verified_personal_information_permissions(
+    has_needed_permission, amr_claim_value, settings, user_gql_client, group, service
 ):
+    settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST = [
+        "authmethod1",
+        "authmethod2",
+    ]
+
     vpi = VerifiedPersonalInformationFactory()
     ServiceConnectionFactory(profile=vpi.profile, service=service)
 
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    if has_needed_permission:
+        assign_perm("can_view_verified_personal_information", group, service)
 
-    gql_field_name = to_graphql_name(field_name)
+    gql_field_name = to_graphql_name("national_identification_number")
     query = query_template.substitute(search_arg_name=gql_field_name)
 
-    expected_data = {"profiles": {"count": 0, "totalCount": 1, "edges": []}}
+    expected_data_no_permission = {
+        "profiles": {"count": 0, "totalCount": 1, "edges": []}
+    }
+    expected_data_with_permission = {
+        "profiles": {
+            "count": 1,
+            "totalCount": 1,
+            "edges": [{"node": {"firstName": vpi.profile.first_name}}],
+        }
+    }
 
+    token_payload = {"amr": amr_claim_value}
     executed = user_gql_client.execute(
-        query, variables={"searchString": getattr(vpi, field_name)}, service=service,
+        query,
+        variables={"searchString": vpi.national_identification_number},
+        auth_token_payload=token_payload,
+        service=service,
     )
+
     assert "errors" not in executed
-    assert executed["data"] == expected_data
+    if (
+        has_needed_permission
+        and amr_claim_value in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
+    ):
+        assert executed["data"] == expected_data_with_permission
+    else:
+        assert executed["data"] == expected_data_no_permission
 
 
 def test_staff_user_can_sort_profiles(user_gql_client, group, service):

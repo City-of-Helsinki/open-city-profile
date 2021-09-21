@@ -210,14 +210,22 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize("amr_claim_value", [None, 0, "authmethod1", "foo"])
 @pytest.mark.parametrize("has_needed_permission", [True, False])
 def test_staff_user_needs_required_permission_to_access_verified_personal_information(
     has_needed_permission,
+    amr_claim_value,
+    settings,
     user_gql_client,
     profile_with_verified_personal_information,
     group,
     service,
 ):
+    settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST = [
+        "authmethod1",
+        "authmethod2",
+    ]
+
     ServiceConnectionFactory(
         profile=profile_with_verified_personal_information, service=service
     )
@@ -245,12 +253,15 @@ def test_staff_user_needs_required_permission_to_access_verified_personal_inform
         )
     )
 
-    token_payload = {"loa": "substantial"}
+    token_payload = {"loa": "substantial", "amr": amr_claim_value}
     executed = user_gql_client.execute(
         query, auth_token_payload=token_payload, service=service
     )
 
-    if has_needed_permission:
+    if (
+        has_needed_permission
+        and amr_claim_value in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
+    ):
         assert "errors" not in executed
         assert executed["data"] == {
             "profile": {

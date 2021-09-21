@@ -74,7 +74,7 @@ from .models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
-from .utils import requester_has_service_permission
+from .utils import requester_can_view_verified_personal_information
 
 User = get_user_model()
 
@@ -366,9 +366,7 @@ class ProfileFilter(FilterSet):
     def filter_by_name_icontains(self, queryset, name, value):
         name_filter = Q(**{f"{name}__icontains": value})
 
-        if requester_has_service_permission(
-            self.request, "can_view_verified_personal_information"
-        ):
+        if requester_can_view_verified_personal_information(self.request):
             name_filter |= Q(
                 **{f"verified_personal_information__{name}__icontains": value}
             )
@@ -376,9 +374,7 @@ class ProfileFilter(FilterSet):
         return queryset.filter(name_filter)
 
     def filter_by_nin_exact(self, queryset, name, value):
-        if requester_has_service_permission(
-            self.request, "can_view_verified_personal_information"
-        ):
+        if requester_can_view_verified_personal_information(self.request):
             return queryset.filter(
                 verified_personal_information__national_identification_number=value
             )
@@ -624,9 +620,7 @@ class ProfileNode(RestrictedProfileNode):
         loa = info.context.user_auth.data.get("loa")
         if (
             info.context.user == self.user and loa in ["substantial", "high"]
-        ) or requester_has_service_permission(
-            info.context, "can_view_verified_personal_information"
-        ):
+        ) or requester_can_view_verified_personal_information(info.context):
             try:
                 return self.verified_personal_information
             except VerifiedPersonalInformation.DoesNotExist:
