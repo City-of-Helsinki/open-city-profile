@@ -91,13 +91,13 @@ strategy:
     when_added: null
   mailer_message:
     id: null
-    message_data: "constant.null"
+    message_data: "string.random"
     priority: null
     when_added: null
   mailer_messagelog:
     id: null
     log_message: null
-    message_data: "constant.null"
+    message_data: "string.random"
     message_id: null
     priority: null
     result: null
