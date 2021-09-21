@@ -30,7 +30,7 @@ The following environment variables can be used to affect some standard Django s
 - `EMAIL_URL`: Configures email for Django using https://django-environ.readthedocs.io/en/latest/#email-settings[Django-environ]. Default is "consolemail://".
 - `VAR_ROOT`: Provides a base path for the https://docs.djangoproject.com/en/2.2/ref/settings/#media-root[`MEDIA_ROOT`] and https://docs.djangoproject.com/en/2.2/ref/settings/#static-root[`STATIC_ROOT`] Django settings. `MEDIA_ROOT` will be set to `${VAR_ROOT}/media` and `STATIC_ROOT` to `${VAR_ROOT}/static`. If run with Docker (determined by checking that the project is in an `/app` directory), `VAR_ROOT` defaults to `/var`. Otherwise it defaults to a path called `var` under the project directory.
 
-== Authentication server(s)
+== Authentication and authorization
 
 This project uses https://github.com/City-of-Helsinki/django-helusers[Django-helusers] for doing authentication. The following environment variables correspond directly to Django-helusers settings:
 
@@ -38,10 +38,11 @@ This project uses https://github.com/City-of-Helsinki/django-helusers[Django-hel
 - `TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX`: Corresponds to `OIDC_API_TOKEN_AUTH. API_SCOPE_PREFIX`. Default is empty.
 - `TOKEN_AUTH_REQUIRE_SCOPE`: Corresponds to `OIDC_API_TOKEN_AUTH. REQUIRE_API_SCOPE_FOR_AUTHENTICATION`. Default is `False`.
 
-The following environment variables configure authentication in other ways:
+The following environment variables configure authentication or authorization in other ways:
 
 - `TOKEN_AUTH_AUTHSERVER_URL`: Sets the "main" authentication server's URL. The URL needs to be exactly what the authentication server reports as its `issuer` value. Default is empty.
 - `ADDITIONAL_AUTHSERVER_URLS`: Sets additional authentication server URLs as a list of strings. JWTs signed by these servers are accepted for authentication. The URLs need to be exactly what the authentication servers report as their `issuer` value. Default is empty list.
+- `VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST`: Can be used to limit staff users access to verified personal information fields for only those that have authenticated using certain authentication method (Denoted by the "amr" claim in the authentication token). If empty, access is not limited. Default is empty list.
 
 It's possible to configure open-city-profile to communicate with a https://www.keycloak.org/[Keycloak] instance. User data gets synchronised into the Keycloak instance. The Keycloak instance can simultaneously act as an authentication server but it doesn't have to. All the following settings are needed — if any are missing, then the communication with Keycloak feature is disabled.
 
