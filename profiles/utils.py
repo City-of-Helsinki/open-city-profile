@@ -67,3 +67,13 @@ def requester_has_service_permission(request, permission):
         request._service_permission_cache[cache_key] = result
 
     return result
+
+
+def requester_can_view_verified_personal_information(request):
+    return requester_has_service_permission(
+        request, "can_view_verified_personal_information"
+    ) and (
+        not settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
+        or request.user_auth.data.get("amr")
+        in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
+    )
