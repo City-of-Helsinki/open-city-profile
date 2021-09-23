@@ -219,6 +219,19 @@ def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):
     assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
 
 
+def test_using_non_existing_token_produces_an_object_does_not_exist_error(
+    user_gql_client,
+):
+    non_existing_token = "e5d47102-a29b-441d-adbc-c6e4e762ffe1"
+
+    variables = {
+        "token": non_existing_token,
+    }
+    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+
+
 def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
