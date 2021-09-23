@@ -235,7 +235,7 @@ def test_using_non_existing_token_produces_an_object_does_not_exist_error(
 def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     profile_to_claim = ProfileFactory(user=None, first_name="John", last_name="Doe")
-    expired_claim_token = ClaimTokenFactory(profile=profile_to_claim)
+    claim_token = ClaimTokenFactory(profile=profile_to_claim)
 
     t = Template(
         """
@@ -259,7 +259,7 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_clie
         }
         """
     )
-    query = t.substitute(claimToken=expired_claim_token.token)
+    query = t.substitute(claimToken=claim_token.token)
     executed = user_gql_client.execute(query)
 
     assert "errors" in executed
