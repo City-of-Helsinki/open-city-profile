@@ -1,7 +1,7 @@
 import hashlib
 
 from django.db import models
-from encrypted_fields.fields import is_hashed_already, SEARCH_HASH_PREFIX, SearchField
+from encrypted_fields import fields
 
 
 class NullToEmptyValueMixin(models.Field):
@@ -19,7 +19,7 @@ class NullToEmptyValueMixin(models.Field):
         return value
 
 
-class CallableHashKeyEncryptedSearchField(SearchField):
+class CallableHashKeyEncryptedSearchField(fields.SearchField):
     """encrypted_fields.fields.SearchField but modified to support callable hash_key"""
 
     def get_prep_value(self, value):
@@ -29,7 +29,7 @@ class CallableHashKeyEncryptedSearchField(SearchField):
         # NOTE: not sure what happens when the str format for date/datetime is changed??
         value = str(value)
 
-        if is_hashed_already(value):
+        if fields.is_hashed_already(value):
             # if we have hashed this previously, don't do it again
             return value
 
@@ -41,4 +41,18 @@ class CallableHashKeyEncryptedSearchField(SearchField):
         # Callable hash key custom code end
 
         v = value + hash_key
-        return SEARCH_HASH_PREFIX + hashlib.sha256(v.encode()).hexdigest()
+        return fields.SEARCH_HASH_PREFIX + hashlib.sha256(v.encode()).hexdigest()
+
+
+class NullToEmptyCharField(NullToEmptyValueMixin, models.CharField):
+    """CharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedCharField(NullToEmptyValueMixin, fields.EncryptedCharField):
+    """EncryptedCharField with automatic null-to-empty-string functionality"""
+
+
+class NullToEmptyEncryptedSearchField(
+    NullToEmptyValueMixin, CallableHashKeyEncryptedSearchField
+):
+    """EncryptedSearchField with automatic null-to-empty-string functionality"""

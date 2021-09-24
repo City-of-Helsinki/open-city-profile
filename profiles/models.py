@@ -16,7 +16,11 @@ from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
-from utils.fields import CallableHashKeyEncryptedSearchField, NullToEmptyValueMixin
+from utils.fields import (
+    NullToEmptyCharField,
+    NullToEmptyEncryptedCharField,
+    NullToEmptyEncryptedSearchField,
+)
 from utils.models import SerializableMixin, UUIDModel
 
 from .enums import (
@@ -227,20 +231,6 @@ class Profile(UUIDModel, SerializableMixin):
                 )
                 raise Exception(msg) from err
         return result
-
-
-class NullToEmptyCharField(NullToEmptyValueMixin, models.CharField):
-    """CharField with automatic null-to-empty-string functionality"""
-
-
-class NullToEmptyEncryptedCharField(NullToEmptyValueMixin, fields.EncryptedCharField):
-    """EncryptedCharField with automatic null-to-empty-string functionality"""
-
-
-class NullToEmptyEncryptedSearchField(
-    NullToEmptyValueMixin, CallableHashKeyEncryptedSearchField
-):
-    """EncryptedSearchField with automatic null-to-empty-string functionality"""
 
 
 def get_national_identification_number_hash_key():
