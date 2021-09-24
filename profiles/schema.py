@@ -5,7 +5,7 @@ import graphene
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
@@ -25,6 +25,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphene_validator.decorators import validated
+from graphene_validator.errors import ValidationError as GrapheneValidationError
 from graphene_validator.validation import validate
 from graphql_relay import from_global_id
 from munigeo.models import AdministrativeDivision
@@ -106,13 +107,8 @@ def _create_nested(model, profile, data):
             if field == "primary" and value is True:
                 model.objects.filter(profile=profile).update(primary=False)
             setattr(item, field, value)
-        try:
-            item.save()
-        except ValidationError:
-            if model.__name__ == "Email":
-                raise InvalidEmailFormatError("Email must be in valid email format")
-            else:
-                raise
+
+        item.save()
 
 
 def _update_nested(model, profile, data, field_callback):
@@ -125,13 +121,8 @@ def _update_nested(model, profile, data, field_callback):
             if field == "primary" and value is True:
                 model.objects.filter(profile=profile).update(primary=False)
             setattr(item, field, value)
-        try:
-            item.save()
-        except ValidationError:
-            if model.__name__ == "Email":
-                raise InvalidEmailFormatError("Email must be in valid email format")
-            else:
-                raise
+
+        item.save()
 
 
 def _delete_nested(model, profile, data):
@@ -666,10 +657,21 @@ class TemporaryReadAccessTokenNode(DjangoObjectType):
         return self.expires_at()
 
 
+def _validate_email(email):
+    try:
+        return model_field_validation(Email, "email", email)
+    except GrapheneValidationError:
+        raise InvalidEmailFormatError("Email must be in valid email format")
+
+
 class CreateEmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
     email = graphene.String(description="Email address.", required=True)
     email_type = AllowedEmailType(description="Email address type.", required=True)
+
+    @staticmethod
+    def validate_email(value, info, **input):
+        return _validate_email(value)
 
 
 class UpdateEmailInput(graphene.InputObjectType):
@@ -677,6 +679,10 @@ class UpdateEmailInput(graphene.InputObjectType):
     id = graphene.ID(required=True)
     email = graphene.String(description="Email address.")
     email_type = AllowedEmailType(description="Email address type.")
+
+    @staticmethod
+    def validate_email(value, info, **input):
+        return _validate_email(value)
 
 
 class CreatePhoneInput(graphene.InputObjectType):
