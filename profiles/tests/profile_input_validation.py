@@ -32,6 +32,17 @@ class ProfileInputValidationBase:
 
         assert_match_error_code(executed, "VALIDATION_ERROR")
 
+    def test_all_name_fields_can_be_set_to_null(self, user_gql_client):
+        profile_input = {
+            "firstName": None,
+            "lastName": None,
+            "nickname": None,
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert "errors" not in executed, executed.get("errors")
+
     def test_adding_phone_with_empty_phone_number_causes_a_validation_error(
         self, user_gql_client, phone_data
     ):

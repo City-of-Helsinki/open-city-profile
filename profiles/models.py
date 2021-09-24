@@ -84,9 +84,9 @@ class LegalRelationship(models.Model):
 @reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
-    first_name = models.CharField(max_length=255, blank=True, db_index=True)
-    last_name = models.CharField(max_length=255, blank=True, db_index=True)
-    nickname = models.CharField(max_length=32, blank=True, db_index=True)
+    first_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
+    last_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
+    nickname = NullToEmptyCharField(max_length=32, blank=True, db_index=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
         storage=OverwriteStorage(),
