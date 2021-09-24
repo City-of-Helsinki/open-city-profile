@@ -4,7 +4,7 @@ from graphql_relay import to_global_id
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
-from .factories import PhoneFactory
+from .factories import EmailFactory, PhoneFactory
 
 
 class ProfileInputValidationBase:
@@ -42,6 +42,20 @@ class ProfileInputValidationBase:
         executed = self._execute_query(user_gql_client, profile_input)
 
         assert "errors" not in executed, executed.get("errors")
+
+    @pytest.mark.parametrize("invalid_email", ["", "not-an-email"])
+    def test_adding_invalid_email_address_causes_an_invalid_email_format_error(
+        self, invalid_email, email_data, user_gql_client
+    ):
+        profile_input = {
+            "addEmails": [
+                {"email": invalid_email, "emailType": email_data["email_type"]}
+            ],
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "INVALID_EMAIL_FORMAT")
 
     def test_adding_phone_with_empty_phone_number_causes_a_validation_error(
         self, user_gql_client, phone_data
@@ -89,6 +103,26 @@ class ExistingProfileInputValidationBase(ProfileInputValidationBase):
         # Ensure Profile has been created
         self._get_profile(user_gql_client.user)
         return super()._execute_query(user_gql_client, profile_input)
+
+    @pytest.mark.parametrize("invalid_email", [None, "", "not-an-email"])
+    def test_updating_to_invalid_email_address_causes_an_invalid_email_format_error(
+        self, invalid_email, user_gql_client
+    ):
+        profile = self._get_profile(user_gql_client.user)
+        email = EmailFactory(profile=profile, primary=False)
+
+        profile_input = {
+            "updateEmails": [
+                {
+                    "id": to_global_id(type="EmailNode", id=email.id),
+                    "email": invalid_email,
+                }
+            ],
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "INVALID_EMAIL_FORMAT")
 
     def test_updating_phone_number_with_empty_phone_number_causes_a_validation_error(
         self, user_gql_client, empty_string_value

@@ -3,7 +3,6 @@ from string import Template
 import pytest
 from graphql_relay.node.node import to_global_id
 
-from open_city_profile.consts import INVALID_EMAIL_FORMAT_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Email, Profile
 from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
@@ -230,95 +229,6 @@ def test_add_email(user_gql_client, email_data):
     )
     executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
-
-
-def test_not_add_invalid_email(user_gql_client, email_data):
-    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            addEmails: [
-                                {
-                                    emailType: ${email_type},
-                                    email:"${email}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
-    mutation = t.substitute(
-        email="!dsdsd{}{}{}{}{}{",
-        email_type=email_data["email_type"],
-        primary=str(not email_data["primary"]).lower(),
-    )
-    executed = user_gql_client.execute(mutation)
-    assert "code" in executed["errors"][0]["extensions"]
-    assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
-
-
-def test_not_update_email_to_invalid_format(user_gql_client, email_data):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    email = profile.emails.first()
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            updateEmails: [
-                                {
-                                    id: "${email_id}",
-                                    emailType: ${email_type},
-                                    email:"${email}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        emails {
-                            edges {
-                                node {
-                                    id
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
-    mutation = t.substitute(
-        email_id=to_global_id(type="EmailNode", id=email.id),
-        email="!dsdsd{}{}{}{}{}{",
-        email_type=email_data["email_type"],
-        primary=str(email_data["primary"]).lower(),
-    )
-    executed = user_gql_client.execute(mutation)
-    assert "code" in executed["errors"][0]["extensions"]
-    assert executed["errors"][0]["extensions"]["code"] == INVALID_EMAIL_FORMAT_ERROR
 
 
 EMAILS_MUTATION = """
