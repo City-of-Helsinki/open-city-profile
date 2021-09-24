@@ -1,3 +1,4 @@
+import pytest
 from graphql_relay import to_global_id
 
 from open_city_profile.tests.asserts import assert_match_error_code
@@ -20,6 +21,16 @@ class ProfileInputValidationBase:
 
     def _execute_query(self, user_gql_client, profile_input):
         return self.execute_query(user_gql_client, profile_input)
+
+    @pytest.mark.parametrize("field_name", ["firstName", "lastName", "nickname"])
+    def test_giving_too_long_name_field_causes_a_validation_error(
+        self, field_name, user_gql_client
+    ):
+        profile_input = {field_name: "x" * 256}
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
 
     def test_adding_phone_with_empty_phone_number_causes_a_validation_error(
         self, user_gql_client, phone_data

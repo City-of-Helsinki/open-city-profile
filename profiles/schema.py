@@ -723,9 +723,13 @@ class UpdateAddressInput(AddressInput):
 
 
 class ProfileInputBase(graphene.InputObjectType):
-    first_name = graphene.String(description="First name.")
-    last_name = graphene.String(description="Last name.")
-    nickname = graphene.String(description="Nickname.")
+    first_name = graphene.String(
+        description="First name. Maximum length is 255 characters."
+    )
+    last_name = graphene.String(
+        description="Last name. Maximum length is 255 characters."
+    )
+    nickname = graphene.String(description="Nickname. Maximum length is 32 characters.")
     image = graphene.String(description="Profile image.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
@@ -738,6 +742,18 @@ class ProfileInputBase(graphene.InputObjectType):
     )
     subscriptions = graphene.List(SubscriptionInputType)
     sensitivedata = graphene.InputField(SensitiveDataFields)
+
+    @staticmethod
+    def validate_first_name(value, info, **input):
+        return model_field_validation(Profile, "first_name", value)
+
+    @staticmethod
+    def validate_last_name(value, info, **input):
+        return model_field_validation(Profile, "last_name", value)
+
+    @staticmethod
+    def validate_nickname(value, info, **input):
+        return model_field_validation(Profile, "nickname", value)
 
 
 class ProfileInput(ProfileInputBase):
