@@ -214,6 +214,17 @@ class ValidationTestBase:
         self.fails_validation(instance)
 
 
+class TestProfileValidation(ValidationTestBase):
+    @pytest.mark.parametrize(
+        "field_name,max_length",
+        [("first_name", 255), ("last_name", 255), ("nickname", 32)],
+    )
+    def test_string_field_max_length(self, field_name, max_length, profile):
+        self.execute_string_field_max_length_validation_test(
+            profile, field_name, max_length
+        )
+
+
 class TestPhoneValidation(ValidationTestBase):
     def test_valid_phone_instance_passes_validation(self):
         instance = PhoneFactory()
