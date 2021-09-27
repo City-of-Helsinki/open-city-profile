@@ -714,10 +714,28 @@ class AddressInput(graphene.InputObjectType):
 
 
 class CreateAddressInput(AddressInput):
-    address = graphene.String(description="Street address.", required=True)
-    postal_code = graphene.String(description="Postal code.", required=True)
-    city = graphene.String(description="City.", required=True)
+    address = graphene.String(
+        description="Street address. Maximum length is 128 characters.", required=True,
+    )
+    postal_code = graphene.String(
+        description="Postal code. Maximum length is 32 characters.", required=True,
+    )
+    city = graphene.String(
+        description="City. Maximum length is 64 characters.", required=True,
+    )
     address_type = AllowedAddressType(description="Address type.", required=True)
+
+    @staticmethod
+    def validate_address(value, info, **input):
+        return model_field_validation(Address, "address", value)
+
+    @staticmethod
+    def validate_postal_code(value, info, **input):
+        return model_field_validation(Address, "postal_code", value)
+
+    @staticmethod
+    def validate_city(value, info, **input):
+        return model_field_validation(Address, "city", value)
 
 
 class UpdateAddressInput(AddressInput):

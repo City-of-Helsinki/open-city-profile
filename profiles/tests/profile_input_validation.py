@@ -1,6 +1,7 @@
 import pytest
 from graphql_relay import to_global_id
 
+from open_city_profile.tests import to_graphql_object
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
@@ -63,6 +64,18 @@ class ProfileInputValidationBase:
         profile_input = {
             "addPhones": [{"phone": "", "phoneType": phone_data["phone_type"]}],
         }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
+
+    @pytest.mark.parametrize("field_name", ["address", "postal_code", "city"])
+    def test_adding_address_with_too_long_field_causes_a_validation_error(
+        self, field_name, user_gql_client, address_data
+    ):
+        address_data[field_name] = "x" * 130
+        new_address = to_graphql_object(address_data)
+        profile_input = {"addAddresses": [new_address]}
 
         executed = self._execute_query(user_gql_client, profile_input)
 
