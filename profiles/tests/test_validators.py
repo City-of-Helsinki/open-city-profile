@@ -3,7 +3,10 @@ from django.core.exceptions import ValidationError
 
 from profiles.validators import (
     validate_finnish_national_identification_number,
+    validate_iso_3166_alpha_2_country_code,
+    validate_iso_3166_alpha_3_country_code,
     validate_iso_3166_country_code,
+    validate_iso_3166_numeric_country_code,
     validate_visible_latin_characters_only,
 )
 
@@ -78,18 +81,42 @@ class TestISO3166CountryCode:
     @staticmethod
     def execute_denied_code_test(code):
         with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_2_country_code(code)
+        with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_3_country_code(code)
+        with pytest.raises(ValidationError):
+            validate_iso_3166_numeric_country_code(code)
+        with pytest.raises(ValidationError):
             validate_iso_3166_country_code(code)
 
     @pytest.mark.parametrize("code", ["AX", "FI", "ZW"])
-    def test_accept_alpha_2_code(self, code):
+    def test_alpha_2_code(self, code):
+        assert validate_iso_3166_alpha_2_country_code(code) is None
+        with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_3_country_code(code)
+        with pytest.raises(ValidationError):
+            validate_iso_3166_numeric_country_code(code)
+
         assert validate_iso_3166_country_code(code) is None
 
     @pytest.mark.parametrize("code", ["DEU", "NPL", "ZMB"])
-    def test_accept_alpha_3_code(self, code):
+    def test_alpha_3_code(self, code):
+        with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_2_country_code(code)
+        assert validate_iso_3166_alpha_3_country_code(code) is None
+        with pytest.raises(ValidationError):
+            validate_iso_3166_numeric_country_code(code)
+
         assert validate_iso_3166_country_code(code) is None
 
     @pytest.mark.parametrize("code", ["008", "010", "535"])
-    def test_accept_numeric_3_code(self, code):
+    def test_numeric_3_code(self, code):
+        with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_2_country_code(code)
+        with pytest.raises(ValidationError):
+            validate_iso_3166_alpha_3_country_code(code)
+        assert validate_iso_3166_numeric_country_code(code) is None
+
         assert validate_iso_3166_country_code(code) is None
 
     @pytest.mark.parametrize("code", ["Ax", "fi", "zW"])
