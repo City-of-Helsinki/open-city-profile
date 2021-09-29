@@ -81,6 +81,18 @@ class ProfileInputValidationBase:
 
         assert_match_error_code(executed, "VALIDATION_ERROR")
 
+    @pytest.mark.parametrize("country_code", ["X", "fi", "VR", "Finland"])
+    def test_adding_address_with_invalid_country_code_value_causes_a_validation_error(
+        self, country_code, user_gql_client, address_data
+    ):
+        address_data["country_code"] = country_code
+        new_address = to_graphql_object(address_data)
+        profile_input = {"addAddresses": [new_address]}
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
+
     def test_giving_invalid_ssn_causes_a_validation_error(self, user_gql_client):
         profile_input = {
             "sensitivedata": {"ssn": "101010X1234"},
@@ -168,6 +180,26 @@ class ExistingProfileInputValidationBase(ProfileInputValidationBase):
                 {
                     "id": to_global_id(type="AddressNode", id=address.id),
                     to_graphql_name(field_name): "x" * 130,
+                }
+            ]
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
+
+    @pytest.mark.parametrize("country_code", ["X", "fi", "VR", "Finland"])
+    def test_updating_address_with_invalid_country_code_value_causes_a_validation_error(
+        self, country_code, user_gql_client
+    ):
+        profile = self._get_profile(user_gql_client.user)
+        address = AddressFactory(profile=profile)
+
+        profile_input = {
+            "updateAddresses": [
+                {
+                    "id": to_global_id(type="AddressNode", id=address.id),
+                    "countryCode": country_code,
                 }
             ]
         }

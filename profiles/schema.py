@@ -709,8 +709,12 @@ class UpdatePhoneInput(graphene.InputObjectType):
 
 
 class AddressInput(graphene.InputObjectType):
-    country_code = graphene.String(description="Country code")
+    country_code = graphene.String(description="An ISO 3166 alpha-2 country code.")
     primary = graphene.Boolean(description="Is this primary address.")
+
+    @staticmethod
+    def validate_country_code(value, info, **input):
+        return model_field_validation(Address, "country_code", value)
 
 
 class CreateAddressInput(AddressInput):
