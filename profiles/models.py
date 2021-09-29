@@ -34,6 +34,7 @@ from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
     validate_finnish_postal_code,
+    validate_iso_3166_alpha_2_country_code,
     validate_iso_3166_country_code,
     validate_visible_latin_characters_only,
 )
@@ -463,10 +464,12 @@ class Address(Contact):
     profile = models.ForeignKey(
         Profile, related_name="addresses", on_delete=models.CASCADE
     )
-    address = models.CharField(max_length=128, blank=False)
-    postal_code = models.CharField(max_length=32, blank=False)
-    city = models.CharField(max_length=64, blank=False)
-    country_code = models.CharField(max_length=2, blank=False)
+    address = NullToEmptyCharField(max_length=128, blank=True)
+    postal_code = NullToEmptyCharField(max_length=32, blank=True)
+    city = NullToEmptyCharField(max_length=64, blank=True)
+    country_code = NullToEmptyCharField(
+        max_length=2, blank=True, validators=[validate_iso_3166_alpha_2_country_code]
+    )
     address_type = EnumField(
         AddressType, max_length=32, blank=False, default=AddressType.HOME
     )

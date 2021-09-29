@@ -249,6 +249,16 @@ class TestAddressValidation(ValidationTestBase):
         self.passes_validation(address)
 
     @pytest.mark.parametrize(
+        "field_name", ["address", "postal_code", "city", "country_code"]
+    )
+    def test_empty_address_field_passes_validation(
+        self, field_name, empty_string_value
+    ):
+        address = AddressFactory()
+        setattr(address, field_name, empty_string_value)
+        self.passes_validation(address)
+
+    @pytest.mark.parametrize(
         "field_name,max_length", [("address", 128), ("postal_code", 32), ("city", 64)]
     )
     def test_address_field_max_length(self, field_name, max_length):
@@ -257,6 +267,23 @@ class TestAddressValidation(ValidationTestBase):
         self.execute_string_field_max_length_validation_test(
             address, field_name, max_length
         )
+
+    @pytest.mark.parametrize("country_code", ["FI", "SE", "EE", "GB"])
+    def test_iso_3166_alpha_2_country_code_passes_validation(self, country_code):
+        address = AddressFactory(country_code=country_code)
+        self.passes_validation(address)
+
+    @pytest.mark.parametrize("country_code", ["FIN", "246"])
+    def test_iso_3166_non_alpha_2_country_code_fails_validation(self, country_code):
+        address = AddressFactory()
+        address.country_code = country_code
+        self.fails_validation(address)
+
+    @pytest.mark.parametrize("country_code", ["Ax", "fi", "VR"])
+    def test_invalid_country_code_fails_validation(self, country_code):
+        address = AddressFactory()
+        address.country_code = country_code
+        self.fails_validation(address)
 
 
 class TestSensitiveDataValidation(ValidationTestBase):
