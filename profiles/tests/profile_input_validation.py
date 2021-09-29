@@ -1,11 +1,11 @@
 import pytest
 from graphql_relay import to_global_id
 
-from open_city_profile.tests import to_graphql_object
+from open_city_profile.tests import to_graphql_name, to_graphql_object
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
-from .factories import EmailFactory, PhoneFactory
+from .factories import AddressFactory, EmailFactory, PhoneFactory
 
 
 class ProfileInputValidationBase:
@@ -150,6 +150,26 @@ class ExistingProfileInputValidationBase(ProfileInputValidationBase):
                     "phone": empty_string_value,
                 }
             ],
+        }
+
+        executed = self._execute_query(user_gql_client, profile_input)
+
+        assert_match_error_code(executed, "VALIDATION_ERROR")
+
+    @pytest.mark.parametrize("field_name", ["address", "postal_code", "city"])
+    def test_updating_address_field_with_too_long_value_causes_a_validation_error(
+        self, field_name, user_gql_client
+    ):
+        profile = self._get_profile(user_gql_client.user)
+        address = AddressFactory(profile=profile)
+
+        profile_input = {
+            "updateAddresses": [
+                {
+                    "id": to_global_id(type="AddressNode", id=address.id),
+                    to_graphql_name(field_name): "x" * 130,
+                }
+            ]
         }
 
         executed = self._execute_query(user_gql_client, profile_input)
