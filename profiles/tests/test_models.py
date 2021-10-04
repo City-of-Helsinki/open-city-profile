@@ -80,8 +80,8 @@ def children_lists_to_unordered(obj):
 
 
 def test_serialize_profile(profile):
-    email_2 = EmailFactory(profile=profile)
-    email_1 = EmailFactory(profile=profile, primary=False)
+    email_1 = EmailFactory(profile=profile, primary=True)
+    email_2 = EmailFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
 
     serialized_profile = children_lists_to_unordered(profile.serialize())
