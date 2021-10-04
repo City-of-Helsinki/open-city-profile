@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
+from services.tests.factories import ServiceConnectionFactory
+
 from ..models import Email, Profile, TemporaryReadAccessToken
 from .factories import (
     AddressFactory,
@@ -87,6 +89,10 @@ def test_serialize_profile(profile):
     address_1 = AddressFactory(profile=profile, primary=True)
     address_2 = AddressFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
+    service_connection_created_at = "2021-10-04"
+    service_connection = ServiceConnectionFactory(
+        profile=profile, created_at=service_connection_created_at
+    )
 
     serialized_profile = children_lists_to_unordered(profile.serialize())
 
@@ -184,7 +190,24 @@ def test_serialize_profile(profile):
                         },
                     ],
                 },
-                {"key": "SERVICE_CONNECTIONS", "children": []},
+                {
+                    "key": "SERVICE_CONNECTIONS",
+                    "children": [
+                        {
+                            "key": "SERVICECONNECTION",
+                            "children": [
+                                {
+                                    "key": "SERVICE",
+                                    "value": service_connection.service.name,
+                                },
+                                {
+                                    "key": "CREATED_AT",
+                                    "value": service_connection_created_at,
+                                },
+                            ],
+                        }
+                    ],
+                },
                 {"key": "SUBSCRIPTIONS", "children": []},
             ],
         }
