@@ -84,6 +84,8 @@ def test_serialize_profile(profile):
     email_2 = EmailFactory(profile=profile, primary=False)
     phone_1 = PhoneFactory(profile=profile, primary=True)
     phone_2 = PhoneFactory(profile=profile, primary=False)
+    address_1 = AddressFactory(profile=profile, primary=True)
+    address_2 = AddressFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
 
     serialized_profile = children_lists_to_unordered(profile.serialize())
@@ -143,7 +145,45 @@ def test_serialize_profile(profile):
                         },
                     ],
                 },
-                {"key": "ADDRESSES", "children": []},
+                {
+                    "key": "ADDRESSES",
+                    "children": [
+                        {
+                            "key": "ADDRESS",
+                            "children": [
+                                {"key": "PRIMARY", "value": address_1.primary},
+                                {
+                                    "key": "ADDRESS_TYPE",
+                                    "value": address_1.address_type.name,
+                                },
+                                {"key": "ADDRESS", "value": address_1.address},
+                                {"key": "POSTAL_CODE", "value": address_1.postal_code},
+                                {"key": "CITY", "value": address_1.city},
+                                {
+                                    "key": "COUNTRY_CODE",
+                                    "value": address_1.country_code,
+                                },
+                            ],
+                        },
+                        {
+                            "key": "ADDRESS",
+                            "children": [
+                                {"key": "PRIMARY", "value": address_2.primary},
+                                {
+                                    "key": "ADDRESS_TYPE",
+                                    "value": address_2.address_type.name,
+                                },
+                                {"key": "ADDRESS", "value": address_2.address},
+                                {"key": "POSTAL_CODE", "value": address_2.postal_code},
+                                {"key": "CITY", "value": address_2.city},
+                                {
+                                    "key": "COUNTRY_CODE",
+                                    "value": address_2.country_code,
+                                },
+                            ],
+                        },
+                    ],
+                },
                 {"key": "SERVICE_CONNECTIONS", "children": []},
                 {"key": "SUBSCRIPTIONS", "children": []},
             ],
