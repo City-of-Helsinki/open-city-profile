@@ -82,6 +82,8 @@ def children_lists_to_unordered(obj):
 def test_serialize_profile(profile):
     email_1 = EmailFactory(profile=profile, primary=True)
     email_2 = EmailFactory(profile=profile, primary=False)
+    phone_1 = PhoneFactory(profile=profile, primary=True)
+    phone_2 = PhoneFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
 
     serialized_profile = children_lists_to_unordered(profile.serialize())
@@ -120,7 +122,27 @@ def test_serialize_profile(profile):
                         },
                     ],
                 },
-                {"key": "PHONES", "children": []},
+                {
+                    "key": "PHONES",
+                    "children": [
+                        {
+                            "key": "PHONE",
+                            "children": [
+                                {"key": "PRIMARY", "value": phone_1.primary},
+                                {"key": "PHONE_TYPE", "value": phone_1.phone_type.name},
+                                {"key": "PHONE", "value": phone_1.phone},
+                            ],
+                        },
+                        {
+                            "key": "PHONE",
+                            "children": [
+                                {"key": "PRIMARY", "value": phone_2.primary},
+                                {"key": "PHONE_TYPE", "value": phone_2.phone_type.name},
+                                {"key": "PHONE", "value": phone_2.phone},
+                            ],
+                        },
+                    ],
+                },
                 {"key": "ADDRESSES", "children": []},
                 {"key": "SERVICE_CONNECTIONS", "children": []},
                 {"key": "SUBSCRIPTIONS", "children": []},
