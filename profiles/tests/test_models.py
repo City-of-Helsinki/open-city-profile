@@ -1,5 +1,4 @@
 from datetime import timedelta
-from unittest import TestCase
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -47,48 +46,89 @@ def test_new_profile_with_non_existing_name_and_default_name(user):
     assert profile.last_name
 
 
+class UnorderedList(list):
+    """Just like a regular list, except that this compares equal with
+       another list even if the two lists' order of members differ."""
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+
+        other_copy = list(other)
+
+        try:
+            for item in self:
+                other_copy.remove(item)
+        except ValueError:
+            return False
+
+        return True
+
+
+def children_lists_to_unordered(obj):
+    """Recursively goes through an object tree and changes all list values
+       of keys named "children" to UnorderedList type."""
+
+    def handle(kv_tuple):
+        key, value = kv_tuple
+        if key == "children" and isinstance(value, list):
+            value = map(children_lists_to_unordered, value)
+            value = UnorderedList(value)
+        return key, value
+
+    return dict(map(handle, obj.items()))
+
+
 def test_serialize_profile(profile):
     email_2 = EmailFactory(profile=profile)
     email_1 = EmailFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
-    serialized_profile = profile.serialize()
-    expected_firstname = {"key": "FIRST_NAME", "value": profile.first_name}
-    expected_email = {
-        "key": "EMAILS",
-        "children": [
-            {
-                "key": "EMAIL",
-                "children": [
-                    {"key": "PRIMARY", "value": email_1.primary},
-                    {"key": "EMAIL_TYPE", "value": email_1.email_type.name},
-                    {"key": "EMAIL", "value": email_1.email},
-                ],
-            },
-            {
-                "key": "EMAIL",
-                "children": [
-                    {"key": "PRIMARY", "value": email_2.primary},
-                    {"key": "EMAIL_TYPE", "value": email_2.email_type.name},
-                    {"key": "EMAIL", "value": email_2.email},
-                ],
-            },
-        ],
-    }
-    expected_sensitive_data = {
-        "key": "SENSITIVEDATA",
-        "children": [{"key": "SSN", "value": sensitive_data.ssn}],
-    }
-    assert "key" in serialized_profile
-    assert "children" in serialized_profile
-    assert serialized_profile.get("key") == "PROFILE"
-    assert expected_firstname in serialized_profile.get("children")
-    serialized_email = list(
-        filter(lambda x: x["key"] == "EMAILS", serialized_profile.get("children"))
-    )[0]
-    TestCase().assertCountEqual(
-        serialized_email.get("children"), expected_email.get("children")
+
+    serialized_profile = children_lists_to_unordered(profile.serialize())
+
+    expected_serialized_profile = children_lists_to_unordered(
+        {
+            "key": "PROFILE",
+            "children": [
+                {"key": "FIRST_NAME", "value": profile.first_name},
+                {"key": "LAST_NAME", "value": profile.last_name},
+                {"key": "NICKNAME", "value": profile.nickname},
+                {"key": "LANGUAGE", "value": profile.language},
+                {"key": "CONTACT_METHOD", "value": profile.contact_method},
+                {
+                    "key": "SENSITIVEDATA",
+                    "children": [{"key": "SSN", "value": sensitive_data.ssn}],
+                },
+                {
+                    "key": "EMAILS",
+                    "children": [
+                        {
+                            "key": "EMAIL",
+                            "children": [
+                                {"key": "PRIMARY", "value": email_1.primary},
+                                {"key": "EMAIL_TYPE", "value": email_1.email_type.name},
+                                {"key": "EMAIL", "value": email_1.email},
+                            ],
+                        },
+                        {
+                            "key": "EMAIL",
+                            "children": [
+                                {"key": "PRIMARY", "value": email_2.primary},
+                                {"key": "EMAIL_TYPE", "value": email_2.email_type.name},
+                                {"key": "EMAIL", "value": email_2.email},
+                            ],
+                        },
+                    ],
+                },
+                {"key": "PHONES", "children": []},
+                {"key": "ADDRESSES", "children": []},
+                {"key": "SERVICE_CONNECTIONS", "children": []},
+                {"key": "SUBSCRIPTIONS", "children": []},
+            ],
+        }
     )
-    assert expected_sensitive_data in serialized_profile.get("children")
+
+    assert serialized_profile == expected_serialized_profile
 
 
 def test_import_customer_data_with_valid_data_set(service):
