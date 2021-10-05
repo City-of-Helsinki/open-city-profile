@@ -89,10 +89,10 @@ def test_serialize_profile(profile):
     address_1 = AddressFactory(profile=profile, primary=True)
     address_2 = AddressFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
-    service_connection_created_at = "2021-10-04"
-    service_connection = ServiceConnectionFactory(
-        profile=profile, created_at=service_connection_created_at
-    )
+    service_connection = ServiceConnectionFactory(profile=profile)
+    service_connection_created_at_date = "2021-10-04"
+    service_connection.created_at = f"{service_connection_created_at_date} 12:00:00Z"
+    service_connection.save()
 
     serialized_profile = children_lists_to_unordered(profile.serialize())
 
@@ -202,7 +202,7 @@ def test_serialize_profile(profile):
                                 },
                                 {
                                     "key": "CREATED_AT",
-                                    "value": service_connection_created_at,
+                                    "value": service_connection_created_at_date,
                                 },
                             ],
                         }
