@@ -612,18 +612,10 @@ class ProfileNode(RestrictedProfileNode):
             return None
 
     def resolve_verified_personal_information(self, info, **kwargs):
-        loa = info.context.user_auth.data.get("loa")
-        if (
-            info.context.user == self.user and loa in ["substantial", "high"]
-        ) or requester_can_view_verified_personal_information(info.context):
-            try:
-                return self.verified_personal_information
-            except VerifiedPersonalInformation.DoesNotExist:
-                return None
-        else:
-            raise PermissionDenied(
-                "No permission to read verified personal information."
-            )
+        try:
+            return self.verified_personal_information
+        except VerifiedPersonalInformation.DoesNotExist:
+            return None
 
     @login_and_service_required
     def __resolve_reference(self, info, **kwargs):

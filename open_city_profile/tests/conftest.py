@@ -18,6 +18,7 @@ from open_city_profile.tests.factories import (
     UserFactory,
 )
 from open_city_profile.views import GraphQLView
+from profiles.utils import clear_thread_locals, set_current_request
 from services.tests.factories import ServiceFactory
 
 _not_provided = object()
@@ -63,12 +64,17 @@ class GraphQLClient(GrapheneClient):
         elif service:
             context.service = service
 
-        return super().execute(
-            *args,
-            context=context,
-            middleware=list(instantiate_middleware(graphene_settings.MIDDLEWARE)),
-            **kwargs
-        )
+        set_current_request(context)
+
+        try:
+            return super().execute(
+                *args,
+                context=context,
+                middleware=list(instantiate_middleware(graphene_settings.MIDDLEWARE)),
+                **kwargs
+            )
+        finally:
+            clear_thread_locals()
 
 
 @pytest.fixture(autouse=True)

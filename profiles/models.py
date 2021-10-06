@@ -2,13 +2,15 @@ import os
 import shutil
 import uuid
 from datetime import timedelta
+from django.db.models.fields.related import ReverseOneToOneDescriptor
 
 import reversion
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from encrypted_fields import fields
 from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
@@ -30,6 +32,7 @@ from .enums import (
     RepresentationType,
     RepresentativeConfirmationDegree,
 )
+from .utils import get_current_request, get_current_user, requester_can_view_verified_personal_information
 from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
@@ -238,8 +241,29 @@ def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
+class CheckingReverseOneToOneDescriptor(ReverseOneToOneDescriptor):
+    def __get__(self, instance, cls=None):
+        request = get_current_request()
+        if request:
+            loa = request.user_auth.data.get("loa")
+            current_user = get_current_user()
+
+            if (
+                instance.user == current_user and loa in ["substantial", "high"]
+            ) or requester_can_view_verified_personal_information(request):
+                pass
+            else:
+                raise PermissionDenied(_("You do not have permission to perform this action."))
+
+        return super().__get__(instance, cls)
+
+
+class CheckingOneToOneField(models.OneToOneField):
+    related_accessor_class = CheckingReverseOneToOneDescriptor
+
+
 class VerifiedPersonalInformation(models.Model):
-    profile = models.OneToOneField(
+    profile = CheckingOneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
     first_name = NullToEmptyCharField(
