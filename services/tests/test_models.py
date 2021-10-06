@@ -1,12 +1,18 @@
+import uuid
+
 import pytest
 import requests
 from django.db.utils import IntegrityError
+
+from open_city_profile.tests.factories import UserFactory
 
 from ..exceptions import MissingGDPRUrlException
 from ..models import Service, ServiceConnection
 from .factories import ProfileFactory, ServiceConnectionFactory
 
 GDPR_URL = "https://example.com/"
+PROFILE_ID = "2aa5a665-77a0-4e62-af24-ec48be5ba9a2"
+USER_UUID = "fd800fb5-9974-4df0-a275-07eaf78dcb07"
 
 
 def test_generate_services_without_service_type(service_factory):
@@ -147,3 +153,84 @@ def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
         service_connection.delete_gdpr_data(api_token="token", dry_run=True)
     with pytest.raises(requests.RequestException):
         service_connection.delete_gdpr_data(api_token="token")
+
+
+@pytest.mark.parametrize(
+    "service__gdpr_url, expected",
+    [
+        # These three are testing that the method works like the old GDPR URL generation
+        ["https://example.com/path", "https://example.com/" + PROFILE_ID],
+        ["https://example.com/?param=123", "https://example.com/" + PROFILE_ID],
+        ["https://example.com/gdpr/", "https://example.com/gdpr/" + PROFILE_ID],
+        # The rest test the new functionality with the template string
+        [
+            "https://example.com/$testvalue/",
+            "https://example.com/$testvalue/" + PROFILE_ID,
+        ],
+        [
+            "https://example.com/gdpr/$profile_id",
+            "https://example.com/gdpr/" + PROFILE_ID,
+        ],
+        [
+            "https://example.com/$profile_id/gdpr/",
+            "https://example.com/" + PROFILE_ID + "/gdpr/",
+        ],
+        [
+            "https://example.com/gdpr/$user_uuid",
+            "https://example.com/gdpr/" + USER_UUID,
+        ],
+        [
+            "https://example.com/$user_uuid/gdpr/",
+            "https://example.com/" + USER_UUID + "/gdpr/",
+        ],
+        [
+            "https://example.com/gdpr/?profile_id=$profile_id",
+            "https://example.com/gdpr/?profile_id=" + PROFILE_ID,
+        ],
+    ],
+)
+def test_service_get_gdpr_url_for_profile(service, expected):
+    user = UserFactory(uuid=uuid.UUID(USER_UUID))
+    profile = ProfileFactory(id=PROFILE_ID, user=user)
+
+    assert service.get_gdpr_url_for_profile(profile) == expected
+
+
+@pytest.mark.parametrize(
+    "service__gdpr_url, expected",
+    [
+        # These three are testing that the method works like the old GDPR URL generation
+        ["https://example.com/path", "https://example.com/" + PROFILE_ID],
+        ["https://example.com/?param=123", "https://example.com/" + PROFILE_ID],
+        ["https://example.com/gdpr/", "https://example.com/gdpr/" + PROFILE_ID],
+        # The rest test the new functionality with the template string
+        [
+            "https://example.com/$testvalue/",
+            "https://example.com/$testvalue/" + PROFILE_ID,
+        ],
+        [
+            "https://example.com/gdpr/$profile_id",
+            "https://example.com/gdpr/" + PROFILE_ID,
+        ],
+        [
+            "https://example.com/$profile_id/gdpr/",
+            "https://example.com/" + PROFILE_ID + "/gdpr/",
+        ],
+        ["https://example.com/gdpr/$user_uuid/$profile_id", None],
+        ["https://example.com/gdpr/$user_uuid", None],
+        ["https://example.com/$user_uuid/gdpr/", None],
+        [
+            "https://example.com/gdpr/?profile_id=$profile_id",
+            "https://example.com/gdpr/?profile_id=" + PROFILE_ID,
+        ],
+    ],
+)
+def test_service_get_gdpr_url_for_profile_without_user(service, expected):
+    profile = ProfileFactory(id=PROFILE_ID, user=None)
+
+    assert service.get_gdpr_url_for_profile(profile) == expected
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_service_get_gdpr_url_for_profile_no_profile(service):
+    assert service.get_gdpr_url_for_profile(None) is None
