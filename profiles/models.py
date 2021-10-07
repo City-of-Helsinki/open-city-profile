@@ -121,6 +121,7 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "emails"},
         {"name": "phones"},
         {"name": "addresses"},
+        {"name": "verified_personal_information"},
         {"name": "service_connections"},
         {"name": "subscriptions"},
     )
@@ -238,7 +239,7 @@ def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(models.Model):
+class VerifiedPersonalInformation(SerializableMixin):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
@@ -284,6 +285,17 @@ class VerifiedPersonalInformation(models.Model):
         validators=[validate_finnish_municipality_of_residence_number],
     )
 
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "given_name"},
+        {"name": "national_identification_number"},
+        {"name": "municipality_of_residence"},
+        {"name": "municipality_of_residence_number"},
+        {"name": "permanent_address"},
+        {"name": "temporary_address"},
+        {"name": "permanent_foreign_address"},
+    )
     audit_log = True
 
     class Meta:
@@ -295,7 +307,7 @@ class VerifiedPersonalInformation(models.Model):
         ]
 
 
-class EncryptedAddress(models.Model):
+class EncryptedAddress(SerializableMixin):
     street_address = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
@@ -304,6 +316,12 @@ class EncryptedAddress(models.Model):
     )
     post_office = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
+    )
+
+    serialize_fields = (
+        {"name": "street_address"},
+        {"name": "postal_code"},
+        {"name": "post_office"},
     )
 
     class Meta:
@@ -343,7 +361,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
+class VerifiedPersonalInformationPermanentForeignAddress(SerializableMixin):
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = NullToEmptyEncryptedCharField(
@@ -371,6 +389,11 @@ class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
         related_name=RELATED_NAME,
     )
 
+    serialize_fields = (
+        {"name": "street_address"},
+        {"name": "additional_address"},
+        {"name": "country_code"},
+    )
     audit_log = True
 
     def is_empty(self):

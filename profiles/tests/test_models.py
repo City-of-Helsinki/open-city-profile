@@ -89,6 +89,7 @@ def test_serialize_profile(profile):
     address_1 = AddressFactory(profile=profile, primary=True)
     address_2 = AddressFactory(profile=profile, primary=False)
     sensitive_data = SensitiveDataFactory(profile=profile)
+    vpi = VerifiedPersonalInformationFactory(profile=profile)
     service_connection = ServiceConnectionFactory(profile=profile)
     service_connection_created_at_date = "2021-10-04"
     service_connection.created_at = f"{service_connection_created_at_date} 12:00:00Z"
@@ -185,6 +186,77 @@ def test_serialize_profile(profile):
                                 {
                                     "key": "COUNTRY_CODE",
                                     "value": address_2.country_code,
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "key": "VERIFIEDPERSONALINFORMATION",
+                    "children": [
+                        {"key": "FIRST_NAME", "value": vpi.first_name},
+                        {"key": "LAST_NAME", "value": vpi.last_name},
+                        {"key": "GIVEN_NAME", "value": vpi.given_name},
+                        {
+                            "key": "NATIONAL_IDENTIFICATION_NUMBER",
+                            "value": vpi.national_identification_number,
+                        },
+                        {
+                            "key": "MUNICIPALITY_OF_RESIDENCE",
+                            "value": vpi.municipality_of_residence,
+                        },
+                        {
+                            "key": "MUNICIPALITY_OF_RESIDENCE_NUMBER",
+                            "value": vpi.municipality_of_residence_number,
+                        },
+                        {
+                            "key": "VERIFIEDPERSONALINFORMATIONPERMANENTADDRESS",
+                            "children": [
+                                {
+                                    "key": "STREET_ADDRESS",
+                                    "value": vpi.permanent_address.street_address,
+                                },
+                                {
+                                    "key": "POSTAL_CODE",
+                                    "value": vpi.permanent_address.postal_code,
+                                },
+                                {
+                                    "key": "POST_OFFICE",
+                                    "value": vpi.permanent_address.post_office,
+                                },
+                            ],
+                        },
+                        {
+                            "key": "VERIFIEDPERSONALINFORMATIONTEMPORARYADDRESS",
+                            "children": [
+                                {
+                                    "key": "STREET_ADDRESS",
+                                    "value": vpi.temporary_address.street_address,
+                                },
+                                {
+                                    "key": "POSTAL_CODE",
+                                    "value": vpi.temporary_address.postal_code,
+                                },
+                                {
+                                    "key": "POST_OFFICE",
+                                    "value": vpi.temporary_address.post_office,
+                                },
+                            ],
+                        },
+                        {
+                            "key": "VERIFIEDPERSONALINFORMATIONPERMANENTFOREIGNADDRESS",
+                            "children": [
+                                {
+                                    "key": "STREET_ADDRESS",
+                                    "value": vpi.permanent_foreign_address.street_address,
+                                },
+                                {
+                                    "key": "ADDITIONAL_ADDRESS",
+                                    "value": vpi.permanent_foreign_address.additional_address,
+                                },
+                                {
+                                    "key": "COUNTRY_CODE",
+                                    "value": vpi.permanent_foreign_address.country_code,
                                 },
                             ],
                         },
