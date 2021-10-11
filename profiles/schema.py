@@ -1551,7 +1551,26 @@ class Query(graphene.ObjectType):
             profile, kwargs["authorization_code"]
         )
 
-        return {"key": "DATA", "children": [profile.serialize(), *external_data]}
+        serialized_profile = profile.serialize()
+
+        loa = info.context.user_auth.data.get("loa")
+        if loa not in ["substantial", "high"]:
+            profile_children = serialized_profile.get("children", [])
+            vpi_index = next(
+                (
+                    i
+                    for i, item in enumerate(profile_children)
+                    if item["key"] == "VERIFIEDPERSONALINFORMATION"
+                ),
+                None,
+            )
+            if vpi_index is not None:
+                profile_children[vpi_index] = {
+                    "key": "VERIFIEDPERSONALINFORMATION",
+                    "error": _("No permission to read verified personal information."),
+                }
+
+        return {"key": "DATA", "children": [serialized_profile, *external_data]}
 
     def resolve_profile_with_access_token(self, info, **kwargs):
         try:

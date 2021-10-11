@@ -2,6 +2,7 @@ import json
 
 import pytest
 import requests
+from django.utils.translation import gettext as _
 
 from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
@@ -16,7 +17,11 @@ from services.tests.factories import ServiceConnectionFactory
 from users.models import User
 
 from ..models import Profile
-from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
+from .factories import (
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+    VerifiedPersonalInformationFactory,
+)
 
 AUTHORIZATION_CODE = "code123"
 DOWNLOAD_MY_PROFILE_MUTATION = """
@@ -140,6 +145,62 @@ def test_user_can_download_profile(
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["downloadMyProfile"] is None
+
+
+def download_verified_personal_information_with_loa(
+    loa, user_gql_client, service, mocker
+):
+    profile = VerifiedPersonalInformationFactory(
+        profile__user=user_gql_client.user
+    ).profile
+
+    mocker.patch.object(TunnistamoTokenExchange, "fetch_api_tokens", return_value=None)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    token_payload = {
+        "loa": loa,
+    }
+    executed = user_gql_client.execute(
+        DOWNLOAD_MY_PROFILE_MUTATION, service=service, auth_token_payload=token_payload
+    )
+
+    full_dump = json.loads(executed["data"]["downloadMyProfile"])
+    profile_dump = next(
+        child for child in full_dump["children"] if child["key"] == "PROFILE"
+    )
+    vpi_dump = next(
+        child
+        for child in profile_dump["children"]
+        if child["key"] == "VERIFIEDPERSONALINFORMATION"
+    )
+
+    return vpi_dump
+
+
+@pytest.mark.parametrize("loa", ["substantial", "high"])
+def test_verified_personal_information_is_included_in_the_downloaded_profile_when_loa_is_high_enough(
+    loa, user_gql_client, service, mocker
+):
+    vpi_dump = download_verified_personal_information_with_loa(
+        loa, user_gql_client, service, mocker
+    )
+
+    assert "error" not in vpi_dump
+    assert len(vpi_dump["children"]) > 0
+
+
+@pytest.mark.parametrize("loa", [None, "foo", "low"])
+def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not_high_enough(
+    loa, user_gql_client, service, mocker
+):
+    vpi_dump = download_verified_personal_information_with_loa(
+        loa, user_gql_client, service, mocker
+    )
+
+    assert vpi_dump == {
+        "key": "VERIFIEDPERSONALINFORMATION",
+        "error": _("No permission to read verified personal information."),
+    }
 
 
 def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
