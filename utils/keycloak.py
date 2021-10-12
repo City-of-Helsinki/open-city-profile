@@ -69,6 +69,13 @@ class KeycloakAdminClient:
             lambda auth: self._session.put(url, auth=auth, json=update_data)
         )
 
+    def delete_user(self, user_id):
+        url = self._single_user_url(user_id)
+
+        self._handle_request_with_auth(
+            lambda auth: self._session.delete(url, auth=auth)
+        )
+
     def send_verify_email(self, user_id):
         url = self._single_user_url(user_id)
         url += f"/send-verify-email"

@@ -97,6 +97,14 @@ def setup_update_user_response(
     )
 
 
+def setup_delete_user_response(user_id, token=access_token, status_code=200):
+    return req_mock.delete(
+        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}",
+        request_headers={"Authorization": f"Bearer {token}"},
+        status_code=status_code,
+    )
+
+
 def setup_send_verify_email_response(user_id, token=access_token, status_code=200):
     return req_mock.put(
         f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
@@ -156,6 +164,25 @@ def test_raise_exception_when_can_not_update_user_data(keycloak_client):
 
     with pytest.raises(requests.HTTPError):
         keycloak_client.update_user(user_id, user_data)
+
+
+def test_delete_single_user_data(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    delete_mock = setup_delete_user_response(user_id)
+
+    keycloak_client.delete_user(user_id)
+
+    assert delete_mock.call_count == 1
+
+
+def test_raise_exception_when_can_not_delete_user_data(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    setup_delete_user_response(user_id, status_code=404)
+
+    with pytest.raises(requests.HTTPError):
+        keycloak_client.delete_user(user_id)
 
 
 def test_send_verify_email_to_user(keycloak_client):
