@@ -308,18 +308,31 @@ def test_user_can_delete_his_profile(
         assert Profile.objects.filter(pk=profile.pk).exists()
 
 
-def test_user_deletion_from_keycloak(user_gql_client, mocker, keycloak_setup):
+@pytest.mark.parametrize("kc_delete_user_response_code", [204, 403, 404])
+def test_user_deletion_from_keycloak(
+    user_gql_client, mocker, kc_delete_user_response_code, keycloak_setup
+):
     user = user_gql_client.user
-    ProfileFactory(user=user)
+    profile = ProfileFactory(user=user)
+
+    def kc_delete_user_response(*args, **kwargs):
+        response = requests.Response()
+        response.status_code = kc_delete_user_response_code
+        response.raise_for_status()
 
     mocked_keycloak_delete_user = mocker.patch.object(
-        KeycloakAdminClient, "delete_user"
+        KeycloakAdminClient, "delete_user", side_effect=kc_delete_user_response
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
-    assert executed["data"] == {"deleteMyProfile": {"clientMutationId": None}}
-    assert "errors" not in executed
+    if kc_delete_user_response_code in [204, 404]:
+        assert executed["data"] == {"deleteMyProfile": {"clientMutationId": None}}
+        assert "errors" not in executed
+    else:
+        assert Profile.objects.filter(pk=profile.pk).exists()
+        assert executed["data"]["deleteMyProfile"] is None
+        assert_match_error_code(executed, "CONNECTED_SERVICE_DELETION_FAILED_ERROR")
 
     mocked_keycloak_delete_user.assert_called_once_with(user.uuid)
 
