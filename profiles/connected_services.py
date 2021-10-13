@@ -126,6 +126,11 @@ def delete_connected_service_data(profile, authorization_code):
         _delete_service_connections_for_profile(profile, api_tokens, dry_run=True)
         _delete_service_connections_for_profile(profile, api_tokens, dry_run=False)
 
+    if _keycloak_admin_client and profile.user:
+        user_id = profile.user.uuid
+
+        _keycloak_admin_client.delete_user(user_id)
+
 
 def send_profile_changes_to_keycloak(instance):
     if not instance.user or _keycloak_admin_client is None:

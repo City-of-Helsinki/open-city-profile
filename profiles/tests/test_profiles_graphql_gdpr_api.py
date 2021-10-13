@@ -15,6 +15,7 @@ from open_city_profile.tests.asserts import assert_match_error_code
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
+from utils.keycloak import KeycloakAdminClient
 
 from ..models import Profile
 from .factories import (
@@ -305,6 +306,22 @@ def test_user_can_delete_his_profile(
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["deleteMyProfile"] is None
         assert Profile.objects.filter(pk=profile.pk).exists()
+
+
+def test_user_deletion_from_keycloak(user_gql_client, mocker, keycloak_setup):
+    user = user_gql_client.user
+    ProfileFactory(user=user)
+
+    mocked_keycloak_delete_user = mocker.patch.object(
+        KeycloakAdminClient, "delete_user"
+    )
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+
+    assert executed["data"] == {"deleteMyProfile": {"clientMutationId": None}}
+    assert "errors" not in executed
+
+    mocked_keycloak_delete_user.assert_called_once_with(user.uuid)
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(
