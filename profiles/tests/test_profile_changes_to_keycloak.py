@@ -8,11 +8,8 @@ from .factories import ProfileFactory
 
 
 @pytest.fixture(autouse=True)
-def setup_profile_change_handling(settings):
-    settings.KEYCLOAK_BASE_URL = "https://localhost/keycloak"
-    settings.KEYCLOAK_REALM = "test-keycloak-realm"
-    settings.KEYCLOAK_CLIENT_ID = "test-keycloak-client-id"
-    settings.KEYCLOAK_CLIENT_SECRET = "test-keycloak-client-secret"
+def setup_profile_change_handling(keycloak_setup):
+    return keycloak_setup
 
 
 def test_do_nothing_if_profile_has_no_user(mocker):

@@ -97,6 +97,14 @@ def email_setup(settings):
 
 
 @pytest.fixture
+def keycloak_setup(settings):
+    settings.KEYCLOAK_BASE_URL = "https://localhost/keycloak"
+    settings.KEYCLOAK_REALM = "test-keycloak-realm"
+    settings.KEYCLOAK_CLIENT_ID = "test-keycloak-client-id"
+    settings.KEYCLOAK_CLIENT_SECRET = "test-keycloak-client-secret"
+
+
+@pytest.fixture
 def user():
     return UserFactory()
 
