@@ -1,29 +1,9 @@
 import pytest
-from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
 
 app = "profiles"
 
 
-def execute_migration_test(migrate_from, migrate_to, before_migration, after_migration):
-    migrate_from = [(app, migrate_from)]
-    migrate_to = [(app, migrate_to)]
-
-    executor = MigrationExecutor(connection)
-    executor.migrate(migrate_from)
-    old_apps = executor.loader.project_state(migrate_from).apps
-
-    passable_data = before_migration(old_apps) or ()
-
-    # Migrate forwards.
-    executor.loader.build_graph()  # reload.
-    executor.migrate(migrate_to)
-    new_apps = executor.loader.project_state(migrate_to).apps
-
-    after_migration(new_apps, *passable_data)
-
-
-def test_fix_primary_email_migration(migration_test_db):
+def test_fix_primary_email_migration(execute_migration_test):
     def create_data(apps):
         Profile = apps.get_model(app, "Profile")
         Email = apps.get_model(app, "Email")
@@ -85,11 +65,13 @@ def test_fix_primary_email_migration(migration_test_db):
         assert profile.emails.filter(primary=True).count() == 1
 
     execute_migration_test(
-        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration
+        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration,
     )
 
 
-def test_verified_personal_information_searchable_names_migration(migration_test_db):
+def test_verified_personal_information_searchable_names_migration(
+    execute_migration_test,
+):
     FIRST_NAME = "First name"
     LAST_NAME = "Last name"
 
@@ -121,7 +103,7 @@ def test_verified_personal_information_searchable_names_migration(migration_test
 
 
 def test_verified_personal_information_searchable_national_identification_number_migration(
-    migration_test_db,
+    execute_migration_test,
 ):
     ID_NUMBER = "010199-1234"
 
@@ -148,7 +130,7 @@ def test_verified_personal_information_searchable_national_identification_number
     )
 
 
-def test_phone_number_to_not_null_migration(migration_test_db):
+def test_phone_number_to_not_null_migration(execute_migration_test):
     NUM_PROFILES = 2
     PHONE_NUMBER_LENGTH = 7
 
