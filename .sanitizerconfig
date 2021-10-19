@@ -308,6 +308,7 @@ strategy:
     gdpr_url: null
     id: null
     implicit_connection: null
+    is_profile_service: null
     name: null
     service_type: null
   services_service_allowed_data_fields:

@@ -4,7 +4,7 @@ from string import Template
 import requests
 from adminsortable.models import SortableMixin
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Q
 from enumfields import EnumField
 from parler.models import TranslatableModel, TranslatedFields
 
@@ -66,8 +66,19 @@ class Service(TranslatableModel):
         default=False,
         help_text="If enabled, this service doesn't require explicit service connections to profiles",
     )
+    is_profile_service = models.BooleanField(
+        default=False,
+        help_text="Identifies the profile service itself. Only one Service can have this property.",
+    )
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["is_profile_service"],
+                condition=Q(is_profile_service=True),
+                name="unique_is_profile_service",
+            )
+        ]
         permissions = (
             ("can_manage_profiles", "Can manage profiles"),
             ("can_view_profiles", "Can view profiles"),
