@@ -38,18 +38,9 @@ def setup_profile_and_staff_user_to_service(
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
-@pytest.mark.parametrize("implicit_serviceconnection", (True, False))
 def test_staff_user_can_update_a_profile(
-    user_gql_client,
-    service,
-    profile_updated_listener,
-    with_serviceconnection,
-    implicit_serviceconnection,
+    user_gql_client, service, profile_updated_listener, with_serviceconnection,
 ):
-    if implicit_serviceconnection:
-        service.implicit_connection = True
-        service.save()
-
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
     address = AddressFactory(profile=profile)

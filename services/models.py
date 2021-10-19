@@ -102,15 +102,11 @@ class Service(TranslatableModel):
     def __str__(self):
         return self.safe_translation_getter("title", super().__str__())
 
-    def has_connection_to_profile(self, profile, allow_implicit=True):
-        """Has this service an implicit or explicit connection to a profile
-
-        Checking can be limited only to explicit connection by setting
-        allow_implicit to False. By default, implicit connection is checked."""
-        if allow_implicit and self.implicit_connection:
-            return True
-
-        return self.serviceconnection_set.filter(profile=profile).exists()
+    def has_connection_to_profile(self, profile):
+        return (
+            self.is_profile_service
+            or self.serviceconnection_set.filter(profile=profile).exists()
+        )
 
     def get_gdpr_url_for_profile(self, profile):
         if not self.gdpr_url or not profile:
