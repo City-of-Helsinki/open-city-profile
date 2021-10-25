@@ -1,6 +1,6 @@
+import encrypted_fields.fields
 from django.conf import settings
 from django.db import migrations
-import encrypted_fields.fields
 
 
 def copy_data_to_searchable_field(apps, schema_editor):
