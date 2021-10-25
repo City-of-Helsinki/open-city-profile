@@ -307,7 +307,6 @@ strategy:
     gdpr_query_scope: null
     gdpr_url: null
     id: null
-    implicit_connection: null
     is_profile_service: null
     name: null
     service_type: null

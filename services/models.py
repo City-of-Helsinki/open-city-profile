@@ -62,10 +62,6 @@ class Service(TranslatableModel):
     gdpr_delete_scope = models.CharField(
         max_length=200, blank=True, help_text="GDPR API delete operation scope"
     )
-    implicit_connection = models.BooleanField(
-        default=False,
-        help_text="If enabled, this service doesn't require explicit service connections to profiles",
-    )
     is_profile_service = models.BooleanField(
         default=False,
         help_text="Identifies the profile service itself. Only one Service can have this property.",
