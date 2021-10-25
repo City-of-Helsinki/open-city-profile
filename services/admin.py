@@ -18,21 +18,6 @@ class ServiceClientIdInline(admin.StackedInline):
 @admin.register(Service)
 class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
     list_display = ("indicate_profile_service",)
-    fieldsets = (
-        (_("Translatable texts"), {"fields": ("title", "description")}),
-        (
-            _("Common options"),
-            {
-                "fields": (
-                    "name",
-                    "allowed_data_fields",
-                    "gdpr_url",
-                    "gdpr_query_scope",
-                    "gdpr_delete_scope",
-                )
-            },
-        ),
-    )
     inlines = [ServiceClientIdInline]
 
     def indicate_profile_service(self, obj):
@@ -44,6 +29,22 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
         return result
 
     indicate_profile_service.short_description = str(Service._meta.verbose_name)
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = [
+            (_("Translatable texts"), {"fields": ("title", "description")}),
+            (_("Common options"), {"fields": ("name", "allowed_data_fields")}),
+        ]
+
+        if obj is None or not obj.is_profile_service:
+            fieldsets.append(
+                (
+                    _("GDPR API"),
+                    {"fields": ("gdpr_url", "gdpr_query_scope", "gdpr_delete_scope")},
+                )
+            )
+
+        return fieldsets
 
 
 @admin.register(AllowedDataField)
