@@ -15,7 +15,9 @@ class Migration(migrations.Migration):
             name="gdpr_url",
             field=models.CharField(
                 blank=True,
-                help_text='The URL of the Service\'s GDPR endpoint. Tokens "$profile_id" or "$user_uuid" will be replaced with the corresponding value. Otherwise the Profile ID will be automatically appended to the url.',
+                help_text="The URL of the Service's GDPR endpoint. "
+                'Tokens "$profile_id" or "$user_uuid" will be replaced with the corresponding value. '
+                "Otherwise the Profile ID will be automatically appended to the url.",
                 max_length=2000,
             ),
         ),
