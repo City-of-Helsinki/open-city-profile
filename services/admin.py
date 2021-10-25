@@ -1,5 +1,6 @@
 from adminsortable.admin import SortableAdmin
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from guardian.admin import GuardedModelAdmin
 from parler.admin import TranslatableAdmin
@@ -16,6 +17,7 @@ class ServiceClientIdInline(admin.StackedInline):
 
 @admin.register(Service)
 class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
+    list_display = ("indicate_profile_service",)
     fieldsets = (
         (_("Translatable texts"), {"fields": ("title", "description")}),
         (
@@ -32,6 +34,16 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
         ),
     )
     inlines = [ServiceClientIdInline]
+
+    def indicate_profile_service(self, obj):
+        result = str(obj)
+        if obj.is_profile_service:
+            result = format_html(
+                '<span title="{}">⚙️ {}</span>', _("Profile service"), result
+            )
+        return result
+
+    indicate_profile_service.short_description = str(Service._meta.verbose_name)
 
 
 @admin.register(AllowedDataField)
