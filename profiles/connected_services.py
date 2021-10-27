@@ -82,7 +82,7 @@ def download_connected_service_data(profile, authorization_code):
 def _delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
     failed_services = []
 
-    for service_connection in profile.service_connections.all():
+    for service_connection in profile.effective_service_connections_qs().all():
         service = service_connection.service
 
         if not service.gdpr_delete_scope:
@@ -119,7 +119,7 @@ def _delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
 
 
 def delete_connected_service_data(profile, authorization_code):
-    if profile.service_connections.exists():
+    if profile.effective_service_connections_qs().exists():
         tte = TunnistamoTokenExchange()
         api_tokens = tte.fetch_api_tokens(authorization_code)
 

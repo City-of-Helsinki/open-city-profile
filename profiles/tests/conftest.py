@@ -86,6 +86,11 @@ register(ServiceConnectionFactory)
 register(ServiceClientIdFactory)
 
 
+@pytest.fixture
+def profile_service():
+    return ServiceFactory(name="profile-service", is_profile_service=True)
+
+
 @pytest.fixture(autouse=True)
 def setup_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = False

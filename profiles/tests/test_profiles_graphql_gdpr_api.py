@@ -279,13 +279,21 @@ def test_user_can_download_profile_using_correct_api_tokens(
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_user_can_delete_his_profile(
-    user_gql_client, service_1, requests_mock, mocker, with_serviceconnection
+    user_gql_client,
+    profile_service,
+    service_1,
+    requests_mock,
+    mocker,
+    with_serviceconnection,
 ):
     """Deletion is allowed when GDPR URL is set, and service returns a successful status."""
     profile = ProfileFactory(user=user_gql_client.user)
-    requests_mock.delete(f"{service_1.gdpr_url}{profile.pk}", json={}, status_code=204)
+    ServiceConnectionFactory(profile=profile, service=profile_service)
 
     if with_serviceconnection:
+        requests_mock.delete(
+            f"{service_1.gdpr_url}{profile.pk}", json={}, status_code=204
+        )
         ServiceConnectionFactory(profile=profile, service=service_1)
         mocker.patch.object(
             TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
@@ -293,9 +301,8 @@ def test_user_can_delete_his_profile(
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, service=service_1)
 
-    expected_data = {"deleteMyProfile": {"clientMutationId": None}}
-
     if with_serviceconnection:
+        expected_data = {"deleteMyProfile": {"clientMutationId": None}}
         assert executed["data"] == expected_data
 
         with pytest.raises(Profile.DoesNotExist):
@@ -443,6 +450,23 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
 
     expected_data = {"deleteMyProfile": {"clientMutationId": None}}
     assert dict(executed["data"]) == expected_data
+    with pytest.raises(Profile.DoesNotExist):
+        profile.refresh_from_db()
+    with pytest.raises(User.DoesNotExist):
+        user_gql_client.user.refresh_from_db()
+
+
+def test_connection_to_profile_service_without_gdpr_api_settings_does_not_prevent_profile_deletion(
+    user_gql_client, profile_service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=profile_service)
+
+    executed = user_gql_client.execute(
+        DELETE_MY_PROFILE_MUTATION, service=profile_service
+    )
+
+    assert "errors" not in executed
     with pytest.raises(Profile.DoesNotExist):
         profile.refresh_from_db()
     with pytest.raises(User.DoesNotExist):

@@ -145,6 +145,9 @@ class Profile(UUIDModel, SerializableMixin):
         except Phone.DoesNotExist:
             return None
 
+    def effective_service_connections_qs(self):
+        return self.service_connections.filter(service__is_profile_service=False)
+
     def save(self, *args, **kwargs):
         if (
             self._state.adding  # uuid pk forces us to do this, since self.pk is True
