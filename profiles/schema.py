@@ -1455,7 +1455,6 @@ class Query(graphene.ObjectType):
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )
-    # TODO: Change the description when the download API is implemented to fetch data from services as well
     # TODO: Add the complete list of error codes
     download_my_profile = graphene.JSONString(
         authorization_code=graphene.String(
@@ -1465,8 +1464,10 @@ class Query(graphene.ObjectType):
                 "service and operation specific GDPR API scopes."
             ),
         ),
-        description="Get the user information stored in the profile as machine readable JSON.\n\nRequires "
-        "authentication.\n\nPossible error codes:\n\n* `TODO`",
+        description="Get the user information stored in the profile and its connected services as "
+        "machine readable JSON.\n\nRequires authentication.\n\n"
+        "Possible error codes:\n\n"
+        "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.",
     )
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
@@ -1642,7 +1643,11 @@ class Mutation(graphene.ObjectType):
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
         "Requires authentication.\n\nPossible error codes:\n\n"
         "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
-        "the currently authenticated user.\n\n* `TODO`"
+        "the currently authenticated user.\n"
+        "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.\n"
+        "* `CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR`: The profile deletion is disallowed by one or more "
+        "connected services.\n"
+        "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for one or more connected services."
     )
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
