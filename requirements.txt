@@ -208,7 +208,7 @@ six==1.14.0
     #   python-jose
     #   singledispatch
     #   url-normalize
-sqlparse==0.3.0
+sqlparse==0.4.2
     # via django
 tablib[html,ods,xls,xlsx,yaml]==1.1.0
     # via django-import-export
