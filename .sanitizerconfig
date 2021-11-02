@@ -141,20 +141,6 @@ strategy:
     postal_code: "profile.encrypted_postal_code"
     street_address: "profile.encrypted_street_address"
     verified_personal_information_id: null
-  reversion_revision:
-    comment: "string.empty"
-    date_created: null
-    id: null
-    user_id: null
-  reversion_version:
-    content_type_id: null
-    db: null
-    format: null
-    id: null
-    object_id: null
-    object_repr: "string.empty"
-    revision_id: null
-    serialized_data: "constant.empty_json_list"
   services_alloweddatafield:
     field_name: null
     id: null

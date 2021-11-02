@@ -173,7 +173,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "users",
     "profiles",
-    "reversion",
     "graphene_django",
     "utils",
     "services",
