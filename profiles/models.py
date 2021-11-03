@@ -3,7 +3,6 @@ import shutil
 import uuid
 from datetime import timedelta
 
-import reversion
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
@@ -57,7 +56,6 @@ class OverwriteStorage(FileSystemStorage):
         return name
 
 
-@reversion.register()
 class LegalRelationship(models.Model):
     representative = models.ForeignKey(  # "parent"
         "Profile", related_name="representatives", on_delete=models.CASCADE
@@ -82,7 +80,6 @@ class LegalRelationship(models.Model):
         return {"relationship": self}
 
 
-@reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)

@@ -10,7 +10,6 @@ from django.shortcuts import render
 from django.urls import path
 from django.utils.decorators import method_decorator
 from munigeo.models import AdministrativeDivision
-from reversion.admin import VersionAdmin
 
 from profiles.models import (
     Address,
@@ -169,7 +168,7 @@ class ImportProfilesFromJsonForm(forms.Form):
 
 
 @admin.register(Profile)
-class ExtendedProfileAdmin(VersionAdmin):
+class ExtendedProfileAdmin(admin.ModelAdmin):
     inlines = [
         VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,

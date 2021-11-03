@@ -6,13 +6,12 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from reversion.admin import VersionAdmin
 
 User = get_user_model()
 
 
 @admin.register(User)
-class UserAdmin(VersionAdmin, DjangoUserAdmin):
+class UserAdmin(DjangoUserAdmin):
     list_display = (
         "uuid",
         "get_profile_uuid_link",
