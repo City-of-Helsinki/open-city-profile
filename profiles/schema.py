@@ -877,22 +877,22 @@ class CreateProfileInput(ProfileInputBase):
 There's no replacement for these as these fields have never had any effect in the first place."""
 
     update_emails = graphene.List(
-        UpdateEmailInput, description="DEPRECATED. Update profile emails."
+        UpdateEmailInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_emails = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove emails from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
     update_phones = graphene.List(
-        UpdatePhoneInput, description="DEPRECATED. Update profile phone numbers."
+        UpdatePhoneInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_phones = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove phone numbers from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
     update_addresses = graphene.List(
-        UpdateAddressInput, description="DEPRECATED. Update profile addresses."
+        UpdateAddressInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_addresses = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove addresses from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
 
 
