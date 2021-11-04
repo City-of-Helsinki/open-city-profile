@@ -227,7 +227,6 @@ strategy:
     contact_method: null
     first_name: "profile.first_name"
     id: null
-    image: "constant.null"
     language: null
     last_name: "profile.last_name"
     nickname: "string.empty"

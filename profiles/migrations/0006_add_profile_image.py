@@ -2,8 +2,6 @@
 
 from django.db import migrations, models
 
-import profiles.models
-
 
 class Migration(migrations.Migration):
 
@@ -13,11 +11,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="profile",
             name="image",
-            field=models.ImageField(
-                blank=True,
-                null=True,
-                storage=profiles.models.OverwriteStorage(),
-                upload_to=profiles.models.get_user_media_folder,
-            ),
+            field=models.ImageField(blank=True, null=True),
         )
     ]
