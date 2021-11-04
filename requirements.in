@@ -19,7 +19,6 @@ graphene-django>=2.10.1
 graphene-federation
 git+https://github.com/City-of-Helsinki/graphene-validator.git@main
 iso3166
-pillow
 psycopg2
 pyyaml>=5.3
 requests
