@@ -297,9 +297,9 @@ type ProfileNode implements Node {
   firstName: String!
   lastName: String!
   nickname: String!
-  image: String
   language: Language
   id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
   primaryEmail: EmailNode
   primaryPhone: PhoneNode
   primaryAddress: AddressNode
@@ -352,9 +352,9 @@ type RestrictedProfileNode implements Node {
   firstName: String!
   lastName: String!
   nickname: String!
-  image: String
   language: Language
   id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
   primaryEmail: EmailNode
   primaryPhone: PhoneNode
   primaryAddress: AddressNode

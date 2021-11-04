@@ -153,6 +153,9 @@ def update_profile(profile, profile_data):
         (Address, profile_data.pop("remove_addresses", [])),
     ]
 
+    # Remove image field from input. It's not supposed to do anything anymore.
+    profile_data.pop("image", None)
+
     profile_had_primary_email = bool(profile.get_primary_email_value())
 
     for field, value in profile_data.items():
@@ -525,9 +528,13 @@ class SensitiveDataFields(graphene.InputObjectType):
 class RestrictedProfileNode(DjangoObjectType):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
+        fields = ("first_name", "last_name", "nickname", "language")
         interfaces = (relay.Node,)
 
+    image = graphene.Field(
+        graphene.String,
+        deprecation_reason="There is no image in the Profile. This field always just returns null.",
+    )
     primary_email = graphene.Field(
         EmailNode,
         description="Convenience field for the email which is marked as primary.",
@@ -575,7 +582,7 @@ class RestrictedProfileNode(DjangoObjectType):
 class ProfileNode(RestrictedProfileNode):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
+        fields = ("first_name", "last_name", "nickname", "language")
         interfaces = (relay.Node,)
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
@@ -772,7 +779,7 @@ class ProfileInputBase(graphene.InputObjectType):
         description="Last name. Maximum length is 255 characters."
     )
     nickname = graphene.String(description="Nickname. Maximum length is 32 characters.")
-    image = graphene.String(description="Profile image.")
+    image = graphene.String(description="**DEPRECATED**. Any input is ignored.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
     add_emails = graphene.List(CreateEmailInput, description="Add emails to profile.")
@@ -839,6 +846,9 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         ]
 
         sensitive_data = profile_data.pop("sensitivedata", None)
+
+        # Remove image field from input. It's not supposed to do anything anymore.
+        profile_data.pop("image", None)
 
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
@@ -920,6 +930,9 @@ class CreateProfileMutation(relay.ClientIDMutation):
         ]
 
         profile_data.pop("sensitivedata", None)
+
+        # Remove image field from input. It's not supposed to do anything anymore.
+        profile_data.pop("image", None)
 
         profile = Profile(**profile_data)
         profile.save()
