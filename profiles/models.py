@@ -19,13 +19,7 @@ from utils.fields import (
 )
 from utils.models import SerializableMixin, UUIDModel
 
-from .enums import (
-    AddressType,
-    EmailType,
-    PhoneType,
-    RepresentationType,
-    RepresentativeConfirmationDegree,
-)
+from .enums import AddressType, EmailType, PhoneType
 from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
@@ -34,30 +28,6 @@ from .validators import (
     validate_iso_3166_country_code,
     validate_visible_latin_characters_only,
 )
-
-
-class LegalRelationship(models.Model):
-    representative = models.ForeignKey(  # "parent"
-        "Profile", related_name="representatives", on_delete=models.CASCADE
-    )
-    representee = models.ForeignKey(  # "child"
-        "Profile", related_name="representees", on_delete=models.CASCADE
-    )
-    type = EnumField(  # ATM only "custodianship"
-        RepresentationType, max_length=30, default=RepresentationType.CUSTODY
-    )
-    confirmation_degree = EnumField(
-        RepresentativeConfirmationDegree,
-        max_length=30,
-        default=RepresentativeConfirmationDegree.NONE,
-    )
-    expiration = models.DateField(blank=True, null=True)
-
-    def __str__(self):
-        return "{} - {}".format(self.representative, self.type)
-
-    def get_notification_context(self):
-        return {"relationship": self}
 
 
 class Profile(UUIDModel, SerializableMixin):
@@ -79,9 +49,6 @@ class Profile(UUIDModel, SerializableMixin):
     concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
 
-    legal_relationships = models.ManyToManyField(
-        "self", through=LegalRelationship, symmetrical=False
-    )
     serialize_fields = (
         {"name": "first_name"},
         {"name": "last_name"},

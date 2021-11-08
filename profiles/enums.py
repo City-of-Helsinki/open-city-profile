@@ -2,26 +2,6 @@ from django.utils.translation import ugettext_lazy as _
 from enumfields import Enum
 
 
-class RepresentationType(Enum):
-    CUSTODY = "custody"
-
-    class Labels:
-        CUSTODY = _("Custodianship")
-
-
-class RepresentativeConfirmationDegree(Enum):
-    NONE = "none"
-    STRONG = "strong"
-    ID_SHOWN = "id_shown"
-    PROXY = "proxy"
-
-    class Labels:
-        NONE = _("Not authenticated")
-        STRONG = _("Strong authentication (Suomi.fi)")
-        ID_SHOWN = _("Guardian present")
-        PROXY = _("Approved via signed document")
-
-
 class EmailType(Enum):
     NONE = "none"
     WORK = "work"

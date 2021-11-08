@@ -210,13 +210,6 @@ strategy:
     primary: null
     profile_id: null
     verified: null
-  profiles_legalrelationship:
-    confirmation_degree: null
-    expiration: null
-    id: null
-    representative_id: null
-    representee_id: null
-    type: null
   profiles_phone:
     id: null
     phone: "profile.phone"
