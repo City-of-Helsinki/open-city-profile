@@ -45,7 +45,6 @@ env = environ.Env(
     MAIL_MAILGUN_KEY=(str, ""),
     MAIL_MAILGUN_DOMAIN=(str, ""),
     MAIL_MAILGUN_API=(str, ""),
-    NOTIFICATIONS_ENABLED=(bool, False),
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     VERSION=(str, None),
@@ -273,7 +272,6 @@ PARLER_LANGUAGES = {
 
 # Notification settings
 
-NOTIFICATIONS_ENABLED = True
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 if env("MAIL_MAILGUN_KEY"):
     ANYMAIL = {
