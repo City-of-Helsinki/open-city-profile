@@ -15,7 +15,6 @@ from profiles.models import (
     Address,
     ClaimToken,
     Email,
-    LegalRelationship,
     Phone,
     Profile,
     SensitiveData,
@@ -34,24 +33,6 @@ def superuser_required(function):
         return function(request, *args, **kwargs)
 
     return wrapper
-
-
-class RepresentativeAdmin(admin.StackedInline):
-    model = LegalRelationship
-    extra = 0
-    fk_name = "representative"
-    verbose_name = "Representative"
-    verbose_name_plural = "Representing"
-    autocomplete_fields = ("representee",)
-
-
-class RepresenteeAdmin(admin.StackedInline):
-    model = LegalRelationship
-    extra = 0
-    fk_name = "representee"
-    verbose_name = "Representative"
-    verbose_name_plural = "Represented by"
-    autocomplete_fields = ("representative",)
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -172,8 +153,6 @@ class ExtendedProfileAdmin(admin.ModelAdmin):
     inlines = [
         VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,
-        RepresenteeAdmin,
-        RepresentativeAdmin,
         ServiceConnectionInline,
         SubscriptionInline,
         ClaimTokenInline,
