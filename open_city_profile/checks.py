@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.core.checks import register, Tags, Warning
 from django.db import connections
 
@@ -32,5 +33,27 @@ def check_obsolete_database_tables(app_configs, **kwargs):
                     hint="Perhaps these should be removed.",
                 )
             )
+
+    return errors
+
+
+@register(Tags.database)
+def check_obsolete_contentypes(app_configs, **kwargs):
+    errors = []
+
+    content_types_without_model = [
+        ct for ct in ContentType.objects.all() if ct.model_class() is None
+    ]
+
+    if content_types_without_model:
+        obsolete_contenttypes = ", ".join(
+            [f"{ct.app_label}.{ct.model}" for ct in content_types_without_model]
+        )
+        errors.append(
+            Warning(
+                f"Content types without a model exist: {obsolete_contenttypes}.",
+                hint="See `remove_stale_contenttypes` management command.",
+            )
+        )
 
     return errors
