@@ -26,23 +26,6 @@ strategy:
     app_label: null
     id: null
     model: null
-  django_ilmoitin_notificationtemplate:
-    admin_notification_subject: null
-    admin_notification_text: null
-    from_email: null
-    id: null
-    type: null
-  django_ilmoitin_notificationtemplate_admins_to_notify:
-    id: null
-    notificationtemplate_id: null
-    user_id: null
-  django_ilmoitin_notificationtemplate_translation:
-    body_html: null
-    body_text: null
-    id: null
-    language_code: null
-    master_id: null
-    subject: null
   django_session:
     expire_date: null
     session_data: "string.empty"
@@ -85,24 +68,6 @@ strategy:
     iss: null
     sid: null
     sub: null
-  mailer_dontsendentry:
-    id: null
-    to_address: "profile.email"
-    when_added: null
-  mailer_message:
-    id: null
-    message_data: "string.random"
-    priority: null
-    when_added: null
-  mailer_messagelog:
-    id: null
-    log_message: null
-    message_data: "string.random"
-    message_id: null
-    priority: null
-    result: null
-    when_added: null
-    when_attempted: null
   profiles_address:
     address: "profile.street_address"
     address_type: null

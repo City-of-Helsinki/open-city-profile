@@ -40,11 +40,7 @@ env = environ.Env(
     OIDC_CLIENT_ID=(str, ""),
     OIDC_CLIENT_SECRET=(str, ""),
     TUNNISTAMO_API_TOKENS_URL=(str, ""),
-    MAILER_EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
     DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
-    MAIL_MAILGUN_KEY=(str, ""),
-    MAIL_MAILGUN_DOMAIN=(str, ""),
-    MAIL_MAILGUN_API=(str, ""),
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     VERSION=(str, None),
@@ -155,6 +151,9 @@ TIME_ZONE = "Europe/Helsinki"
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
+
 # Set to True to enable GraphiQL interface, this will overriden to True if DEBUG=True
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 
@@ -175,8 +174,6 @@ INSTALLED_APPS = [
     "users",
     "profiles",
     "reversion",
-    "django_ilmoitin",
-    "mailer",
     "graphene_django",
     "utils",
     "services",
@@ -266,18 +263,6 @@ PARLER_LANGUAGES = {
     1: ({"code": "fi"}, {"code": "en"}, {"code": "sv"}),
     "default": {"fallbacks": ["fi"], "hide_untranslated": False},
 }
-
-# Notification settings
-
-DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
-if env("MAIL_MAILGUN_KEY"):
-    ANYMAIL = {
-        "MAILGUN_API_KEY": env("MAIL_MAILGUN_KEY"),
-        "MAILGUN_SENDER_DOMAIN": env("MAIL_MAILGUN_DOMAIN"),
-        "MAILGUN_API_URL": env("MAIL_MAILGUN_API"),
-    }
-EMAIL_BACKEND = "mailer.backend.DbBackend"
-MAILER_EMAIL_BACKEND = env.str("MAILER_EMAIL_BACKEND")
 
 # Graphene
 

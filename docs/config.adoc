@@ -79,16 +79,6 @@ First of all, `TOKEN_AUTH_AUTHSERVER_URL` is used as the authentication server, 
 - `GDPR_AUTH_CALLBACK_URL`: Callback URL should be the same which is used by the UI for fetching OAuth/OIDC authorization token for using the GDPR API.
 - `TUNNISTAMO_API_TOKENS_URL`: Tunnistamo URL from which the backend will fetch API tokens for GDPR API use.
 
-== Email
-
-- `MAILER_EMAIL_BACKEND`: https://pypi.org/project/django-mailer/[Django-mailer] is used to queue emails. This lets you set your actual email backend. The default is "django.core.mail.backends.console.EmailBackend".
-
-https://mailgun.com/[Mailgun] is the only supported email sending service. https://anymail.readthedocs.io[Anymail] is used as email backend to communicate with Mailgun. If you want to send email, set `MAILER_EMAIL_BACKEND` to "anymail.backends.mailgun.EmailBackend". See https://anymail.readthedocs.io/en/stable/esps/mailgun/[Mailgun configuration in Anymail]. These settings are supported:
-
-- `MAIL_MAILGUN_API`: The URL of the Mailgun API to call. Corresponds to `MAILGUN_API_URL` Anymail setting.
-- `MAIL_MAILGUN_KEY`: The API key for Mailgun. Corresponds to `MAILGUN_API_KEY` Anymail setting.
-- `MAIL_MAILGUN_DOMAIN`: Sender's domain. Corresponds to `MAILGUN_SENDER_DOMAIN` Anymail setting.
-
 == Feature flags
 
 - `ENABLE_GRAPHIQL`: Enables GraphiQL testing user interface. If `DEBUG` is `True`, this setting has no effect and GraphiQL is always enabled. Default is `False`.

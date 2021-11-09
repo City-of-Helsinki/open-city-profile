@@ -6,7 +6,6 @@ django-environ
 django-filter
 django-guardian
 django-helusers>=0.7
-django-ilmoitin>=0.2.0
 django-parler
 django-reversion
 django-sanitized-dump
