@@ -1,29 +1,9 @@
 import pytest
-from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
 
 app = "profiles"
 
 
-def execute_migration_test(migrate_from, migrate_to, before_migration, after_migration):
-    migrate_from = [(app, migrate_from)]
-    migrate_to = [(app, migrate_to)]
-
-    executor = MigrationExecutor(connection)
-    executor.migrate(migrate_from)
-    old_apps = executor.loader.project_state(migrate_from).apps
-
-    passable_data = before_migration(old_apps) or ()
-
-    # Migrate forwards.
-    executor.loader.build_graph()  # reload.
-    executor.migrate(migrate_to)
-    new_apps = executor.loader.project_state(migrate_to).apps
-
-    after_migration(new_apps, *passable_data)
-
-
-def test_fix_primary_email_migration(migration_test_db):
+def test_fix_primary_email_migration(execute_migration_test):
     def create_data(apps):
         Profile = apps.get_model(app, "Profile")
         Email = apps.get_model(app, "Email")
@@ -85,11 +65,13 @@ def test_fix_primary_email_migration(migration_test_db):
         assert profile.emails.filter(primary=True).count() == 1
 
     execute_migration_test(
-        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration
+        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration,
     )
 
 
-def test_verified_personal_information_searchable_names_migration(migration_test_db):
+def test_verified_personal_information_searchable_names_migration(
+    execute_migration_test,
+):
     FIRST_NAME = "First name"
     LAST_NAME = "Last name"
 
@@ -121,7 +103,7 @@ def test_verified_personal_information_searchable_names_migration(migration_test
 
 
 def test_verified_personal_information_searchable_national_identification_number_migration(
-    migration_test_db,
+    execute_migration_test,
 ):
     ID_NUMBER = "010199-1234"
 
@@ -143,6 +125,39 @@ def test_verified_personal_information_searchable_national_identification_number
     execute_migration_test(
         "0036_start_using_raw_verifiedpersonalinformation_names",
         "0038_start_using_searchable_national_identification_number",
+        create_data,
+        verify_migration,
+    )
+
+
+def test_phone_number_to_not_null_migration(execute_migration_test):
+    NUM_PROFILES = 2
+    PHONE_NUMBER_LENGTH = 7
+
+    def create_data(apps):
+        Profile = apps.get_model(app, "Profile")
+        Phone = apps.get_model(app, "Phone")
+
+        for i in range(NUM_PROFILES):
+            profile = Profile.objects.create(first_name=str(i))
+            Phone.objects.create(profile=profile, phone=str(i) * PHONE_NUMBER_LENGTH)
+            Phone.objects.create(profile=profile, phone=None)
+
+    def verify_migration(apps):
+        Profile = apps.get_model(app, "Profile")
+        Phone = apps.get_model(app, "Phone")
+
+        assert Phone.objects.count() == NUM_PROFILES
+
+        for i in range(NUM_PROFILES):
+            profile = Profile.objects.get(first_name=str(i))
+            assert profile.phones.count() == 1
+            good_phone = Phone.objects.get(profile=profile)
+            assert good_phone.phone == str(i) * PHONE_NUMBER_LENGTH
+
+    execute_migration_test(
+        "0047_remove_verifiedpersonalinformation_email",
+        "0048_change_phone_number_to_not_null",
         create_data,
         verify_migration,
     )

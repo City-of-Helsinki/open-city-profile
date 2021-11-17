@@ -4,6 +4,8 @@ import factory.random
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
+from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 from django.test import RequestFactory
 from graphene.test import Client as GrapheneClient
 from graphene_django.settings import graphene_settings
@@ -77,13 +79,33 @@ def autouse_db(db):
 
 
 @pytest.fixture
-def migration_test_db(request, transactional_db):
+def execute_migration_test(request, transactional_db):
     def reset_migrations():
         call_command("migrate", verbosity=0)
 
     request.addfinalizer(reset_migrations)
 
-    return transactional_db
+    app = request.module.app
+
+    def execute_migration_test(
+        migrate_from, migrate_to, before_migration, after_migration
+    ):
+        migrate_from = [(app, migrate_from)]
+        migrate_to = [(app, migrate_to)]
+
+        executor = MigrationExecutor(connection)
+        executor.migrate(migrate_from)
+        old_apps = executor.loader.project_state(migrate_from).apps
+
+        passable_data = before_migration(old_apps) or ()
+
+        executor.loader.build_graph()
+        executor.migrate(migrate_to)
+        new_apps = executor.loader.project_state(migrate_to).apps
+
+        after_migration(new_apps, *passable_data)
+
+    return execute_migration_test
 
 
 @pytest.fixture(autouse=True)
@@ -94,6 +116,14 @@ def set_random_seed():
 @pytest.fixture(autouse=True)
 def email_setup(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+
+@pytest.fixture
+def keycloak_setup(settings):
+    settings.KEYCLOAK_BASE_URL = "https://localhost/keycloak"
+    settings.KEYCLOAK_REALM = "test-keycloak-realm"
+    settings.KEYCLOAK_CLIENT_ID = "test-keycloak-client-id"
+    settings.KEYCLOAK_CLIENT_SECRET = "test-keycloak-client-secret"
 
 
 @pytest.fixture
@@ -154,3 +184,8 @@ def get_unix_timestamp_now():
 @pytest.fixture
 def unix_timestamp_now():
     return get_unix_timestamp_now()
+
+
+@pytest.fixture(params=[None, ""])
+def empty_string_value(request):
+    return request.param

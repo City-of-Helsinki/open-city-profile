@@ -1,15 +1,15 @@
 from itertools import chain
 
+import django.dispatch
 import graphene
-import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.utils.translation import override
-from django.utils.translation import ugettext_lazy as _
 from django_filters import (
     BooleanFilter,
     CharFilter,
@@ -24,22 +24,26 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphene_federation import key
 from graphene_validator.decorators import validated
-from graphql_jwt.decorators import login_required, permission_required
+from graphene_validator.errors import ValidationError as GrapheneValidationError
+from graphene_validator.validation import validate
+from graphql_relay import from_global_id
 from munigeo.models import AdministrativeDivision
 from thesaurus.models import Concept
 
+from open_city_profile.decorators import (
+    login_and_service_required,
+    login_required,
+    permission_required,
+    staff_required,
+)
 from open_city_profile.exceptions import (
     APINotImplementedError,
-    ConnectedServiceDeletionFailedError,
-    ConnectedServiceDeletionNotAllowedError,
-    MissingGDPRApiTokenError,
+    InvalidEmailFormatError,
     ProfileDoesNotExistError,
+    ProfileMustHavePrimaryEmailError,
     TokenExpiredError,
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
-from open_city_profile.oidc import TunnistamoTokenExchange
-from profiles.decorators import login_and_service_required, staff_required
-from services.exceptions import MissingGDPRUrlException
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
 from subscriptions.schema import (
@@ -49,6 +53,10 @@ from subscriptions.schema import (
 )
 from utils.validation import model_field_validation
 
+from .connected_services import (
+    delete_connected_service_data,
+    download_connected_service_data,
+)
 from .enums import AddressType, EmailType, PhoneType
 from .models import (
     Address,
@@ -65,12 +73,7 @@ from .models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
-from .utils import (
-    create_nested,
-    delete_nested,
-    requester_has_service_permission,
-    update_nested,
-)
+from .utils import requester_can_view_verified_personal_information
 
 User = get_user_model()
 
@@ -85,6 +88,9 @@ AllowedAddressType = graphene.Enum.from_enum(
 )
 
 
+profile_updated = django.dispatch.Signal(providing_args=["instance"])
+
+
 def get_claimable_profile(token=None):
     claim_token = ClaimToken.objects.get(token=token)
     if claim_token.expires_at and claim_token.expires_at < timezone.now():
@@ -92,16 +98,54 @@ def get_claimable_profile(token=None):
     return Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
 
 
+def _create_nested(model, profile, data):
+    for add_input in filter(None, data):
+        item = model(profile=profile)
+        for field, value in add_input.items():
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+
+        item.save()
+
+
+def _update_nested(model, profile, data, field_callback):
+    for update_input in filter(None, data):
+        id = update_input.pop("id")
+        item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
+        for field, value in update_input.items():
+            if field_callback:
+                field_callback(item, field, value)
+            if field == "primary" and value is True:
+                model.objects.filter(profile=profile).update(primary=False)
+            setattr(item, field, value)
+
+        item.save()
+
+
+def _delete_nested(model, profile, data):
+    for remove_id in filter(None, data):
+        model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
+
+
 def update_profile(profile, profile_data):
+    def email_change_makes_it_unverified(item, field, value):
+        if field == "email" and item.email != value:
+            item.verified = False
+
     nested_to_create = [
         (Email, profile_data.pop("add_emails", [])),
         (Phone, profile_data.pop("add_phones", [])),
         (Address, profile_data.pop("add_addresses", [])),
     ]
     nested_to_update = [
-        (Email, profile_data.pop("update_emails", [])),
-        (Phone, profile_data.pop("update_phones", [])),
-        (Address, profile_data.pop("update_addresses", [])),
+        (
+            Email,
+            profile_data.pop("update_emails", []),
+            email_change_makes_it_unverified,
+        ),
+        (Phone, profile_data.pop("update_phones", []), None),
+        (Address, profile_data.pop("update_addresses", []), None),
     ]
     nested_to_delete = [
         (Email, profile_data.pop("remove_emails", [])),
@@ -109,18 +153,27 @@ def update_profile(profile, profile_data):
         (Address, profile_data.pop("remove_addresses", [])),
     ]
 
+    profile_had_primary_email = bool(profile.get_primary_email_value())
+
     for field, value in profile_data.items():
         setattr(profile, field, value)
     profile.save()
 
     for model, data in nested_to_create:
-        create_nested(model, profile, data)
+        _create_nested(model, profile, data)
 
-    for model, data in nested_to_update:
-        update_nested(model, profile, data)
+    for model, data, field_callback in nested_to_update:
+        _update_nested(model, profile, data, field_callback)
 
     for model, data in nested_to_delete:
-        delete_nested(model, profile, data)
+        _delete_nested(model, profile, data)
+
+    if profile_had_primary_email and not bool(profile.get_primary_email_value()):
+        raise ProfileMustHavePrimaryEmailError(
+            "Must maintain a primary email on a profile"
+        )
+
+    profile_updated.send(sender=profile.__class__, instance=profile)
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -302,9 +355,7 @@ class ProfileFilter(FilterSet):
     def filter_by_name_icontains(self, queryset, name, value):
         name_filter = Q(**{f"{name}__icontains": value})
 
-        if requester_has_service_permission(
-            self.request, "can_view_verified_personal_information"
-        ):
+        if requester_can_view_verified_personal_information(self.request):
             name_filter |= Q(
                 **{f"verified_personal_information__{name}__icontains": value}
             )
@@ -312,9 +363,7 @@ class ProfileFilter(FilterSet):
         return queryset.filter(name_filter)
 
     def filter_by_nin_exact(self, queryset, name, value):
-        if requester_has_service_permission(
-            self.request, "can_view_verified_personal_information"
-        ):
+        if requester_can_view_verified_personal_information(self.request):
             return queryset.filter(
                 verified_personal_information__national_identification_number=value
             )
@@ -355,6 +404,7 @@ class PhoneNode(ContactNode):
         interfaces = (relay.Node,)
 
 
+@key(fields="id")
 class AddressNode(ContactNode):
     address_type = AllowedAddressType()
 
@@ -370,6 +420,26 @@ class AddressNode(ContactNode):
             "country_code",
         )
         interfaces = (relay.Node,)
+
+    @login_and_service_required
+    def __resolve_reference(self, info, **kwargs):
+        address = graphene.Node.get_node_from_global_id(
+            info, self.id, only_type=AddressNode
+        )
+        if not address:
+            return None
+
+        service = info.context.service
+        user = info.context.user
+
+        if service.has_connection_to_profile(address.profile) and (
+            user == address.profile.user or user.has_perm("can_view_profiles", service)
+        ):
+            return address
+        else:
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
 
 class VerifiedPersonalInformationAddressNode(graphene.ObjectType):
@@ -394,7 +464,6 @@ class VerifiedPersonalInformationNode(DjangoObjectType):
             "last_name",
             "given_name",
             "national_identification_number",
-            "email",
             "municipality_of_residence",
             "municipality_of_residence_number",
         )
@@ -446,7 +515,11 @@ class SensitiveDataNode(DjangoObjectType):
 
 
 class SensitiveDataFields(graphene.InputObjectType):
-    ssn = graphene.String(description="Social security number.")
+    ssn = graphene.String(description="Finnish personal identity code.")
+
+    @staticmethod
+    def validate_ssn(value, info, **input):
+        return model_field_validation(SensitiveData, "ssn", value)
 
 
 class RestrictedProfileNode(DjangoObjectType):
@@ -540,9 +613,7 @@ class ProfileNode(RestrictedProfileNode):
         loa = info.context.user_auth.data.get("loa")
         if (
             info.context.user == self.user and loa in ["substantial", "high"]
-        ) or requester_has_service_permission(
-            info.context, "can_view_verified_personal_information"
-        ):
+        ) or requester_can_view_verified_personal_information(info.context):
             try:
                 return self.verified_personal_information
             except VerifiedPersonalInformation.DoesNotExist:
@@ -584,10 +655,21 @@ class TemporaryReadAccessTokenNode(DjangoObjectType):
         return self.expires_at()
 
 
+def _validate_email(email):
+    try:
+        return model_field_validation(Email, "email", email)
+    except GrapheneValidationError:
+        raise InvalidEmailFormatError("Email must be in valid email format")
+
+
 class CreateEmailInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary mail address.")
     email = graphene.String(description="Email address.", required=True)
     email_type = AllowedEmailType(description="Email address type.", required=True)
+
+    @staticmethod
+    def validate_email(value, info, **input):
+        return _validate_email(value)
 
 
 class UpdateEmailInput(graphene.InputObjectType):
@@ -596,44 +678,100 @@ class UpdateEmailInput(graphene.InputObjectType):
     email = graphene.String(description="Email address.")
     email_type = AllowedEmailType(description="Email address type.")
 
+    @staticmethod
+    def validate_email(value, info, **input):
+        return _validate_email(value)
+
 
 class CreatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
-    phone = graphene.String(description="Phone number.", required=True)
+    phone = graphene.String(
+        description="Phone number. Must not be empty.", required=True
+    )
     phone_type = AllowedPhoneType(description="Phone number type.", required=True)
+
+    @staticmethod
+    def validate_phone(value, info, **input):
+        return model_field_validation(Phone, "phone", value)
 
 
 class UpdatePhoneInput(graphene.InputObjectType):
     primary = graphene.Boolean(description="Is this primary phone number.")
     id = graphene.ID(required=True)
-    phone = graphene.String(description="Phone number.")
+    phone = graphene.String(description="Phone number. If provided, must not be empty.")
     phone_type = AllowedPhoneType(description="Phone number type.")
+
+    @staticmethod
+    def validate_phone(value, info, **input):
+        return model_field_validation(Phone, "phone", value)
 
 
 class AddressInput(graphene.InputObjectType):
-    country_code = graphene.String(description="Country code")
+    country_code = graphene.String(description="An ISO 3166 alpha-2 country code.")
     primary = graphene.Boolean(description="Is this primary address.")
+
+    @staticmethod
+    def validate_country_code(value, info, **input):
+        return model_field_validation(Address, "country_code", value)
 
 
 class CreateAddressInput(AddressInput):
-    address = graphene.String(description="Street address.", required=True)
-    postal_code = graphene.String(description="Postal code.", required=True)
-    city = graphene.String(description="City.", required=True)
+    address = graphene.String(
+        description="Street address. Maximum length is 128 characters.", required=True,
+    )
+    postal_code = graphene.String(
+        description="Postal code. Maximum length is 32 characters.", required=True,
+    )
+    city = graphene.String(
+        description="City. Maximum length is 64 characters.", required=True,
+    )
     address_type = AllowedAddressType(description="Address type.", required=True)
+
+    @staticmethod
+    def validate_address(value, info, **input):
+        return model_field_validation(Address, "address", value)
+
+    @staticmethod
+    def validate_postal_code(value, info, **input):
+        return model_field_validation(Address, "postal_code", value)
+
+    @staticmethod
+    def validate_city(value, info, **input):
+        return model_field_validation(Address, "city", value)
 
 
 class UpdateAddressInput(AddressInput):
     id = graphene.ID(required=True)
-    address = graphene.String(description="Street address.")
-    postal_code = graphene.String(description="Postal code.")
-    city = graphene.String(description="City.")
+    address = graphene.String(
+        description="Street address. Maximum length is 128 characters."
+    )
+    postal_code = graphene.String(
+        description="Postal code. Maximum length is 32 characters."
+    )
+    city = graphene.String(description="City. Maximum length is 64 characters.")
     address_type = AllowedAddressType(description="Address type.")
+
+    @staticmethod
+    def validate_address(value, info, **input):
+        return model_field_validation(Address, "address", value)
+
+    @staticmethod
+    def validate_postal_code(value, info, **input):
+        return model_field_validation(Address, "postal_code", value)
+
+    @staticmethod
+    def validate_city(value, info, **input):
+        return model_field_validation(Address, "city", value)
 
 
 class ProfileInputBase(graphene.InputObjectType):
-    first_name = graphene.String(description="First name.")
-    last_name = graphene.String(description="Last name.")
-    nickname = graphene.String(description="Nickname.")
+    first_name = graphene.String(
+        description="First name. Maximum length is 255 characters."
+    )
+    last_name = graphene.String(
+        description="Last name. Maximum length is 255 characters."
+    )
+    nickname = graphene.String(description="Nickname. Maximum length is 32 characters.")
     image = graphene.String(description="Profile image.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
@@ -646,6 +784,18 @@ class ProfileInputBase(graphene.InputObjectType):
     )
     subscriptions = graphene.List(SubscriptionInputType)
     sensitivedata = graphene.InputField(SensitiveDataFields)
+
+    @staticmethod
+    def validate_first_name(value, info, **input):
+        return model_field_validation(Profile, "first_name", value)
+
+    @staticmethod
+    def validate_last_name(value, info, **input):
+        return model_field_validation(Profile, "last_name", value)
+
+    @staticmethod
+    def validate_nickname(value, info, **input):
+        return model_field_validation(Profile, "nickname", value)
 
 
 class ProfileInput(ProfileInputBase):
@@ -679,6 +829,8 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
     @login_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        validate(cls, root, info, **input)
+
         profile_data = input.pop("profile")
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
@@ -686,13 +838,18 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
             (Address, profile_data.pop("add_addresses", [])),
         ]
 
+        sensitive_data = profile_data.pop("sensitivedata", None)
+
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
             setattr(profile, field, value)
         profile.save()
 
         for model, data in nested_to_create:
-            create_nested(model, profile, data)
+            _create_nested(model, profile, data)
+
+        if sensitive_data:
+            update_sensitivedata(profile, sensitive_data)
 
         return CreateMyProfileMutation(profile=profile)
 
@@ -744,28 +901,35 @@ class CreateProfileMutation(relay.ClientIDMutation):
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         service = info.context.service
-        profile_data = input.pop("profile")
-        sensitivedata = profile_data.pop("sensitivedata", None)
+        profile_data = input.get("profile")
+        sensitivedata = profile_data.get("sensitivedata", None)
+
+        if sensitivedata and not info.context.user.has_perm(
+            "can_manage_sensitivedata", service
+        ):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+        validate(cls, root, info, **input)
+
         nested_to_create = [
             (Email, profile_data.pop("add_emails", [])),
             (Phone, profile_data.pop("add_phones", [])),
             (Address, profile_data.pop("add_addresses", [])),
         ]
 
+        profile_data.pop("sensitivedata", None)
+
         profile = Profile(**profile_data)
         profile.save()
 
         for model, data in nested_to_create:
-            create_nested(model, profile, data)
+            _create_nested(model, profile, data)
 
         if sensitivedata:
-            if info.context.user.has_perm("can_manage_sensitivedata", service):
-                SensitiveData.objects.create(profile=profile, **sensitivedata)
-                profile.refresh_from_db()
-            else:
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+            SensitiveData.objects.create(profile=profile, **sensitivedata)
+            profile.refresh_from_db()
 
         # create the service connection for the profile
         profile.service_connections.create(service=service)
@@ -837,7 +1001,6 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
     national_identification_number = graphene.String(
         description="Finnish personal identity code."
     )
-    email = graphene.String(description="Email. Max length 1024 characters.")
     municipality_of_residence = graphene.String(
         description="Official municipality of residence in Finland as a free form text. Max length 100 characters."
     )
@@ -876,10 +1039,6 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
         )
 
     @staticmethod
-    def validate_email(value, info, **input):
-        return model_field_validation(VerifiedPersonalInformation, "email", value)
-
-    @staticmethod
     def validate_municipality_of_residence(value, info, **input):
         return model_field_validation(
             VerifiedPersonalInformation, "municipality_of_residence", value
@@ -894,14 +1053,32 @@ class VerifiedPersonalInformationInput(graphene.InputObjectType):
 
 class EmailInput(graphene.InputObjectType):
     email = graphene.String(description="The email address.", required=True)
+    verified = graphene.Boolean(
+        description="Sets whether the primary email address has been verified. If not given, defaults to False."
+    )
 
 
 class ProfileWithVerifiedPersonalInformationInput(graphene.InputObjectType):
+    first_name = graphene.String(description="First name.")
+    last_name = graphene.String(description="Last name.")
     verified_personal_information = graphene.InputField(
-        VerifiedPersonalInformationInput, required=True
+        VerifiedPersonalInformationInput
     )
     primary_email = graphene.InputField(
         EmailInput, description="Sets the profile's primary email address."
+    )
+
+
+class CreateOrUpdateUserProfileMutationInput(graphene.InputObjectType):
+    user_id = graphene.UUID(
+        required=True,
+        description="The **user id** of the user the Profile is or will be associated with.",
+    )
+    service_client_id = graphene.String(
+        description="Connect the profile to the service identified by this client id."
+    )
+    profile = graphene.InputField(
+        ProfileWithVerifiedPersonalInformationInput, required=True
     )
 
 
@@ -925,21 +1102,17 @@ class ProfileWithVerifiedPersonalInformationOutput(graphene.ObjectType):
         interfaces = (relay.Node,)
 
 
+class CreateOrUpdateUserProfileMutationPayload(graphene.ObjectType):
+    profile = graphene.Field(ProfileNode)
+
+
 class CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
     graphene.ObjectType
 ):
     profile = graphene.Field(ProfileWithVerifiedPersonalInformationOutput)
 
 
-@validated
-class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
-    class Arguments:
-        input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
-            required=True
-        )
-
-    Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
-
+class CreateOrUpdateUserProfileMutationBase:
     @staticmethod
     def _handle_address(vpi, address_name, address_model, address_input):
         try:
@@ -956,29 +1129,9 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             address.delete()
 
     @staticmethod
-    def _handle_primary_email(profile, primary_email_input):
-        email_address = primary_email_input["email"]
-
-        email, email_created = profile.emails.get_or_create(
-            email=email_address, defaults={"email_type": EmailType.NONE}
-        )
-
-        profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
-
-        if not email.primary:
-            email.primary = True
-            email.save()
-
-    @staticmethod
-    @permission_required("profiles.manage_verified_personal_information")
-    @transaction.atomic
-    def mutate(parent, info, input):
-        user_id_input = input.pop("user_id")
-        profile_input = input.pop("profile")
-        verified_personal_information_input = profile_input.pop(
-            "verified_personal_information"
-        )
-
+    def _handle_verified_personal_information(
+        profile, verified_personal_information_input
+    ):
         address_types = [
             {"model": VerifiedPersonalInformationPermanentAddress},
             {"model": VerifiedPersonalInformationTemporaryAddress},
@@ -989,10 +1142,6 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             address_type["input"] = verified_personal_information_input.pop(
                 address_type["name"], None
             )
-
-        user, created = User.objects.get_or_create(uuid=user_id_input)
-
-        profile, created = Profile.objects.get_or_create(user=user)
 
         vpi, created = VerifiedPersonalInformation.objects.update_or_create(
             profile=profile, defaults=verified_personal_information_input
@@ -1006,8 +1155,45 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
             address_name = address_type["name"]
             address_model = address_type["model"]
 
-            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_address(
+            CreateOrUpdateUserProfileMutationBase._handle_address(
                 vpi, address_name, address_model, address_input
+            )
+
+    @staticmethod
+    def _handle_primary_email(profile, primary_email_input):
+        email_address = primary_email_input["email"]
+        verified = primary_email_input.get("verified", False)
+
+        email, email_created = profile.emails.get_or_create(
+            email=email_address,
+            defaults={"email_type": EmailType.NONE, "verified": verified},
+        )
+
+        profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
+
+        if not email.primary or email.verified is not verified:
+            email.primary = True
+            email.verified = verified
+            email.save()
+
+    @staticmethod
+    def _do_mutate(parent, info, input):
+        user_id_input = input.pop("user_id")
+        profile_input = input.pop("profile")
+        verified_personal_information_input = profile_input.pop(
+            "verified_personal_information", None
+        )
+        primary_email_input = profile_input.pop("primary_email", None)
+
+        user, created = User.objects.get_or_create(uuid=user_id_input)
+
+        profile, created = Profile.objects.update_or_create(
+            user=user, defaults=profile_input
+        )
+
+        if verified_personal_information_input:
+            CreateOrUpdateUserProfileMutationBase._handle_verified_personal_information(
+                profile, verified_personal_information_input
             )
 
         service_client_id = input.pop("service_client_id", None)
@@ -1017,11 +1203,45 @@ class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Muta
                 service=service, defaults={"enabled": True}
             )
 
-        primary_email_input = profile_input.pop("primary_email", None)
         if primary_email_input:
-            CreateOrUpdateProfileWithVerifiedPersonalInformationMutation._handle_primary_email(
+            CreateOrUpdateUserProfileMutationBase._handle_primary_email(
                 profile, primary_email_input
             )
+
+        return profile
+
+
+@validated
+class CreateOrUpdateUserProfileMutation(
+    CreateOrUpdateUserProfileMutationBase, graphene.Mutation
+):
+    class Arguments:
+        input = CreateOrUpdateUserProfileMutationInput(required=True)
+
+    Output = CreateOrUpdateUserProfileMutationPayload
+
+    @staticmethod
+    @permission_required("profiles.manage_verified_personal_information")
+    @transaction.atomic
+    def mutate(parent, info, input):
+        profile = CreateOrUpdateUserProfileMutationBase._do_mutate(parent, info, input)
+        return CreateOrUpdateUserProfileMutationPayload(profile=profile)
+
+
+@validated
+class CreateOrUpdateProfileWithVerifiedPersonalInformationMutation(graphene.Mutation):
+    class Arguments:
+        input = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput(
+            required=True
+        )
+
+    Output = CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+
+    @staticmethod
+    @permission_required("profiles.manage_verified_personal_information")
+    @transaction.atomic
+    def mutate(parent, info, input):
+        profile = CreateOrUpdateUserProfileMutationBase._do_mutate(parent, info, input)
 
         return CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload(
             profile=profile
@@ -1044,6 +1264,8 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
+
+        validate(cls, root, info, **input)
 
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
@@ -1109,16 +1331,23 @@ class UpdateProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
-        sensitive_data = profile_data.pop("sensitivedata", None)
+        sensitive_data = profile_data.get("sensitivedata", None)
+
+        if sensitive_data and not info.context.user.has_perm(
+            "can_manage_sensitivedata", service
+        ):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+        validate(cls, root, info, **input)
+
+        profile_data.pop("sensitivedata", None)
+
         update_profile(profile, profile_data)
 
         if sensitive_data:
-            if info.context.user.has_perm("can_manage_sensitivedata", service):
-                update_sensitivedata(profile, sensitive_data)
-            else:
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+            update_sensitivedata(profile, sensitive_data)
 
         return UpdateProfileMutation(profile=profile)
 
@@ -1134,6 +1363,8 @@ class ClaimProfileMutation(relay.ClientIDMutation):
     @login_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
+        validate(cls, root, info, **input)
+
         profile_to_claim = get_claimable_profile(token=input["token"])
         if Profile.objects.filter(user=info.context.user).exists():
             # Logged in user has a profile
@@ -1164,8 +1395,6 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
     @classmethod
     @login_and_service_required
     def mutate_and_get_payload(cls, root, info, **input):
-        authorization_code = input["authorization_code"]
-
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
@@ -1176,60 +1405,11 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
-        if profile.service_connections.exists():
-            tte = TunnistamoTokenExchange()
-            api_tokens = tte.fetch_api_tokens(authorization_code)
-            cls.delete_service_connections_for_profile(
-                profile, api_tokens, dry_run=True
-            )
-            cls.delete_service_connections_for_profile(
-                profile, api_tokens, dry_run=False
-            )
+        delete_connected_service_data(profile, input["authorization_code"])
 
         profile.delete()
         info.context.user.delete()
         return DeleteMyProfileMutation()
-
-    @staticmethod
-    def delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
-        failed_services = []
-
-        for service_connection in profile.service_connections.all():
-            service = service_connection.service
-
-            if not service.gdpr_delete_scope:
-                raise ConnectedServiceDeletionNotAllowedError(
-                    f"Connected services: {service.name}"
-                    f"does not have an API for removing data."
-                )
-
-            api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
-            api_token = api_tokens.get(api_identifier, "")
-
-            if not api_token:
-                raise MissingGDPRApiTokenError(
-                    f"Couldn't fetch an API token for service {service.name}."
-                )
-
-            try:
-                service_connection.delete_gdpr_data(
-                    api_token=api_token, dry_run=dry_run
-                )
-                if not dry_run:
-                    service_connection.delete()
-            except (requests.RequestException, MissingGDPRUrlException):
-                failed_services.append(service.name)
-
-        if failed_services:
-            failed_services_string = ", ".join(failed_services)
-            if dry_run:
-                raise ConnectedServiceDeletionNotAllowedError(
-                    f"Connected services: {failed_services_string} did not allow deleting the profile."
-                )
-
-            raise ConnectedServiceDeletionFailedError(
-                f"Deletion failed for the following connected services: {failed_services_string}."
-            )
 
 
 class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
@@ -1275,7 +1455,6 @@ class Query(graphene.ObjectType):
         description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n* `TODO`",
     )
-    # TODO: Change the description when the download API is implemented to fetch data from services as well
     # TODO: Add the complete list of error codes
     download_my_profile = graphene.JSONString(
         authorization_code=graphene.String(
@@ -1285,8 +1464,10 @@ class Query(graphene.ObjectType):
                 "service and operation specific GDPR API scopes."
             ),
         ),
-        description="Get the user information stored in the profile as machine readable JSON.\n\nRequires "
-        "authentication.\n\nPossible error codes:\n\n* `TODO`",
+        description="Get the user information stored in the profile and its connected services as "
+        "machine readable JSON.\n\nRequires authentication.\n\n"
+        "Possible error codes:\n\n"
+        "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.",
     )
     # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
@@ -1328,7 +1509,7 @@ class Query(graphene.ObjectType):
     def resolve_profile(self, info, **kwargs):
         service = info.context.service
         return Profile.objects.filter(service_connections__service=service).get(
-            pk=relay.Node.from_global_id(kwargs["id"])[1]
+            pk=from_global_id(kwargs["id"])[1]
         )
 
     @login_and_service_required
@@ -1357,7 +1538,6 @@ class Query(graphene.ObjectType):
 
     @login_and_service_required
     def resolve_download_my_profile(self, info, **kwargs):
-        authorization_code = kwargs["authorization_code"]
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
@@ -1368,34 +1548,30 @@ class Query(graphene.ObjectType):
                 _("You do not have permission to perform this action.")
             )
 
-        external_data = []
+        external_data = download_connected_service_data(
+            profile, kwargs["authorization_code"]
+        )
 
-        if profile.service_connections.exists():
-            tte = TunnistamoTokenExchange()
-            api_tokens = tte.fetch_api_tokens(authorization_code)
+        serialized_profile = profile.serialize()
 
-            for service_connection in profile.service_connections.all():
-                service = service_connection.service
+        loa = info.context.user_auth.data.get("loa")
+        if loa not in ["substantial", "high"]:
+            profile_children = serialized_profile.get("children", [])
+            vpi_index = next(
+                (
+                    i
+                    for i, item in enumerate(profile_children)
+                    if item["key"] == "VERIFIEDPERSONALINFORMATION"
+                ),
+                None,
+            )
+            if vpi_index is not None:
+                profile_children[vpi_index] = {
+                    "key": "VERIFIEDPERSONALINFORMATION",
+                    "error": _("No permission to read verified personal information."),
+                }
 
-                if not service.gdpr_query_scope:
-                    continue
-
-                api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
-                api_token = api_tokens.get(api_identifier, "")
-
-                if not api_token:
-                    raise MissingGDPRApiTokenError(
-                        f"Couldn't fetch an API token for service {service.name}."
-                    )
-
-                service_connection_data = service_connection.download_gdpr_data(
-                    api_token=api_token
-                )
-
-                if service_connection_data:
-                    external_data.append(service_connection_data)
-
-        return {"key": "DATA", "children": [profile.serialize(), *external_data]}
+        return {"key": "DATA", "children": [serialized_profile, *external_data]}
 
     def resolve_profile_with_access_token(self, info, **kwargs):
         try:
@@ -1428,6 +1604,18 @@ class Mutation(graphene.ObjectType):
             "* `PERMISSION_DENIED_ERROR`: "
             "The current user doesn't have the reguired permissions to perform this action.\n"
             "* `VALIDATION_ERROR`: "
+            "The given input doesn't pass validation.",
+            deprecation_reason="Renamed to createOrUpdateUserProfile",
+        )
+    )
+    create_or_update_user_profile = (
+        CreateOrUpdateUserProfileMutation.Field(
+            description="Creates a new or updates an existing profile for the specified user.\n\n"
+            "Requires elevated privileges.\n\n"
+            "Possible error codes:\n\n"
+            "* `PERMISSION_DENIED_ERROR`: "
+            "The current user doesn't have the reguired permissions to perform this action.\n"
+            "* `VALIDATION_ERROR`: "
             "The given input doesn't pass validation."
         )
     )
@@ -1437,29 +1625,39 @@ class Mutation(graphene.ObjectType):
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
-        "\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "\n* Phone\n\nRequires authentication.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
     )
     update_profile = UpdateProfileMutation.Field(
         description="Updates the profile with id given as an argument based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
         "\n* Phone\n\nIf sensitive data is given, associated data will also be created "
         "and linked to the profile **or** the existing data set will be updated if the profile is "
-        "already linked to it.\n\nRequires elevated privileges.\n\nPossible error codes:\n\n* `TODO`"
+        "already linked to it.\n\nRequires elevated privileges.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
     )
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
         "Requires authentication.\n\nPossible error codes:\n\n"
         "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
-        "the currently authenticated user.\n\n* `TODO`"
+        "the currently authenticated user.\n"
+        "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.\n"
+        "* `CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR`: The profile deletion is disallowed by one or more "
+        "connected services.\n"
+        "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for one or more connected services."
     )
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
         description="Fetches a profile which has no linked user account yet by the given token and links the profile "
-        "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented"
-        " completely. If the authenticated user already has a profile, this mutation will respond with "
-        "an error.\n\nPossible error codes:\n\n* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently "
-        "authenticated user already has a profile.\n\n* `TODO`"
+        "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented "
+        "completely. If the authenticated user already has a profile, this mutation will respond with "
+        "an error.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
+        "* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently authenticated user already has a profile."
     )
 
     create_my_profile_temporary_read_access_token = CreateMyProfileTemporaryReadAccessTokenMutation.Field(

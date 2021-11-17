@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.core.exceptions import MiddlewareNotUsed
 from helusers.oidc import RequestJWTAuthentication
 
 from services.utils import set_service_to_request
@@ -7,11 +5,6 @@ from services.utils import set_service_to_request
 
 class JWTAuthentication:
     def __init__(self, get_response):
-        if not settings.USE_HELUSERS_REQUEST_JWT_AUTH:
-            raise MiddlewareNotUsed(
-                "django-helusers RequestJWTAuthentication is disabled"
-            )
-
         self.get_response = get_response
 
     def __call__(self, request):

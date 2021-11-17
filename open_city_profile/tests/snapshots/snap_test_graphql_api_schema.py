@@ -127,6 +127,16 @@ type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
   profile: ProfileWithVerifiedPersonalInformationOutput
 }
 
+input CreateOrUpdateUserProfileMutationInput {
+  userId: UUID!
+  serviceClientId: String
+  profile: ProfileWithVerifiedPersonalInformationInput!
+}
+
+type CreateOrUpdateUserProfileMutationPayload {
+  profile: ProfileNode
+}
+
 input CreatePhoneInput {
   primary: Boolean
   phone: String!
@@ -177,6 +187,7 @@ type DeleteMyProfileMutationPayload {
 
 input EmailInput {
   email: String!
+  verified: Boolean
 }
 
 type EmailNode implements Node {
@@ -217,7 +228,8 @@ type Mutation {
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
   createProfile(input: CreateProfileMutationInput!): CreateProfileMutationPayload
-  createOrUpdateProfileWithVerifiedPersonalInformation(input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!): CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload
+  createOrUpdateProfileWithVerifiedPersonalInformation(input: CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput!): CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload @deprecated(reason: "Renamed to createOrUpdateUserProfile")
+  createOrUpdateUserProfile(input: CreateOrUpdateUserProfileMutationInput!): CreateOrUpdateUserProfileMutationPayload
   updateMyProfile(input: UpdateMyProfileMutationInput!): UpdateMyProfileMutationPayload
   updateProfile(input: UpdateProfileMutationInput!): UpdateProfileMutationPayload
   deleteMyProfile(input: DeleteMyProfileMutationInput!): DeleteMyProfileMutationPayload
@@ -239,7 +251,7 @@ type PageInfo {
 type PhoneNode implements Node {
   primary: Boolean!
   id: ID!
-  phone: String
+  phone: String!
   phoneType: PhoneType
 }
 
@@ -314,7 +326,9 @@ type ProfileNodeEdge {
 }
 
 input ProfileWithVerifiedPersonalInformationInput {
-  verifiedPersonalInformation: VerifiedPersonalInformationInput!
+  firstName: String
+  lastName: String
+  verifiedPersonalInformation: VerifiedPersonalInformationInput
   primaryEmail: EmailInput
 }
 
@@ -589,7 +603,6 @@ input VerifiedPersonalInformationInput {
   lastName: String
   givenName: String
   nationalIdentificationNumber: String
-  email: String
   municipalityOfResidence: String
   municipalityOfResidenceNumber: String
   permanentAddress: VerifiedPersonalInformationAddressInput
@@ -602,7 +615,6 @@ type VerifiedPersonalInformationNode {
   lastName: String!
   givenName: String!
   nationalIdentificationNumber: String!
-  email: String!
   municipalityOfResidence: String!
   municipalityOfResidenceNumber: String!
   permanentAddress: VerifiedPersonalInformationAddressNode
@@ -612,7 +624,7 @@ type VerifiedPersonalInformationNode {
 
 scalar _Any
 
-union _Entity = ProfileNode
+union _Entity = AddressNode | ProfileNode
 
 type _Service {
   sdl: String

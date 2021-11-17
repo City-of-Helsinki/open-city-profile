@@ -56,13 +56,30 @@ def validate_finnish_postal_code(value: str) -> None:
     _finnish_postal_code_validator(value)
 
 
-def validate_iso_3166_country_code(value: str) -> None:
+def _validate_country_code_in_any_index(value, indices):
     if isinstance(value, str):
-        key = value.upper()
-        for index in [countries_by_alpha2, countries_by_alpha3, countries_by_numeric]:
-            if index.get(key):
+        for index in indices:
+            if index.get(value):
                 return
 
     raise ValidationError(
         _("Invalid country code: %(value)s"), code="invalid", params={"value": value},
+    )
+
+
+def validate_iso_3166_alpha_2_country_code(value: str) -> None:
+    _validate_country_code_in_any_index(value, [countries_by_alpha2])
+
+
+def validate_iso_3166_alpha_3_country_code(value: str) -> None:
+    _validate_country_code_in_any_index(value, [countries_by_alpha3])
+
+
+def validate_iso_3166_numeric_country_code(value: str) -> None:
+    _validate_country_code_in_any_index(value, [countries_by_numeric])
+
+
+def validate_iso_3166_country_code(value: str) -> None:
+    _validate_country_code_in_any_index(
+        value, [countries_by_alpha2, countries_by_alpha3, countries_by_numeric]
     )

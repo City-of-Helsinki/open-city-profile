@@ -1,5 +1,4 @@
 from django.apps import AppConfig
-from django.conf import settings
 
 
 class ProfilesConfig(AppConfig):
@@ -11,6 +10,4 @@ class ProfilesConfig(AppConfig):
 
     def ready(self):
         import profiles.log_signals  # noqa isort:skip
-
-        if settings.NOTIFICATIONS_ENABLED:
-            import profiles.signals  # noqa isort:skip
+        import profiles.signals  # noqa isort:skip

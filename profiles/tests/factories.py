@@ -68,7 +68,6 @@ class VerifiedPersonalInformationFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker("last_name")
     given_name = factory.Faker("first_name")
     national_identification_number = factory.Faker("ssn", locale="fi_FI")
-    email = factory.Faker("email")
     municipality_of_residence = factory.Faker("city")
     municipality_of_residence_number = factory.Faker("numerify", text="###")
 

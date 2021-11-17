@@ -4,9 +4,8 @@ django-cors-headers
 django-enumfields
 django-environ
 django-filter
-django-graphql-jwt
 django-guardian
-django-helusers>=0.6
+django-helusers>=0.7
 django-ilmoitin>=0.2.0
 django-import-export
 django-munigeo
@@ -16,7 +15,6 @@ django-sanitized-dump
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
 djangorestframework
-drf-oidc-auth==0.10.0
 graphene-django>=2.10.1
 graphene-federation
 git+https://github.com/City-of-Helsinki/graphene-validator.git@main

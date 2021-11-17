@@ -4,8 +4,8 @@ from django.db.utils import IntegrityError
 from graphene import relay
 from graphene_django.types import DjangoObjectType
 
+from open_city_profile.decorators import login_and_service_required
 from open_city_profile.exceptions import ServiceAlreadyExistsError
-from profiles.decorators import login_and_service_required
 
 from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection

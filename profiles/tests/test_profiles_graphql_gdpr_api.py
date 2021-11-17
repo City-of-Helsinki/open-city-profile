@@ -2,6 +2,7 @@ import json
 
 import pytest
 import requests
+from django.utils.translation import gettext as _
 
 from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
@@ -14,9 +15,14 @@ from open_city_profile.tests.asserts import assert_match_error_code
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
+from utils.keycloak import KeycloakAdminClient
 
 from ..models import Profile
-from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
+from .factories import (
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+    VerifiedPersonalInformationFactory,
+)
 
 AUTHORIZATION_CODE = "code123"
 DOWNLOAD_MY_PROFILE_MUTATION = """
@@ -142,6 +148,62 @@ def test_user_can_download_profile(
         assert executed["data"]["downloadMyProfile"] is None
 
 
+def download_verified_personal_information_with_loa(
+    loa, user_gql_client, service, mocker
+):
+    profile = VerifiedPersonalInformationFactory(
+        profile__user=user_gql_client.user
+    ).profile
+
+    mocker.patch.object(TunnistamoTokenExchange, "fetch_api_tokens", return_value=None)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    token_payload = {
+        "loa": loa,
+    }
+    executed = user_gql_client.execute(
+        DOWNLOAD_MY_PROFILE_MUTATION, service=service, auth_token_payload=token_payload
+    )
+
+    full_dump = json.loads(executed["data"]["downloadMyProfile"])
+    profile_dump = next(
+        child for child in full_dump["children"] if child["key"] == "PROFILE"
+    )
+    vpi_dump = next(
+        child
+        for child in profile_dump["children"]
+        if child["key"] == "VERIFIEDPERSONALINFORMATION"
+    )
+
+    return vpi_dump
+
+
+@pytest.mark.parametrize("loa", ["substantial", "high"])
+def test_verified_personal_information_is_included_in_the_downloaded_profile_when_loa_is_high_enough(
+    loa, user_gql_client, service, mocker
+):
+    vpi_dump = download_verified_personal_information_with_loa(
+        loa, user_gql_client, service, mocker
+    )
+
+    assert "error" not in vpi_dump
+    assert len(vpi_dump["children"]) > 0
+
+
+@pytest.mark.parametrize("loa", [None, "foo", "low"])
+def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not_high_enough(
+    loa, user_gql_client, service, mocker
+):
+    vpi_dump = download_verified_personal_information_with_loa(
+        loa, user_gql_client, service, mocker
+    )
+
+    assert vpi_dump == {
+        "key": "VERIFIEDPERSONALINFORMATION",
+        "error": _("No permission to read verified personal information."),
+    }
+
+
 def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
@@ -244,6 +306,35 @@ def test_user_can_delete_his_profile(
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["deleteMyProfile"] is None
         assert Profile.objects.filter(pk=profile.pk).exists()
+
+
+@pytest.mark.parametrize("kc_delete_user_response_code", [204, 403, 404])
+def test_user_deletion_from_keycloak(
+    user_gql_client, mocker, kc_delete_user_response_code, keycloak_setup
+):
+    user = user_gql_client.user
+    profile = ProfileFactory(user=user)
+
+    def kc_delete_user_response(*args, **kwargs):
+        response = requests.Response()
+        response.status_code = kc_delete_user_response_code
+        response.raise_for_status()
+
+    mocked_keycloak_delete_user = mocker.patch.object(
+        KeycloakAdminClient, "delete_user", side_effect=kc_delete_user_response
+    )
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+
+    if kc_delete_user_response_code in [204, 404]:
+        assert executed["data"] == {"deleteMyProfile": {"clientMutationId": None}}
+        assert "errors" not in executed
+    else:
+        assert Profile.objects.filter(pk=profile.pk).exists()
+        assert executed["data"]["deleteMyProfile"] is None
+        assert_match_error_code(executed, "CONNECTED_SERVICE_DELETION_FAILED_ERROR")
+
+    mocked_keycloak_delete_user.assert_called_once_with(user.uuid)
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(

@@ -1,33 +1,10 @@
 import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from helusers.oidc import ApiTokenAuthentication
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from open_city_profile.exceptions import TokenExchangeError
-from services.utils import set_service_to_request
-
-
-class GraphQLApiTokenAuthentication(ApiTokenAuthentication):
-    """
-    Custom wrapper for the helusers.oidc.ApiTokenAuthentication backend.
-    Needed to make it work with graphql_jwt.middleware.JSONWebTokenMiddleware,
-    which in turn calls django.contrib.auth.middleware.AuthenticationMiddleware.
-
-    Authenticate function should:
-    1. accept kwargs, or django's auth middleware will not call it
-    2. return only the user object, or django's auth middleware will fail
-    """
-
-    def authenticate(self, request, **kwargs):
-        user_auth_tuple = super().authenticate(request)
-        if not user_auth_tuple:
-            return None
-        user, auth = user_auth_tuple
-        request.user_auth = auth
-        set_service_to_request(request)
-        return user
 
 
 class TunnistamoTokenExchange:

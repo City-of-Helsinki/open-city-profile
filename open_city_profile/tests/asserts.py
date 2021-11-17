@@ -28,4 +28,9 @@ def assert_almost_equal(a, b, epsilon=None):
 
 
 def assert_match_error_code(response, error_code):
-    assert response["errors"][0].get("extensions").get("code") == error_code
+    assert "errors" in response
+    error = response["errors"][0]
+    assert "extensions" in error
+    extensions = error["extensions"]
+    assert "code" in extensions
+    assert extensions["code"] == error_code

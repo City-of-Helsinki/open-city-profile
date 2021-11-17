@@ -79,19 +79,25 @@ strategy:
     ad_group_id: null
     group_id: null
     id: null
+  helusers_oidcbackchannellogoutevent:
+    created_at: null
+    id: null
+    iss: null
+    sid: null
+    sub: null
   mailer_dontsendentry:
     id: null
     to_address: "profile.email"
     when_added: null
   mailer_message:
     id: null
-    message_data: "constant.null"
+    message_data: "string.random"
     priority: null
     when_added: null
   mailer_messagelog:
     id: null
     log_message: null
-    message_data: "constant.null"
+    message_data: "string.random"
     message_id: null
     priority: null
     result: null
@@ -246,7 +252,6 @@ strategy:
     validity_duration: null
   profiles_verifiedpersonalinformation:
     _national_identification_number_data: "profile.encrypted_national_identification_number"
-    email: "profile.encrypted_email"
     first_name: "profile.first_name"
     given_name: "profile.encrypted_first_name"
     id: null

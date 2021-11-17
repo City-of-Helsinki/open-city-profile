@@ -16,7 +16,11 @@ from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
-from utils.fields import CallableHashKeyEncryptedSearchField, NullToEmptyValueMixin
+from utils.fields import (
+    NullToEmptyCharField,
+    NullToEmptyEncryptedCharField,
+    NullToEmptyEncryptedSearchField,
+)
 from utils.models import SerializableMixin, UUIDModel
 
 from .enums import (
@@ -30,6 +34,7 @@ from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
     validate_finnish_postal_code,
+    validate_iso_3166_alpha_2_country_code,
     validate_iso_3166_country_code,
     validate_visible_latin_characters_only,
 )
@@ -80,9 +85,9 @@ class LegalRelationship(models.Model):
 @reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
-    first_name = models.CharField(max_length=255, blank=True, db_index=True)
-    last_name = models.CharField(max_length=255, blank=True, db_index=True)
-    nickname = models.CharField(max_length=32, blank=True, db_index=True)
+    first_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
+    last_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
+    nickname = NullToEmptyCharField(max_length=32, blank=True, db_index=True)
     image = models.ImageField(
         upload_to=get_user_media_folder,
         storage=OverwriteStorage(),
@@ -116,6 +121,7 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "emails"},
         {"name": "phones"},
         {"name": "addresses"},
+        {"name": "verified_personal_information"},
         {"name": "service_connections"},
         {"name": "subscriptions"},
     )
@@ -229,25 +235,11 @@ class Profile(UUIDModel, SerializableMixin):
         return result
 
 
-class NullToEmptyCharField(NullToEmptyValueMixin, models.CharField):
-    """CharField with automatic null-to-empty-string functionality"""
-
-
-class NullToEmptyEncryptedCharField(NullToEmptyValueMixin, fields.EncryptedCharField):
-    """EncryptedCharField with automatic null-to-empty-string functionality"""
-
-
-class NullToEmptyEncryptedSearchField(
-    NullToEmptyValueMixin, CallableHashKeyEncryptedSearchField
-):
-    """EncryptedSearchField with automatic null-to-empty-string functionality"""
-
-
 def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(models.Model):
+class VerifiedPersonalInformation(SerializableMixin):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
@@ -280,9 +272,6 @@ class VerifiedPersonalInformation(models.Model):
         blank=True,
         help_text="Finnish national identification number.",
     )
-    email = NullToEmptyEncryptedCharField(
-        max_length=1024, blank=True, help_text="Email."
-    )
     municipality_of_residence = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
@@ -296,6 +285,17 @@ class VerifiedPersonalInformation(models.Model):
         validators=[validate_finnish_municipality_of_residence_number],
     )
 
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "given_name"},
+        {"name": "national_identification_number"},
+        {"name": "municipality_of_residence"},
+        {"name": "municipality_of_residence_number"},
+        {"name": "permanent_address"},
+        {"name": "temporary_address"},
+        {"name": "permanent_foreign_address"},
+    )
     audit_log = True
 
     class Meta:
@@ -307,7 +307,7 @@ class VerifiedPersonalInformation(models.Model):
         ]
 
 
-class EncryptedAddress(models.Model):
+class EncryptedAddress(SerializableMixin):
     street_address = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
@@ -316,6 +316,12 @@ class EncryptedAddress(models.Model):
     )
     post_office = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
+    )
+
+    serialize_fields = (
+        {"name": "street_address"},
+        {"name": "postal_code"},
+        {"name": "post_office"},
     )
 
     class Meta:
@@ -355,7 +361,7 @@ class VerifiedPersonalInformationTemporaryAddress(EncryptedAddress):
         return self.verified_personal_information.profile
 
 
-class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
+class VerifiedPersonalInformationPermanentForeignAddress(SerializableMixin):
     RELATED_NAME = "permanent_foreign_address"
 
     street_address = NullToEmptyEncryptedCharField(
@@ -383,6 +389,11 @@ class VerifiedPersonalInformationPermanentForeignAddress(models.Model):
         related_name=RELATED_NAME,
     )
 
+    serialize_fields = (
+        {"name": "street_address"},
+        {"name": "additional_address"},
+        {"name": "country_code"},
+    )
     audit_log = True
 
     def is_empty(self):
@@ -402,7 +413,9 @@ class DivisionOfInterest(models.Model):
 
 class SensitiveData(SerializableMixin):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    ssn = fields.EncryptedCharField(max_length=11)
+    ssn = fields.EncryptedCharField(
+        max_length=11, validators=[validate_finnish_national_identification_number]
+    )
     serialize_fields = ({"name": "ssn"},)
     audit_log = True
 
@@ -421,7 +434,7 @@ class Phone(Contact):
     profile = models.ForeignKey(
         Profile, related_name="phones", on_delete=models.CASCADE
     )
-    phone = models.CharField(max_length=255, null=True, blank=False, db_index=True)
+    phone = models.CharField(max_length=255, null=False, blank=False, db_index=True)
     phone_type = EnumField(
         PhoneType, max_length=32, blank=False, default=PhoneType.MOBILE
     )
@@ -461,7 +474,7 @@ class Email(Contact):
             profile=self.profile, primary=True,
         )
         if self.pk:
-            existing_primary_emails.exclude(pk=self.pk)
+            existing_primary_emails = existing_primary_emails.exclude(pk=self.pk)
         if existing_primary_emails.exists():
             raise ValidationError("Primary email already exists")
 
@@ -474,10 +487,12 @@ class Address(Contact):
     profile = models.ForeignKey(
         Profile, related_name="addresses", on_delete=models.CASCADE
     )
-    address = models.CharField(max_length=128, blank=False)
-    postal_code = models.CharField(max_length=32, blank=False)
-    city = models.CharField(max_length=64, blank=False)
-    country_code = models.CharField(max_length=2, blank=False)
+    address = NullToEmptyCharField(max_length=128, blank=True)
+    postal_code = NullToEmptyCharField(max_length=32, blank=True)
+    city = NullToEmptyCharField(max_length=64, blank=True)
+    country_code = NullToEmptyCharField(
+        max_length=2, blank=True, validators=[validate_iso_3166_alpha_2_country_code]
+    )
     address_type = EnumField(
         AddressType, max_length=32, blank=False, default=AddressType.HOME
     )

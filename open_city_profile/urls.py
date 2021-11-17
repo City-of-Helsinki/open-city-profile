@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
-from django.urls import path
+from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 
 from open_city_profile.views import GraphQLView
@@ -15,6 +15,7 @@ urlpatterns = [
             GraphQLView.as_view(graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG)
         ),
     ),
+    path("auth/", include("helusers.urls")),
 ]
 
 

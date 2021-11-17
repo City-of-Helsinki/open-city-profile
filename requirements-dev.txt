@@ -112,7 +112,7 @@ prompt-toolkit==3.0.5
     # via ipython
 ptyprocess==0.6.0
     # via pexpect
-py==1.8.1
+py==1.10.0
     # via pytest
 pyasn1==0.4.5
     # via rsa
@@ -126,7 +126,7 @@ pyflakes==2.1.1
     # via
     #   autoflake
     #   flake8
-pygments==2.6.1
+pygments==2.9.0
     # via ipython
 pyparsing==2.4.7
     # via packaging
@@ -190,7 +190,7 @@ traitlets==4.3.3
     # via ipython
 typed-ast==1.4.1
     # via black
-urllib3==1.25.11
+urllib3==1.26.6
     # via requests
 virtualenv==20.0.20
     # via pre-commit
