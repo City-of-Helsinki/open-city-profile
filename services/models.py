@@ -22,6 +22,11 @@ def get_next_data_field_order():
         return 1
 
 
+class AllowedDataFieldManager(models.Manager):
+    def get_by_natural_key(self, field_name):
+        return self.get(field_name=field_name)
+
+
 class AllowedDataField(TranslatableModel, SortableMixin):
     field_name = models.CharField(max_length=30, unique=True)
     translations = TranslatedFields(label=models.CharField(max_length=64))
@@ -29,11 +34,18 @@ class AllowedDataField(TranslatableModel, SortableMixin):
         default=get_next_data_field_order, editable=False, db_index=True
     )
 
+    objects = AllowedDataFieldManager()
+
     class Meta:
         ordering = ["order"]
 
     def __str__(self):
         return self.safe_translation_getter("label", super().__str__())
+
+
+class ServiceManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
 
 
 class Service(TranslatableModel):
@@ -66,6 +78,8 @@ class Service(TranslatableModel):
         default=False,
         help_text="Identifies the profile service itself. Only one Service can have this property.",
     )
+
+    objects = ServiceManager()
 
     class Meta:
         constraints = [
@@ -130,11 +144,18 @@ class Service(TranslatableModel):
         return gdpr_url
 
 
+class ServiceClientIdManager(models.Manager):
+    def get_by_natural_key(self, client_id):
+        return self.get(client_id=client_id)
+
+
 class ServiceClientId(models.Model):
     service = models.ForeignKey(
         Service, on_delete=models.CASCADE, related_name="client_ids"
     )
     client_id = models.CharField(max_length=256, null=False, blank=False, unique=True)
+
+    objects = ServiceClientIdManager()
 
 
 class ServiceConnection(SerializableMixin):
