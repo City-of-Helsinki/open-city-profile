@@ -9,6 +9,7 @@ ipython
 isort
 jedi
 pep8-naming
+pip-tools
 pre-commit
 pydocstyle
 pytest

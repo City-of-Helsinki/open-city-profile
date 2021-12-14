@@ -154,10 +154,7 @@ The project is now running at [localhost:8000](http://localhost:8000)
 
 This repository contains `requirements*.in` and corresponding `requirements*.txt` files for requirements handling. The `requirements*.txt` files are generated from the `requirements*.in` files with `pip-compile`.
 
-1. Install `pip-tools`:
-    * `pip install pip-tools`
-
-2. Add new packages to `requirements.in` or `requirements-dev.in`
+1. Add new packages to `requirements.in` or `requirements-dev.in`
 
 3. Update `.txt` file for the changed requirements file:
     * `pip-compile requirements.in`
