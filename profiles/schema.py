@@ -588,7 +588,10 @@ class ProfileNode(RestrictedProfileNode):
     service_connections = DjangoFilterConnectionField(
         ServiceConnectionType, description="List of the profile's connected services."
     )
-    subscriptions = relay.ConnectionField(SubscriptionNodeConnection)
+    subscriptions = relay.ConnectionField(
+        SubscriptionNodeConnection,
+        deprecation_reason="The whole subscriptions concept is non-functional. This field always just returns null.",
+    )
     verified_personal_information = graphene.Field(
         VerifiedPersonalInformationNode,
         description="Personal information that has been verified to be true. "
@@ -786,7 +789,10 @@ class ProfileInputBase(graphene.InputObjectType):
     add_addresses = graphene.List(
         CreateAddressInput, description="Add addresses to profile."
     )
-    subscriptions = graphene.List(SubscriptionInputType)
+    subscriptions = graphene.List(
+        SubscriptionInputType,
+        description="**DEPRECATED**. The whole subscriptions concept is non-functional. Any input is ignored.",
+    )
     sensitivedata = graphene.InputField(SensitiveDataFields)
 
     @staticmethod
@@ -806,6 +812,7 @@ class ProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
+* `subscriptions`
 
 There's no replacement for these."""
 
@@ -874,6 +881,7 @@ class CreateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
+* `subscriptions`
 * `update_emails`
 * `remove_emails`
 * `update_phones`
@@ -1306,6 +1314,7 @@ class UpdateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
+* `subscriptions`
 
 There's no replacement for these."""
 

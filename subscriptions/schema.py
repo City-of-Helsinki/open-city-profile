@@ -81,7 +81,8 @@ class UpdateMySubscriptionMutation(relay.ClientIDMutation):
 
 class Query(graphene.ObjectType):
     subscription_type_categories = relay.ConnectionField(
-        SubscriptionTypeCategoryNodeConnection
+        SubscriptionTypeCategoryNodeConnection,
+        deprecation_reason="The whole subscriptions concept is non-functional. There's no replacement.",
     )
 
     def resolve_subscription_type_categories(self, info, **kwargs):
@@ -90,4 +91,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     # TODO: Complete the description
-    update_my_subscription = UpdateMySubscriptionMutation.Field(description="")
+    update_my_subscription = UpdateMySubscriptionMutation.Field(
+        description="",
+        deprecation_reason="The whole subscriptions concept is non-functional. There's no replacement.",
+    )
