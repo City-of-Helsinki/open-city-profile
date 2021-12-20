@@ -806,6 +806,12 @@ class ProfileInputBase(graphene.InputObjectType):
 
 
 class ProfileInput(ProfileInputBase):
+    """The following fields are deprecated:
+
+* `image`
+
+There's no replacement for these."""
+
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
     )
@@ -867,6 +873,7 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 class CreateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
+* `image`
 * `update_emails`
 * `remove_emails`
 * `update_phones`
@@ -874,7 +881,7 @@ class CreateProfileInput(ProfileInputBase):
 * `update_addresses`
 * `remove_addresses`
 
-There's no replacement for these as these fields have never had any effect in the first place."""
+There's no replacement for these."""
 
     update_emails = graphene.List(
         UpdateEmailInput, description="**DEPRECATED**. Any input is ignored."
@@ -1298,6 +1305,12 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 
 
 class UpdateProfileInput(ProfileInputBase):
+    """The following fields are deprecated:
+
+* `image`
+
+There's no replacement for these."""
+
     id = graphene.Argument(graphene.ID, required=True)
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
