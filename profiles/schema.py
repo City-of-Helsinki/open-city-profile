@@ -855,6 +855,9 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         # Remove image field from input. It's not supposed to do anything anymore.
         profile_data.pop("image", None)
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
 
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
@@ -940,6 +943,9 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         # Remove image field from input. It's not supposed to do anything anymore.
         profile_data.pop("image", None)
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
 
         profile = Profile(**profile_data)
         profile.save()
@@ -1365,6 +1371,10 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
+
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
 
         validate(cls, root, info, **input)
 

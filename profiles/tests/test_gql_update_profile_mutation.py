@@ -90,6 +90,7 @@ def test_staff_user_can_update_a_profile(
                         sensitivedata: {
                             ssn: "${ssn}"
                         }
+                        subscriptions: []
                     }
                 }
             ) {
@@ -118,6 +119,13 @@ def test_staff_user_can_update_a_profile(
                     }
                     sensitivedata {
                         ssn
+                    }
+                    subscriptions {
+                        edges {
+                            node {
+                                id
+                            }
+                        }
                     }
                 }
             }
@@ -148,6 +156,7 @@ def test_staff_user_can_update_a_profile(
                 "phones": {"edges": [{"node": {"phone": data["phone"]}}]},
                 "addresses": {"edges": []},
                 "sensitivedata": {"ssn": data["ssn"]},
+                "subscriptions": {"edges": []},
             }
         }
     }
