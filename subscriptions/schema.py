@@ -1,32 +1,48 @@
 import graphene
 from django.db import transaction
 from graphene import relay
-from graphene_django.filter import DjangoFilterConnectionField
-from graphene_django.types import DjangoObjectType
 
 import profiles.schema as profiles_schema
 from open_city_profile.decorators import login_required
 
-from .models import SubscriptionType, SubscriptionTypeCategory
 
-
-class SubscriptionTypeNode(DjangoObjectType):
+class SubscriptionTypeNode(graphene.ObjectType):
+    subscription_type_category = graphene.Field(
+        "subscriptions.schema.SubscriptionTypeCategoryNode", required=True
+    )
+    code = graphene.String(required=True)
+    created_at = graphene.DateTime(required=True)
+    order = graphene.Int(required=True)
     label = graphene.String()
 
     class Meta:
-        model = SubscriptionType
         interfaces = (relay.Node,)
         filter_fields = []
         exclude = ("subscriptions",)
 
 
-class SubscriptionTypeCategoryNode(DjangoObjectType):
+class SubscriptionTypeNodeConnection(relay.Connection):
+    class Meta:
+        node = SubscriptionTypeNode
+
+
+class SubscriptionTypeCategoryNode(graphene.ObjectType):
+    code = graphene.String(required=True)
+    created_at = graphene.DateTime(required=True)
+    order = graphene.Int(required=True)
+    subscription_types = relay.ConnectionField(
+        SubscriptionTypeNodeConnection, required=True
+    )
     label = graphene.String()
 
     class Meta:
-        model = SubscriptionTypeCategory
         interfaces = (relay.Node,)
         filter_fields = []
+
+
+class SubscriptionTypeCategoryNodeConnection(relay.Connection):
+    class Meta:
+        node = SubscriptionTypeCategoryNode
 
 
 class SubscriptionNode(graphene.ObjectType):
@@ -64,12 +80,12 @@ class UpdateMySubscriptionMutation(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
-    subscription_type_categories = DjangoFilterConnectionField(
-        SubscriptionTypeCategoryNode
+    subscription_type_categories = relay.ConnectionField(
+        SubscriptionTypeCategoryNodeConnection
     )
 
     def resolve_subscription_type_categories(self, info, **kwargs):
-        return SubscriptionTypeCategory.objects.all()
+        return []
 
 
 class Mutation(graphene.ObjectType):
