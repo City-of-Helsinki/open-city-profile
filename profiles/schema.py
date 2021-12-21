@@ -46,7 +46,7 @@ from open_city_profile.exceptions import (
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
-from subscriptions.schema import SubscriptionInputType, SubscriptionNode
+from subscriptions.schema import SubscriptionInputType, SubscriptionNodeConnection
 from utils.validation import model_field_validation
 
 from .connected_services import (
@@ -590,7 +590,7 @@ class ProfileNode(RestrictedProfileNode):
     service_connections = DjangoFilterConnectionField(
         ServiceConnectionType, description="List of the profile's connected services."
     )
-    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
+    subscriptions = relay.ConnectionField(SubscriptionNodeConnection)
     verified_personal_information = graphene.Field(
         VerifiedPersonalInformationNode,
         description="Personal information that has been verified to be true. "
@@ -600,6 +600,9 @@ class ProfileNode(RestrictedProfileNode):
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
+
+    def resolve_subscriptions(self, info, **kwargs):
+        return []
 
     def resolve_sensitivedata(self, info, **kwargs):
         service = info.context.service

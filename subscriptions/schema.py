@@ -10,15 +10,6 @@ from open_city_profile.decorators import login_required
 from .models import Subscription, SubscriptionType, SubscriptionTypeCategory
 
 
-class SubscriptionNode(DjangoObjectType):
-    class Meta:
-        model = Subscription
-        interfaces = (relay.Node,)
-        filter_fields = []
-
-    profile = graphene.Field(lambda: profiles_schema.ProfileNode, required=True)
-
-
 class SubscriptionTypeNode(DjangoObjectType):
     label = graphene.String()
 
@@ -36,6 +27,22 @@ class SubscriptionTypeCategoryNode(DjangoObjectType):
         model = SubscriptionTypeCategory
         interfaces = (relay.Node,)
         filter_fields = []
+
+
+class SubscriptionNode(graphene.ObjectType):
+    class Meta:
+        interfaces = (relay.Node,)
+        filter_fields = []
+
+    profile = graphene.Field(lambda: profiles_schema.ProfileNode, required=True)
+    subscription_type = graphene.Field(SubscriptionTypeNode, required=True)
+    created_at = graphene.DateTime(required=True)
+    enabled = graphene.Boolean(required=True)
+
+
+class SubscriptionNodeConnection(relay.Connection):
+    class Meta:
+        node = SubscriptionNode
 
 
 class SubscriptionInputType(graphene.InputObjectType):

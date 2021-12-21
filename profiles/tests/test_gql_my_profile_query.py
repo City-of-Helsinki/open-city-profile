@@ -470,38 +470,7 @@ def test_normal_user_can_query_his_own_profile_with_subscriptions(user_gql_clien
         "myProfile": {
             "firstName": profile.first_name,
             "lastName": profile.last_name,
-            "subscriptions": {
-                "edges": [
-                    {
-                        "node": {
-                            "enabled": True,
-                            "subscriptionType": {
-                                "order": 1,
-                                "code": "TEST-1",
-                                "label": "Test 1",
-                                "subscriptionTypeCategory": {
-                                    "code": "TEST-CATEGORY-1",
-                                    "label": "Test Category 1",
-                                },
-                            },
-                        }
-                    },
-                    {
-                        "node": {
-                            "enabled": False,
-                            "subscriptionType": {
-                                "order": 2,
-                                "code": "TEST-2",
-                                "label": "Test 2",
-                                "subscriptionTypeCategory": {
-                                    "code": "TEST-CATEGORY-1",
-                                    "label": "Test Category 1",
-                                },
-                            },
-                        }
-                    },
-                ]
-            },
+            "subscriptions": {"edges": []},
         }
     }
     executed = user_gql_client.execute(query)
