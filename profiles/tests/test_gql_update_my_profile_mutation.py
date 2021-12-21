@@ -7,10 +7,6 @@ from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Email, Profile
 from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
 from services.tests.factories import ServiceConnectionFactory
-from subscriptions.tests.factories import (
-    SubscriptionTypeCategoryFactory,
-    SubscriptionTypeFactory,
-)
 
 from .factories import (
     AddressFactory,
@@ -987,26 +983,22 @@ def test_update_sensitive_data(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
-def test_update_subscriptions_via_profile(user_gql_client):
+def test_discard_subscriptions_input(user_gql_client):
     ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    category = SubscriptionTypeCategoryFactory()
-    type_1 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-1")
-    type_2 = SubscriptionTypeFactory(subscription_type_category=category, code="TEST-2")
 
-    t = Template(
-        """
+    mutation = """
         mutation {
             updateMyProfile(
                 input: {
                     profile: {
                         subscriptions: [
                             {
-                                subscriptionTypeId: "${type_1_id}",
-                                enabled: ${type_1_enabled}
+                                subscriptionTypeId: "ID1",
+                                enabled: true
                             },
                             {
-                                subscriptionTypeId: "${type_2_id}",
-                                enabled: ${type_2_enabled}
+                                subscriptionTypeId: "ID2",
+                                enabled: true
                             }
                         ]
                     }
@@ -1029,43 +1021,9 @@ def test_update_subscriptions_via_profile(user_gql_client):
                 }
             }
         }
-        """
-    )
+    """
 
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "subscriptions": {
-                    "edges": [
-                        {
-                            "node": {
-                                "enabled": True,
-                                "subscriptionType": {
-                                    "code": type_1.code,
-                                    "subscriptionTypeCategory": {"code": category.code},
-                                },
-                            }
-                        },
-                        {
-                            "node": {
-                                "enabled": False,
-                                "subscriptionType": {
-                                    "code": type_2.code,
-                                    "subscriptionTypeCategory": {"code": category.code},
-                                },
-                            }
-                        },
-                    ]
-                }
-            }
-        }
-    }
+    expected_data = {"updateMyProfile": {"profile": {"subscriptions": {"edges": []}}}}
 
-    mutation = t.substitute(
-        type_1_id=to_global_id(type="SubscriptionTypeNode", id=type_1.id),
-        type_1_enabled="true",
-        type_2_id=to_global_id(type="SubscriptionTypeNode", id=type_2.id),
-        type_2_enabled="false",
-    )
     executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data

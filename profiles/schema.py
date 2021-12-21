@@ -46,11 +46,7 @@ from open_city_profile.exceptions import (
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
-from subscriptions.schema import (
-    SubscriptionInputType,
-    SubscriptionNode,
-    UpdateMySubscriptionMutation,
-)
+from subscriptions.schema import SubscriptionInputType, SubscriptionNode
 from utils.validation import model_field_validation
 
 from .connected_services import (
@@ -1295,17 +1291,12 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
-        subscription_data = profile_data.pop("subscriptions", [])
+        profile_data.pop("subscriptions", None)
 
         update_profile(profile, profile_data)
 
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
-
-        for subscription in subscription_data:
-            UpdateMySubscriptionMutation().mutate_and_get_payload(
-                root, info, subscription=subscription
-            )
 
         return UpdateMyProfileMutation(profile=profile)
 
