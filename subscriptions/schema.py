@@ -7,7 +7,7 @@ from graphene_django.types import DjangoObjectType
 import profiles.schema as profiles_schema
 from open_city_profile.decorators import login_required
 
-from .models import Subscription, SubscriptionType, SubscriptionTypeCategory
+from .models import SubscriptionType, SubscriptionTypeCategory
 
 
 class SubscriptionTypeNode(DjangoObjectType):
@@ -60,18 +60,7 @@ class UpdateMySubscriptionMutation(relay.ClientIDMutation):
     @login_required
     @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
-        subscription_data = input.get("subscription")
-        subscription_type_id = subscription_data.get("subscription_type_id")
-        subscription = Subscription.objects.get_or_create(
-            profile=info.context.user.profile,
-            subscription_type=graphene.Node.get_node_from_global_id(
-                info, subscription_type_id, only_type=SubscriptionTypeNode
-            ),
-        )[0]
-        subscription.enabled = subscription_data.get("enabled")
-        subscription.save()
-
-        return UpdateMySubscriptionMutation(subscription=subscription)
+        return UpdateMySubscriptionMutation(subscription=None)
 
 
 class Query(graphene.ObjectType):
