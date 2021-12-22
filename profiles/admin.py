@@ -23,7 +23,6 @@ from profiles.models import (
 )
 from services.admin import ServiceConnectionInline
 from services.models import Service
-from subscriptions.admin import SubscriptionInline
 
 
 def superuser_required(function):
@@ -154,7 +153,6 @@ class ExtendedProfileAdmin(admin.ModelAdmin):
         VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,
         ServiceConnectionInline,
-        SubscriptionInline,
         ClaimTokenInline,
         TemporaryReadAccessTokenInline,
         EmailAdminInline,
