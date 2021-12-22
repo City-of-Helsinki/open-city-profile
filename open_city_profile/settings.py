@@ -186,7 +186,6 @@ INSTALLED_APPS = [
     "encrypted_fields",
     "adminsortable",
     "subscriptions",
-    "import_export",
     "open_city_profile.apps.OpenCityProfileConfig",
     "sanitized_dump",
 ]
