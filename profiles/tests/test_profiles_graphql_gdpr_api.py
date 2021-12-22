@@ -136,7 +136,6 @@ def test_user_can_download_profile(
                                     },
                                 ],
                             },
-                            {"key": "SUBSCRIPTIONS", "children": []},
                         ],
                     }
                 ],

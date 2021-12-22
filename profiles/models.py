@@ -61,7 +61,6 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "addresses"},
         {"name": "verified_personal_information"},
         {"name": "service_connections"},
-        {"name": "subscriptions"},
     )
     audit_log = True
 

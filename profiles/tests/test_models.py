@@ -280,7 +280,6 @@ def test_serialize_profile(profile):
                         }
                     ],
                 },
-                {"key": "SUBSCRIPTIONS", "children": []},
             ],
         }
     )
