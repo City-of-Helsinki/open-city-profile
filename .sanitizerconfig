@@ -328,33 +328,6 @@ strategy:
     proj4text: null
     srid: null
     srtext: null
-  subscriptions_subscription:
-    created_at: null
-    enabled: null
-    id: null
-    profile_id: null
-    subscription_type_id: null
-  subscriptions_subscriptiontype:
-    code: null
-    created_at: null
-    id: null
-    order: null
-    subscription_type_category_id: null
-  subscriptions_subscriptiontype_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
-  subscriptions_subscriptiontypecategory:
-    code: null
-    created_at: null
-    id: null
-    order: null
-  subscriptions_subscriptiontypecategory_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
   thesaurus_collection:
     id: null
   thesaurus_collection_translation:
