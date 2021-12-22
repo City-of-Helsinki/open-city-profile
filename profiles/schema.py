@@ -341,7 +341,10 @@ class ProfileFilter(FilterSet):
     addresses__address_type = ChoiceFilter(choices=AddressType.choices())
     addresses__primary = BooleanFilter()
     language = CharFilter()
-    enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
+    enabled_subscriptions = CharFilter(
+        method="get_enabled_subscriptions",
+        label="**DEPRECATED:** this filter has no effect.",
+    )
     order_by = PrimaryContactInfoOrderingFilter(
         fields=(
             ("first_name", "firstName"),
@@ -370,12 +373,7 @@ class ProfileFilter(FilterSet):
             return queryset.none()
 
     def get_enabled_subscriptions(self, queryset, name, value):
-        """
-        Custom filter to join the enabled of subscription with subscription type correctly
-        """
-        return queryset.filter(
-            subscriptions__enabled=True, subscriptions__subscription_type__code=value
-        )
+        return queryset
 
 
 class ContactNode(DjangoObjectType):
