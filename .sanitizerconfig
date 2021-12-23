@@ -185,37 +185,6 @@ strategy:
     proj4text: null
     srid: null
     srtext: null
-  thesaurus_collection:
-    id: null
-  thesaurus_collection_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
-  thesaurus_concept:
-    code: null
-    id: null
-    vocabulary_id: null
-  thesaurus_concept_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
-  thesaurus_member:
-    collection_id: null
-    concept_id: null
-    id: null
-    parent_id: null
-  thesaurus_vocabulary:
-    collection_id: null
-    id: null
-    prefix: null
-    uri: null
-  thesaurus_vocabulary_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
   users_user:
     date_joined: null
     department_name: null

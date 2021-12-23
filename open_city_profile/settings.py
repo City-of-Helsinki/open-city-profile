@@ -169,7 +169,6 @@ INSTALLED_APPS = [
     "django.contrib.gis",
     "django_filters",
     "parler",
-    "thesaurus",
     "corsheaders",
     "users",
     "profiles",
