@@ -27,7 +27,6 @@ from graphene_validator.decorators import validated
 from graphene_validator.errors import ValidationError as GrapheneValidationError
 from graphene_validator.validation import validate
 from graphql_relay import from_global_id
-from munigeo.models import AdministrativeDivision
 
 from open_city_profile.decorators import (
     login_and_service_required,
@@ -182,21 +181,6 @@ def update_sensitivedata(profile, sensitive_data):
     for field, value in sensitive_data.items():
         setattr(profile_sensitivedata, field, value)
     profile_sensitivedata.save()
-
-
-class AdministrativeDivisionType(DjangoObjectType):
-    class Meta:
-        model = AdministrativeDivision
-        fields = ("children", "origin_id", "ocd_id", "municipality")
-
-    type = graphene.String()
-    name = graphene.String()
-
-    def resolve_children(self, info, **kwargs):
-        return self.children.filter(type__type="sub_district")
-
-    def resolve_type(self, info, **kwargs):
-        return self.type.type
 
 
 with override("en"):
