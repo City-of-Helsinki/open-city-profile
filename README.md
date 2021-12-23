@@ -43,7 +43,6 @@ Prerequisites:
      * `ENABLE_GRAPHIQL`, enables GraphiQL interface for `/graphql/`
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
-     * `BOOTSTRAP_DIVISIONS`, bootstrap data import for divisions
      * `OIDC_CLIENT_ID`, Tunnistamo client id for enabling GDPR API authorization code flows
      * `OIDC_CLIENT_SECRET`, Tunnistamo client secret for enabling GDPR API authorization code flows
      * `GDPR_AUTH_CALLBACK_URL`, GDPR auth callback URL should be the same which is used by the UI for
@@ -67,11 +66,6 @@ Prerequisites:
 3. Create superuser:
     * Taken care by the example env
     * `docker exec -it profile-backend python manage.py createsuperuser`
-
-4. Import administrative Helsinki divisions if needed:
-    * `docker exec profile-backend python manage.py geo_import finland --municipalities`
-    * `docker exec profile-backend python manage.py geo_import helsinki --divisions`
-    * `docker exec profile-backend python manage.py mark_divisions_of_interest`
 
 5. Set permissions for service staff members if needed:
    * Create group(s) (via Django admin) and add user(s) to the group
@@ -128,15 +122,6 @@ Create extensions in the database
 Allow user to create test database
 
     sudo -u postgres psql -c "ALTER USER open_city_profile CREATEDB;"
-
-
-### Import administrative divisions
-
-In order to have the relevant Helsinki regions run the following commands:
-
-* `python manage.py geo_import finland --municipalities`
-* `python manage.py geo_import helsinki --divisions`
-* `python manage.py mark_divisions_of_interest`
 
 
 ### Daily running
