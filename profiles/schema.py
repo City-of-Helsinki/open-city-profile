@@ -28,7 +28,6 @@ from graphene_validator.errors import ValidationError as GrapheneValidationError
 from graphene_validator.validation import validate
 from graphql_relay import from_global_id
 from munigeo.models import AdministrativeDivision
-from thesaurus.models import Concept
 
 from open_city_profile.decorators import (
     login_and_service_required,
@@ -183,18 +182,6 @@ def update_sensitivedata(profile, sensitive_data):
     for field, value in sensitive_data.items():
         setattr(profile_sensitivedata, field, value)
     profile_sensitivedata.save()
-
-
-class ConceptType(DjangoObjectType):
-    class Meta:
-        model = Concept
-        fields = ("code",)
-
-    vocabulary = graphene.String()
-    label = graphene.String()
-
-    def resolve_vocabulary(self, info, **kwargs):
-        return self.vocabulary.prefix
 
 
 class AdministrativeDivisionType(DjangoObjectType):

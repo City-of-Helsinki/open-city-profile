@@ -224,10 +224,6 @@ strategy:
     last_name: "profile.last_name"
     nickname: "string.empty"
     user_id: null
-  profiles_profile_concepts_of_interest:
-    concept_id: null
-    id: null
-    profile_id: null
   profiles_profile_divisions_of_interest:
     administrativedivision_id: null
     id: null

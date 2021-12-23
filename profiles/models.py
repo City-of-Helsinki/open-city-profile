@@ -8,7 +8,6 @@ from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
 from munigeo.models import AdministrativeDivision
-from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
@@ -46,7 +45,6 @@ class Profile(UUIDModel, SerializableMixin):
         choices=settings.CONTACT_METHODS,
         default=settings.CONTACT_METHODS[0][0],
     )
-    concepts_of_interest = models.ManyToManyField(Concept, blank=True)
     divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
 
     serialize_fields = (
