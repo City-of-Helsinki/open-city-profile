@@ -7,7 +7,6 @@ from django.db import models, transaction
 from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
-from munigeo.models import AdministrativeDivision
 
 from services.models import ServiceConnection
 from users.models import User
@@ -45,7 +44,6 @@ class Profile(UUIDModel, SerializableMixin):
         choices=settings.CONTACT_METHODS,
         default=settings.CONTACT_METHODS[0][0],
     )
-    divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
 
     serialize_fields = (
         {"name": "first_name"},
@@ -339,14 +337,6 @@ class VerifiedPersonalInformationPermanentForeignAddress(SerializableMixin):
 
     def resolve_profile(self):
         return self.verified_personal_information.profile
-
-
-class DivisionOfInterest(models.Model):
-    division = models.OneToOneField(
-        AdministrativeDivision,
-        on_delete=models.CASCADE,
-        related_name="division_of_interest",
-    )
 
 
 class SensitiveData(SerializableMixin):

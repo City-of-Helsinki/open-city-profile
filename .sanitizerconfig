@@ -200,9 +200,6 @@ strategy:
     id: null
     profile_id: null
     token: null
-  profiles_divisionofinterest:
-    division_id: null
-    id: null
   profiles_email:
     email: "profile.email"
     email_type: null
@@ -224,10 +221,6 @@ strategy:
     last_name: "profile.last_name"
     nickname: "string.empty"
     user_id: null
-  profiles_profile_divisions_of_interest:
-    administrativedivision_id: null
-    id: null
-    profile_id: null
   profiles_sensitivedata:
     id: null
     profile_id: null
