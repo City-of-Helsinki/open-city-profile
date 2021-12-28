@@ -172,8 +172,6 @@ INSTALLED_APPS = [
     "parler",
     "thesaurus",
     "corsheaders",
-    "mptt",
-    "munigeo",
     "users",
     "profiles",
     "reversion",
