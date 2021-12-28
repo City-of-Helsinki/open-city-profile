@@ -11,7 +11,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("munigeo", "0004_delete_old_translations"),
         ("profiles", "0009_add_profile_uuid"),
         ("services", "0003_pre_profile_uuid"),
     ]
@@ -39,9 +38,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="profile",
             name="divisions_of_interest",
-            field=models.ManyToManyField(
-                blank=True, to="munigeo.AdministrativeDivision"
-            ),
+            field=models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AlterField(
             model_name="legalrelationship",
