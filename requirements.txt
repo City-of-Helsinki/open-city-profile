@@ -66,10 +66,7 @@ django==2.2.25
     #   django-reversion
     #   django-searchable-encrypted-fields
     #   django-thesaurus
-    #   djangorestframework
     #   graphene-django
-djangorestframework==3.12.4
-    # via -r requirements.in
 ecdsa==0.16.1
     # via python-jose
 future==0.17.1

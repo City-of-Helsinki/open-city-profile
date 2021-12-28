@@ -12,7 +12,6 @@ django-reversion
 django-sanitized-dump
 django-searchable-encrypted-fields
 django-thesaurus>=0.0.2
-djangorestframework
 graphene-django>=2.10.1
 graphene-federation
 git+https://github.com/City-of-Helsinki/graphene-validator.git@main
