@@ -9,7 +9,6 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import path
 from django.utils.decorators import method_decorator
-from munigeo.models import AdministrativeDivision
 
 from profiles.models import (
     Address,
@@ -199,14 +198,6 @@ class ExtendedProfileAdmin(admin.ModelAdmin):
             messages.error(request, err)
             form = ImportProfilesFromJsonForm()
             return render(request, "admin/profiles/upload_json.html", {"form": form})
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "divisions_of_interest":
-            kwargs["queryset"] = AdministrativeDivision.objects.filter(
-                division_of_interest__isnull=False
-            )
-        formfield = super().formfield_for_manytomany(db_field, request, **kwargs)
-        return formfield
 
     def delete_model(self, request, obj):
         user = obj.user
