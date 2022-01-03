@@ -22,7 +22,7 @@ deprecation==2.1.0
     # via django-helusers
 django-admin-sortable==2.2.3
     # via -r requirements.in
-django-cors-headers==3.0.2
+django-cors-headers==3.10.1
     # via -r requirements.in
 django-enumfields==1.0.0
     # via -r requirements.in
