@@ -34,7 +34,7 @@ django-guardian==2.1.0
     # via -r requirements.in
 django-helusers==0.7.0
     # via -r requirements.in
-django-parler==1.9.2
+django-parler==2.3
     # via -r requirements.in
 django-sanitized-dump==1.2.1
     # via -r requirements.in
@@ -47,6 +47,7 @@ django==2.2.25
     #   django-cors-headers
     #   django-filter
     #   django-helusers
+    #   django-parler
     #   django-searchable-encrypted-fields
     #   graphene-django
 ecdsa==0.16.1
