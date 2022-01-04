@@ -87,6 +87,8 @@ sentry_sdk.init(
 sentry_sdk.integrations.logging.ignore_logger("graphql.execution.utils")
 
 BASE_DIR = str(checkout_dir)
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 DEBUG = env.bool("DEBUG")
 TIER = env.str("TIER")
 SECRET_KEY = env.str("SECRET_KEY")
