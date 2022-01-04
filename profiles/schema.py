@@ -82,7 +82,8 @@ AllowedAddressType = graphene.Enum.from_enum(
 )
 
 
-profile_updated = django.dispatch.Signal(providing_args=["instance"])
+"""Provides the updated Profile instance as a keyword argument called `instance`."""
+profile_updated = django.dispatch.Signal()
 
 
 def get_claimable_profile(token=None):
