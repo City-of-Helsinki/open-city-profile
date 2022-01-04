@@ -8,6 +8,8 @@
 
 aniso8601==6.0.0
     # via graphene
+asgiref==3.4.1
+    # via django
 cachetools==4.2.0
     # via django-helusers
 certifi==2020.4.5.1
@@ -40,7 +42,7 @@ django-sanitized-dump==1.2.1
     # via -r requirements.in
 django-searchable-encrypted-fields==0.1.3
     # via -r requirements.in
-django==2.2.25
+django==3.2.11
     # via
     #   -r requirements.in
     #   django-admin-sortable
@@ -133,6 +135,8 @@ six==1.14.0
     #   singledispatch
 sqlparse==0.4.2
     # via django
+typing-extensions==4.0.1
+    # via asgiref
 urllib3==1.26.6
     # via
     #   requests

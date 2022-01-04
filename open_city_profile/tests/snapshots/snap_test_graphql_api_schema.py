@@ -23,8 +23,8 @@ type AddServiceConnectionMutationPayload {
 }
 
 type AddressNode implements Node {
-  primary: Boolean!
   id: ID!
+  primary: Boolean!
   address: String!
   postalCode: String!
   city: String!
@@ -191,8 +191,8 @@ input EmailInput {
 }
 
 type EmailNode implements Node {
-  primary: Boolean!
   id: ID!
+  primary: Boolean!
   email: String!
   emailType: EmailType
   verified: Boolean!
@@ -249,8 +249,8 @@ type PageInfo {
 }
 
 type PhoneNode implements Node {
-  primary: Boolean!
   id: ID!
+  primary: Boolean!
   phone: String!
   phoneType: PhoneType
 }
