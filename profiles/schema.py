@@ -57,7 +57,6 @@ from .models import (
     ClaimToken,
     Contact,
     Email,
-    EncryptedAddress,
     Phone,
     Profile,
     SensitiveData,
@@ -951,15 +950,21 @@ class VerifiedPersonalInformationAddressInput(graphene.InputObjectType):
 
     @staticmethod
     def validate_street_address(value, info, **input):
-        return model_field_validation(EncryptedAddress, "street_address", value)
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentAddress, "street_address", value
+        )
 
     @staticmethod
     def validate_postal_code(value, info, **input):
-        return model_field_validation(EncryptedAddress, "postal_code", value)
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentAddress, "postal_code", value
+        )
 
     @staticmethod
     def validate_post_office(value, info, **input):
-        return model_field_validation(EncryptedAddress, "post_office", value)
+        return model_field_validation(
+            VerifiedPersonalInformationPermanentAddress, "post_office", value
+        )
 
 
 class VerifiedPersonalInformationForeignAddressInput(graphene.InputObjectType):
