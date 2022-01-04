@@ -1,7 +1,7 @@
 from functools import wraps
 
 from django.core.exceptions import PermissionDenied
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from graphql.execution.base import ResolveInfo
 
 from open_city_profile.exceptions import ServiceNotIdentifiedError
