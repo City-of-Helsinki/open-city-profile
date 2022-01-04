@@ -30,7 +30,7 @@ django-environ==0.4.5
     # via -r requirements.in
 django-filter==2.4.0
     # via -r requirements.in
-django-guardian==2.1.0
+django-guardian==2.4.0
     # via -r requirements.in
 django-helusers==0.7.0
     # via -r requirements.in
@@ -46,6 +46,7 @@ django==2.2.25
     #   django-admin-sortable
     #   django-cors-headers
     #   django-filter
+    #   django-guardian
     #   django-helusers
     #   django-parler
     #   django-searchable-encrypted-fields
