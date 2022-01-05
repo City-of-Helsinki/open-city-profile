@@ -98,7 +98,7 @@ def do_graphql_call_as_user(
     service_client_id = None
     if service is _not_provided:
         service_client_id = ServiceClientIdFactory(
-            service__service_type=None, service__implicit_connection=True,
+            service__service_type=None, service__is_profile_service=True,
         )
     elif service:
         service_client_id = service.client_ids.first()

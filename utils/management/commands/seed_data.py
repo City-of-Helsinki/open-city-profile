@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 from faker import Faker
 
 from services.models import Service
-from subscriptions.utils import generate_subscription_types
 from utils.utils import (
     assign_permissions,
     generate_data_fields,
@@ -56,18 +55,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--superuser", help="Add admin/admin superuser", action="store_true"
         )
-        parser.add_argument(
-            "--divisions",
-            help="Import Helsinki divisions of interest",
-            action="store_true",
-        )
 
     def handle(self, *args, **kwargs):
         clear = kwargs["clear"]
         no_clear = kwargs["no_clear"]
         development = kwargs["development"]
         superuser = kwargs["superuser"]
-        divisions = kwargs["divisions"]
         locale = kwargs["locale"]
         faker = Faker(locale)
         profile_count = kwargs["profilecount"]
@@ -84,15 +77,6 @@ class Command(BaseCommand):
             management.call_command("add_admin_user")
             self.stdout.write(self.style.SUCCESS("Done - Admin user"))
 
-        if divisions:
-            self.stdout.write("Importing Helsinki divisions of interest...")
-            management.call_command("geo_import", "finland", "--municipalities")
-            management.call_command("geo_import", "helsinki", "--divisions")
-            management.call_command("mark_divisions_of_interest")
-            self.stdout.write(
-                self.style.SUCCESS("Done - Helsinki divisions of interest")
-            )
-
         # Initial profile data
         self.stdout.write("Generating data fields...")
         generate_data_fields()
@@ -100,8 +84,6 @@ class Command(BaseCommand):
         services = generate_services()
         self.stdout.write("Generating groups...")
         groups = generate_groups_for_services(services=services)
-        self.stdout.write("Generating subscription types...")
-        generate_subscription_types()
 
         self.stdout.write(self.style.SUCCESS("Done - Profile data"))
 

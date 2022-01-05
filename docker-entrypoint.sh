@@ -32,13 +32,6 @@ if [[ "$CREATE_SUPERUSER" = "1" ]]; then
     echo "Admin user created with credentials admin:admin (email: admin@example.com)"
 fi
 
-# Bootstrap data import for divisions
-if [[ "$BOOTSTRAP_DIVISIONS" = "1" ]]; then
-    ./manage.py geo_import finland --municipalities
-    ./manage.py geo_import helsinki --divisions
-    ./manage.py mark_divisions_of_interest
-fi
-
 # Start server
 if [[ ! -z "$@" ]]; then
     "$@"

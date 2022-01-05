@@ -224,7 +224,7 @@ enum Language {
 }
 
 type Mutation {
-  updateMySubscription(input: UpdateMySubscriptionMutationInput!): UpdateMySubscriptionMutationPayload
+  updateMySubscription(input: UpdateMySubscriptionMutationInput!): UpdateMySubscriptionMutationPayload @deprecated(reason: "The whole subscriptions concept is non-functional. There\'s no replacement.")
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
   createProfile(input: CreateProfileMutationInput!): CreateProfileMutationPayload
@@ -297,9 +297,9 @@ type ProfileNode implements Node {
   firstName: String!
   lastName: String!
   nickname: String!
-  image: String
   language: Language
   id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
   primaryEmail: EmailNode
   primaryPhone: PhoneNode
   primaryAddress: AddressNode
@@ -309,7 +309,7 @@ type ProfileNode implements Node {
   contactMethod: ContactMethod
   sensitivedata: SensitiveDataNode
   serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
-  subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection
+  subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection @deprecated(reason: "The whole subscriptions concept is non-functional. This field always just returns null.")
   verifiedPersonalInformation: VerifiedPersonalInformationNode
 }
 
@@ -337,7 +337,7 @@ type ProfileWithVerifiedPersonalInformationOutput implements Node {
 }
 
 type Query {
-  subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection
+  subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection @deprecated(reason: "The whole subscriptions concept is non-functional. There\'s no replacement.")
   profile(id: ID!, serviceType: ServiceType): ProfileNode
   myProfile: ProfileNode
   downloadMyProfile(authorizationCode: String!): JSONString
@@ -352,9 +352,9 @@ type RestrictedProfileNode implements Node {
   firstName: String!
   lastName: String!
   nickname: String!
-  image: String
   language: Language
   id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
   primaryEmail: EmailNode
   primaryPhone: PhoneNode
   primaryAddress: AddressNode

@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("thesaurus", "0001_initial"),
     ]
 
     operations = [
@@ -55,7 +54,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "concepts_of_interest",
-                    models.ManyToManyField(blank=True, to="thesaurus.Concept"),
+                    models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL),
                 ),
                 (
                     "user",

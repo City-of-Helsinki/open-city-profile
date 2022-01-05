@@ -9,7 +9,6 @@ from profiles.models import _default_temporary_read_access_token_validity_durati
 from profiles.schema import profile_updated
 from profiles.tests.factories import (
     AddressDataDictFactory,
-    ConceptFactory,
     EmailDataDictFactory,
     PhoneDataDictFactory,
     ProfileDataDictFactory,
@@ -17,7 +16,6 @@ from profiles.tests.factories import (
     SensitiveDataFactory,
     TemporaryReadAccessTokenFactory,
     VerifiedPersonalInformationFactory,
-    VocabularyFactory,
 )
 from services.tests.factories import (
     ServiceClientIdFactory,
@@ -41,16 +39,6 @@ def profile_with_sensitive_data():
 @pytest.fixture
 def profile_with_verified_personal_information():
     return VerifiedPersonalInformationFactory().profile
-
-
-@pytest.fixture
-def vocabulary():
-    return VocabularyFactory()
-
-
-@pytest.fixture
-def concept(vocabulary):
-    return ConceptFactory(vocabulary=vocabulary)
 
 
 @pytest.fixture
@@ -84,6 +72,11 @@ def profile_updated_listener(mocker):
 register(ServiceFactory)
 register(ServiceConnectionFactory)
 register(ServiceClientIdFactory)
+
+
+@pytest.fixture
+def profile_service():
+    return ServiceFactory(name="profile-service", is_profile_service=True)
 
 
 @pytest.fixture(autouse=True)

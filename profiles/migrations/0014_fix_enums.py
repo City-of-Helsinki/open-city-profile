@@ -6,6 +6,26 @@ from django.db import migrations
 import profiles.enums
 
 
+class RepresentationType(enumfields.fields.Enum):
+    CUSTODY = "custody"
+
+    class Labels:
+        CUSTODY = "Custodianship"
+
+
+class RepresentativeConfirmationDegree(enumfields.fields.Enum):
+    NONE = "none"
+    STRONG = "strong"
+    ID_SHOWN = "id_shown"
+    PROXY = "proxy"
+
+    class Labels:
+        NONE = "Not authenticated"
+        STRONG = "Strong authentication (Suomi.fi)"
+        ID_SHOWN = "Guardian present"
+        PROXY = "Approved via signed document"
+
+
 class Migration(migrations.Migration):
 
     dependencies = [("profiles", "0013_change_foreign_key_type")]
@@ -29,16 +49,14 @@ class Migration(migrations.Migration):
             model_name="legalrelationship",
             name="confirmation_degree",
             field=enumfields.fields.EnumField(
-                default="none",
-                enum=profiles.enums.RepresentativeConfirmationDegree,
-                max_length=30,
+                default="none", enum=RepresentativeConfirmationDegree, max_length=30
             ),
         ),
         migrations.AlterField(
             model_name="legalrelationship",
             name="type",
             field=enumfields.fields.EnumField(
-                default="custody", enum=profiles.enums.RepresentationType, max_length=30
+                default="custody", enum=RepresentationType, max_length=30
             ),
         ),
         migrations.AlterField(

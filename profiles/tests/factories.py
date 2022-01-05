@@ -1,5 +1,4 @@
 import factory
-from thesaurus.models import Concept, Vocabulary
 
 from open_city_profile.tests.factories import UserFactory
 from profiles.enums import AddressType, EmailType, PhoneType
@@ -165,21 +164,6 @@ class AddressDataDictFactory(factory.DictFactory):
     country_code = factory.Faker("country_code", representation="alpha-2")
     address_type = AddressType.WORK.name
     primary = False
-
-
-class VocabularyFactory(factory.django.DjangoModelFactory):
-    prefix = factory.Faker("word")
-
-    class Meta:
-        model = Vocabulary
-
-
-class ConceptFactory(factory.django.DjangoModelFactory):
-    code = factory.Faker("word")
-    vocabulary = factory.SubFactory(VocabularyFactory)
-
-    class Meta:
-        model = Concept
 
 
 class SensitiveDataFactory(factory.django.DjangoModelFactory):

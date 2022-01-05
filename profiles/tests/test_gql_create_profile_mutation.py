@@ -38,6 +38,7 @@ ${email_input}
                                 primary: true
                             }
                         ]
+                        subscriptions: []
                     }
                 }
             ) {
@@ -69,6 +70,13 @@ ${email_input}
                                     type
                                     name
                                 }
+                            }
+                        }
+                    }
+                    subscriptions {
+                        edges {
+                            node {
+                                id
                             }
                         }
                     }
@@ -135,6 +143,7 @@ ${email_input}
                         }
                     ]
                 },
+                "subscriptions": {"edges": []},
             }
         }
     }

@@ -31,6 +31,14 @@ def test_add_service_with_duplicate_name(service_factory):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_there_can_be_only_one_profile_service(service_factory):
+    service_factory(is_profile_service=True)
+    with pytest.raises(IntegrityError):
+        service_factory(is_profile_service=True)
+    assert Service.objects.count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
 def test_connect_duplicate_service_for_profile(service):
     profile = ProfileFactory()
     ServiceConnectionFactory(profile=profile, service=service)

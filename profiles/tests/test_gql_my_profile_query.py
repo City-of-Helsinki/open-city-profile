@@ -3,11 +3,6 @@ import pytest
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from services.tests.factories import ServiceConnectionFactory
-from subscriptions.models import Subscription
-from subscriptions.tests.factories import (
-    SubscriptionTypeCategoryFactory,
-    SubscriptionTypeFactory,
-)
 
 from .conftest import VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES
 from .factories import (
@@ -428,19 +423,6 @@ def test_normal_user_can_query_his_own_profiles_sensitivedata(user_gql_client):
 
 def test_normal_user_can_query_his_own_profile_with_subscriptions(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
-    cat = SubscriptionTypeCategoryFactory(
-        code="TEST-CATEGORY-1", label="Test Category 1"
-    )
-    type_1 = SubscriptionTypeFactory(
-        subscription_type_category=cat, code="TEST-1", label="Test 1"
-    )
-    type_2 = SubscriptionTypeFactory(
-        subscription_type_category=cat, code="TEST-2", label="Test 2"
-    )
-    Subscription.objects.create(profile=profile, subscription_type=type_1, enabled=True)
-    Subscription.objects.create(
-        profile=profile, subscription_type=type_2, enabled=False
-    )
 
     query = """
         {
@@ -470,38 +452,7 @@ def test_normal_user_can_query_his_own_profile_with_subscriptions(user_gql_clien
         "myProfile": {
             "firstName": profile.first_name,
             "lastName": profile.last_name,
-            "subscriptions": {
-                "edges": [
-                    {
-                        "node": {
-                            "enabled": True,
-                            "subscriptionType": {
-                                "order": 1,
-                                "code": "TEST-1",
-                                "label": "Test 1",
-                                "subscriptionTypeCategory": {
-                                    "code": "TEST-CATEGORY-1",
-                                    "label": "Test Category 1",
-                                },
-                            },
-                        }
-                    },
-                    {
-                        "node": {
-                            "enabled": False,
-                            "subscriptionType": {
-                                "order": 2,
-                                "code": "TEST-2",
-                                "label": "Test 2",
-                                "subscriptionTypeCategory": {
-                                    "code": "TEST-CATEGORY-1",
-                                    "label": "Test Category 1",
-                                },
-                            },
-                        }
-                    },
-                ]
-            },
+            "subscriptions": {"edges": []},
         }
     }
     executed = user_gql_client.execute(query)

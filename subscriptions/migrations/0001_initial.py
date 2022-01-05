@@ -4,8 +4,6 @@ import django.db.models.deletion
 import parler.models
 from django.db import migrations, models
 
-import subscriptions.models
-
 
 class Migration(migrations.Migration):
 
@@ -31,9 +29,7 @@ class Migration(migrations.Migration):
                 (
                     "order",
                     models.PositiveIntegerField(
-                        db_index=True,
-                        default=subscriptions.models.get_next_subscription_type_category_order,
-                        editable=False,
+                        db_index=True, default=1, editable=False,
                     ),
                 ),
             ],
@@ -57,9 +53,7 @@ class Migration(migrations.Migration):
                 (
                     "order",
                     models.PositiveIntegerField(
-                        db_index=True,
-                        default=subscriptions.models.get_next_subscription_type_order,
-                        editable=False,
+                        db_index=True, default=1, editable=False,
                     ),
                 ),
                 (

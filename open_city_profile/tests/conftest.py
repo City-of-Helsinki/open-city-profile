@@ -36,8 +36,8 @@ class GraphQLClient(GrapheneClient):
     ):
         """
         Custom execute method which adds all of the middlewares defined in the
-        settings to the execution. Additionally adds a default service with
-        implicit_connection enabled to the context if no service is provided.
+        settings to the execution. Additionally adds a profile service to the
+        context if no service is provided.
 
         e.g. GQL DataLoaders middleware is used to make the DataLoaders
         available through the context.
@@ -61,7 +61,7 @@ class GraphQLClient(GrapheneClient):
             context.service = None
 
         if service is _not_provided:
-            context.service = ServiceFactory(implicit_connection=True)
+            context.service = ServiceFactory(name="profile", is_profile_service=True)
         elif service:
             context.service = service
 

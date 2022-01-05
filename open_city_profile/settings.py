@@ -45,7 +45,6 @@ env = environ.Env(
     MAIL_MAILGUN_KEY=(str, ""),
     MAIL_MAILGUN_DOMAIN=(str, ""),
     MAIL_MAILGUN_API=(str, ""),
-    NOTIFICATIONS_ENABLED=(bool, False),
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     VERSION=(str, None),
@@ -187,7 +186,6 @@ INSTALLED_APPS = [
     "encrypted_fields",
     "adminsortable",
     "subscriptions",
-    "import_export",
     "open_city_profile.apps.OpenCityProfileConfig",
     "sanitized_dump",
 ]
@@ -202,7 +200,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "reversion.middleware.RevisionMiddleware",
     "open_city_profile.middleware.JWTAuthentication",
     "profiles.middleware.SetCurrentRequest",
 ]
@@ -274,7 +271,6 @@ PARLER_LANGUAGES = {
 
 # Notification settings
 
-NOTIFICATIONS_ENABLED = True
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 if env("MAIL_MAILGUN_KEY"):
     ANYMAIL = {

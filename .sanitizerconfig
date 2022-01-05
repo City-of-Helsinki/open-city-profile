@@ -200,9 +200,6 @@ strategy:
     id: null
     profile_id: null
     token: null
-  profiles_divisionofinterest:
-    division_id: null
-    id: null
   profiles_email:
     email: "profile.email"
     email_type: null
@@ -210,13 +207,6 @@ strategy:
     primary: null
     profile_id: null
     verified: null
-  profiles_legalrelationship:
-    confirmation_degree: null
-    expiration: null
-    id: null
-    representative_id: null
-    representee_id: null
-    type: null
   profiles_phone:
     id: null
     phone: "profile.phone"
@@ -227,19 +217,10 @@ strategy:
     contact_method: null
     first_name: "profile.first_name"
     id: null
-    image: "constant.null"
     language: null
     last_name: "profile.last_name"
     nickname: "string.empty"
     user_id: null
-  profiles_profile_concepts_of_interest:
-    concept_id: null
-    id: null
-    profile_id: null
-  profiles_profile_divisions_of_interest:
-    administrativedivision_id: null
-    id: null
-    profile_id: null
   profiles_sensitivedata:
     id: null
     profile_id: null
@@ -307,7 +288,7 @@ strategy:
     gdpr_query_scope: null
     gdpr_url: null
     id: null
-    implicit_connection: null
+    is_profile_service: null
     name: null
     service_type: null
   services_service_allowed_data_fields:
@@ -336,33 +317,6 @@ strategy:
     proj4text: null
     srid: null
     srtext: null
-  subscriptions_subscription:
-    created_at: null
-    enabled: null
-    id: null
-    profile_id: null
-    subscription_type_id: null
-  subscriptions_subscriptiontype:
-    code: null
-    created_at: null
-    id: null
-    order: null
-    subscription_type_category_id: null
-  subscriptions_subscriptiontype_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
-  subscriptions_subscriptiontypecategory:
-    code: null
-    created_at: null
-    id: null
-    order: null
-  subscriptions_subscriptiontypecategory_translation:
-    id: null
-    label: null
-    language_code: null
-    master_id: null
   thesaurus_collection:
     id: null
   thesaurus_collection_translation:

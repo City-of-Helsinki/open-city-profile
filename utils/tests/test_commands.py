@@ -3,7 +3,6 @@ from django.core.management import call_command
 
 from profiles.models import Profile
 from services.models import AllowedDataField, Service
-from subscriptions.models import SubscriptionType, SubscriptionTypeCategory
 from users.models import User
 from utils.utils import DATA_FIELD_VALUES, SERVICES
 
@@ -15,8 +14,6 @@ def test_command_seed_data_works_without_arguments():
     assert Group.objects.count() == len(SERVICES)
     assert User.objects.filter(is_superuser=True).count() == 0
     assert AllowedDataField.objects.count() == len(DATA_FIELD_VALUES)
-    assert SubscriptionType.objects.count() == 3
-    assert SubscriptionTypeCategory.objects.count() == 2
 
 
 def test_command_seed_data_initializes_development_data():

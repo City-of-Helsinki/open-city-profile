@@ -27,8 +27,6 @@ from graphene_validator.decorators import validated
 from graphene_validator.errors import ValidationError as GrapheneValidationError
 from graphene_validator.validation import validate
 from graphql_relay import from_global_id
-from munigeo.models import AdministrativeDivision
-from thesaurus.models import Concept
 
 from open_city_profile.decorators import (
     login_and_service_required,
@@ -46,11 +44,7 @@ from open_city_profile.exceptions import (
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
-from subscriptions.schema import (
-    SubscriptionInputType,
-    SubscriptionNode,
-    UpdateMySubscriptionMutation,
-)
+from subscriptions.schema import SubscriptionInputType, SubscriptionNodeConnection
 from utils.validation import model_field_validation
 
 from .connected_services import (
@@ -153,6 +147,9 @@ def update_profile(profile, profile_data):
         (Address, profile_data.pop("remove_addresses", [])),
     ]
 
+    # Remove image field from input. It's not supposed to do anything anymore.
+    profile_data.pop("image", None)
+
     profile_had_primary_email = bool(profile.get_primary_email_value())
 
     for field, value in profile_data.items():
@@ -184,33 +181,6 @@ def update_sensitivedata(profile, sensitive_data):
     for field, value in sensitive_data.items():
         setattr(profile_sensitivedata, field, value)
     profile_sensitivedata.save()
-
-
-class ConceptType(DjangoObjectType):
-    class Meta:
-        model = Concept
-        fields = ("code",)
-
-    vocabulary = graphene.String()
-    label = graphene.String()
-
-    def resolve_vocabulary(self, info, **kwargs):
-        return self.vocabulary.prefix
-
-
-class AdministrativeDivisionType(DjangoObjectType):
-    class Meta:
-        model = AdministrativeDivision
-        fields = ("children", "origin_id", "ocd_id", "municipality")
-
-    type = graphene.String()
-    name = graphene.String()
-
-    def resolve_children(self, info, **kwargs):
-        return self.children.filter(type__type="sub_district")
-
-    def resolve_type(self, info, **kwargs):
-        return self.type.type
 
 
 with override("en"):
@@ -342,7 +312,10 @@ class ProfileFilter(FilterSet):
     addresses__address_type = ChoiceFilter(choices=AddressType.choices())
     addresses__primary = BooleanFilter()
     language = CharFilter()
-    enabled_subscriptions = CharFilter(method="get_enabled_subscriptions")
+    enabled_subscriptions = CharFilter(
+        method="get_enabled_subscriptions",
+        label="**DEPRECATED:** this filter has no effect.",
+    )
     order_by = PrimaryContactInfoOrderingFilter(
         fields=(
             ("first_name", "firstName"),
@@ -371,12 +344,7 @@ class ProfileFilter(FilterSet):
             return queryset.none()
 
     def get_enabled_subscriptions(self, queryset, name, value):
-        """
-        Custom filter to join the enabled of subscription with subscription type correctly
-        """
-        return queryset.filter(
-            subscriptions__enabled=True, subscriptions__subscription_type__code=value
-        )
+        return queryset
 
 
 class ContactNode(DjangoObjectType):
@@ -525,9 +493,13 @@ class SensitiveDataFields(graphene.InputObjectType):
 class RestrictedProfileNode(DjangoObjectType):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
+        fields = ("first_name", "last_name", "nickname", "language")
         interfaces = (relay.Node,)
 
+    image = graphene.Field(
+        graphene.String,
+        deprecation_reason="There is no image in the Profile. This field always just returns null.",
+    )
     primary_email = graphene.Field(
         EmailNode,
         description="Convenience field for the email which is marked as primary.",
@@ -575,7 +547,7 @@ class RestrictedProfileNode(DjangoObjectType):
 class ProfileNode(RestrictedProfileNode):
     class Meta:
         model = Profile
-        fields = ("first_name", "last_name", "nickname", "image", "language")
+        fields = ("first_name", "last_name", "nickname", "language")
         interfaces = (relay.Node,)
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
@@ -587,7 +559,10 @@ class ProfileNode(RestrictedProfileNode):
     service_connections = DjangoFilterConnectionField(
         ServiceConnectionType, description="List of the profile's connected services."
     )
-    subscriptions = DjangoFilterConnectionField(SubscriptionNode)
+    subscriptions = relay.ConnectionField(
+        SubscriptionNodeConnection,
+        deprecation_reason="The whole subscriptions concept is non-functional. This field always just returns null.",
+    )
     verified_personal_information = graphene.Field(
         VerifiedPersonalInformationNode,
         description="Personal information that has been verified to be true. "
@@ -597,6 +572,9 @@ class ProfileNode(RestrictedProfileNode):
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
+
+    def resolve_subscriptions(self, info, **kwargs):
+        return []
 
     def resolve_sensitivedata(self, info, **kwargs):
         service = info.context.service
@@ -772,7 +750,7 @@ class ProfileInputBase(graphene.InputObjectType):
         description="Last name. Maximum length is 255 characters."
     )
     nickname = graphene.String(description="Nickname. Maximum length is 32 characters.")
-    image = graphene.String(description="Profile image.")
+    image = graphene.String(description="**DEPRECATED**. Any input is ignored.")
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
     add_emails = graphene.List(CreateEmailInput, description="Add emails to profile.")
@@ -782,7 +760,10 @@ class ProfileInputBase(graphene.InputObjectType):
     add_addresses = graphene.List(
         CreateAddressInput, description="Add addresses to profile."
     )
-    subscriptions = graphene.List(SubscriptionInputType)
+    subscriptions = graphene.List(
+        SubscriptionInputType,
+        description="**DEPRECATED**. The whole subscriptions concept is non-functional. Any input is ignored.",
+    )
     sensitivedata = graphene.InputField(SensitiveDataFields)
 
     @staticmethod
@@ -799,6 +780,13 @@ class ProfileInputBase(graphene.InputObjectType):
 
 
 class ProfileInput(ProfileInputBase):
+    """The following fields are deprecated:
+
+* `image`
+* `subscriptions`
+
+There's no replacement for these."""
+
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
     )
@@ -840,6 +828,12 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         sensitive_data = profile_data.pop("sensitivedata", None)
 
+        # Remove image field from input. It's not supposed to do anything anymore.
+        profile_data.pop("image", None)
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
+
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
             setattr(profile, field, value)
@@ -857,6 +851,8 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 class CreateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
+* `image`
+* `subscriptions`
 * `update_emails`
 * `remove_emails`
 * `update_phones`
@@ -864,25 +860,25 @@ class CreateProfileInput(ProfileInputBase):
 * `update_addresses`
 * `remove_addresses`
 
-There's no replacement for these as these fields have never had any effect in the first place."""
+There's no replacement for these."""
 
     update_emails = graphene.List(
-        UpdateEmailInput, description="DEPRECATED. Update profile emails."
+        UpdateEmailInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_emails = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove emails from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
     update_phones = graphene.List(
-        UpdatePhoneInput, description="DEPRECATED. Update profile phone numbers."
+        UpdatePhoneInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_phones = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove phone numbers from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
     update_addresses = graphene.List(
-        UpdateAddressInput, description="DEPRECATED. Update profile addresses."
+        UpdateAddressInput, description="**DEPRECATED**. Any input is ignored."
     )
     remove_addresses = graphene.List(
-        graphene.ID, description="DEPRECATED. Remove addresses from profile."
+        graphene.ID, description="**DEPRECATED**. Any input is ignored."
     )
 
 
@@ -920,6 +916,12 @@ class CreateProfileMutation(relay.ClientIDMutation):
         ]
 
         profile_data.pop("sensitivedata", None)
+
+        # Remove image field from input. It's not supposed to do anything anymore.
+        profile_data.pop("image", None)
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
 
         profile = Profile(**profile_data)
         profile.save()
@@ -1269,22 +1271,24 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
-        subscription_data = profile_data.pop("subscriptions", [])
+        profile_data.pop("subscriptions", None)
 
         update_profile(profile, profile_data)
 
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
 
-        for subscription in subscription_data:
-            UpdateMySubscriptionMutation().mutate_and_get_payload(
-                root, info, subscription=subscription
-            )
-
         return UpdateMyProfileMutation(profile=profile)
 
 
 class UpdateProfileInput(ProfileInputBase):
+    """The following fields are deprecated:
+
+* `image`
+* `subscriptions`
+
+There's no replacement for these."""
+
     id = graphene.Argument(graphene.ID, required=True)
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
@@ -1326,7 +1330,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             info, profile_data.pop("id"), only_type=ProfileNode
         )
 
-        if not service.has_connection_to_profile(profile, allow_implicit=False):
+        if not service.has_connection_to_profile(profile):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
@@ -1339,6 +1343,10 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
+
+        # Remove subscriptions field from the input. It has never been handled so
+        # providing any input has just resulted into an error.
+        profile_data.pop("subscriptions", None)
 
         validate(cls, root, info, **input)
 

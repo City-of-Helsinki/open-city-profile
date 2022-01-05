@@ -9,11 +9,6 @@ from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import AddressType, EmailType, PhoneType
 from services.tests.factories import ServiceConnectionFactory
-from subscriptions.models import Subscription
-from subscriptions.tests.factories import (
-    SubscriptionTypeCategoryFactory,
-    SubscriptionTypeFactory,
-)
 
 from .factories import (
     AddressFactory,
@@ -634,7 +629,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     assert executed["data"] == expected_data
 
 
-def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
+def test_filtering_profiles_by_subscriptions_has_no_effect(
     user_gql_client, group, service
 ):
     def generate_expected_data(profiles):
@@ -676,32 +671,6 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
     AddressFactory(profile=profile_3, postal_code="00100")
     AddressFactory(profile=profile_4, postal_code="00200")
 
-    cat = SubscriptionTypeCategoryFactory(code="TEST-CATEGORY-1")
-    type_1 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-1")
-    type_2 = SubscriptionTypeFactory(subscription_type_category=cat, code="TEST-2")
-
-    Subscription.objects.create(
-        profile=profile_1, subscription_type=type_1, enabled=True
-    )
-    Subscription.objects.create(
-        profile=profile_1, subscription_type=type_2, enabled=True
-    )
-
-    Subscription.objects.create(
-        profile=profile_2, subscription_type=type_1, enabled=True
-    )
-    Subscription.objects.create(
-        profile=profile_2, subscription_type=type_2, enabled=False
-    )
-
-    Subscription.objects.create(
-        profile=profile_3, subscription_type=type_1, enabled=True
-    )
-
-    Subscription.objects.create(
-        profile=profile_4, subscription_type=type_2, enabled=True
-    )
-
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
     ServiceConnectionFactory(profile=profile_3, service=service)
@@ -738,23 +707,12 @@ def test_staff_user_can_filter_profiles_by_subscriptions_and_postal_code(
         }
     """
 
-    # test for type 1 + postal code 00100
-
     executed = user_gql_client.execute(
         query,
-        variables={"subscriptionType": type_1.code, "postalCode": "00100"},
+        variables={"subscriptionType": "whatever", "postalCode": "00100"},
         service=service,
     )
     assert executed["data"] == generate_expected_data([profile_1, profile_2, profile_3])
-
-    # test for type 2 + postal code 00100
-
-    executed = user_gql_client.execute(
-        query,
-        variables={"subscriptionType": type_2.code, "postalCode": "00100"},
-        service=service,
-    )
-    assert executed["data"] == generate_expected_data([profile_1])
 
 
 def test_staff_user_can_paginate_profiles(user_gql_client, group, service):

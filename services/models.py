@@ -4,7 +4,7 @@ from string import Template
 import requests
 from adminsortable.models import SortableMixin
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Q
 from enumfields import EnumField
 from parler.models import TranslatableModel, TranslatedFields
 
@@ -62,12 +62,19 @@ class Service(TranslatableModel):
     gdpr_delete_scope = models.CharField(
         max_length=200, blank=True, help_text="GDPR API delete operation scope"
     )
-    implicit_connection = models.BooleanField(
+    is_profile_service = models.BooleanField(
         default=False,
-        help_text="If enabled, this service doesn't require explicit service connections to profiles",
+        help_text="Identifies the profile service itself. Only one Service can have this property.",
     )
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["is_profile_service"],
+                condition=Q(is_profile_service=True),
+                name="unique_is_profile_service",
+            )
+        ]
         permissions = (
             ("can_manage_profiles", "Can manage profiles"),
             ("can_view_profiles", "Can view profiles"),
@@ -91,15 +98,11 @@ class Service(TranslatableModel):
     def __str__(self):
         return self.safe_translation_getter("title", super().__str__())
 
-    def has_connection_to_profile(self, profile, allow_implicit=True):
-        """Has this service an implicit or explicit connection to a profile
-
-        Checking can be limited only to explicit connection by setting
-        allow_implicit to False. By default, implicit connection is checked."""
-        if allow_implicit and self.implicit_connection:
-            return True
-
-        return self.serviceconnection_set.filter(profile=profile).exists()
+    def has_connection_to_profile(self, profile):
+        return (
+            self.is_profile_service
+            or self.serviceconnection_set.filter(profile=profile).exists()
+        )
 
     def get_gdpr_url_for_profile(self, profile):
         if not self.gdpr_url or not profile:

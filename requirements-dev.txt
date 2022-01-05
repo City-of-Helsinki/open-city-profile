@@ -27,7 +27,9 @@ cfgv==3.1.0
 chardet==3.0.4
     # via requests
 click==7.1.2
-    # via black
+    # via
+    #   black
+    #   pip-tools
 coverage==5.1
     # via pytest-cov
 decorator==4.4.2
@@ -104,6 +106,8 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
+pip-tools==5.5.0
+    # via -r requirements-dev.in
 pluggy==0.13.1
     # via pytest
 pre-commit==2.3.0
@@ -206,4 +210,5 @@ zipp==3.1.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
+# pip
 # setuptools

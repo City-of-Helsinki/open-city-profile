@@ -1,18 +1,12 @@
-import os
-import shutil
 import uuid
 from datetime import timedelta
 
-import reversion
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
-from munigeo.models import AdministrativeDivision
-from thesaurus.models import Concept
 
 from services.models import ServiceConnection
 from users.models import User
@@ -23,13 +17,7 @@ from utils.fields import (
 )
 from utils.models import SerializableMixin, UUIDModel
 
-from .enums import (
-    AddressType,
-    EmailType,
-    PhoneType,
-    RepresentationType,
-    RepresentativeConfirmationDegree,
-)
+from .enums import AddressType, EmailType, PhoneType
 from .validators import (
     validate_finnish_municipality_of_residence_number,
     validate_finnish_national_identification_number,
@@ -40,60 +28,11 @@ from .validators import (
 )
 
 
-def get_user_media_folder(instance, filename):
-    return "%s/profile_images/%s" % (instance.user.uuid, filename)
-
-
-class OverwriteStorage(FileSystemStorage):
-    """
-    Custom storage that deletes previous profile images
-    by deleting the /profiles_images/ folder
-    """
-
-    def get_available_name(self, name, max_length=None):
-        dir_name, file_name = os.path.split(name)
-        if self.exists(dir_name):
-            shutil.rmtree(os.path.join(settings.MEDIA_ROOT, dir_name))
-        return name
-
-
-@reversion.register()
-class LegalRelationship(models.Model):
-    representative = models.ForeignKey(  # "parent"
-        "Profile", related_name="representatives", on_delete=models.CASCADE
-    )
-    representee = models.ForeignKey(  # "child"
-        "Profile", related_name="representees", on_delete=models.CASCADE
-    )
-    type = EnumField(  # ATM only "custodianship"
-        RepresentationType, max_length=30, default=RepresentationType.CUSTODY
-    )
-    confirmation_degree = EnumField(
-        RepresentativeConfirmationDegree,
-        max_length=30,
-        default=RepresentativeConfirmationDegree.NONE,
-    )
-    expiration = models.DateField(blank=True, null=True)
-
-    def __str__(self):
-        return "{} - {}".format(self.representative, self.type)
-
-    def get_notification_context(self):
-        return {"relationship": self}
-
-
-@reversion.register()
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
     last_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
     nickname = NullToEmptyCharField(max_length=32, blank=True, db_index=True)
-    image = models.ImageField(
-        upload_to=get_user_media_folder,
-        storage=OverwriteStorage(),
-        null=True,
-        blank=True,
-    )
     language = models.CharField(
         max_length=2,
         choices=settings.LANGUAGES,
@@ -105,12 +44,7 @@ class Profile(UUIDModel, SerializableMixin):
         choices=settings.CONTACT_METHODS,
         default=settings.CONTACT_METHODS[0][0],
     )
-    concepts_of_interest = models.ManyToManyField(Concept, blank=True)
-    divisions_of_interest = models.ManyToManyField(AdministrativeDivision, blank=True)
 
-    legal_relationships = models.ManyToManyField(
-        "self", through=LegalRelationship, symmetrical=False
-    )
     serialize_fields = (
         {"name": "first_name"},
         {"name": "last_name"},
@@ -123,7 +57,6 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "addresses"},
         {"name": "verified_personal_information"},
         {"name": "service_connections"},
-        {"name": "subscriptions"},
     )
     audit_log = True
 
@@ -144,6 +77,9 @@ class Profile(UUIDModel, SerializableMixin):
             return self.phones.get(primary=True).phone
         except Phone.DoesNotExist:
             return None
+
+    def effective_service_connections_qs(self):
+        return self.service_connections.filter(service__is_profile_service=False)
 
     def save(self, *args, **kwargs):
         if (
@@ -401,14 +337,6 @@ class VerifiedPersonalInformationPermanentForeignAddress(SerializableMixin):
 
     def resolve_profile(self):
         return self.verified_personal_information.profile
-
-
-class DivisionOfInterest(models.Model):
-    division = models.OneToOneField(
-        AdministrativeDivision,
-        on_delete=models.CASCADE,
-        related_name="division_of_interest",
-    )
 
 
 class SensitiveData(SerializableMixin):
