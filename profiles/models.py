@@ -45,6 +45,9 @@ class Profile(UUIDModel, SerializableMixin):
         default=settings.CONTACT_METHODS[0][0],
     )
 
+    class Meta:
+        ordering = ["id"]
+
     serialize_fields = (
         {"name": "first_name"},
         {"name": "last_name"},

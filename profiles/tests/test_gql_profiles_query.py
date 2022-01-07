@@ -683,7 +683,8 @@ def test_filtering_profiles_by_subscriptions_has_no_effect(
         query getProfiles($subscriptionType: String, $postalCode: String) {
             profiles(
                 enabledSubscriptions: $subscriptionType,
-                addresses_PostalCode: $postalCode
+                addresses_PostalCode: $postalCode,
+                orderBy: "firstName"
             ) {
                 edges {
                     node {
@@ -712,23 +713,46 @@ def test_filtering_profiles_by_subscriptions_has_no_effect(
         variables={"subscriptionType": "whatever", "postalCode": "00100"},
         service=service,
     )
-    assert executed["data"] == generate_expected_data([profile_1, profile_2, profile_3])
-
-
-def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
-    profile_1, profile_2 = (
-        ProfileFactory(first_name="Adam", last_name="Tester"),
-        ProfileFactory(first_name="Bryan", last_name="Tester"),
+    profiles_ordered_by_first_name = sorted(
+        [profile_1, profile_2, profile_3], key=lambda p: p.first_name
     )
-    ServiceConnectionFactory(profile=profile_1, service=service)
-    ServiceConnectionFactory(profile=profile_2, service=service)
+    assert executed["data"] == generate_expected_data(profiles_ordered_by_first_name)
+
+
+# Profiles are ordered by their id field if no other ordering is requested
+@pytest.mark.parametrize(
+    "order_by,expected_order",
+    [(None, ("Bryan", "Clive", "Adam")), ("firstName", ("Adam", "Bryan", "Clive"))],
+)
+def test_staff_user_can_paginate_profiles(
+    order_by, expected_order, user_gql_client, group, service
+):
+    for profile in (
+        ProfileFactory(
+            id=uuid.UUID("22222222-2222-2222-2222-222222222222"),
+            first_name="Clive",
+            last_name="Tester",
+        ),
+        ProfileFactory(
+            id=uuid.UUID("33333333-3333-3333-3333-333333333333"),
+            first_name="Adam",
+            last_name="Tester",
+        ),
+        ProfileFactory(
+            id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+            first_name="Bryan",
+            last_name="Tester",
+        ),
+    ):
+        ServiceConnectionFactory(profile=profile, service=service)
+
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getProfiles($after: String = "") {
-            profiles(orderBy: "firstName", first: 1, after: $after) {
+        query getProfiles($orderBy: String, $after: String) {
+            profiles(orderBy: $orderBy, first: 1, after: $after) {
                 pageInfo {
                     endCursor
                 }
@@ -741,21 +765,18 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
         }
     """
 
-    expected_edges = [{"node": {"firstName": "Adam"}}]
-    executed = user_gql_client.execute(query, service=service)
-    assert "data" in executed
-    assert executed["data"]["profiles"]["edges"] == expected_edges
-    assert "pageInfo" in executed["data"]["profiles"]
-    assert "endCursor" in executed["data"]["profiles"]["pageInfo"]
+    end_cursor = None
+    for expected_first_name in expected_order:
+        executed = user_gql_client.execute(
+            query, variables={"orderBy": order_by, "after": end_cursor}, service=service
+        )
 
-    end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
-
-    expected_edges = [{"node": {"firstName": "Bryan"}}]
-    executed = user_gql_client.execute(
-        query, variables={"after": end_cursor}, service=service
-    )
-    assert "data" in executed
-    assert executed["data"]["profiles"]["edges"] == expected_edges
+        expected_edges = [{"node": {"firstName": expected_first_name}}]
+        assert "data" in executed
+        assert executed["data"]["profiles"]["edges"] == expected_edges
+        assert "pageInfo" in executed["data"]["profiles"]
+        assert "endCursor" in executed["data"]["profiles"]["pageInfo"]
+        end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
 
 
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
