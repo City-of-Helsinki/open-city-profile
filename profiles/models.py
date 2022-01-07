@@ -387,7 +387,7 @@ class Email(Contact):
     verified = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["-primary"]
+        ordering = ["-primary", "id"]
 
     serialize_fields = (
         {"name": "primary"},
