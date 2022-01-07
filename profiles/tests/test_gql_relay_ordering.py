@@ -1,3 +1,7 @@
+from graphql_relay import from_global_id
+
+from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+
 from .factories import AddressFactory, EmailFactory, PhoneFactory, ProfileFactory
 
 QUERY = """
@@ -21,6 +25,13 @@ QUERY = """
             edges {
                 node {
                     phone
+                }
+            }
+        }
+        serviceConnections {
+            edges {
+                node {
+                    id
                 }
             }
         }
@@ -78,3 +89,18 @@ def test_phones_are_ordered_first_by_primary_then_by_id(user_gql_client):
 
     executed = user_gql_client.execute(QUERY)
     assert executed["data"]["myProfile"]["phones"]["edges"] == expected_edges
+
+
+def test_service_connections_are_ordered_by_id(user_gql_client):
+    profile = ProfileFactory(user=user_gql_client.user)
+    connections = [
+        ServiceConnectionFactory(profile=profile, service=ServiceFactory())
+        for _ in range(3)
+    ]
+
+    executed = user_gql_client.execute(QUERY)
+    connection_edges = executed["data"]["myProfile"]["serviceConnections"]["edges"]
+
+    assert len(connection_edges) == len(connections)
+    for edge, connection in zip(connection_edges, connections):
+        assert from_global_id(edge["node"]["id"])[1] == str(connection.id)

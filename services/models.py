@@ -147,6 +147,7 @@ class ServiceConnection(SerializableMixin):
 
     class Meta:
         unique_together = ("profile", "service")
+        ordering = ["id"]
 
     def __str__(self):
         return "{} {} - {}".format(
