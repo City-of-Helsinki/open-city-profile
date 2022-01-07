@@ -727,8 +727,8 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
     assign_perm("can_view_profiles", group, service)
 
     query = """
-        query getProfiles {
-            profiles(orderBy: "firstName", first: 1) {
+        query getProfiles($after: String = "") {
+            profiles(orderBy: "firstName", first: 1, after: $after) {
                 pageInfo {
                     endCursor
                 }
@@ -741,32 +741,21 @@ def test_staff_user_can_paginate_profiles(user_gql_client, group, service):
         }
     """
 
-    expected_data = {"edges": [{"node": {"firstName": "Adam"}}]}
+    expected_edges = [{"node": {"firstName": "Adam"}}]
     executed = user_gql_client.execute(query, service=service)
     assert "data" in executed
-    assert executed["data"]["profiles"]["edges"] == expected_data["edges"]
+    assert executed["data"]["profiles"]["edges"] == expected_edges
     assert "pageInfo" in executed["data"]["profiles"]
     assert "endCursor" in executed["data"]["profiles"]["pageInfo"]
 
     end_cursor = executed["data"]["profiles"]["pageInfo"]["endCursor"]
 
-    query = """
-        query getProfiles($endCursor: String) {
-            profiles(first: 1, after: $endCursor) {
-                edges {
-                    node {
-                        firstName
-                    }
-                }
-            }
-        }
-    """
-    expected_data = {"edges": [{"node": {"firstName": "Bryan"}}]}
+    expected_edges = [{"node": {"firstName": "Bryan"}}]
     executed = user_gql_client.execute(
-        query, variables={"endCursor": end_cursor}, service=service
+        query, variables={"after": end_cursor}, service=service
     )
     assert "data" in executed
-    assert executed["data"]["profiles"] == expected_data
+    assert executed["data"]["profiles"]["edges"] == expected_edges
 
 
 def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
