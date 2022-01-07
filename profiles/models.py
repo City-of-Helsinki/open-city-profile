@@ -359,6 +359,7 @@ class Contact(SerializableMixin):
 
     class Meta:
         abstract = True
+        ordering = ["-primary", "id"]
 
 
 class Phone(Contact):
@@ -385,9 +386,6 @@ class Email(Contact):
         EmailType, max_length=32, blank=False, default=EmailType.PERSONAL
     )
     verified = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ["-primary", "id"]
 
     serialize_fields = (
         {"name": "primary"},
