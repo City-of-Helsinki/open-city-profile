@@ -42,6 +42,13 @@ QUERY = """
                                 node {
                                     fieldName
                                     order
+                                    serviceSet {
+                                        edges {
+                                            node {
+                                                name
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -148,3 +155,26 @@ def test_allowed_data_fields_are_ordered_by_order_field(user_gql_client, service
         received_field = allowed_data_field_edge["node"]
         assert received_field["fieldName"] == field.field_name
         assert received_field["order"] == field.order
+
+
+def test_services_are_ordered_by_id(user_gql_client):
+    allowed_data_field = AllowedDataFieldFactory()
+    services = ServiceFactory.create_batch(3)
+    for service in services:
+        service.allowed_data_fields.set([allowed_data_field])
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=services[0])
+
+    executed = user_gql_client.execute(QUERY)
+
+    connection_edges = executed["data"]["myProfile"]["serviceConnections"]["edges"]
+
+    assert len(connection_edges) == 1
+    service_node = connection_edges[0]["node"]["service"]
+    allowed_data_field_edges = service_node["allowedDataFields"]["edges"]
+    assert len(allowed_data_field_edges) == 1
+    service_edges = allowed_data_field_edges[0]["node"]["serviceSet"]["edges"]
+
+    for service_edge, service in zip(service_edges, services):
+        assert service_edge["node"]["name"] == service.name

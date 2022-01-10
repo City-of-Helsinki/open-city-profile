@@ -75,6 +75,7 @@ class Service(TranslatableModel):
                 name="unique_is_profile_service",
             )
         ]
+        ordering = ["id"]
         permissions = (
             ("can_manage_profiles", "Can manage profiles"),
             ("can_view_profiles", "Can view profiles"),
