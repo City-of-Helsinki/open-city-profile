@@ -52,5 +52,10 @@ class AllowedDataFieldFactory(factory.django.DjangoModelFactory):
     field_name = factory.Sequence(lambda n: "name %d" % n)
     label = factory.Sequence(lambda n: "Label %d" % n)
 
+    @factory.post_generation
+    def final_order(self, create, extracted, **kwargs):
+        if extracted is not None:
+            self.order = extracted
+
     class Meta:
         model = AllowedDataField
