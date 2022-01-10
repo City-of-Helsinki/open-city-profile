@@ -1,13 +1,13 @@
 # Open city profile
 
-[![status](https://travis-ci.com/City-of-Helsinki/open-city-profile.svg)](https://github.com/City-of-Helsinki/open-city-profile)
+[![Continuous integration](https://github.com/City-of-Helsinki/open-city-profile/actions/workflows/ci.yml/badge.svg)](https://github.com/City-of-Helsinki/open-city-profile/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/City-of-Helsinki/open-city-profile/branch/develop/graph/badge.svg)](https://codecov.io/gh/City-of-Helsinki/open-city-profile)
 
 
 ## Summary
 
 Open city profile is used to store common information (name, contact
-information, areas of interests, ...) about the citizens of the city of Helsinki.
+information, ...) about the citizens of the city of Helsinki.
 
 When a citizen is using a service which is connected to the profile, the
 service can query for the citizen's information from the profile so that the
@@ -18,7 +18,7 @@ interests.
 
 The same data may also be queried by the employees of the city of Helsinki
 while performing their daily duties, for example using the administrative
-functions of Venepaikka service.
+functions of services.
 
 Open city profile is implemented using Django and it provides a GraphQL API.
 
@@ -184,24 +184,19 @@ The tests require a Postgres database to which to connect to. Here's one way to 
 ## Issue tracking
 
 * [Github issue list](https://github.com/City-of-Helsinki/open-city-profile/issues)
-* [Jira issues](https://helsinkisolutionoffice.atlassian.net/projects/OM/issues/?filter=allissues)
 
 
 ## API documentation
 
-* [Generated GraphiQL documentation](https://profiili-api.test.kuva.hel.ninja/graphql/)
+* [Generated GraphiQL documentation](https://profile-api.dev.hel.ninja/graphql/)
 
 
 ## Environments
-Test: https://profiili-api.test.kuva.hel.ninja/graphql/
 
-Production: https://profiili-api.prod.kuva.hel.ninja/graphql/
-
-## CI/CD builds
-
-Project is using [Gitlab](https://gitlab.com/City-of-Helsinki/KuVa/github-mirrors/open-city-profile/pipelines)
-for automated builds and deployment into the test environment.
-The test environment is built automatically from the `develop` branch.
+* Dev: https://profile-api.dev.hel.ninja//graphql/
+* Test: https://profile-api.test.hel.ninja//graphql/
+* Staging: https://api.hel.fi/profiili-stage/graphql/
+* Production: https://api.hel.fi/profiili/graphql/
 
 ## Anonymised Database dump
 
