@@ -19,7 +19,7 @@ AllowedServiceType = graphene.Enum.from_enum(
 
 
 class AllowedDataFieldNode(DjangoObjectType):
-    label = graphene.String()
+    label = graphene.String(description="Supports hel_translation directive.")
 
     class Meta:
         model = AllowedDataField
@@ -30,8 +30,8 @@ class ServiceNode(DjangoObjectType):
     type = AllowedServiceType(
         source="service_type", deprecation_reason="See 'name' field for a replacement.",
     )
-    title = graphene.String()
-    description = graphene.String()
+    title = graphene.String(description="Supports hel_translation directive.")
+    description = graphene.String(description="Supports hel_translation directive.")
 
     class Meta:
         model = Service
