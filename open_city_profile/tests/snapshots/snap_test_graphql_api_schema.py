@@ -12,8 +12,6 @@ snapshots['test_graphql_schema_matches_the_reference 1'] = '''schema {
   mutation: Mutation
 }
 
-directive @hel_translation(in: HelTranslationLanguage!) on FIELD
-
 input AddServiceConnectionMutationInput {
   serviceConnection: ServiceConnectionInput!
   clientMutationId: String
@@ -215,12 +213,6 @@ enum EmailType {
   WORK
   PERSONAL
   OTHER
-}
-
-enum HelTranslationLanguage {
-  FI
-  EN
-  SV
 }
 
 scalar JSONString
