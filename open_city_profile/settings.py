@@ -270,7 +270,6 @@ GRAPHENE = {
     "SCHEMA": "open_city_profile.schema.schema",
     "MIDDLEWARE": [
         # NOTE: Graphene runs its middlewares in reverse order!
-        "open_city_profile.graphene.HelTranslationMiddleware",
         "open_city_profile.graphene.JWTMiddleware",
         "open_city_profile.graphene.GQLDataLoaders",
     ],
