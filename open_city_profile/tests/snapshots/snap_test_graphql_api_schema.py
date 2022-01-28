@@ -54,7 +54,7 @@ type AllowedDataFieldNode implements Node {
   fieldName: String!
   order: Int!
   serviceSet(before: String, after: String, first: Int, last: Int): ServiceNodeConnection!
-  label: String
+  label(language: TranslationLanguage): String
 }
 
 type AllowedDataFieldNodeConnection {
@@ -409,8 +409,8 @@ type ServiceNode implements Node {
   gdprDeleteScope: String!
   serviceconnectionSet(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection!
   type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
-  title: String
-  description: String
+  title(language: TranslationLanguage): String
+  description(language: TranslationLanguage): String
 }
 
 type ServiceNodeConnection {
@@ -494,6 +494,12 @@ type SubscriptionTypeNodeEdge {
 type TemporaryReadAccessTokenNode {
   token: UUID!
   expiresAt: DateTime
+}
+
+enum TranslationLanguage {
+  FI
+  EN
+  SV
 }
 
 scalar UUID
