@@ -6,6 +6,7 @@ from graphene_django.types import DjangoObjectType
 
 from open_city_profile.decorators import login_and_service_required
 from open_city_profile.exceptions import ServiceAlreadyExistsError
+from open_city_profile.graphene import DjangoParlerObjectType
 
 from .enums import ServiceType
 from .models import AllowedDataField, Service, ServiceConnection
@@ -18,26 +19,24 @@ AllowedServiceType = graphene.Enum.from_enum(
 )
 
 
-class AllowedDataFieldNode(DjangoObjectType):
-    label = graphene.String(description="Supports hel_translation directive.")
-
+class AllowedDataFieldNode(DjangoParlerObjectType):
     class Meta:
         model = AllowedDataField
         interfaces = (relay.Node,)
 
 
-class ServiceNode(DjangoObjectType):
+class ServiceNode(DjangoParlerObjectType):
     type = AllowedServiceType(
         source="service_type", deprecation_reason="See 'name' field for a replacement.",
     )
-    title = graphene.String(description="Supports hel_translation directive.")
-    description = graphene.String(description="Supports hel_translation directive.")
 
     class Meta:
         model = Service
         fields = (
             "id",
             "name",
+            "title",
+            "description",
             "allowed_data_fields",
             "created_at",
             "gdpr_url",

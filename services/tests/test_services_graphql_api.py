@@ -1,10 +1,15 @@
+from string import Template
+
 import pytest
+from django.conf import settings
 
 from open_city_profile.consts import (
     SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     SERVICE_NOT_IDENTIFIED_ERROR,
 )
+from open_city_profile.graphene import TranslationLanguage
 from open_city_profile.tests.asserts import assert_match_error_code
+from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
@@ -246,3 +251,131 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
     executed = user_gql_client.execute(query)
 
     assert dict(executed["data"]) == expected_data
+
+
+def _set_service_title_and_description(service):
+    service.set_current_language("fi")
+    service.title = "Service title in finnish"
+    service.description = "Service description in finnish"
+    service.save()
+
+    service.set_current_language("en")
+    service.title = "Service title in english"
+    service.description = "Service description in english"
+    service.save()
+
+
+@pytest.mark.parametrize("language", ["EN", "FI"])
+def test_service_title_translation(user_gql_client, service, language):
+    profile = ProfileFactory(user=user_gql_client.user)
+    _set_service_title_and_description(service)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    t = Template(
+        """
+        query TestQuery {
+            myProfile {
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                title_translated: title(language:${language})
+                                description
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+    )
+
+    query = t.substitute({"language": language})
+
+    executed = user_gql_client.execute(query, service=service)
+
+    expected_title = service.safe_translation_getter(
+        "title", language_code=getattr(TranslationLanguage, language).value
+    )
+    expected_description = service.safe_translation_getter(
+        "description", language_code=settings.LANGUAGE_CODE
+    )
+
+    expected_data = {
+        "myProfile": {
+            "serviceConnections": {
+                "edges": [
+                    {
+                        "node": {
+                            "service": {
+                                "title_translated": expected_title,
+                                "description": expected_description,
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    assert executed["data"] == expected_data
+
+
+def test_language_argument_overrides_header_language(
+    live_server, profile, service_client_id
+):
+    service = service_client_id.service
+    _set_service_title_and_description(service)
+    ServiceConnectionFactory(profile=profile, service=service)
+    user = profile.user
+
+    query = """
+        {
+            myProfile {
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                title(language: EN)
+                                description
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    result_data, errors = do_graphql_call_as_user(
+        live_server,
+        user,
+        service=service,
+        query=query,
+        extra_request_args={"headers": {"Accept-Language": "fi"}},
+    )
+
+    assert not errors, errors
+
+    expected_title = service.safe_translation_getter("title", language_code="en")
+    expected_description = service.safe_translation_getter(
+        "description", language_code="fi"
+    )
+
+    expected_data = {
+        "myProfile": {
+            "serviceConnections": {
+                "edges": [
+                    {
+                        "node": {
+                            "service": {
+                                "title": expected_title,
+                                "description": expected_description,
+                            },
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    assert result_data == expected_data
