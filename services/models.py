@@ -43,7 +43,7 @@ class Service(TranslatableModel):
     name = models.CharField(max_length=200, blank=False, null=False, unique=True)
     translations = TranslatedFields(
         title=models.CharField(max_length=64),
-        description=models.TextField(max_length=200, blank=True),
+        description=models.TextField(max_length=500, blank=True),
     )
     allowed_data_fields = models.ManyToManyField(AllowedDataField)
     created_at = models.DateTimeField(auto_now_add=True)
