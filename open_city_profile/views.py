@@ -2,6 +2,7 @@ import graphene_validator.errors
 import sentry_sdk
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from graphene_django.views import GraphQLView as BaseGraphQLView
+from helusers.oidc import AuthenticationError
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
@@ -9,6 +10,7 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
+    JWT_AUTHENTICATION_ERROR,
     MISSING_GDPR_API_TOKEN_ERROR,
     OBJECT_DOES_NOT_EXIST_ERROR,
     PERMISSION_DENIED_ERROR,
@@ -43,6 +45,7 @@ error_codes_shared = {
     ValidationError: VALIDATION_ERROR,
     graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
+    AuthenticationError: JWT_AUTHENTICATION_ERROR,
 }
 
 error_codes_profile = {
