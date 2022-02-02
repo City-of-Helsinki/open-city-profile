@@ -3,6 +3,7 @@ import uuid
 import requests
 import requests_mock
 from django.conf import settings
+from django.utils.crypto import get_random_string
 from jose import jwt
 
 from services.tests.factories import ServiceClientIdFactory
@@ -24,22 +25,38 @@ CONFIGURATION = {
 KEYS = {"keys": [rsa_key.public_key_jwk]}
 
 
+def generate_jwt_token(extra_claims=None):
+    """Generates a JWT token for testing purposes
+
+    Returns a two element tuple of the data used in the token and the encoded jwt token
+    """
+    if extra_claims is None:
+        extra_claims = {}
+
+    jwt_data = {
+        "iss": ISSUER,
+        "iat": get_unix_timestamp_now() - 10,
+        "aud": AUDIENCE,
+        "sub": str(uuid.uuid4()),
+        "sid": get_random_string(),
+        "exp": get_unix_timestamp_now() + 120,
+    }
+    jwt_data.update(extra_claims)
+
+    return (
+        jwt_data,
+        jwt.encode(
+            jwt_data, key=rsa_key.private_key_pem, algorithm=rsa_key.jose_algorithm
+        ),
+    )
+
+
 class BearerTokenAuth(requests.auth.AuthBase):
     def __init__(self, extra_claims=None):
         self._extra_claims = extra_claims or {}
 
     def __call__(self, request):
-        jwt_data = {
-            "iss": ISSUER,
-            "iat": get_unix_timestamp_now() - 10,
-            "aud": AUDIENCE,
-            "sub": str(uuid.uuid4()),
-            "exp": get_unix_timestamp_now() + 120,
-        }
-        jwt_data.update(self._extra_claims)
-        encoded_jwt = jwt.encode(
-            jwt_data, key=rsa_key.private_key_pem, algorithm=rsa_key.jose_algorithm
-        )
+        encoded_jwt = generate_jwt_token(self._extra_claims)[1]
 
         request.headers["Authorization"] = f"Bearer {encoded_jwt}"
         return request
