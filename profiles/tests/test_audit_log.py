@@ -6,6 +6,7 @@ from typing import Any, List, Optional
 
 import pytest
 from django.conf import settings
+from django.urls import reverse
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_almost_equal
@@ -64,7 +65,7 @@ def assert_common_fields(
 ):
     now_dt = datetime.now(tz=timezone.utc)
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
-    leeway_ms = 50
+    leeway_ms = 100
 
     if not isinstance(log_messages, list):
         log_messages = [log_messages]
@@ -274,6 +275,81 @@ MY_PROFILE_QUERY = """
         }
     }
 """
+
+
+def test_admin_profile_list_no_audit_log_entries(admin_client, cap_audit_log):
+    profiles = ProfileFactory.create_batch(5)
+
+    cap_audit_log.clear()
+
+    url = reverse(
+        "admin:{}_{}_changelist".format(
+            profiles[0]._meta.app_label, profiles[0].__class__.__name__.lower()
+        ),
+    )
+
+    response = admin_client.get(url)
+    assert response.status_code == 200
+
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 0
+
+
+def test_admin_read_profile_logs_correct_actor(admin_client, cap_audit_log):
+    profile = ProfileFactory()
+
+    cap_audit_log.clear()
+
+    url = reverse(
+        "admin:{}_{}_change".format(
+            profile._meta.app_label, profile.__class__.__name__.lower()
+        ),
+        args=(profile.pk,),
+    )
+
+    response = admin_client.get(url)
+    assert response.status_code == 200
+
+    audit_logs = cap_audit_log.get_logs()
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
+    assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
+    assert log_message["audit_event"]["actor"]["user_id"] == str(
+        response.wsgi_request.user.uuid
+    )
+
+
+def test_admin_read_profile(admin_client, cap_audit_log, profile_with_related):
+    profile = profile_with_related.profile
+
+    cap_audit_log.clear()
+
+    url = reverse(
+        "admin:{}_{}_change".format(
+            profile._meta.app_label, profile.__class__.__name__.lower()
+        ),
+        args=(profile.pk,),
+    )
+
+    response = admin_client.get(url)
+    assert response.status_code == 200
+
+    audit_logs = cap_audit_log.get_logs()
+
+    for profile_part_name in profile_with_related.all_profile_part_names:
+        related_logs, audit_logs = partition_logs_by_target_type(
+            audit_logs, profile_part_name
+        )
+
+        assert_common_fields(
+            related_logs,
+            profile,
+            "READ",
+            target_profile_part=profile_part_name,
+            actor_role="ADMIN",
+        )
+
+    assert_common_fields(audit_logs, profile, "READ", actor_role="ADMIN")
 
 
 def test_actor_is_resolved_in_graphql_call(

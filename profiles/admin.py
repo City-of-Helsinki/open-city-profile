@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.urls import path
 from django.utils.decorators import method_decorator
 
+from profiles.audit_log import log
 from profiles.models import (
     Address,
     ClaimToken,
@@ -31,6 +32,26 @@ def superuser_required(function):
         return function(request, *args, **kwargs)
 
     return wrapper
+
+
+class AuditLogModelAdmin(admin.ModelAdmin):
+    def render_change_form(
+        self, request, context, add=False, change=False, form_url="", obj=None
+    ):
+        if obj and obj.pk:
+            log("READ", obj)
+            for admin_formset in context["inline_admin_formsets"]:
+                formset = admin_formset.formset
+
+                if not hasattr(formset, "get_queryset"):
+                    continue
+
+                for formset_item in formset.get_queryset().all():
+                    log("READ", formset_item)
+
+        return super().render_change_form(
+            request, context, add=add, change=change, form_url=form_url, obj=obj
+        )
 
 
 class AlwaysChangedModelForm(ModelForm):
@@ -109,6 +130,9 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
         return False
 
     def get_permanent_address(self, obj):
+        if obj.permanent_address:
+            log("READ", obj.permanent_address)
+
         return "{}, {} {}\n".format(
             obj.permanent_address.street_address,
             obj.permanent_address.postal_code,
@@ -118,6 +142,9 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     get_permanent_address.short_description = "Permanent address"
 
     def get_temporary_address(self, obj):
+        if obj.temporary_address:
+            log("READ", obj.temporary_address)
+
         return "{}, {} {}\n".format(
             obj.temporary_address.street_address,
             obj.temporary_address.postal_code,
@@ -127,6 +154,9 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     get_temporary_address.short_description = "Temporary address"
 
     def get_permanent_foreign_address(self, obj):
+        if obj.permanent_foreign_address:
+            log("READ", obj.permanent_foreign_address)
+
         return "{}, {}, {}\n".format(
             obj.permanent_foreign_address.street_address,
             obj.permanent_foreign_address.additional_address,
@@ -147,7 +177,7 @@ class ImportProfilesFromJsonForm(forms.Form):
 
 
 @admin.register(Profile)
-class ExtendedProfileAdmin(admin.ModelAdmin):
+class ExtendedProfileAdmin(AuditLogModelAdmin):
     inlines = [
         VerifiedPersonalInformationAdminInline,
         SensitiveDataAdminInline,
