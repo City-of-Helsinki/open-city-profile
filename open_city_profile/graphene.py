@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from functools import partial
 
 import graphene
@@ -10,6 +11,7 @@ from graphene_django.forms.converter import convert_form_field
 from graphene_django.types import ALL_FIELDS
 from parler.models import TranslatableModel
 
+from profiles.audit_log import log
 from profiles.loaders import (
     AddressesByProfileIdLoader,
     EmailsByProfileIdLoader,
@@ -180,3 +182,27 @@ class DjangoParlerObjectType(DjangoObjectType):
             _meta=_meta,
             **options
         )
+
+
+class AuditLogMiddleware:
+    """Adds an audit log READ entry when resolving a field from a model
+
+    Adds only one READ log entry per model per query.
+
+    We can cache the already logged primary keys in the logged_instances attribute
+    because the whole GraphQLView and all middleware classes are instantiated anew for
+    every request."""
+
+    def __init__(self):
+        self.logged_instances = defaultdict(set)
+
+    def resolve(self, next_middleware, root, info, **kwargs):
+        if (
+            hasattr(root, "pk")
+            and root.pk
+            and root.pk not in self.logged_instances[root.__class__]
+        ):
+            log("READ", root)
+            self.logged_instances[root.__class__].add(root.pk)
+
+        return next_middleware(root, info, **kwargs)

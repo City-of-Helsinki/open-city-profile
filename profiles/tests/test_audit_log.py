@@ -1,7 +1,9 @@
+import itertools
 import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from string import Template
 from typing import Any, List, Optional
 
 import pytest
@@ -54,6 +56,18 @@ def partition_logs_by_target_type(logs, target_type):
             rest.append(log)
 
     return matches, rest
+
+
+def group_logs_by_target_id(logs):
+    logs = sorted(logs, key=lambda x: x["audit_event"]["target"]["id"])
+
+    grouped_logs = {}
+    for profile_id, log_group in itertools.groupby(
+        logs, lambda x: x["audit_event"]["target"]["id"]
+    ):
+        grouped_logs[profile_id] = list(log_group)
+
+    return grouped_logs
 
 
 def assert_common_fields(
@@ -186,27 +200,6 @@ def profile_with_related(request):
     )
 
 
-def test_audit_log_read(profile_with_related, cap_audit_log):
-    related_name = profile_with_related.related_name
-
-    profile_from_db = Profile.objects.select_related(related_name).first()
-    audit_logs = cap_audit_log.get_logs()
-
-    for profile_part_name in profile_with_related.all_profile_part_names:
-        related_logs, audit_logs = partition_logs_by_target_type(
-            audit_logs, profile_part_name
-        )
-
-        assert_common_fields(
-            related_logs,
-            profile_from_db,
-            "READ",
-            target_profile_part=profile_part_name,
-        )
-
-    assert_common_fields(audit_logs, profile_from_db, "READ")
-
-
 def test_audit_log_update(profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
     related_part = profile_with_related.related_part
@@ -238,13 +231,6 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
     profile.delete()
     profile.pk = deleted_pk
     audit_logs = cap_audit_log.get_logs()
-    # Audit logging the Profile DELETE with a related object causes some READs
-    # for the involved models.
-    # This is unnecessary, but it's a feature of the current implementation.
-    # We ignore the READ events in this test for now.
-    audit_logs = list(
-        filter(lambda e: e["audit_event"]["operation"] != "READ", audit_logs)
-    )
 
     for profile_part_name in profile_with_related.all_profile_part_names:
         related_logs, audit_logs = partition_logs_by_target_type(
@@ -261,10 +247,8 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
 def test_audit_log_create(cap_audit_log):
     profile = ProfileFactory()
     audit_logs = cap_audit_log.get_logs()
-    assert (
-        len(audit_logs) == 2
-    )  # profile is accessed here as well, thus the 2 log entries
-    log_message = audit_logs[1]
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "CREATE")
 
 
@@ -275,6 +259,89 @@ MY_PROFILE_QUERY = """
         }
     }
 """
+
+
+def test_reading_many_profiles_and_fields_emits_correct_logs_but_not_duplicates(
+    live_server, user, group, service_client_id, cap_audit_log
+):
+    service = service_client_id.service
+
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_verified_personal_information", group, service)
+
+    vpis = VerifiedPersonalInformationFactory.create_batch(2)
+    profiles = {}
+    for vpi in vpis:
+        profiles[str(vpi.profile.id)] = vpi.profile
+        ServiceConnectionFactory(profile=vpi.profile, service=service)
+
+    t = Template(
+        """
+        query {
+            profiles(id: ["${id}", "${id2}"]) {
+                edges {
+                    node {
+                        firstName
+                        lastName
+                        verifiedPersonalInformation {
+                            firstName
+                            lastName
+                            givenName
+                            nationalIdentificationNumber
+                            municipalityOfResidence
+                            municipalityOfResidenceNumber
+                            permanentAddress {
+                                streetAddress
+                                postalCode
+                                postOffice
+                            }
+                        }
+                    }
+                }
+            },
+            second_read: profiles(id: ["${id}", "${id2}"]) {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+    )
+
+    query = t.substitute(id=list(profiles.keys())[0], id2=list(profiles.keys())[1])
+
+    # Do the same query two times to test that the audit logging deduplication doesn't
+    # affect the next query.
+    for i in range(2):
+        cap_audit_log.clear()
+        do_graphql_call_as_user(live_server, user, service=service, query=query)
+
+        audit_logs = cap_audit_log.get_logs()
+
+        # 3 reads (base, vpi, vpi permanent address) per profile.
+        # Should not be duplicated for the "second_read" query.
+        assert len(audit_logs) == 6
+
+        for profile_id, logs in group_logs_by_target_id(audit_logs).items():
+            for profile_part_name in [
+                "base profile",
+                "verified personal information",
+                "verified personal information permanent address",
+            ]:
+                related_logs, rest = partition_logs_by_target_type(
+                    logs, profile_part_name
+                )
+
+                assert_common_fields(
+                    related_logs,
+                    profiles[profile_id],
+                    "READ",
+                    actor_role="ADMIN",
+                    target_profile_part=profile_part_name,
+                )
 
 
 def test_admin_profile_list_no_audit_log_entries(admin_client, cap_audit_log):
