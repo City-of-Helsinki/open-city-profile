@@ -44,7 +44,6 @@ from open_city_profile.exceptions import (
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
 from services.models import Service, ServiceConnection
 from services.schema import AllowedServiceType, ServiceConnectionType
-from subscriptions.schema import SubscriptionInputType, SubscriptionNodeConnection
 from utils.validation import model_field_validation
 
 from .connected_services import (
@@ -285,7 +284,6 @@ class ProfileFilter(FilterSet):
             "addresses__address_type",
             "addresses__primary",
             "language",
-            "enabled_subscriptions",
         )
 
     id = UUIDMultipleChoiceFilter(
@@ -312,10 +310,6 @@ class ProfileFilter(FilterSet):
     addresses__address_type = ChoiceFilter(choices=AddressType.choices())
     addresses__primary = BooleanFilter()
     language = CharFilter()
-    enabled_subscriptions = CharFilter(
-        method="get_enabled_subscriptions",
-        label="**DEPRECATED:** this filter has no effect.",
-    )
     order_by = PrimaryContactInfoOrderingFilter(
         fields=(
             ("first_name", "firstName"),
@@ -342,9 +336,6 @@ class ProfileFilter(FilterSet):
             )
         else:
             return queryset.none()
-
-    def get_enabled_subscriptions(self, queryset, name, value):
-        return queryset
 
 
 class ContactNode(DjangoObjectType):
@@ -559,10 +550,6 @@ class ProfileNode(RestrictedProfileNode):
     service_connections = DjangoFilterConnectionField(
         ServiceConnectionType, description="List of the profile's connected services."
     )
-    subscriptions = relay.ConnectionField(
-        SubscriptionNodeConnection,
-        deprecation_reason="The whole subscriptions concept is non-functional. This field always just returns null.",
-    )
     verified_personal_information = graphene.Field(
         VerifiedPersonalInformationNode,
         description="Personal information that has been verified to be true. "
@@ -572,9 +559,6 @@ class ProfileNode(RestrictedProfileNode):
 
     def resolve_service_connections(self, info, **kwargs):
         return ServiceConnection.objects.filter(profile=self)
-
-    def resolve_subscriptions(self, info, **kwargs):
-        return []
 
     def resolve_sensitivedata(self, info, **kwargs):
         service = info.context.service
@@ -760,10 +744,6 @@ class ProfileInputBase(graphene.InputObjectType):
     add_addresses = graphene.List(
         CreateAddressInput, description="Add addresses to profile."
     )
-    subscriptions = graphene.List(
-        SubscriptionInputType,
-        description="**DEPRECATED**. The whole subscriptions concept is non-functional. Any input is ignored.",
-    )
     sensitivedata = graphene.InputField(SensitiveDataFields)
 
     @staticmethod
@@ -783,7 +763,6 @@ class ProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
-* `subscriptions`
 
 There's no replacement for these."""
 
@@ -830,9 +809,6 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         # Remove image field from input. It's not supposed to do anything anymore.
         profile_data.pop("image", None)
-        # Remove subscriptions field from the input. It has never been handled so
-        # providing any input has just resulted into an error.
-        profile_data.pop("subscriptions", None)
 
         profile = Profile.objects.create(user=info.context.user)
         for field, value in profile_data.items():
@@ -852,7 +828,6 @@ class CreateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
-* `subscriptions`
 * `update_emails`
 * `remove_emails`
 * `update_phones`
@@ -919,9 +894,6 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         # Remove image field from input. It's not supposed to do anything anymore.
         profile_data.pop("image", None)
-        # Remove subscriptions field from the input. It has never been handled so
-        # providing any input has just resulted into an error.
-        profile_data.pop("subscriptions", None)
 
         profile = Profile(**profile_data)
         profile.save()
@@ -1277,7 +1249,6 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 
         profile_data = input.pop("profile")
         sensitive_data = profile_data.pop("sensitivedata", None)
-        profile_data.pop("subscriptions", None)
 
         update_profile(profile, profile_data)
 
@@ -1291,7 +1262,6 @@ class UpdateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
 * `image`
-* `subscriptions`
 
 There's no replacement for these."""
 
@@ -1349,10 +1319,6 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
             )
-
-        # Remove subscriptions field from the input. It has never been handled so
-        # providing any input has just resulted into an error.
-        profile_data.pop("subscriptions", None)
 
         validate(cls, root, info, **input)
 

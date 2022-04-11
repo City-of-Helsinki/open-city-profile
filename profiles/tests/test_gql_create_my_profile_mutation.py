@@ -26,7 +26,6 @@ def test_normal_user_can_create_profile(
                             sensitivedata: {
                                 ssn: "${ssn}"
                             }
-                            subscriptions: []
                         }
                     }
                 ) {
@@ -44,13 +43,6 @@ def test_normal_user_can_create_profile(
                         }
                         sensitivedata {
                             ssn
-                        }
-                        subscriptions {
-                            edges {
-                                node {
-                                    id
-                                }
-                            }
                         }
                     }
                 }
@@ -75,7 +67,6 @@ def test_normal_user_can_create_profile(
                     ]
                 },
                 "sensitivedata": {"ssn": ssn},
-                "subscriptions": {"edges": []},
             }
         }
     }

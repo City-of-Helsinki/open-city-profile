@@ -153,7 +153,6 @@ input CreateProfileInput {
   addEmails: [CreateEmailInput]
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
-  subscriptions: [SubscriptionInputType]
   sensitivedata: SensitiveDataFields
   updateEmails: [UpdateEmailInput]
   removeEmails: [ID]
@@ -224,7 +223,6 @@ enum Language {
 }
 
 type Mutation {
-  updateMySubscription(input: UpdateMySubscriptionMutationInput!): UpdateMySubscriptionMutationPayload @deprecated(reason: "The whole subscriptions concept is non-functional. There\'s no replacement.")
   addServiceConnection(input: AddServiceConnectionMutationInput!): AddServiceConnectionMutationPayload
   createMyProfile(input: CreateMyProfileMutationInput!): CreateMyProfileMutationPayload
   createProfile(input: CreateProfileMutationInput!): CreateProfileMutationPayload
@@ -283,7 +281,6 @@ input ProfileInput {
   addEmails: [CreateEmailInput]
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
-  subscriptions: [SubscriptionInputType]
   sensitivedata: SensitiveDataFields
   updateEmails: [UpdateEmailInput]
   removeEmails: [ID]
@@ -309,7 +306,6 @@ type ProfileNode implements Node {
   contactMethod: ContactMethod
   sensitivedata: SensitiveDataNode
   serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
-  subscriptions(before: String, after: String, first: Int, last: Int): SubscriptionNodeConnection @deprecated(reason: "The whole subscriptions concept is non-functional. This field always just returns null.")
   verifiedPersonalInformation: VerifiedPersonalInformationNode
 }
 
@@ -337,11 +333,10 @@ type ProfileWithVerifiedPersonalInformationOutput implements Node {
 }
 
 type Query {
-  subscriptionTypeCategories(before: String, after: String, first: Int, last: Int): SubscriptionTypeCategoryNodeConnection @deprecated(reason: "The whole subscriptions concept is non-functional. There\'s no replacement.")
   profile(id: ID!, serviceType: ServiceType): ProfileNode
   myProfile: ProfileNode
   downloadMyProfile(authorizationCode: String!): JSONString
-  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, enabledSubscriptions: String, orderBy: String): ProfileNodeConnection
+  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, orderBy: String): ProfileNodeConnection
   claimableProfile(token: UUID!): ProfileNode
   profileWithAccessToken(token: UUID!): RestrictedProfileNode
   _entities(representations: [_Any]): [_Entity]
@@ -430,67 +425,6 @@ enum ServiceType {
   GODCHILDREN_OF_CULTURE @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
 }
 
-input SubscriptionInputType {
-  subscriptionTypeId: ID!
-  enabled: Boolean!
-}
-
-type SubscriptionNode implements Node {
-  id: ID!
-  profile: ProfileNode!
-  subscriptionType: SubscriptionTypeNode!
-  createdAt: DateTime!
-  enabled: Boolean!
-}
-
-type SubscriptionNodeConnection {
-  pageInfo: PageInfo!
-  edges: [SubscriptionNodeEdge]!
-}
-
-type SubscriptionNodeEdge {
-  node: SubscriptionNode
-  cursor: String!
-}
-
-type SubscriptionTypeCategoryNode implements Node {
-  id: ID!
-  code: String!
-  createdAt: DateTime!
-  order: Int!
-  subscriptionTypes(before: String, after: String, first: Int, last: Int): SubscriptionTypeNodeConnection!
-  label: String
-}
-
-type SubscriptionTypeCategoryNodeConnection {
-  pageInfo: PageInfo!
-  edges: [SubscriptionTypeCategoryNodeEdge]!
-}
-
-type SubscriptionTypeCategoryNodeEdge {
-  node: SubscriptionTypeCategoryNode
-  cursor: String!
-}
-
-type SubscriptionTypeNode implements Node {
-  id: ID!
-  subscriptionTypeCategory: SubscriptionTypeCategoryNode!
-  code: String!
-  createdAt: DateTime!
-  order: Int!
-  label: String
-}
-
-type SubscriptionTypeNodeConnection {
-  pageInfo: PageInfo!
-  edges: [SubscriptionTypeNodeEdge]!
-}
-
-type SubscriptionTypeNodeEdge {
-  node: SubscriptionTypeNode
-  cursor: String!
-}
-
 type TemporaryReadAccessTokenNode {
   token: UUID!
   expiresAt: DateTime
@@ -531,16 +465,6 @@ type UpdateMyProfileMutationPayload {
   clientMutationId: String
 }
 
-input UpdateMySubscriptionMutationInput {
-  subscription: SubscriptionInputType!
-  clientMutationId: String
-}
-
-type UpdateMySubscriptionMutationPayload {
-  subscription: SubscriptionNode
-  clientMutationId: String
-}
-
 input UpdatePhoneInput {
   primary: Boolean
   id: ID!
@@ -558,7 +482,6 @@ input UpdateProfileInput {
   addEmails: [CreateEmailInput]
   addPhones: [CreatePhoneInput]
   addAddresses: [CreateAddressInput]
-  subscriptions: [SubscriptionInputType]
   sensitivedata: SensitiveDataFields
   id: ID!
   updateEmails: [UpdateEmailInput]
