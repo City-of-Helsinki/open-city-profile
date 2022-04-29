@@ -1,4 +1,5 @@
 import threading
+from collections import defaultdict
 
 from django.conf import settings
 
@@ -6,6 +7,7 @@ _thread_locals = threading.local()
 
 
 def set_current_request(request):
+    request.audit_loggables = defaultdict(lambda: {"parts": set()})
     _thread_locals.request = request
 
 

@@ -1,11 +1,11 @@
-from django.db.models.signals import post_delete, post_init, post_save
+from django.db.models.signals import post_init, post_save, pre_delete
 from django.dispatch import receiver
 
 from .audit_log import log
 
 
-@receiver(post_delete)
-def post_delete_audit_log(sender, instance, **kwargs):
+@receiver(pre_delete)
+def pre_delete_audit_log(sender, instance, **kwargs):
     log("DELETE", instance)
 
 
