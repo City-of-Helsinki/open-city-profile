@@ -5,10 +5,15 @@ from django.db.models.fields.reverse_related import OneToOneRel
 
 
 class UUIDModel(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, editable=False)
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        if not self.id and self._state.adding:
+            self.id = uuid.uuid4()
+        super().save(*args, **kwargs)
 
 
 class SerializableMixin(models.Model):

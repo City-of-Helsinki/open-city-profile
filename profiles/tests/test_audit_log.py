@@ -260,10 +260,8 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
 def test_audit_log_create(cap_audit_log):
     profile = ProfileFactory()
     audit_logs = cap_audit_log.get_logs()
-    assert (
-        len(audit_logs) == 2
-    )  # profile is accessed here as well, thus the 2 log entries
-    log_message = audit_logs[1]
+    assert len(audit_logs) == 1
+    log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "CREATE")
 
 

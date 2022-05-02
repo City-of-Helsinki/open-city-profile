@@ -19,6 +19,7 @@ from profiles.models import (
 
 
 class ProfileFactory(factory.django.DjangoModelFactory):
+    id = None
     user = factory.SubFactory(UserFactory)
 
     class Meta:
