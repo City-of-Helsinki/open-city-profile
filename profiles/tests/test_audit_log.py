@@ -323,12 +323,21 @@ def test_audit_log_update(live_server, profile_with_related, cap_audit_log):
     assert_common_fields(audit_logs, profile, "UPDATE", actor_role="OWNER")
 
 
-def test_audit_log_delete(profile_with_related, cap_audit_log):
+def test_audit_log_delete(live_server, profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
+    user = profile.user
 
-    deleted_pk = profile.pk
-    profile.delete()
-    profile.pk = deleted_pk
+    query = """
+        mutation {
+            deleteMyProfile(input: {
+                authorizationCode: ""
+            }) {
+                clientMutationId
+            }
+        }
+    """
+    do_graphql_call_as_user(live_server, user, query=query)
+
     audit_logs = cap_audit_log.get_logs()
     # Audit logging the Profile DELETE with a related object causes some READs
     # for the involved models.
@@ -342,18 +351,37 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
         )
 
         assert_common_fields(
-            related_logs, profile, "DELETE", target_profile_part=profile_part_name
+            related_logs,
+            profile,
+            "DELETE",
+            actor_role="OWNER",
+            target_profile_part=profile_part_name,
         )
 
-    assert_common_fields(audit_logs, profile, "DELETE")
+    assert_common_fields(audit_logs, profile, "DELETE", actor_role="OWNER")
 
 
-def test_audit_log_create(cap_audit_log):
-    profile = ProfileFactory()
+def test_audit_log_create(live_server, user, cap_audit_log):
+    query = """
+        mutation {
+            createMyProfile(input: {
+                profile: {
+                    firstName: "New profile"
+                }
+            }) {
+                profile {
+                    firstName
+                }
+            }
+        }
+    """
+    do_graphql_call_as_user(live_server, user, query=query)
+
     audit_logs = cap_audit_log.get_logs()
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "CREATE")
+    profile = Profile.objects.get()
+    assert_common_fields(log_message, profile, "CREATE", actor_role="OWNER")
 
 
 def test_actor_is_resolved_in_graphql_call(
