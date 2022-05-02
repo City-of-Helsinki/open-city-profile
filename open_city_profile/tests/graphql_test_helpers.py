@@ -95,7 +95,9 @@ def do_graphql_call(
 
         response = requests.post(url, json=payload, **request_args)
 
-    assert response.status_code == 200
+    assert (
+        response.status_code == 200
+    ), f"Status: {response.status_code}. Body:\n{response.text}"
 
     body = response.json()
     return body.get("data"), body.get("errors")
