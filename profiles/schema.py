@@ -810,10 +810,7 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         # Remove image field from input. It's not supposed to do anything anymore.
         profile_data.pop("image", None)
 
-        profile = Profile.objects.create(user=info.context.user)
-        for field, value in profile_data.items():
-            setattr(profile, field, value)
-        profile.save()
+        profile = Profile.objects.create(user=info.context.user, **profile_data)
 
         for model, data in nested_to_create:
             _create_nested(model, profile, data)
