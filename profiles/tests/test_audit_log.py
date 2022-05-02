@@ -2,12 +2,14 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from string import Template
 from typing import Any, List, Optional
 
 import pytest
 from django.conf import settings
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from profiles.models import (
@@ -53,6 +55,12 @@ def partition_logs_by_target_type(logs, target_type):
             rest.append(log)
 
     return matches, rest
+
+
+def discard_audit_logs(audit_logs, operation):
+    return list(
+        filter(lambda e: e["audit_event"]["operation"] != operation, audit_logs)
+    )
 
 
 def assert_common_fields(
@@ -234,28 +242,85 @@ def test_audit_log_read(live_server, profile_with_related, cap_audit_log):
     assert_common_fields(audit_logs, profile, "READ", actor_role="OWNER")
 
 
-def test_audit_log_update(profile_with_related, cap_audit_log):
+def test_audit_log_update(live_server, profile_with_related, cap_audit_log):
     profile = profile_with_related.profile
-    related_part = profile_with_related.related_part
-    profile_part_name = profile_with_related.profile_part_name
+    user = profile.user
+    assign_perm("profiles.manage_verified_personal_information", user)
 
-    profile.first_name = "John"
-    profile.save()
-    if related_part:
-        related_part.save()
+    related_name = profile_with_related.related_name
+
+    if related_name == "sensitivedata":
+        query = """
+            mutation {
+                updateMyProfile(input: {
+                    profile: {
+                        sensitivedata: {
+                            ssn: "121256-7890"
+                        }
+                    }
+                }) {
+                    profile {
+                        firstName
+                    }
+                }
+            }
+        """
+    else:
+        if related_name and "verified" in related_name:
+            if "address" in related_name:
+                address_name = related_name.split("__")[1]
+                vpi_content = (
+                    to_graphql_name(address_name)
+                    + ': { streetAddress: "New street address" }'
+                )
+            else:
+                vpi_content = 'lastName: "Verified last name"'
+            vpi_input = "verifiedPersonalInformation: {" + vpi_content + "}"
+        else:
+            vpi_input = ""
+
+        t = Template(
+            """
+            mutation {
+                createOrUpdateUserProfile(input: {
+                    userId: "${user_id}"
+                    profile: {
+                        firstName: "New name"
+                        ${vpi_input}
+                    }
+                }) {
+                    profile {
+                        firstName
+                    }
+                }
+            }
+        """
+        )
+        query = t.substitute(user_id=str(user.uuid), vpi_input=vpi_input)
+
+    do_graphql_call_as_user(live_server, user, query=query)
 
     audit_logs = cap_audit_log.get_logs()
+    # Audit logging the Profile UPDATE with a related object causes some READs
+    # for the involved models.
+    # This is unnecessary, but it's a feature of the current implementation.
+    # We ignore the READ events in this test for now.
+    audit_logs = discard_audit_logs(audit_logs, "READ")
 
-    if profile_part_name:
+    for profile_part_name in profile_with_related.all_profile_part_names:
         related_logs, audit_logs = partition_logs_by_target_type(
             audit_logs, profile_part_name
         )
 
         assert_common_fields(
-            related_logs, profile, "UPDATE", target_profile_part=profile_part_name
+            related_logs,
+            profile,
+            "UPDATE",
+            actor_role="OWNER",
+            target_profile_part=profile_part_name,
         )
 
-    assert_common_fields(audit_logs, profile, "UPDATE")
+    assert_common_fields(audit_logs, profile, "UPDATE", actor_role="OWNER")
 
 
 def test_audit_log_delete(profile_with_related, cap_audit_log):
@@ -269,9 +334,7 @@ def test_audit_log_delete(profile_with_related, cap_audit_log):
     # for the involved models.
     # This is unnecessary, but it's a feature of the current implementation.
     # We ignore the READ events in this test for now.
-    audit_logs = list(
-        filter(lambda e: e["audit_event"]["operation"] != "READ", audit_logs)
-    )
+    audit_logs = discard_audit_logs(audit_logs, "READ")
 
     for profile_part_name in profile_with_related.all_profile_part_names:
         related_logs, audit_logs = partition_logs_by_target_type(
