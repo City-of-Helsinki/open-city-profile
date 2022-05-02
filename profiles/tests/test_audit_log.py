@@ -185,10 +185,37 @@ def profile_with_related(request):
     )
 
 
-def test_audit_log_read(profile_with_related, cap_audit_log):
-    related_name = profile_with_related.related_name
+MY_PROFILE_QUERY = """
+    query {
+        myProfile {
+            id
+            sensitivedata {
+                id
+            }
+            verifiedPersonalInformation {
+                firstName
+                permanentAddress {
+                    streetAddress
+                }
+                temporaryAddress {
+                    streetAddress
+                }
+                permanentForeignAddress {
+                    streetAddress
+                }
+            }
+        }
+    }
+"""
 
-    profile_from_db = Profile.objects.select_related(related_name).first()
+
+def test_audit_log_read(live_server, profile_with_related, cap_audit_log):
+    profile = profile_with_related.profile
+    user = profile.user
+    do_graphql_call_as_user(
+        live_server, user, extra_claims={"loa": "substantial"}, query=MY_PROFILE_QUERY
+    )
+
     audit_logs = cap_audit_log.get_logs()
 
     for profile_part_name in profile_with_related.all_profile_part_names:
@@ -198,12 +225,13 @@ def test_audit_log_read(profile_with_related, cap_audit_log):
 
         assert_common_fields(
             related_logs,
-            profile_from_db,
+            profile,
             "READ",
+            actor_role="OWNER",
             target_profile_part=profile_part_name,
         )
 
-    assert_common_fields(audit_logs, profile_from_db, "READ")
+    assert_common_fields(audit_logs, profile, "READ", actor_role="OWNER")
 
 
 def test_audit_log_update(profile_with_related, cap_audit_log):
@@ -263,15 +291,6 @@ def test_audit_log_create(cap_audit_log):
     assert len(audit_logs) == 1
     log_message = audit_logs[0]
     assert_common_fields(log_message, profile, "CREATE")
-
-
-MY_PROFILE_QUERY = """
-    query {
-        myProfile {
-            id
-        }
-    }
-"""
 
 
 def test_actor_is_resolved_in_graphql_call(

@@ -107,7 +107,12 @@ _not_provided = object()
 
 
 def do_graphql_call_as_user(
-    live_server, user, service=_not_provided, query=_QUERY, extra_request_args=None,
+    live_server,
+    user,
+    service=_not_provided,
+    extra_claims=None,
+    query=_QUERY,
+    extra_request_args=None,
 ):
     if extra_request_args is None:
         extra_request_args = {}
@@ -124,6 +129,9 @@ def do_graphql_call_as_user(
 
     if service_client_id:
         claims["azp"] = service_client_id.client_id
+
+    if extra_claims:
+        claims.update(extra_claims)
 
     return do_graphql_call(
         live_server,
