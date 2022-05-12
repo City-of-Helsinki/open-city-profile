@@ -112,35 +112,45 @@ def log(action, instance):
 def _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables):
     logger = logging.getLogger("audit")
 
+    actor_dict = {}
+
+    if service:
+        actor_dict["service_name"] = service.name
+
+    if client_id:
+        actor_dict["client_id"] = client_id
+
+    if ip_address:
+        actor_dict["ip_address"] = ip_address
+
+    if current_user:
+        actor_dict["user_id"] = str(current_user.uuid)
+
     for profile_id, data in audit_loggables.items():
         target_user_uuid = data.get("user_uuid")
 
+        actor_dict["role"] = _resolve_role(current_user, target_user_uuid)
+
+        target_dict = {
+            "id": str(profile_id),
+        }
+        if target_user_uuid:
+            target_dict["user_id"] = str(target_user_uuid)
+
         for action, profile_part, timestamp in data["parts"]:
+            target_dict["type"] = profile_part
+
             message = {
                 "audit_event": {
                     "origin": "PROFILE-BE",
                     "status": "SUCCESS",
                     "date_time_epoch": int(timestamp.timestamp() * 1000),
                     "date_time": f"{timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
-                    "actor": {"role": _resolve_role(current_user, target_user_uuid)},
+                    "actor": actor_dict,
                     "operation": action,
-                    "target": {"id": str(profile_id), "type": profile_part},
+                    "target": target_dict,
                 }
             }
-
-            if current_user:
-                message["audit_event"]["actor"]["user_id"] = str(current_user.uuid)
-
-            if target_user_uuid:
-                message["audit_event"]["target"]["user_id"] = str(target_user_uuid)
-
-            if service:
-                message["audit_event"]["actor"]["service_name"] = service.name
-            if client_id:
-                message["audit_event"]["actor"]["client_id"] = client_id
-
-            if ip_address:
-                message["audit_event"]["actor"]["ip_address"] = ip_address
 
             logger.info(json.dumps(message))
 
