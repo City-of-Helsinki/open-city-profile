@@ -6,11 +6,27 @@ from django.conf import settings
 from django.utils.text import camel_case_to_spaces
 
 from .utils import (
+    clear_thread_locals,
     get_current_client_id,
     get_current_service,
     get_current_user,
     get_original_client_ip,
+    set_current_request,
 )
+
+
+class AuditLogMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        set_current_request(request)
+
+        response = self.get_response(request)
+
+        clear_thread_locals()
+
+        return response
 
 
 def should_audit(model):

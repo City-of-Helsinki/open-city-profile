@@ -195,7 +195,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "open_city_profile.middleware.JWTAuthentication",
-    "profiles.middleware.SetCurrentRequest",
+    "profiles.audit_log.AuditLogMiddleware",
 ]
 
 TEMPLATES = [
