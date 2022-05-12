@@ -109,7 +109,7 @@ def log(action, instance):
         )
 
 
-def _produce_json_logs(current_user, audit_loggables):
+def _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables):
     logger = logging.getLogger("audit")
 
     for profile_id, data in audit_loggables.items():
@@ -134,14 +134,11 @@ def _produce_json_logs(current_user, audit_loggables):
             if target_user_uuid:
                 message["audit_event"]["target"]["user_id"] = str(target_user_uuid)
 
-            service = _get_current_service()
             if service:
                 message["audit_event"]["actor"]["service_name"] = service.name
-            client_id = _get_current_client_id()
             if client_id:
                 message["audit_event"]["actor"]["client_id"] = client_id
 
-            ip_address = _get_original_client_ip()
             if ip_address:
                 message["audit_event"]["actor"]["ip_address"] = ip_address
 
@@ -158,9 +155,12 @@ def _commit_audit_logs():
     del request._audit_loggables
 
     current_user = _get_current_user()
+    service = _get_current_service()
+    client_id = _get_current_client_id()
+    ip_address = _get_original_client_ip()
 
     profiles = [log_data["profile"] for log_data in audit_loggables.values()]
     for ids in User.objects.filter(profile__in=profiles).values("uuid", "profile__id"):
         audit_loggables[ids["profile__id"]]["user_uuid"] = ids["uuid"]
 
-    _produce_json_logs(current_user, audit_loggables)
+    _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables)
