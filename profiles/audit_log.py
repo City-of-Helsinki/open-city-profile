@@ -1,18 +1,43 @@
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 
 from django.conf import settings
 from django.utils.text import camel_case_to_spaces
 
-from .utils import (
-    clear_thread_locals,
-    get_current_client_id,
-    get_current_service,
-    get_current_user,
-    get_original_client_ip,
-    set_current_request,
-)
+_thread_locals = threading.local()
+
+
+def _get_current_request():
+    return getattr(_thread_locals, "request", None)
+
+
+def _get_current_user():
+    return getattr(_get_current_request(), "user", None)
+
+
+def _get_original_client_ip():
+    client_ip = None
+
+    request = _get_current_request()
+    if request:
+        if settings.USE_X_FORWARDED_FOR:
+            forwarded_for = request.headers.get("x-forwarded-for", "")
+            client_ip = forwarded_for.split(",")[0] or None
+
+        if not client_ip:
+            client_ip = request.META.get("REMOTE_ADDR")
+
+    return client_ip
+
+
+def _get_current_service():
+    return getattr(_get_current_request(), "service", None)
+
+
+def _get_current_client_id():
+    return getattr(_get_current_request(), "client_id", None)
 
 
 class AuditLogMiddleware:
@@ -20,11 +45,11 @@ class AuditLogMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        set_current_request(request)
+        _thread_locals.request = request
 
         response = self.get_response(request)
 
-        clear_thread_locals()
+        _thread_locals.__dict__.clear()
 
         return response
 
@@ -69,7 +94,7 @@ def log(action, instance):
         logger = logging.getLogger("audit")
 
         current_time = datetime.now(tz=timezone.utc)
-        current_user = get_current_user()
+        current_user = _get_current_user()
         profile = (
             instance.profile
             if hasattr(instance, "profile")
@@ -94,14 +119,14 @@ def log(action, instance):
 
         _format_user_data(message["audit_event"], "target", target_user)
 
-        service = get_current_service()
+        service = _get_current_service()
         if service:
             message["audit_event"]["actor"]["service_name"] = service.name
-        client_id = get_current_client_id()
+        client_id = _get_current_client_id()
         if client_id:
             message["audit_event"]["actor"]["client_id"] = client_id
 
-        ip_address = get_original_client_ip()
+        ip_address = _get_original_client_ip()
         if ip_address:
             message["audit_event"]["actor"]["ip_address"] = ip_address
 
