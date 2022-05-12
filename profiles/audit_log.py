@@ -8,8 +8,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.text import camel_case_to_spaces
 
-from .models import Profile
-
 User = get_user_model()
 
 _thread_locals = threading.local()
@@ -100,16 +98,23 @@ def _profile_part(instance):
     return camel_case_to_spaces(class_name)
 
 
+def register_loggable(instance):
+    profile_and_loggables = _get_profile_and_loggables(instance)
+
+    if profile_and_loggables is not None:
+        profile, profile_loggables = profile_and_loggables
+
+        profile_loggables["profile"] = profile
+        if profile.user:
+            profile_loggables["user_uuid"] = profile.user.uuid
+
+
 def log(action, instance):
     profile_and_loggables = _get_profile_and_loggables(instance)
 
     if profile_and_loggables is not None:
         profile, profile_loggables = profile_and_loggables
 
-        if action == "DELETE" and isinstance(instance, Profile) and profile.user:
-            # If the Profile is about to get deleted,
-            # need to store the User before it gets deleted too.
-            profile_loggables["user_uuid"] = profile.user.uuid
         profile_loggables["profile"] = profile
         profile_loggables["parts"].add(
             (action, _profile_part(instance), datetime.now(tz=timezone.utc))
