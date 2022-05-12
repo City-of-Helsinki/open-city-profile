@@ -1,10 +1,16 @@
 import json
 import logging
 import threading
+from collections import defaultdict
 from datetime import datetime, timezone
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils.text import camel_case_to_spaces
+
+from .models import Profile
+
+User = get_user_model()
 
 _thread_locals = threading.local()
 
@@ -46,16 +52,18 @@ class AuditLogMiddleware:
 
     def __call__(self, request):
         _thread_locals.request = request
+        request._audit_loggables = defaultdict(lambda: {"parts": set()})
 
         response = self.get_response(request)
 
+        _commit_audit_logs()
         _thread_locals.__dict__.clear()
 
         return response
 
 
-def _resolve_role(current_user, profile):
-    if profile.user == current_user:
+def _resolve_role(current_user, profile_user_uuid):
+    if profile_user_uuid and current_user and profile_user_uuid == current_user.uuid:
         return "OWNER"
     elif current_user is not None:
         return "ADMIN"
@@ -72,56 +80,87 @@ def _profile_part(instance):
     return camel_case_to_spaces(class_name)
 
 
-def _format_user_data(audit_event, field_name, user):
-    if user:
-        audit_event[field_name]["user_id"] = (
-            str(user.uuid) if hasattr(user, "uuid") else None
-        )
-
-
 def log(action, instance):
+    if not settings.AUDIT_LOGGING_ENABLED:
+        return
+
+    audit_loggables = getattr(_get_current_request(), "_audit_loggables", None)
+
     if (
-        settings.AUDIT_LOGGING_ENABLED
+        audit_loggables is not None
         and getattr(instance.__class__, "audit_log", False)
         and instance.pk
     ):
-        logger = logging.getLogger("audit")
-
-        current_time = datetime.now(tz=timezone.utc)
-        current_user = _get_current_user()
         profile = (
             instance.profile
             if hasattr(instance, "profile")
             else instance.resolve_profile()
         )
-        profile_id = str(profile.pk) if profile else None
-        target_user = profile.user if profile and profile.user else None
 
-        message = {
-            "audit_event": {
-                "origin": "PROFILE-BE",
-                "status": "SUCCESS",
-                "date_time_epoch": int(current_time.timestamp() * 1000),
-                "date_time": f"{current_time.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
-                "actor": {"role": _resolve_role(current_user, profile)},
-                "operation": action,
-                "target": {"id": profile_id, "type": _profile_part(instance)},
+        profile_loggables = audit_loggables[profile.pk]
+
+        if action == "DELETE" and isinstance(instance, Profile) and profile.user:
+            # If the Profile is about to get deleted,
+            # need to store the User before it gets deleted too.
+            profile_loggables["user_uuid"] = profile.user.uuid
+        profile_loggables["profile"] = profile
+        profile_loggables["parts"].add(
+            (action, _profile_part(instance), datetime.now(tz=timezone.utc))
+        )
+
+
+def _produce_json_logs(current_user, audit_loggables):
+    logger = logging.getLogger("audit")
+
+    for profile_id, data in audit_loggables.items():
+        target_user_uuid = data.get("user_uuid")
+
+        for action, profile_part, timestamp in data["parts"]:
+            message = {
+                "audit_event": {
+                    "origin": "PROFILE-BE",
+                    "status": "SUCCESS",
+                    "date_time_epoch": int(timestamp.timestamp() * 1000),
+                    "date_time": f"{timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
+                    "actor": {"role": _resolve_role(current_user, target_user_uuid)},
+                    "operation": action,
+                    "target": {"id": str(profile_id), "type": profile_part},
+                }
             }
-        }
 
-        _format_user_data(message["audit_event"], "actor", current_user)
+            if current_user:
+                message["audit_event"]["actor"]["user_id"] = str(current_user.uuid)
 
-        _format_user_data(message["audit_event"], "target", target_user)
+            if target_user_uuid:
+                message["audit_event"]["target"]["user_id"] = str(target_user_uuid)
 
-        service = _get_current_service()
-        if service:
-            message["audit_event"]["actor"]["service_name"] = service.name
-        client_id = _get_current_client_id()
-        if client_id:
-            message["audit_event"]["actor"]["client_id"] = client_id
+            service = _get_current_service()
+            if service:
+                message["audit_event"]["actor"]["service_name"] = service.name
+            client_id = _get_current_client_id()
+            if client_id:
+                message["audit_event"]["actor"]["client_id"] = client_id
 
-        ip_address = _get_original_client_ip()
-        if ip_address:
-            message["audit_event"]["actor"]["ip_address"] = ip_address
+            ip_address = _get_original_client_ip()
+            if ip_address:
+                message["audit_event"]["actor"]["ip_address"] = ip_address
 
-        logger.info(json.dumps(message))
+            logger.info(json.dumps(message))
+
+
+def _commit_audit_logs():
+    request = _get_current_request()
+
+    audit_loggables = getattr(request, "_audit_loggables", None)
+    if not audit_loggables:
+        return
+
+    del request._audit_loggables
+
+    current_user = _get_current_user()
+
+    profiles = [log_data["profile"] for log_data in audit_loggables.values()]
+    for ids in User.objects.filter(profile__in=profiles).values("uuid", "profile__id"):
+        audit_loggables[ids["profile__id"]]["user_uuid"] = ids["uuid"]
+
+    _produce_json_logs(current_user, audit_loggables)
