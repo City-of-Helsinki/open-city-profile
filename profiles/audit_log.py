@@ -8,6 +8,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.text import camel_case_to_spaces
 
+from audit_log.models import LogEntry
+
 User = get_user_model()
 
 _thread_locals = threading.local()
@@ -121,50 +123,80 @@ def log(action, instance):
             profile_loggables["parts"][data_action] = datetime.now(tz=timezone.utc)
 
 
-def _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables):
-    logger = logging.getLogger("audit")
+def _create_log_entries(current_user, service, client_id, ip_address, audit_loggables):
+    log_entries = []
 
-    actor_dict = {}
-
-    if service:
-        actor_dict["service_name"] = service.name
-
-    if client_id:
-        actor_dict["client_id"] = client_id
-
-    if ip_address:
-        actor_dict["ip_address"] = ip_address
-
-    if current_user:
-        actor_dict["user_id"] = str(current_user.uuid)
+    service_name = service.name if service else ""
+    client_id = client_id if client_id else ""
+    ip_address = ip_address if ip_address else ""
+    actor_user_id = current_user.uuid if current_user else None
 
     for profile_id, data in audit_loggables.items():
         target_user_uuid = data.get("user_uuid")
-
-        actor_dict["role"] = _resolve_role(current_user, target_user_uuid)
-
-        target_dict = {
-            "id": str(profile_id),
-        }
-        if target_user_uuid:
-            target_dict["user_id"] = str(target_user_uuid)
+        actor_role = _resolve_role(current_user, target_user_uuid)
 
         for (action, profile_part), timestamp in data["parts"].items():
-            target_dict["type"] = profile_part
+            log_entries.append(
+                LogEntry(
+                    timestamp=timestamp,
+                    service_name=service_name,
+                    client_id=client_id,
+                    ip_address=ip_address,
+                    actor_user_id=actor_user_id,
+                    actor_role=actor_role,
+                    target_user_id=target_user_uuid,
+                    target_profile_id=profile_id,
+                    target_type=profile_part,
+                    operation=action,
+                )
+            )
 
-            message = {
-                "audit_event": {
-                    "origin": "PROFILE-BE",
-                    "status": "SUCCESS",
-                    "date_time_epoch": int(timestamp.timestamp() * 1000),
-                    "date_time": f"{timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
-                    "actor": actor_dict,
-                    "operation": action,
-                    "target": target_dict,
-                }
+    return log_entries
+
+
+def _put_logs_to_logger(log_entries):
+    logger = logging.getLogger("audit")
+
+    for log_entry in log_entries:
+        actor_dict = {
+            k: v
+            for k, v in [
+                ("service_name", log_entry.service_name),
+                ("client_id", log_entry.client_id),
+                ("ip_address", log_entry.ip_address),
+                ("user_id", str(log_entry.actor_user_id or "")),
+                ("role", log_entry.actor_role),
+            ]
+            if v
+        }
+
+        target_dict = {
+            k: v
+            for k, v in [
+                ("id", str(log_entry.target_profile_id or "")),
+                ("user_id", str(log_entry.target_user_id or "")),
+                ("type", log_entry.target_type),
+            ]
+            if v
+        }
+
+        message = {
+            "audit_event": {
+                "origin": "PROFILE-BE",
+                "status": "SUCCESS",
+                "date_time_epoch": int(log_entry.timestamp.timestamp() * 1000),
+                "date_time": f"{log_entry.timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
+                "actor": actor_dict,
+                "operation": log_entry.operation,
+                "target": target_dict,
             }
+        }
 
-            logger.info(json.dumps(message))
+        logger.info(json.dumps(message))
+
+
+def _put_logs_to_db(log_entries):
+    LogEntry.objects.bulk_create(log_entries)
 
 
 def _commit_audit_logs():
@@ -185,4 +217,9 @@ def _commit_audit_logs():
     for ids in User.objects.filter(profile__in=profiles).values("uuid", "profile__id"):
         audit_loggables[ids["profile__id"]]["user_uuid"] = ids["uuid"]
 
-    _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables)
+    log_entries = _create_log_entries(
+        current_user, service, client_id, ip_address, audit_loggables
+    )
+
+    _put_logs_to_logger(log_entries)
+    _put_logs_to_db(log_entries)
