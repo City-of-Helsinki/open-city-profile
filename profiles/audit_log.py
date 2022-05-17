@@ -62,6 +62,26 @@ class AuditLogMiddleware:
         return response
 
 
+def _get_profile_and_loggables(instance):
+    if not settings.AUDIT_LOGGING_ENABLED:
+        return
+
+    audit_loggables = getattr(_get_current_request(), "_audit_loggables", None)
+
+    if (
+        audit_loggables is not None
+        and getattr(instance.__class__, "audit_log", False)
+        and instance.pk
+    ):
+        profile = (
+            instance.profile
+            if hasattr(instance, "profile")
+            else instance.resolve_profile()
+        )
+
+        return profile, audit_loggables[profile.pk]
+
+
 def _resolve_role(current_user, profile_user_uuid):
     if profile_user_uuid and current_user and profile_user_uuid == current_user.uuid:
         return "OWNER"
@@ -81,23 +101,10 @@ def _profile_part(instance):
 
 
 def log(action, instance):
-    if not settings.AUDIT_LOGGING_ENABLED:
-        return
+    profile_and_loggables = _get_profile_and_loggables(instance)
 
-    audit_loggables = getattr(_get_current_request(), "_audit_loggables", None)
-
-    if (
-        audit_loggables is not None
-        and getattr(instance.__class__, "audit_log", False)
-        and instance.pk
-    ):
-        profile = (
-            instance.profile
-            if hasattr(instance, "profile")
-            else instance.resolve_profile()
-        )
-
-        profile_loggables = audit_loggables[profile.pk]
+    if profile_and_loggables is not None:
+        profile, profile_loggables = profile_and_loggables
 
         if action == "DELETE" and isinstance(instance, Profile) and profile.user:
             # If the Profile is about to get deleted,
