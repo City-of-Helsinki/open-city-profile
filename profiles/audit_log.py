@@ -54,12 +54,6 @@ class AuditLogMiddleware:
         return response
 
 
-def should_audit(model):
-    if hasattr(model, "audit_log") and model.audit_log:
-        return True
-    return False
-
-
 def _resolve_role(current_user, profile):
     if profile.user == current_user:
         return "OWNER"
@@ -88,7 +82,7 @@ def _format_user_data(audit_event, field_name, user):
 def log(action, instance):
     if (
         settings.AUDIT_LOGGING_ENABLED
-        and should_audit(instance.__class__)
+        and getattr(instance.__class__, "audit_log", False)
         and instance.pk
     ):
         logger = logging.getLogger("audit")
