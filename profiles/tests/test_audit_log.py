@@ -64,7 +64,7 @@ def discard_audit_logs(audit_logs, operation):
 
 
 def assert_common_fields(
-    log_messages,
+    log_message,
     target_profile,
     operation,
     actor_role="SYSTEM",
@@ -74,32 +74,30 @@ def assert_common_fields(
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
     leeway_ms = 50
 
-    if not isinstance(log_messages, list):
-        log_messages = [log_messages]
+    if isinstance(log_message, list):
+        assert len(log_message) == 1
+        log_message = log_message[0]
 
-    assert len(log_messages) > 0
+    audit_event = log_message["audit_event"]
 
-    for log_message in log_messages:
-        audit_event = log_message["audit_event"]
+    assert audit_event["origin"] == "PROFILE-BE"
+    assert audit_event["status"] == "SUCCESS"
+    assert audit_event["operation"] == operation
+    assert audit_event["actor"]["role"] == actor_role
 
-        assert audit_event["origin"] == "PROFILE-BE"
-        assert audit_event["status"] == "SUCCESS"
-        assert audit_event["operation"] == operation
-        assert audit_event["actor"]["role"] == actor_role
+    assert_almost_equal(audit_event["date_time_epoch"], now_ms_timestamp, leeway_ms)
 
-        assert_almost_equal(audit_event["date_time_epoch"], now_ms_timestamp, leeway_ms)
+    log_dt = datetime.strptime(
+        audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+    ).replace(tzinfo=timezone.utc)
+    assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
 
-        log_dt = datetime.strptime(
-            audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-        ).replace(tzinfo=timezone.utc)
-        assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
-
-        expected_target = {
-            "id": str(target_profile.pk),
-            "type": target_profile_part,
-            "user_id": str(target_profile.user.uuid),
-        }
-        assert audit_event["target"] == expected_target
+    expected_target = {
+        "id": str(target_profile.pk),
+        "type": target_profile_part,
+        "user_id": str(target_profile.user.uuid),
+    }
+    assert audit_event["target"] == expected_target
 
 
 @dataclass
@@ -378,10 +376,8 @@ def test_audit_log_create(live_server, user, cap_audit_log):
     do_graphql_call_as_user(live_server, user, query=query)
 
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
-    log_message = audit_logs[0]
     profile = Profile.objects.get()
-    assert_common_fields(log_message, profile, "CREATE", actor_role="OWNER")
+    assert_common_fields(audit_logs, profile, "CREATE", actor_role="OWNER")
 
 
 def test_actor_is_resolved_in_graphql_call(
@@ -392,9 +388,8 @@ def test_actor_is_resolved_in_graphql_call(
     user = profile.user
     do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
+    assert_common_fields(audit_logs, profile, "READ", actor_role="OWNER")
     log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
 
 
@@ -406,9 +401,8 @@ def test_service_is_resolved_in_graphql_call(
     ServiceConnectionFactory(profile=profile, service=service)
     do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
+    assert_common_fields(audit_logs, profile, "READ", actor_role="OWNER")
     log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "READ", actor_role="OWNER")
     actor_log = log_message["audit_event"]["actor"]
     assert "service_name" in actor_log
     assert actor_log["service_name"] == service.name
@@ -441,9 +435,8 @@ def test_actor_service(live_server, user, group, service_client_id, cap_audit_lo
     do_graphql_call_as_user(live_server, user, service=service, query=query)
 
     audit_logs = cap_audit_log.get_logs()
-    assert len(audit_logs) == 1
+    assert_common_fields(audit_logs, profile, "READ", actor_role="ADMIN")
     log_message = audit_logs[0]
-    assert_common_fields(log_message, profile, "READ", actor_role="ADMIN")
     actor_log = log_message["audit_event"]["actor"]
     assert actor_log["service_name"] == service.name
     assert "client_id" in actor_log

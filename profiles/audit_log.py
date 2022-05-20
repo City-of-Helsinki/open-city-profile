@@ -50,7 +50,7 @@ class AuditLogMiddleware:
 
     def __call__(self, request):
         _thread_locals.request = request
-        request._audit_loggables = defaultdict(lambda: {"parts": set()})
+        request._audit_loggables = defaultdict(lambda: {"parts": dict()})
 
         response = self.get_response(request)
 
@@ -116,9 +116,9 @@ def log(action, instance):
         profile, profile_loggables = profile_and_loggables
 
         profile_loggables["profile"] = profile
-        profile_loggables["parts"].add(
-            (action, _profile_part(instance), datetime.now(tz=timezone.utc))
-        )
+        data_action = (action, _profile_part(instance))
+        if data_action not in profile_loggables["parts"]:
+            profile_loggables["parts"][data_action] = datetime.now(tz=timezone.utc)
 
 
 def _produce_json_logs(current_user, service, client_id, ip_address, audit_loggables):
@@ -149,7 +149,7 @@ def _produce_json_logs(current_user, service, client_id, ip_address, audit_logga
         if target_user_uuid:
             target_dict["user_id"] = str(target_user_uuid)
 
-        for action, profile_part, timestamp in data["parts"]:
+        for (action, profile_part), timestamp in data["parts"].items():
             target_dict["type"] = profile_part
 
             message = {
