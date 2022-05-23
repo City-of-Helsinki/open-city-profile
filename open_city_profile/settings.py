@@ -172,6 +172,7 @@ INSTALLED_APPS = [
     "django_filters",
     "parler",
     "corsheaders",
+    "audit_log",
     "users",
     "profiles",
     "graphene_django",

@@ -1,6 +1,18 @@
 config:
   addons: []
 strategy:
+  audit_log_logentry:
+    actor_role: null
+    actor_user_id: null
+    client_id: null
+    id: null
+    ip_address: null
+    operation: null
+    service_name: null
+    target_profile_id: null
+    target_type: null
+    target_user_id: null
+    timestamp: null
   auth_group:
     id: null
     name: null
