@@ -6,7 +6,6 @@ from string import Template
 from typing import Any, List, Optional
 
 import pytest
-from django.conf import settings
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests import to_graphql_name
@@ -28,7 +27,7 @@ from .factories import (
 
 
 @pytest.fixture(autouse=True)
-def enable_audit_log():
+def enable_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = True
 
 
