@@ -46,6 +46,7 @@ env = environ.Env(
     VERSION=(str, None),
     AUDIT_LOGGING_ENABLED=(bool, False),
     AUDIT_LOG_FILENAME=(str, ""),
+    AUDIT_LOG_TO_DB_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
@@ -307,6 +308,7 @@ if "SECRET_KEY" not in locals():
 
 AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
 AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
+AUDIT_LOG_TO_DB_ENABLED = env.bool("AUDIT_LOG_TO_DB_ENABLED")
 
 if AUDIT_LOG_FILENAME:
     if "X" in AUDIT_LOG_FILENAME:

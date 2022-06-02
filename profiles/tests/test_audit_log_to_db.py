@@ -28,6 +28,7 @@ from .factories import (
 @pytest.fixture(autouse=True)
 def enable_audit_log(settings):
     settings.AUDIT_LOGGING_ENABLED = True
+    settings.AUDIT_LOG_TO_DB_ENABLED = True
 
 
 def partition_logs_by_target_type(log_entries, target_type):

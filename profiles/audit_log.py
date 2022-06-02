@@ -222,4 +222,6 @@ def _commit_audit_logs():
     )
 
     _put_logs_to_logger(log_entries)
-    _put_logs_to_db(log_entries)
+
+    if settings.AUDIT_LOG_TO_DB_ENABLED:
+        _put_logs_to_db(log_entries)
