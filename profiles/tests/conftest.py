@@ -80,8 +80,9 @@ def profile_service():
 
 
 @pytest.fixture(autouse=True)
-def setup_audit_log(settings):
-    settings.AUDIT_LOGGING_ENABLED = False
+def disable_audit_log(settings):
+    settings.AUDIT_LOG_TO_LOGGER_ENABLED = False
+    settings.AUDIT_LOG_TO_DB_ENABLED = False
 
 
 VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES = {

@@ -44,8 +44,8 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     VERSION=(str, None),
-    AUDIT_LOGGING_ENABLED=(bool, False),
-    AUDIT_LOG_FILENAME=(str, ""),
+    AUDIT_LOG_TO_LOGGER_ENABLED=(bool, False),
+    AUDIT_LOG_LOGGER_FILENAME=(str, ""),
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
@@ -306,26 +306,26 @@ if "SECRET_KEY" not in locals():
                 % secret_file
             )
 
-AUDIT_LOGGING_ENABLED = env.bool("AUDIT_LOGGING_ENABLED")
-AUDIT_LOG_FILENAME = env("AUDIT_LOG_FILENAME")
+AUDIT_LOG_TO_LOGGER_ENABLED = env.bool("AUDIT_LOG_TO_LOGGER_ENABLED")
+AUDIT_LOG_LOGGER_FILENAME = env("AUDIT_LOG_LOGGER_FILENAME")
 AUDIT_LOG_TO_DB_ENABLED = env.bool("AUDIT_LOG_TO_DB_ENABLED")
 
-if AUDIT_LOG_FILENAME:
-    if "X" in AUDIT_LOG_FILENAME:
+if AUDIT_LOG_LOGGER_FILENAME:
+    if "X" in AUDIT_LOG_LOGGER_FILENAME:
         import random
         import re
         import string
 
         system_random = random.SystemRandom()
         char_pool = string.ascii_lowercase + string.digits
-        AUDIT_LOG_FILENAME = re.sub(
-            "X", lambda x: system_random.choice(char_pool), AUDIT_LOG_FILENAME
+        AUDIT_LOG_LOGGER_FILENAME = re.sub(
+            "X", lambda x: system_random.choice(char_pool), AUDIT_LOG_LOGGER_FILENAME
         )
 
     _audit_log_handler = {
         "level": "INFO",
         "class": "logging.handlers.RotatingFileHandler",
-        "filename": AUDIT_LOG_FILENAME,
+        "filename": AUDIT_LOG_LOGGER_FILENAME,
         "maxBytes": 100_000_000,
         "backupCount": 1,
         "delay": True,

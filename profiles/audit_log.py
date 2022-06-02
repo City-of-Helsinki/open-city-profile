@@ -63,7 +63,7 @@ class AuditLogMiddleware:
 
 
 def _get_profile_and_loggables(instance):
-    if not settings.AUDIT_LOGGING_ENABLED:
+    if not (settings.AUDIT_LOG_TO_LOGGER_ENABLED or settings.AUDIT_LOG_TO_DB_ENABLED):
         return
 
     audit_loggables = getattr(_get_current_request(), "_audit_loggables", None)
@@ -221,7 +221,8 @@ def _commit_audit_logs():
         current_user, service, client_id, ip_address, audit_loggables
     )
 
-    _put_logs_to_logger(log_entries)
+    if settings.AUDIT_LOG_TO_LOGGER_ENABLED:
+        _put_logs_to_logger(log_entries)
 
     if settings.AUDIT_LOG_TO_DB_ENABLED:
         _put_logs_to_db(log_entries)

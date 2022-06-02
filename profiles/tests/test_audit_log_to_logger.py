@@ -28,7 +28,7 @@ from .factories import (
 
 @pytest.fixture(autouse=True)
 def enable_audit_log(settings):
-    settings.AUDIT_LOGGING_ENABLED = True
+    settings.AUDIT_LOG_TO_LOGGER_ENABLED = True
 
 
 @pytest.fixture
