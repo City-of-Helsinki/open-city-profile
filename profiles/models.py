@@ -356,6 +356,7 @@ class SensitiveData(SerializableMixin):
 
 class Contact(SerializableMixin):
     primary = models.BooleanField(default=False)
+    audit_log = True
 
     class Meta:
         abstract = True

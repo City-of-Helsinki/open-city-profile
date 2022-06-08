@@ -4,6 +4,7 @@ from string import Template
 from typing import Any, List, Optional
 
 import pytest
+from graphql_relay import to_global_id
 from guardian.shortcuts import assign_perm
 
 from audit_log.models import LogEntry
@@ -19,6 +20,9 @@ from profiles.models import (
 from services.tests.factories import ServiceConnectionFactory
 
 from .factories import (
+    AddressFactory,
+    EmailFactory,
+    PhoneFactory,
     ProfileFactory,
     SensitiveDataFactory,
     VerifiedPersonalInformationFactory,
@@ -134,6 +138,9 @@ def vpi_factory_with_addresses(*wanted_address_models):
             "verified personal information permanent foreign address",
             ["verified personal information"],
         ),
+        (PhoneFactory, "phones", "phone", [],),
+        (EmailFactory, "emails", "email", [],),
+        (AddressFactory, "addresses", "address", [],),
     ]
 )
 def profile_with_related(request):
@@ -179,6 +186,32 @@ MY_PROFILE_QUERY = """
                 }
                 permanentForeignAddress {
                     streetAddress
+                }
+            }
+            phones {
+                edges {
+                    node {
+                        phone
+                        phoneType
+                        primary
+                    }
+                }
+            }
+            emails {
+                edges {
+                    node {
+                        email
+                        emailType
+                        primary
+                    }
+                }
+            }
+            addresses {
+                edges {
+                    node {
+                        address
+                        primary
+                    }
                 }
             }
         }
@@ -234,6 +267,78 @@ def test_audit_log_update(live_server, profile_with_related):
                 }
             }
         """
+    elif related_name == "phones":
+        t = Template(
+            """
+            mutation {
+                updateMyProfile(input: {
+                    profile: {
+                        updatePhones: [
+                            {
+                                id: "${phone_id}",
+                                phone: "12345",
+                                primary: true
+                            }
+                        ]
+                    }
+                }) {
+                    profile {
+                        firstName
+                    }
+                }
+            }
+            """
+        )
+        phone = profile.phones.first()
+        query = t.substitute(phone_id=to_global_id("PhoneNode", phone.pk))
+    elif related_name == "emails":
+        t = Template(
+            """
+            mutation {
+                updateMyProfile(input: {
+                    profile: {
+                        updateEmails: [
+                            {
+                                id: "${email_id}",
+                                email: "example@example.com",
+                                primary: true
+                            }
+                        ]
+                    }
+                }) {
+                    profile {
+                        firstName
+                    }
+                }
+            }
+            """
+        )
+        email = profile.emails.first()
+        query = t.substitute(email_id=to_global_id("EmailNode", email.pk))
+    elif related_name == "addresses":
+        t = Template(
+            """
+            mutation {
+                updateMyProfile(input: {
+                    profile: {
+                        updateAddresses: [
+                            {
+                                id: "${address_id}",
+                                address: "example address",
+                                primary: true
+                            }
+                        ]
+                    }
+                }) {
+                    profile {
+                        firstName
+                    }
+                }
+            }
+            """
+        )
+        address = profile.addresses.first()
+        query = t.substitute(address_id=to_global_id("AddressNode", address.pk))
     else:
         if related_name and "verified" in related_name:
             if "address" in related_name:
