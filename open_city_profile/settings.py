@@ -125,8 +125,6 @@ if env("CSRF_TRUSTED_ORIGINS"):
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 DATABASES = {"default": env.db()}
-# Ensure postgis engine
-DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
 CACHES = {"default": env.cache()}
 vars().update(env.email_url())  # EMAIL_BACKEND etc.
@@ -169,7 +167,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.gis",
+#    "django.contrib.gis",
     "django_filters",
     "parler",
     "corsheaders",
