@@ -59,7 +59,7 @@ def assert_common_fields(
     target_profile_part="base profile",
 ):
     now_dt = datetime.now(tz=timezone.utc)
-    leeway = timedelta(milliseconds=50)
+    leeway = timedelta(milliseconds=70)
 
     if isinstance(log_entry, list):
         assert len(log_entry) == 1
