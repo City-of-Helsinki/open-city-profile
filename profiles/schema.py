@@ -169,8 +169,6 @@ def update_profile(profile, profile_data):
             "Must maintain a primary email on a profile"
         )
 
-    profile_updated.send(sender=profile.__class__, instance=profile)
-
 
 def update_sensitivedata(profile, sensitive_data):
     if hasattr(profile, "sensitivedata"):
@@ -1233,24 +1231,26 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 
     @classmethod
     @login_and_service_required
-    @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
-        profile = Profile.objects.get(user=info.context.user)
+        with transaction.atomic():
+            profile = Profile.objects.get(user=info.context.user)
 
-        if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            if not info.context.service.has_connection_to_profile(profile):
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
 
-        validate(cls, root, info, **input)
+            validate(cls, root, info, **input)
 
-        profile_data = input.pop("profile")
-        sensitive_data = profile_data.pop("sensitivedata", None)
+            profile_data = input.pop("profile")
+            sensitive_data = profile_data.pop("sensitivedata", None)
 
-        update_profile(profile, profile_data)
+            update_profile(profile, profile_data)
 
-        if sensitive_data:
-            update_sensitivedata(profile, sensitive_data)
+            if sensitive_data:
+                update_sensitivedata(profile, sensitive_data)
+
+        profile_updated.send(sender=profile.__class__, instance=profile)
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -1295,36 +1295,38 @@ class UpdateProfileMutation(relay.ClientIDMutation):
 
     @classmethod
     @staff_required(required_permission="manage")
-    @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
-        service = info.context.service
-        profile_data = input.get("profile")
-        profile = graphene.Node.get_node_from_global_id(
-            info, profile_data.pop("id"), only_type=ProfileNode
-        )
-
-        if not service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
+        with transaction.atomic():
+            service = info.context.service
+            profile_data = input.get("profile")
+            profile = graphene.Node.get_node_from_global_id(
+                info, profile_data.pop("id"), only_type=ProfileNode
             )
 
-        sensitive_data = profile_data.get("sensitivedata", None)
+            if not service.has_connection_to_profile(profile):
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
 
-        if sensitive_data and not info.context.user.has_perm(
-            "can_manage_sensitivedata", service
-        ):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            sensitive_data = profile_data.get("sensitivedata", None)
 
-        validate(cls, root, info, **input)
+            if sensitive_data and not info.context.user.has_perm(
+                "can_manage_sensitivedata", service
+            ):
+                raise PermissionDenied(
+                    _("You do not have permission to perform this action.")
+                )
 
-        profile_data.pop("sensitivedata", None)
+            validate(cls, root, info, **input)
 
-        update_profile(profile, profile_data)
+            profile_data.pop("sensitivedata", None)
 
-        if sensitive_data:
-            update_sensitivedata(profile, sensitive_data)
+            update_profile(profile, profile_data)
+
+            if sensitive_data:
+                update_sensitivedata(profile, sensitive_data)
+
+        profile_updated.send(sender=profile.__class__, instance=profile)
 
         return UpdateProfileMutation(profile=profile)
 
@@ -1338,7 +1340,6 @@ class ClaimProfileMutation(relay.ClientIDMutation):
 
     @classmethod
     @login_required
-    @transaction.atomic
     def mutate_and_get_payload(cls, root, info, **input):
         validate(cls, root, info, **input)
 
@@ -1351,11 +1352,17 @@ class ClaimProfileMutation(relay.ClientIDMutation):
                 "Claiming a profile with existing profile not yet implemented"
             )
         else:
-            # Logged in user has no profile, let's use claimed profile
-            update_profile(profile_to_claim, input["profile"])
-            profile_to_claim.user = info.context.user
-            profile_to_claim.save()
-            profile_to_claim.claim_tokens.all().delete()
+            with transaction.atomic():
+                # Logged in user has no profile, let's use claimed profile
+                update_profile(profile_to_claim, input["profile"])
+                profile_to_claim.user = info.context.user
+                profile_to_claim.save()
+                profile_to_claim.claim_tokens.all().delete()
+
+            profile_updated.send(
+                sender=profile_to_claim.__class__, instance=profile_to_claim
+            )
+
             return ClaimProfileMutation(profile=profile_to_claim)
 
 
