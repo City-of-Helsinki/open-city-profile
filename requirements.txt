@@ -92,7 +92,7 @@ psycopg2==2.8.3
     # via -r requirements.in
 pyasn1==0.4.5
     # via rsa
-pycryptodome==3.9.1
+pycryptodome==3.15.0
     # via django-searchable-encrypted-fields
 pyparsing==2.4.7
     # via packaging
