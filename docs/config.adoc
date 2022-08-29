@@ -46,7 +46,7 @@ The following environment variables configure authentication or authorization in
 
 It's possible to configure open-city-profile to communicate with a https://www.keycloak.org/[Keycloak] instance. User data gets synchronised into the Keycloak instance. The Keycloak instance can simultaneously act as an authentication server but it doesn't have to. All the following settings are needed — if any are missing, then the communication with Keycloak feature is disabled.
 
-- `KEYCLOAK_BASE_URL`: The base URL of the Keycloak server, without any path parts.
+- `KEYCLOAK_BASE_URL`: The base URL of the Keycloak server, including any configured context path.
 - `KEYCLOAK_REALM`: The name of the https://www.keycloak.org/docs/latest/server_admin/#the-master-realm[Keycloak realm] to use.
 - `KEYCLOAK_CLIENT_ID`: Authentication to the Keycloak instance happens https://www.keycloak.org/docs/latest/server_development/#authenticate-with-a-service-account[using a service account]. This is the client id.
 - `KEYCLOAK_CLIENT_SECRET`: ...and this is the client secret.

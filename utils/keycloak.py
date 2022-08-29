@@ -16,7 +16,7 @@ class KeycloakAdminClient:
 
     @cached_property
     def _well_known(self):
-        well_known_url = f"{self._server_url}/auth/realms/{self._realm_name}/.well-known/openid-configuration"
+        well_known_url = f"{self._server_url}/realms/{self._realm_name}/.well-known/openid-configuration"
 
         result = self._session.get(well_known_url)
         result.raise_for_status()
@@ -43,9 +43,7 @@ class KeycloakAdminClient:
         return self._auth
 
     def _single_user_url(self, user_id):
-        return (
-            f"{self._server_url}/auth/admin/realms/{self._realm_name}/users/{user_id}"
-        )
+        return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}"
 
     def _handle_request_with_auth(self, requester):
         response = requester(self._get_auth())

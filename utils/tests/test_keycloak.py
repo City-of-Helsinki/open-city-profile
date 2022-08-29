@@ -41,7 +41,7 @@ def keycloak_client():
 
 def setup_well_known(status_code=200):
     return req_mock.get(
-        f"{server_url}/auth/realms/{realm_name}/.well-known/openid-configuration",
+        f"{server_url}/realms/{realm_name}/.well-known/openid-configuration",
         status_code=status_code,
         json={"token_endpoint": token_endpoint_url},
     )
@@ -73,7 +73,7 @@ def setup_client_credentials(response_access_tokens=None, status_code=200):
 
 def setup_user_response(user_id, user_data, token=access_token, status_code=200):
     req_mock.get(
-        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}",
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}",
         request_headers={"Authorization": f"Bearer {token}"},
         json=user_data,
         status_code=status_code,
@@ -87,7 +87,7 @@ def setup_update_user_response(
         return request.json() == update_data
 
     return req_mock.put(
-        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}",
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}",
         request_headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -99,7 +99,7 @@ def setup_update_user_response(
 
 def setup_delete_user_response(user_id, token=access_token, status_code=200):
     return req_mock.delete(
-        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}",
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}",
         request_headers={"Authorization": f"Bearer {token}"},
         status_code=status_code,
     )
@@ -107,7 +107,7 @@ def setup_delete_user_response(user_id, token=access_token, status_code=200):
 
 def setup_send_verify_email_response(user_id, token=access_token, status_code=200):
     return req_mock.put(
-        f"{server_url}/auth/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
         request_headers={"Authorization": f"Bearer {token}"},
         status_code=status_code,
     )
