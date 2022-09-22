@@ -126,17 +126,18 @@ def delete_connected_service_data(profile, authorization_code):
         _delete_service_connections_for_profile(profile, api_tokens, dry_run=True)
         _delete_service_connections_for_profile(profile, api_tokens, dry_run=False)
 
-    if _keycloak_admin_client and profile.user:
-        user_id = profile.user.uuid
 
-        try:
-            _keycloak_admin_client.delete_user(user_id)
-        except Exception as err:
-            if (
-                not isinstance(err, requests.HTTPError)
-                or err.response.status_code != 404
-            ):
-                raise ConnectedServiceDeletionFailedError("User deletion unsuccesful.")
+def delete_profile_from_keycloak(profile):
+    if not _keycloak_admin_client or not profile.user:
+        return
+
+    user_id = profile.user.uuid
+
+    try:
+        _keycloak_admin_client.delete_user(user_id)
+    except Exception as err:
+        if not isinstance(err, requests.HTTPError) or err.response.status_code != 404:
+            raise ConnectedServiceDeletionFailedError("User deletion unsuccessful.")
 
 
 def send_profile_changes_to_keycloak(instance):

@@ -48,6 +48,7 @@ from utils.validation import model_field_validation
 
 from .connected_services import (
     delete_connected_service_data,
+    delete_profile_from_keycloak,
     download_connected_service_data,
 )
 from .enums import AddressType, EmailType, PhoneType
@@ -1391,6 +1392,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 
         delete_connected_service_data(profile, input["authorization_code"])
 
+        delete_profile_from_keycloak(profile)
         profile.delete()
         info.context.user.delete()
         return DeleteMyProfileMutation()
