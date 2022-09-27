@@ -1372,7 +1372,7 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         authorization_code = graphene.String(
             required=True,
             description=(
-                "OAuth/OIDC authoziation code. When obtaining the code, it is required to use "
+                "OAuth/OIDC authorization code. When obtaining the code, it is required to use "
                 "service and operation specific GDPR API scopes."
             ),
         )
@@ -1446,7 +1446,7 @@ class Query(graphene.ObjectType):
         authorization_code=graphene.String(
             required=True,
             description=(
-                "OAuth/OIDC authoziation code. When obtaining the code, it is required to use "
+                "OAuth/OIDC authorization code. When obtaining the code, it is required to use "
                 "service and operation specific GDPR API scopes."
             ),
         ),
@@ -1588,7 +1588,7 @@ class Mutation(graphene.ObjectType):
             "Requires elevated privileges.\n\n"
             "Possible error codes:\n\n"
             "* `PERMISSION_DENIED_ERROR`: "
-            "The current user doesn't have the reguired permissions to perform this action.\n"
+            "The current user doesn't have the required permissions to perform this action.\n"
             "* `VALIDATION_ERROR`: "
             "The given input doesn't pass validation.",
             deprecation_reason="Renamed to createOrUpdateUserProfile",
@@ -1600,7 +1600,7 @@ class Mutation(graphene.ObjectType):
             "Requires elevated privileges.\n\n"
             "Possible error codes:\n\n"
             "* `PERMISSION_DENIED_ERROR`: "
-            "The current user doesn't have the reguired permissions to perform this action.\n"
+            "The current user doesn't have the required permissions to perform this action.\n"
             "* `VALIDATION_ERROR`: "
             "The given input doesn't pass validation."
         )
