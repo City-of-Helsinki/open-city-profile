@@ -314,6 +314,48 @@ def test_user_can_delete_his_profile(
         assert Profile.objects.filter(pk=profile.pk).exists()
 
 
+@pytest.mark.parametrize("should_fail", [False, True])
+def test_user_can_dry_run_profile_deletion(
+    user_gql_client, service_1, service_2, mocker, should_fail
+):
+    query = """
+        mutation {
+            deleteMyProfile(input: {authorizationCode: "code123", dryRun: true}) {
+                clientMutationId
+            }
+        }
+    """
+
+    def mock_delete_gdpr_data(self, api_token, dry_run=False):
+        if should_fail:
+            raise requests.HTTPError()
+
+    mocked_gdpr_delete = mocker.patch.object(
+        ServiceConnection,
+        "delete_gdpr_data",
+        autospec=True,
+        side_effect=mock_delete_gdpr_data,
+    )
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+    ServiceConnectionFactory(profile=profile, service=service_2)
+
+    executed = user_gql_client.execute(query)
+
+    assert mocked_gdpr_delete.call_count == 2
+    assert all([c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls])
+    assert Profile.objects.filter(pk=profile.pk).exists()
+    assert ServiceConnection.objects.count() == 2
+
+    if should_fail:
+        assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
+    else:
+        assert "errors" not in executed
+
+
 @pytest.mark.parametrize("kc_delete_user_response_code", [204, 403, 404])
 def test_user_deletion_from_keycloak(
     user_gql_client, mocker, kc_delete_user_response_code, keycloak_setup

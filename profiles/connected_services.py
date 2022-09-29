@@ -118,13 +118,14 @@ def _delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
         )
 
 
-def delete_connected_service_data(profile, authorization_code):
+def delete_connected_service_data(profile, authorization_code, dry_run=False):
     if profile.effective_service_connections_qs().exists():
         tte = TunnistamoTokenExchange()
         api_tokens = tte.fetch_api_tokens(authorization_code)
 
         _delete_service_connections_for_profile(profile, api_tokens, dry_run=True)
-        _delete_service_connections_for_profile(profile, api_tokens, dry_run=False)
+        if not dry_run:
+            _delete_service_connections_for_profile(profile, api_tokens, dry_run=False)
 
 
 def delete_profile_from_keycloak(profile):

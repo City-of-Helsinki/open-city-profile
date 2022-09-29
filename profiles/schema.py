@@ -1376,6 +1376,10 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
                 "service and operation specific GDPR API scopes."
             ),
         )
+        dry_run = graphene.Boolean(
+            required=False,
+            description="Can be used to see if the profile can be removed. Default is False.",
+        )
 
     @classmethod
     @login_and_service_required
@@ -1390,11 +1394,17 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
-        delete_connected_service_data(profile, input["authorization_code"])
+        dry_run = input.get("dry_run", False)
 
-        delete_profile_from_keycloak(profile)
-        profile.delete()
-        info.context.user.delete()
+        delete_connected_service_data(
+            profile, input["authorization_code"], dry_run=dry_run
+        )
+
+        if not dry_run:
+            delete_profile_from_keycloak(profile)
+            profile.delete()
+            info.context.user.delete()
+
         return DeleteMyProfileMutation()
 
 

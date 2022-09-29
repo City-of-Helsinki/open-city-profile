@@ -177,6 +177,7 @@ scalar DateTime
 
 input DeleteMyProfileMutationInput {
   authorizationCode: String!
+  dryRun: Boolean
   clientMutationId: String
 }
 
