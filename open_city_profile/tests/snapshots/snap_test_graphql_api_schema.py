@@ -185,6 +185,17 @@ type DeleteMyProfileMutationPayload {
   clientMutationId: String
 }
 
+input DeleteMyServiceDataMutationInput {
+  authorizationCode: String!
+  serviceName: String!
+  dryRun: Boolean
+  clientMutationId: String
+}
+
+type DeleteMyServiceDataMutationPayload {
+  clientMutationId: String
+}
+
 input EmailInput {
   email: String!
   verified: Boolean
@@ -232,6 +243,7 @@ type Mutation {
   updateMyProfile(input: UpdateMyProfileMutationInput!): UpdateMyProfileMutationPayload
   updateProfile(input: UpdateProfileMutationInput!): UpdateProfileMutationPayload
   deleteMyProfile(input: DeleteMyProfileMutationInput!): DeleteMyProfileMutationPayload
+  deleteMyServiceData(input: DeleteMyServiceDataMutationInput!): DeleteMyServiceDataMutationPayload
   claimProfile(input: ClaimProfileMutationInput!): ClaimProfileMutationPayload
   createMyProfileTemporaryReadAccessToken(input: CreateMyProfileTemporaryReadAccessTokenMutationInput!): CreateMyProfileTemporaryReadAccessTokenMutationPayload
 }
