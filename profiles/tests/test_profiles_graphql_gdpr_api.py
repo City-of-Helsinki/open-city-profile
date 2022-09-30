@@ -9,6 +9,7 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     MISSING_GDPR_API_TOKEN_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
+    SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
@@ -33,6 +34,19 @@ DOWNLOAD_MY_PROFILE_MUTATION = """
 DELETE_MY_PROFILE_MUTATION = """
     mutation {
         deleteMyProfile(input: {authorizationCode: "code123"}) {
+            clientMutationId
+        }
+    }
+"""
+DELETE_MY_SERVICE_DATA_MUTATION = """
+    mutation deleteMyServiceMutation($serviceName: String!, $dryRun: Boolean) {
+        deleteMyServiceData(
+            input: {
+                authorizationCode: "code123",
+                serviceName: $serviceName,
+                dryRun: $dryRun
+            }
+        ) {
             clientMutationId
         }
     }
@@ -566,3 +580,91 @@ def test_api_tokens_missing(user_gql_client, service_1, query_or_delete, mocker)
         executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     assert_match_error_code(executed, MISSING_GDPR_API_TOKEN_ERROR)
+
+
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_user_can_delete_data_from_a_service(
+    user_gql_client, service_1, service_2, mocker, dry_run
+):
+    def mock_delete_gdpr_data(self, api_token, dry_run=False):
+        return True
+
+    mocked_gdpr_delete = mocker.patch.object(
+        ServiceConnection,
+        "delete_gdpr_data",
+        autospec=True,
+        side_effect=mock_delete_gdpr_data,
+    )
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+    ServiceConnectionFactory(profile=profile, service=service_2)
+
+    variables = {
+        "serviceName": service_1.name,
+        "dryRun": dry_run,
+    }
+    executed = user_gql_client.execute(
+        DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
+    )
+
+    assert "errors" not in executed
+
+    if dry_run:
+        assert mocked_gdpr_delete.call_count == 1
+        assert [c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls] == [True]
+        assert ServiceConnection.objects.count() == 2
+    else:
+        assert mocked_gdpr_delete.call_count == 2
+        assert [c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls] == [True, False]
+        assert ServiceConnection.objects.count() == 1
+        assert ServiceConnection.objects.first().service == service_2
+
+
+def test_error_when_trying_to_delete_data_from_a_service_the_user_is_not_connected_to(
+    user_gql_client, service_1, service_2
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+
+    variables = {
+        "serviceName": service_2.name,
+        "dryRun": False,
+    }
+    executed = user_gql_client.execute(
+        DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
+    )
+
+    assert_match_error_code(executed, SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR)
+
+
+def test_error_when_trying_to_delete_data_from_an_unknown_service(
+    user_gql_client, service_1
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+
+    variables = {
+        "serviceName": "unknown_service",
+        "dryRun": False,
+    }
+    executed = user_gql_client.execute(
+        DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
+    )
+
+    assert_match_error_code(executed, SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR)
+
+
+def test_error_when_using_service_delete_with_non_existent_profile(user_gql_client):
+    variables = {
+        "serviceName": "n/a",
+    }
+    executed = user_gql_client.execute(
+        DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
+    )
+
+    expected_data = {"deleteMyServiceData": None}
+    assert executed["data"] == expected_data
+    assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)

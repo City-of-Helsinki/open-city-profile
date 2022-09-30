@@ -79,10 +79,12 @@ def download_connected_service_data(profile, authorization_code):
     return external_data
 
 
-def _delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
+def _delete_service_connection_and_service_data(
+    service_connections, api_tokens, dry_run=False
+):
     failed_services = []
 
-    for service_connection in profile.effective_service_connections_qs().all():
+    for service_connection in service_connections:
         service = service_connection.service
 
         if not service.gdpr_delete_scope:
@@ -118,14 +120,25 @@ def _delete_service_connections_for_profile(profile, api_tokens, dry_run=False):
         )
 
 
-def delete_connected_service_data(profile, authorization_code, dry_run=False):
-    if profile.effective_service_connections_qs().exists():
-        tte = TunnistamoTokenExchange()
-        api_tokens = tte.fetch_api_tokens(authorization_code)
+def delete_connected_service_data(
+    profile, authorization_code, service_connections=None, dry_run=False
+):
+    if service_connections is None:
+        service_connections = profile.effective_service_connections_qs().all()
 
-        _delete_service_connections_for_profile(profile, api_tokens, dry_run=True)
-        if not dry_run:
-            _delete_service_connections_for_profile(profile, api_tokens, dry_run=False)
+    if not service_connections:
+        return
+
+    tte = TunnistamoTokenExchange()
+    api_tokens = tte.fetch_api_tokens(authorization_code)
+
+    _delete_service_connection_and_service_data(
+        service_connections, api_tokens, dry_run=True
+    )
+    if not dry_run:
+        _delete_service_connection_and_service_data(
+            service_connections, api_tokens, dry_run=False
+        )
 
 
 def delete_profile_from_keycloak(profile):

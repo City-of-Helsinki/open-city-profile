@@ -39,6 +39,7 @@ from open_city_profile.exceptions import (
     InvalidEmailFormatError,
     ProfileDoesNotExistError,
     ProfileMustHavePrimaryEmailError,
+    ServiceConnectionNotFound,
     TokenExpiredError,
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
@@ -1408,6 +1409,54 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         return DeleteMyProfileMutation()
 
 
+class DeleteMyServiceDataMutation(relay.ClientIDMutation):
+    class Input:
+        authorization_code = graphene.String(
+            required=True,
+            description=(
+                "OAuth/OIDC authorization code. When obtaining the code, it is required to use "
+                "service and operation specific GDPR API scopes."
+            ),
+        )
+        service_name = graphene.String(
+            required=True,
+            description=("The name of the service the data should be removed from"),
+        )
+        dry_run = graphene.Boolean(
+            required=False,
+            description="Can be used to see if the date can be removed from the service. Default is False.",
+        )
+
+    @classmethod
+    @login_and_service_required
+    def mutate_and_get_payload(cls, root, info, **input):
+        try:
+            profile = Profile.objects.get(user=info.context.user)
+        except Profile.DoesNotExist:
+            raise ProfileDoesNotExistError("Profile does not exist")
+
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
+
+        service_connections = profile.effective_service_connections_qs().filter(
+            service__name=input["service_name"]
+        )
+
+        if not service_connections:
+            raise ServiceConnectionNotFound("Service connection not found")
+
+        delete_connected_service_data(
+            profile,
+            input["authorization_code"],
+            service_connections=service_connections,
+            dry_run=input.get("dry_run", False),
+        )
+
+        return DeleteMyServiceDataMutation()
+
+
 class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
     temporary_read_access_token = graphene.Field(TemporaryReadAccessTokenNode)
 
@@ -1644,6 +1693,18 @@ class Mutation(graphene.ObjectType):
         "* `CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR`: The profile deletion is disallowed by one or more "
         "connected services.\n"
         "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for one or more connected services."
+    )
+    # TODO: Add the complete list of error codes
+    delete_my_service_data = DeleteMyServiceDataMutation.Field(
+        description="Deletes the data of the profile which is linked to the currently authenticated user from one "
+        "connected service.\n\n"
+        "Requires authentication.\n\nPossible error codes:\n\n"
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
+        "the currently authenticated user.\n"
+        "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing the service.\n"
+        "* `SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR`: The user is not connected to the service\n"
+        "* `CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR`: The profile deletion is disallowed by the service\n"
+        "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for the service."
     )
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
