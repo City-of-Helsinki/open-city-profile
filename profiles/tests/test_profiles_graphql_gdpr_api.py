@@ -416,7 +416,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
 
     assert ServiceConnection.objects.count() == 1
     assert ServiceConnection.objects.first().service == service_2
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_FAILED_ERROR)
 
 
@@ -444,18 +444,15 @@ def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": None}
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
 
 
 def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
-    profile = ProfileFactory(user=user_gql_client.user)
-    profile.delete()
-
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     expected_data = {"deleteMyProfile": None}
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
     assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)
 
 
@@ -490,7 +487,7 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     assert mocked_gdpr_delete.call_count == 4
 
     expected_data = {"deleteMyProfile": {"clientMutationId": None}}
-    assert dict(executed["data"]) == expected_data
+    assert executed["data"] == expected_data
     with pytest.raises(Profile.DoesNotExist):
         profile.refresh_from_db()
     with pytest.raises(User.DoesNotExist):
