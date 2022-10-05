@@ -39,7 +39,7 @@ from open_city_profile.exceptions import (
     InvalidEmailFormatError,
     ProfileDoesNotExistError,
     ProfileMustHavePrimaryEmailError,
-    ServiceConnectionNotFound,
+    ServiceConnectionDoesNotExist,
     ServiceDoesNotExist,
     TokenExpiredError,
 )
@@ -1446,7 +1446,7 @@ class DeleteMyServiceDataMutation(relay.ClientIDMutation):
         )
 
         if not service_connections:
-            raise ServiceConnectionNotFound("Service connection not found")
+            raise ServiceConnectionDoesNotExist("Service connection does not exist")
 
         delete_connected_service_data(
             profile,
@@ -1665,7 +1665,7 @@ class Query(graphene.ObjectType):
         except Service.DoesNotExist:
             raise ServiceDoesNotExist("Service not found")
         except ServiceConnection.DoesNotExist:
-            raise ServiceConnectionNotFound("Service connection not found")
+            raise ServiceConnectionDoesNotExist("Service connection does not exist")
 
 
 class Mutation(graphene.ObjectType):

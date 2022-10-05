@@ -47,8 +47,8 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
 
 
-class ServiceConnectionNotFound(ProfileGraphQLError):
-    """Service connection not found"""
+class ServiceConnectionDoesNotExist(ProfileGraphQLError):
+    """Service connection does not exist"""
 
 
 class ServiceNotIdentifiedError(ProfileGraphQLError):
