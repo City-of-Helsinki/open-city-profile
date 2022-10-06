@@ -2,6 +2,7 @@ import datetime
 import uuid
 
 from graphql_relay import to_global_id
+from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_match_error_code
 
@@ -36,6 +37,8 @@ def assert_datetimes_equal(datetime_str, datetime_instance):
 def test_existing_service_connection_is_returned(
     profile, service_client_id, service_connection_factory, user_gql_client
 ):
+    assign_perm("services.view_serviceconnection", user_gql_client.user)
+
     service = service_client_id.service
     service_connection = service_connection_factory(profile=profile, service=service)
 
@@ -76,6 +79,8 @@ def test_existing_service_connection_is_returned(
 
 class TestErrorResults:
     def do_error_test(self, user_id, service_client_id, expected_error, gql_client):
+        assign_perm("services.view_serviceconnection", gql_client.user)
+
         variables = {
             "userId": str(user_id),
             "serviceClientId": service_client_id,
@@ -119,3 +124,20 @@ class TestErrorResults:
             "SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR",
             user_gql_client,
         )
+
+
+def test_requires_view_service_connection_permission(
+    profile, service_client_id, service_connection_factory, user_gql_client
+):
+    service = service_client_id.service
+    service_connection_factory(profile=profile, service=service)
+
+    variables = {
+        "userId": str(profile.user.uuid),
+        "serviceClientId": service_client_id.client_id,
+    }
+
+    executed = user_gql_client.execute(QUERY, variables=variables)
+
+    assert executed["data"] == {"serviceConnectionWithUserId": None}
+    assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")

@@ -1564,6 +1564,7 @@ class Query(graphene.ObjectType):
             description="Any client id of the service to which the service connection connects.",
         ),
         description="Get a service connection by using a user id of the profile and a client id of the service.\n\n"
+        "Requires elevated privileges.\n\n"
         "Possible error codes:\n\n"
         "* `PROFILE_DOES_NOT_EXIST_ERROR`: No profile found for the given user id argument.\n"
         "* `SERVICE_DOES_NOT_EXIST_ERROR`: No service found for the given client id argument.\n"
@@ -1649,6 +1650,7 @@ class Query(graphene.ObjectType):
 
         return token.profile
 
+    @permission_required("services.view_serviceconnection")
     def resolve_service_connection_with_user_id(self, info, **kwargs):
         try:
             profile = Profile.objects.get(user__uuid=kwargs["user_id"])
