@@ -1550,6 +1550,21 @@ class Query(graphene.ObjectType):
         "* `TOKEN_EXPIRED_ERROR`",
     )
 
+    service_connection_with_user_id = graphene.Field(
+        ServiceConnectionType,
+        user_id=graphene.Argument(
+            graphene.UUID,
+            required=True,
+            description="The **user id** of the user whose profile is part of the service connection.",
+        ),
+        service_client_id=graphene.Argument(
+            graphene.String,
+            required=True,
+            description="Any client id of the service to which the service connection connects.",
+        ),
+        description="Get a service connection by using a user id of the profile and a client id of the service.",
+    )
+
     @staff_required(required_permission="view")
     def resolve_profile(self, info, **kwargs):
         service = info.context.service
@@ -1628,6 +1643,12 @@ class Query(graphene.ObjectType):
             raise TokenExpiredError("The access token has expired")
 
         return token.profile
+
+    def resolve_service_connection_with_user_id(self, info, **kwargs):
+        return ServiceConnection.objects.get(
+            profile__user__uuid=kwargs["user_id"],
+            service__client_ids__client_id=kwargs["service_client_id"],
+        )
 
 
 class Mutation(graphene.ObjectType):
