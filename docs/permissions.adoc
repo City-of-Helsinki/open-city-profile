@@ -13,7 +13,7 @@ Since a GraphQL mutation for example can modify half a dozen different models, u
 [%hardbreaks]
 *In admin UI:* profiles | verified personal information | Can manage verified personal information
 *In code:* `profiles.manage_verified_personal_information`
-*Purpose:* Needed to access the `createOrUpdateProfileWithVerifiedPersonalInformation` mutation.
+*Purpose:* Needed to access the `createOrUpdateUserProfile` mutation.
 
 [%hardbreaks]
 *In admin UI:* services | service | Can view verified personal information
