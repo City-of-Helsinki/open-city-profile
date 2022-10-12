@@ -2,6 +2,7 @@ import graphene
 from django.db import transaction
 from django.db.utils import IntegrityError
 from graphene import relay
+from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 
 from open_city_profile.decorators import login_and_service_required
@@ -25,9 +26,23 @@ class AllowedDataFieldNode(DjangoParlerObjectType):
         interfaces = (relay.Node,)
 
 
+class ServiceConnectionType(DjangoObjectType):
+    class Meta:
+        model = ServiceConnection
+        fields = ("service", "created_at", "enabled")
+        filter_fields = []
+        interfaces = (relay.Node,)
+
+
 class ServiceNode(DjangoParlerObjectType):
     type = AllowedServiceType(
         source="service_type", deprecation_reason="See 'name' field for a replacement.",
+    )
+    serviceconnection_set = DjangoFilterConnectionField(
+        ServiceConnectionType,
+        required=True,
+        deprecation_reason="Always returns an empty result. "
+        "Getting connections for a service is not supported and there is no replacement.",
     )
 
     class Meta:
@@ -42,18 +57,12 @@ class ServiceNode(DjangoParlerObjectType):
             "gdpr_url",
             "gdpr_query_scope",
             "gdpr_delete_scope",
-            "serviceconnection_set",
         )
         filter_fields = []
         interfaces = (relay.Node,)
 
-
-class ServiceConnectionType(DjangoObjectType):
-    class Meta:
-        model = ServiceConnection
-        fields = ("service", "created_at", "enabled")
-        filter_fields = []
-        interfaces = (relay.Node,)
+    def resolve_serviceconnection_set(self, info, **kwargs):
+        return ServiceConnection.objects.none()
 
 
 class ServiceInput(graphene.InputObjectType):

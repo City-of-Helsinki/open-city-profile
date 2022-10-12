@@ -90,6 +90,49 @@ def test_normal_user_can_query_own_services(
     assert executed["data"] == expected_data
 
 
+def test_service_connections_of_service_always_returns_an_empty_result(
+    user_gql_client, service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    for p in ProfileFactory.create_batch(3):
+        ServiceConnectionFactory(profile=p, service=service)
+
+    query = """
+        {
+            myProfile {
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                serviceconnectionSet {
+                                    edges {
+                                        node {
+                                            id
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    expected_data = {
+        "myProfile": {
+            "serviceConnections": {
+                "edges": [
+                    {"node": {"service": {"serviceconnectionSet": {"edges": []}}}}
+                ]
+            }
+        }
+    }
+    executed = user_gql_client.execute(query)
+    assert executed["data"] == expected_data
+
+
 @pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_add_service(user_gql_client, service):
     ProfileFactory(user=user_gql_client.user)
