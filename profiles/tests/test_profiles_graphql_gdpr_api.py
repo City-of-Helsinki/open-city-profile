@@ -330,7 +330,7 @@ def test_user_can_delete_his_profile(
 
 @pytest.mark.parametrize("should_fail", [False, True])
 def test_user_can_dry_run_profile_deletion(
-    user_gql_client, service_1, service_2, mocker, should_fail
+    user_gql_client, service_1, service_2, mocker, requests_mock, should_fail
 ):
     query = """
         mutation {
@@ -339,17 +339,6 @@ def test_user_can_dry_run_profile_deletion(
             }
         }
     """
-
-    def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        if should_fail:
-            raise requests.HTTPError()
-
-    mocked_gdpr_delete = mocker.patch.object(
-        ServiceConnection,
-        "delete_gdpr_data",
-        autospec=True,
-        side_effect=mock_delete_gdpr_data,
-    )
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
@@ -357,10 +346,23 @@ def test_user_can_dry_run_profile_deletion(
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
 
+    def get_response(request, context):
+        if should_fail:
+            context.status_code = 403
+
+    service1_mocker = requests_mock.delete(
+        service_1.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+    )
+    service2_mocker = requests_mock.delete(
+        service_2.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+    )
+
     executed = user_gql_client.execute(query)
 
-    assert mocked_gdpr_delete.call_count == 2
-    assert all([c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls])
+    assert service1_mocker.call_count == 1
+    assert service2_mocker.call_count == 1
+    assert "dry_run=True" in service1_mocker.request_history[0].text
+    assert "dry_run=True" in service2_mocker.request_history[0].text
     assert Profile.objects.filter(pk=profile.pk).exists()
     assert ServiceConnection.objects.count() == 2
 
@@ -400,29 +402,27 @@ def test_user_deletion_from_keycloak(
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(
-    user_gql_client, service_1, service_2, mocker
+    user_gql_client, service_1, service_2, mocker, requests_mock
 ):
     """Test an edge case where dry runs passes for all connected services, but the
     proper service connection delete fails for a single connected service. All other
     connected services should still get deleted.
     """
-
-    def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        if self.service.name == service_2.name and not dry_run:
-            raise requests.HTTPError("Such big fail! :(")
-
-    mocker.patch.object(
-        ServiceConnection,
-        "delete_gdpr_data",
-        autospec=True,
-        side_effect=mock_delete_gdpr_data,
-    )
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
+
+    def get_response(request, context):
+        if not request.body or "dry_run" not in request.body:
+            context.status_code = 403
+
+    requests_mock.delete(service_1.get_gdpr_url_for_profile(profile), status_code=204)
+    requests_mock.delete(
+        service_2.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+    )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
@@ -471,25 +471,33 @@ def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
 
 
 def test_user_can_delete_his_profile_using_correct_api_tokens(
-    user_gql_client, service_1, service_2, mocker
+    user_gql_client, service_1, service_2, mocker, requests_mock
 ):
-    def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        if (self.service.name == service_1.name and api_token == API_TOKEN_1) or (
-            self.service.name == service_2.name and api_token == API_TOKEN_2
-        ):
-            return True
-
-        raise Exception("Wrong token used!")
-
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
-    mocked_gdpr_delete = mocker.patch.object(
-        ServiceConnection,
-        "delete_gdpr_data",
-        autospec=True,
-        side_effect=mock_delete_gdpr_data,
-    )
+
+    service_1_gdpr_url = service_1.get_gdpr_url_for_profile(profile)
+    service_2_gdpr_url = service_2.get_gdpr_url_for_profile(profile)
+
+    def get_response(request, context):
+        if (
+            request.url == service_1_gdpr_url
+            and request.headers["authorization"] == f"Bearer {API_TOKEN_1}"
+        ):
+            return
+
+        if (
+            request.url == service_2_gdpr_url
+            and request.headers["authorization"] == f"Bearer {API_TOKEN_2}"
+        ):
+            return
+
+        context.status_code = 401
+
+    requests_mock.delete(service_1_gdpr_url, status_code=204, text=get_response)
+    requests_mock.delete(service_2_gdpr_url, status_code=204, text=get_response)
+
     mocked_token_exchange = mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
@@ -498,7 +506,6 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
 
     mocked_token_exchange.assert_called_once()
     assert mocked_token_exchange.call_args == ((AUTHORIZATION_CODE,),)
-    assert mocked_gdpr_delete.call_count == 4
 
     expected_data = {"deleteMyProfile": {"clientMutationId": None}}
     assert executed["data"] == expected_data
@@ -584,17 +591,8 @@ def test_api_tokens_missing(user_gql_client, service_1, query_or_delete, mocker)
 
 @pytest.mark.parametrize("dry_run", [True, False])
 def test_user_can_delete_data_from_a_service(
-    user_gql_client, service_1, service_2, mocker, dry_run
+    user_gql_client, service_1, service_2, mocker, requests_mock, dry_run
 ):
-    def mock_delete_gdpr_data(self, api_token, dry_run=False):
-        return True
-
-    mocked_gdpr_delete = mocker.patch.object(
-        ServiceConnection,
-        "delete_gdpr_data",
-        autospec=True,
-        side_effect=mock_delete_gdpr_data,
-    )
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
@@ -602,6 +600,12 @@ def test_user_can_delete_data_from_a_service(
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
 
+    service_1_mocker = requests_mock.delete(
+        service_1.get_gdpr_url_for_profile(profile), status_code=204
+    )
+    service_2_mocker = requests_mock.delete(
+        service_2.get_gdpr_url_for_profile(profile), status_code=204
+    )
     variables = {
         "serviceName": service_1.name,
         "dryRun": dry_run,
@@ -613,12 +617,15 @@ def test_user_can_delete_data_from_a_service(
     assert "errors" not in executed
 
     if dry_run:
-        assert mocked_gdpr_delete.call_count == 1
-        assert [c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls] == [True]
+        assert service_1_mocker.call_count == 1
+        assert service_2_mocker.call_count == 0
+        assert "dry_run=True" in service_1_mocker.request_history[0].text
         assert ServiceConnection.objects.count() == 2
     else:
-        assert mocked_gdpr_delete.call_count == 2
-        assert [c[2]["dry_run"] for c in mocked_gdpr_delete.mock_calls] == [True, False]
+        assert service_1_mocker.call_count == 2
+        assert service_2_mocker.call_count == 0
+        assert "dry_run=True" in service_1_mocker.request_history[0].text
+        assert not service_1_mocker.request_history[1].text
         assert ServiceConnection.objects.count() == 1
         assert ServiceConnection.objects.first().service == service_2
 
