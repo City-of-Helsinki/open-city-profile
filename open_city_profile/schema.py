@@ -6,7 +6,7 @@ import services.schema
 
 
 class Query(
-    profiles.schema.Query, graphene.ObjectType,
+    profiles.schema.Query, services.schema.Query, graphene.ObjectType,
 ):
     pass
 

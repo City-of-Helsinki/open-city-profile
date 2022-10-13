@@ -100,6 +100,13 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
         return AddServiceConnectionMutation(service_connection=service_connection)
 
 
+class Query(graphene.ObjectType):
+    services = DjangoFilterConnectionField(
+        ServiceNode,
+        description="Search for services. The results are paged using Relay.",
+    )
+
+
 class Mutation(graphene.ObjectType):
     add_service_connection = AddServiceConnectionMutation.Field(
         description="Connect the currently authenticated user's profile to the given service.\n\nRequires "
