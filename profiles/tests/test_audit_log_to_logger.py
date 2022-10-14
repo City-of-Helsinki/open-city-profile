@@ -75,7 +75,7 @@ def assert_common_fields(
 ):
     now_dt = datetime.now(tz=timezone.utc)
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
-    leeway_ms = 70
+    leeway_ms = 200
 
     if isinstance(log_message, list):
         assert len(log_message) == 1
