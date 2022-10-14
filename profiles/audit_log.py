@@ -83,10 +83,13 @@ def _get_profile_and_loggables(instance):
 
 
 def _resolve_role(current_user, profile_user_uuid):
-    if profile_user_uuid and current_user and profile_user_uuid == current_user.uuid:
+    if profile_user_uuid and profile_user_uuid == getattr(current_user, "uuid", None):
         return "OWNER"
     elif current_user is not None:
-        return "ADMIN"
+        if current_user.is_anonymous:
+            return "ANONYMOUS"
+        else:
+            return "ADMIN"
     else:
         return "SYSTEM"
 
@@ -129,7 +132,7 @@ def _create_log_entries(current_user, service, client_id, ip_address, audit_logg
     service_name = service.name if service else ""
     client_id = client_id if client_id else ""
     ip_address = ip_address if ip_address else ""
-    actor_user_id = current_user.uuid if current_user else None
+    actor_user_id = getattr(current_user, "uuid", None)
 
     for profile_id, data in audit_loggables.items():
         target_user_uuid = data.get("user_uuid")
