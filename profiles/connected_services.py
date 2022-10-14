@@ -86,20 +86,8 @@ def _delete_service_connection_and_service_data(
 
     for service_connection in service_connections:
         service = service_connection.service
-
-        if not service.gdpr_delete_scope:
-            raise ConnectedServiceDeletionNotAllowedError(
-                f"Connected services: {service.name}"
-                f"does not have an API for removing data."
-            )
-
         api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
         api_token = api_tokens.get(api_identifier, "")
-
-        if not api_token:
-            raise MissingGDPRApiTokenError(
-                f"Couldn't fetch an API token for service {service.name}."
-            )
 
         try:
             service_connection.delete_gdpr_data(api_token=api_token, dry_run=dry_run)
@@ -120,6 +108,36 @@ def _delete_service_connection_and_service_data(
         )
 
 
+def _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens):
+    failed_services = []
+
+    for service_connection in service_connections:
+        service = service_connection.service
+
+        if not service.gdpr_delete_scope:
+            raise ConnectedServiceDeletionNotAllowedError(
+                f"Connected services: {service.name}"
+                f"does not have an API for removing data."
+            )
+
+        api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
+        api_token = api_tokens.get(api_identifier, "")
+
+        if not api_token:
+            raise MissingGDPRApiTokenError(
+                f"Couldn't fetch an API token for service {service.name}."
+            )
+
+        if not service.get_gdpr_url_for_profile(profile):
+            failed_services.append(service.name)
+
+    if failed_services:
+        failed_services_string = ", ".join(failed_services)
+        raise ConnectedServiceDeletionNotAllowedError(
+            f"Connected services: {failed_services_string} did not allow deleting the profile."
+        )
+
+
 def delete_connected_service_data(
     profile, authorization_code, service_connections=None, dry_run=False
 ):
@@ -131,6 +149,8 @@ def delete_connected_service_data(
 
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
+
+    _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens)
 
     _delete_service_connection_and_service_data(
         service_connections, api_tokens, dry_run=True
