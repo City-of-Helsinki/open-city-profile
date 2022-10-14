@@ -630,6 +630,35 @@ def test_user_can_delete_data_from_a_service(
         assert ServiceConnection.objects.first().service == service_2
 
 
+@pytest.mark.parametrize(
+    "errors_from_service",
+    [None, {"errors": [{"code": "ERROR_CODE", "message": {"en": "Error"}}]}],
+)
+def test_error_is_returned_when_service_returns_errors(
+    user_gql_client, service_1, mocker, requests_mock, errors_from_service
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+
+    service_1_mocker = requests_mock.delete(
+        service_1.get_gdpr_url_for_profile(profile),
+        status_code=403,
+        json=errors_from_service,
+    )
+    executed = user_gql_client.execute(
+        DELETE_MY_SERVICE_DATA_MUTATION, variables={"serviceName": service_1.name}
+    )
+
+    assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
+
+    assert service_1_mocker.call_count == 1
+    assert ServiceConnection.objects.count() == 1
+    assert ServiceConnection.objects.first().service == service_1
+
+
 def test_error_when_trying_to_delete_data_from_a_service_the_user_is_not_connected_to(
     user_gql_client, service_1, service_2
 ):

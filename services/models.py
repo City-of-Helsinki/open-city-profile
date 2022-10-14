@@ -1,5 +1,8 @@
 import urllib.parse
+from dataclasses import dataclass
+from json import JSONDecodeError
 from string import Template
+from typing import List
 
 import requests
 from adminsortable.models import SortableMixin
@@ -8,11 +11,14 @@ from django.db.models import Max, Q
 from enumfields import EnumField
 from parler.models import TranslatableModel, TranslatedFields
 
+from open_city_profile.consts import (
+    SERVICE_GDPR_API_REQUEST_ERROR,
+    SERVICE_GDPR_API_UNKNOWN_ERROR,
+)
 from utils.auth import BearerAuth
 from utils.models import SerializableMixin
 
 from .enums import ServiceType
-from .exceptions import MissingGDPRUrlException
 
 
 def get_next_data_field_order():
@@ -138,6 +144,72 @@ class ServiceClientId(models.Model):
     client_id = models.CharField(max_length=256, null=False, blank=False, unique=True)
 
 
+def _validate_gdpr_api_errors(errors):
+    try:
+        iter(errors)
+    except TypeError:
+        return False
+
+    expected_keys = {"code", "message"}
+    for error in errors:
+        if set(error.keys()) != expected_keys:
+            return False
+        if not error.get("code") or not isinstance(error["code"], str):
+            return False
+        if not error.get("message") or not isinstance(error["message"], dict):
+            return False
+
+        for key, value in error["message"].items():
+            if not key or not isinstance(value, str):
+                return False
+
+    return True
+
+
+@dataclass
+class DeleteGdprDataErrorMessage:
+    lang: str
+    text: str
+
+
+@dataclass
+class DeleteGdprDataError:
+    code: str
+    message: List[DeleteGdprDataErrorMessage]
+
+
+@dataclass
+class DeleteGdprDataResult:
+    service: Service
+    dry_run: bool
+    success: bool
+    errors: List[DeleteGdprDataError]
+
+
+def _convert_gdpr_api_errors(errors) -> List[DeleteGdprDataError]:
+    """Converts errors from the GDPR API to a list of DeleteGdprDataErrors"""
+    converted_errors = []
+    for error in errors:
+        converted_error = DeleteGdprDataError(code=error["code"], message=[])
+        for lang, text in error["message"].items():
+            converted_error.message.append(
+                DeleteGdprDataErrorMessage(lang=lang, text=text)
+            )
+        converted_errors.append(converted_error)
+
+    return converted_errors
+
+
+def _add_error_to_result(result, code, message):
+    result.errors.append(
+        DeleteGdprDataError(
+            code=code, message=[DeleteGdprDataErrorMessage(lang="en", text=message)]
+        )
+    )
+
+    return result
+
+
 class ServiceConnection(SerializableMixin):
     profile = models.ForeignKey(
         "profiles.Profile", on_delete=models.CASCADE, related_name="service_connections"
@@ -176,29 +248,53 @@ class ServiceConnection(SerializableMixin):
                 return {}
         return {}
 
-    def delete_gdpr_data(self, api_token: str, dry_run=False):
+    def delete_gdpr_data(self, api_token: str, dry_run=False) -> DeleteGdprDataResult:
         """Delete service specific GDPR data by profile.
 
         API token needs to be for a user that can access information for the related
         profile on the related GDPR API.
 
         Dry run parameter can be used for asking the service if delete is possible.
-        An exception will be raised by this method if deletion response from the
-        service indicates an error or if GDPR related URLs have not been configured
-        for the related service.
+
+        The errors content from the service is returned if the service provides a JSON
+        response with an "errors" key containing valid error content.
         """
+        result = DeleteGdprDataResult(
+            service=self.service, dry_run=dry_run, success=False, errors=[],
+        )
+
+        url = self.service.get_gdpr_url_for_profile(self.profile)
+
         data = {}
         if dry_run:
             data["dry_run"] = True
 
-        url = self.service.get_gdpr_url_for_profile(self.profile)
-        if url:
+        try:
             response = requests.delete(
                 url, auth=BearerAuth(api_token), timeout=5, data=data
             )
-            response.raise_for_status()
-            return True
+        except requests.RequestException:
+            return _add_error_to_result(
+                result,
+                SERVICE_GDPR_API_REQUEST_ERROR,
+                "Error when making a request to the GDPR URL of the service",
+            )
 
-        raise MissingGDPRUrlException(
-            f"Service {self.service.name} does not define an URL for GDPR removal."
+        if response.status_code == 204:
+            result.success = True
+            return result
+
+        if response.status_code in [403, 500]:
+            try:
+                errors_from_the_service = response.json().get("errors")
+                if _validate_gdpr_api_errors(errors_from_the_service):
+                    result.errors = _convert_gdpr_api_errors(errors_from_the_service)
+                    return result
+            except JSONDecodeError:
+                pass
+
+        return _add_error_to_result(
+            result,
+            SERVICE_GDPR_API_UNKNOWN_ERROR,
+            "Unknown error occurred when trying to remove data from the service",
         )
