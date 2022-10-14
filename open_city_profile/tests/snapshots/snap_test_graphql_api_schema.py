@@ -346,7 +346,7 @@ type ProfileWithVerifiedPersonalInformationOutput implements Node {
 }
 
 type Query {
-  services(before: String, after: String, first: Int, last: Int): ServiceNodeConnection
+  services(before: String, after: String, first: Int, last: Int, clientId: String): ServiceNodeConnection
   profile(id: ID!, serviceType: ServiceType): ProfileNode
   myProfile: ProfileNode
   downloadMyProfile(authorizationCode: String!): JSONString

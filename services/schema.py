@@ -1,6 +1,7 @@
 import graphene
 from django.db import transaction
 from django.db.utils import IntegrityError
+from django_filters import CharFilter, FilterSet
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
@@ -24,6 +25,18 @@ class AllowedDataFieldNode(DjangoParlerObjectType):
     class Meta:
         model = AllowedDataField
         interfaces = (relay.Node,)
+
+
+class ServiceFilter(FilterSet):
+    class Meta:
+        model = Service
+        fields = []
+
+    client_id = CharFilter(
+        field_name="client_ids__client_id",
+        label="Filters a service having this exact client id. "
+        "Because client ids are unique, the result can contain max one service.",
+    )
 
 
 class ServiceConnectionType(DjangoObjectType):
@@ -103,6 +116,7 @@ class AddServiceConnectionMutation(relay.ClientIDMutation):
 class Query(graphene.ObjectType):
     services = DjangoFilterConnectionField(
         ServiceNode,
+        filterset_class=ServiceFilter,
         description="Search for services. The results are paged using Relay.",
     )
 
