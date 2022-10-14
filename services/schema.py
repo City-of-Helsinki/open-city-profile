@@ -51,6 +51,10 @@ class ServiceNode(DjangoParlerObjectType):
     type = AllowedServiceType(
         source="service_type", deprecation_reason="See 'name' field for a replacement.",
     )
+    requires_service_connection = graphene.Boolean(
+        required=True,
+        description="Does this service require a service connection to profile in order to receive the profile's data.",
+    )
     serviceconnection_set = DjangoFilterConnectionField(
         ServiceConnectionType,
         required=True,
@@ -73,6 +77,9 @@ class ServiceNode(DjangoParlerObjectType):
         )
         filter_fields = []
         interfaces = (relay.Node,)
+
+    def resolve_requires_service_connection(self, info, **kwargs):
+        return not self.is_profile_service
 
     def resolve_serviceconnection_set(self, info, **kwargs):
         return ServiceConnection.objects.none()

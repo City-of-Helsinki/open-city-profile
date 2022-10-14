@@ -1,5 +1,7 @@
 from services.models import Service
 
+from .factories import ServiceFactory
+
 QUERY = """
     query Services($clientId: String = "") {
         services(clientId: $clientId) {
@@ -48,3 +50,36 @@ def test_can_filter_according_to_exact_client_id_of_service(
 
     assert "errors" not in executed
     assert executed["data"] == {"services": {"edges": []}}
+
+
+def test_services_require_service_connections_except_profile_service(
+    anon_user_gql_client,
+):
+    profile_service = ServiceFactory(name="profile-service", is_profile_service=True)
+    ServiceFactory(name="regular-service", is_profile_service=False)
+
+    query = """
+        query {
+            services {
+                edges {
+                    node {
+                        name
+                        requiresServiceConnection
+                    }
+                }
+            }
+        }
+    """
+
+    # Get services via the model so that they are in the default order
+    services = Service.objects.all()
+
+    expected_service_edges = [
+        {"node": {"name": s.name, "requiresServiceConnection": s != profile_service}}
+        for s in services
+    ]
+
+    executed = anon_user_gql_client.execute(query, service=None)
+
+    assert "errors" not in executed
+    assert executed["data"] == {"services": {"edges": expected_service_edges}}

@@ -418,6 +418,7 @@ type ServiceNode implements Node {
   gdprQueryScope: String!
   gdprDeleteScope: String!
   type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
+  requiresServiceConnection: Boolean!
   serviceconnectionSet(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection! @deprecated(reason: "Always returns an empty result. Getting connections for a service is not supported and there is no replacement.")
   title(language: TranslationLanguage): String
   description(language: TranslationLanguage): String
