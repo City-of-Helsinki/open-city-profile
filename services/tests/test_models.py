@@ -1,12 +1,10 @@
 import uuid
 
 import pytest
-import requests
 from django.db.utils import IntegrityError
 
 from open_city_profile.tests.factories import UserFactory
 
-from ..exceptions import MissingGDPRUrlException
 from ..models import Service, ServiceConnection
 from .factories import ProfileFactory, ServiceConnectionFactory
 
@@ -122,10 +120,10 @@ def test_download_gdpr_data_returns_empty_dict_if_request_fails(
 def test_remove_service_gdpr_data_no_url(profile, service):
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data(api_token="token", dry_run=True)
-    with pytest.raises(MissingGDPRUrlException):
-        service_connection.delete_gdpr_data(api_token="token")
+    result = service_connection.delete_gdpr_data(api_token="token", dry_run=True)
+    assert result.errors
+    result = service_connection.delete_gdpr_data(api_token="token")
+    assert result.errors
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
@@ -139,11 +137,13 @@ def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
 
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
-    dry_run_ok = service_connection.delete_gdpr_data(api_token="token", dry_run=True)
-    real_ok = service_connection.delete_gdpr_data(api_token="token")
+    dry_run_result = service_connection.delete_gdpr_data(
+        api_token="token", dry_run=True
+    )
+    real_result = service_connection.delete_gdpr_data(api_token="token")
 
-    assert dry_run_ok
-    assert real_ok
+    assert dry_run_result.success is True
+    assert real_result.success is True
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
@@ -157,10 +157,48 @@ def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
 
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data(api_token="token", dry_run=True)
-    with pytest.raises(requests.RequestException):
-        service_connection.delete_gdpr_data(api_token="token")
+    dry_run_result = service_connection.delete_gdpr_data(
+        api_token="token", dry_run=True
+    )
+    real_result = service_connection.delete_gdpr_data(api_token="token")
+
+    assert dry_run_result.success is False
+    assert real_result.success is False
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+@pytest.mark.parametrize(
+    "error_content",
+    [
+        {"unknown_key": "data"},
+        {"message": {"en": "No code"}},
+        {"code": "no message"},
+        {"code": None, "message": None},
+        {"code": None, "message": {}},
+        {"code": "ERROR_CODE", "message": None},
+        {"code": "ERROR_CODE", "message": {}},
+        {"code": "ERROR_CODE", "message": {"en": None}},
+        {"code": "ERROR_CODE", "message": {"": "Message with empty key"}},
+        {"code": 123, "message": {"en": "Code is wrong type"}},
+        {"code": "", "message": {"en": "Code is empty"}},
+        {"code": "ERROR_CODE", "message": "Message not an object"},
+    ],
+)
+def test_invalid_error_messages_from_service_gdpr_api_results_in_unknown_error(
+    profile, service, requests_mock, error_content
+):
+    requests_mock.delete(
+        f"{GDPR_URL}{profile.pk}",
+        json={"errors": [error_content]},
+        status_code=403,
+        request_headers={"authorization": "Bearer token"},
+    )
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    result = service_connection.delete_gdpr_data(api_token="token")
+
+    assert result.errors[0].code == "SERVICE_GDPR_API_UNKNOWN_ERROR"
 
 
 @pytest.mark.parametrize(

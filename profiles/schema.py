@@ -36,6 +36,8 @@ from open_city_profile.decorators import (
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
+    ConnectedServiceDeletionFailedError,
+    ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
     ProfileDoesNotExistError,
     ProfileMustHavePrimaryEmailError,
@@ -1369,6 +1371,18 @@ class ClaimProfileMutation(relay.ClientIDMutation):
             return ClaimProfileMutation(profile=profile_to_claim)
 
 
+def _raise_exception_on_error(info, results):
+    errors = [error for result in results for error in result.errors]
+    if not errors:
+        return
+
+    dry_run = any(result.dry_run for result in results)
+    if dry_run:
+        raise ConnectedServiceDeletionNotAllowedError("Not allowed")
+
+    raise ConnectedServiceDeletionFailedError("Deletion failed")
+
+
 class DeleteMyProfileMutation(relay.ClientIDMutation):
     class Input:
         authorization_code = graphene.String(
@@ -1398,9 +1412,10 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 
         dry_run = input.get("dry_run", False)
 
-        delete_connected_service_data(
+        results = delete_connected_service_data(
             profile, input["authorization_code"], dry_run=dry_run
         )
+        _raise_exception_on_error(info, results)
 
         if not dry_run:
             delete_profile_from_keycloak(profile)
@@ -1448,12 +1463,13 @@ class DeleteMyServiceDataMutation(relay.ClientIDMutation):
         if not service_connections:
             raise ServiceConnectionDoesNotExist("Service connection does not exist")
 
-        delete_connected_service_data(
+        results = delete_connected_service_data(
             profile,
             input["authorization_code"],
             service_connections=service_connections,
             dry_run=input.get("dry_run", False),
         )
+        _raise_exception_on_error(info, results)
 
         return DeleteMyServiceDataMutation()
 

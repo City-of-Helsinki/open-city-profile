@@ -9,7 +9,6 @@ from open_city_profile.exceptions import (
     MissingGDPRApiTokenError,
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
-from services.exceptions import MissingGDPRUrlException
 from utils.keycloak import KeycloakAdminClient
 
 _keycloak_admin_client = None
@@ -82,30 +81,22 @@ def download_connected_service_data(profile, authorization_code):
 def _delete_service_connection_and_service_data(
     service_connections, api_tokens, dry_run=False
 ):
-    failed_services = []
+    results = []
 
     for service_connection in service_connections:
         service = service_connection.service
         api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
         api_token = api_tokens.get(api_identifier, "")
 
-        try:
-            service_connection.delete_gdpr_data(api_token=api_token, dry_run=dry_run)
-            if not dry_run:
-                service_connection.delete()
-        except (requests.RequestException, MissingGDPRUrlException):
-            failed_services.append(service.name)
-
-    if failed_services:
-        failed_services_string = ", ".join(failed_services)
-        if dry_run:
-            raise ConnectedServiceDeletionNotAllowedError(
-                f"Connected services: {failed_services_string} did not allow deleting the profile."
-            )
-
-        raise ConnectedServiceDeletionFailedError(
-            f"Deletion failed for the following connected services: {failed_services_string}."
+        result = service_connection.delete_gdpr_data(
+            api_token=api_token, dry_run=dry_run
         )
+        if result.success and not dry_run:
+            service_connection.delete()
+
+        results.append(result)
+
+    return results
 
 
 def _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens):
@@ -145,20 +136,24 @@ def delete_connected_service_data(
         service_connections = profile.effective_service_connections_qs().all()
 
     if not service_connections:
-        return
+        return []
 
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
 
     _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens)
 
-    _delete_service_connection_and_service_data(
+    results = _delete_service_connection_and_service_data(
         service_connections, api_tokens, dry_run=True
     )
+    if dry_run or any([len(r.errors) for r in results]):
+        return results
+
     if not dry_run:
-        _delete_service_connection_and_service_data(
+        results = _delete_service_connection_and_service_data(
             service_connections, api_tokens, dry_run=False
         )
+        return results
 
 
 def delete_profile_from_keycloak(profile):
