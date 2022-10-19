@@ -40,6 +40,7 @@ from open_city_profile.exceptions import (
     ProfileDoesNotExistError,
     ProfileMustHavePrimaryEmailError,
     ServiceConnectionNotFound,
+    ServiceDoesNotExist,
     TokenExpiredError,
 )
 from open_city_profile.graphene import UUIDMultipleChoiceFilter
@@ -1562,7 +1563,11 @@ class Query(graphene.ObjectType):
             required=True,
             description="Any client id of the service to which the service connection connects.",
         ),
-        description="Get a service connection by using a user id of the profile and a client id of the service.",
+        description="Get a service connection by using a user id of the profile and a client id of the service.\n\n"
+        "Possible error codes:\n\n"
+        "* `PROFILE_DOES_NOT_EXIST_ERROR`: No profile found for the given user id argument.\n"
+        "* `SERVICE_DOES_NOT_EXIST_ERROR`: No service found for the given client id argument.\n"
+        "* `SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR`: No service connection found with the given arguments.",
     )
 
     @staff_required(required_permission="view")
@@ -1645,10 +1650,20 @@ class Query(graphene.ObjectType):
         return token.profile
 
     def resolve_service_connection_with_user_id(self, info, **kwargs):
-        return ServiceConnection.objects.get(
-            profile__user__uuid=kwargs["user_id"],
-            service__client_ids__client_id=kwargs["service_client_id"],
-        )
+        try:
+            profile = Profile.objects.get(user__uuid=kwargs["user_id"])
+            service = Service.objects.get(
+                client_ids__client_id=kwargs["service_client_id"]
+            )
+            return ServiceConnection.objects.select_related("service").get(
+                profile=profile, service=service
+            )
+        except Profile.DoesNotExist:
+            raise ProfileDoesNotExistError("Profile not found")
+        except Service.DoesNotExist:
+            raise ServiceDoesNotExist("Service not found")
+        except ServiceConnection.DoesNotExist:
+            raise ServiceConnectionNotFound("Service connection not found")
 
 
 class Mutation(graphene.ObjectType):

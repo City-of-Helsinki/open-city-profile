@@ -39,6 +39,10 @@ class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
 
 
+class ServiceDoesNotExist(ProfileGraphQLError):
+    """Service does not exist"""
+
+
 class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
 
