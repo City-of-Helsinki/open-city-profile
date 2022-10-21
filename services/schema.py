@@ -6,7 +6,7 @@ from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 
-from open_city_profile.decorators import login_and_service_required
+from open_city_profile.decorators import login_and_service_required, permission_required
 from open_city_profile.exceptions import ServiceAlreadyExistsError
 from open_city_profile.graphene import DjangoParlerObjectType
 
@@ -124,8 +124,13 @@ class Query(graphene.ObjectType):
     services = DjangoFilterConnectionField(
         ServiceNode,
         filterset_class=ServiceFilter,
-        description="Search for services. The results are paged using Relay.",
+        description="Search for services. The results are paged using Relay.\n\n"
+        "Requires elevated privileges.",
     )
+
+    @permission_required("services.view_service")
+    def resolve_services(self, info, **kwargs):
+        return Service.objects
 
 
 class Mutation(graphene.ObjectType):

@@ -22,6 +22,11 @@ Since a GraphQL mutation for example can modify half a dozen different models, u
 *Note:* Use object permissions. Add the permission to the `Service` object for the users or groups that should have access.
 
 [%hardbreaks]
+*In admin UI:* services | service | Can view service
+*In code:* `services.view_service`
+*Purpose:* Needed to access the `services` query.
+
+[%hardbreaks]
 *In admin UI:* services | service connection | Can view service connection
 *In code:* `services.view_serviceconnection`
 *Purpose:* Needed to access the `serviceConnectionWithUserId` query.
