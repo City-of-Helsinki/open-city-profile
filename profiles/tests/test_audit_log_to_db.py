@@ -10,7 +10,10 @@ from guardian.shortcuts import assign_perm
 from audit_log.models import LogEntry
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_almost_equal
-from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
+from open_city_profile.tests.graphql_test_helpers import (
+    do_graphql_call,
+    do_graphql_call_as_user,
+)
 from profiles.models import (
     Profile,
     VerifiedPersonalInformationPermanentAddress,
@@ -25,6 +28,7 @@ from .factories import (
     PhoneFactory,
     ProfileFactory,
     SensitiveDataFactory,
+    TemporaryReadAccessTokenFactory,
     VerifiedPersonalInformationFactory,
 )
 
@@ -465,6 +469,27 @@ def test_actor_is_resolved_in_graphql_call(live_server, profile, service_client_
     assert_common_fields(log_entries, profile, "READ", actor_role="OWNER")
     log_entry = log_entries[0]
     assert log_entry.actor_user_id == user.uuid
+
+
+def test_anonymous_user_actor_is_resolved_in_graphql_call(live_server, profile):
+    token = TemporaryReadAccessTokenFactory(profile=profile)
+
+    query = Template(
+        """
+        query {
+            profileWithAccessToken(token: "${token}") {
+                id
+            }
+        }
+    """
+    ).substitute(token=token.token)
+
+    do_graphql_call(live_server, query=query)
+
+    log_entries = list(LogEntry.objects.all())
+    assert_common_fields(log_entries, profile, "READ", actor_role="ANONYMOUS")
+    log_entry = log_entries[0]
+    assert log_entry.actor_user_id is None
 
 
 def test_service_is_resolved_in_graphql_call(live_server, profile, service_client_id):
