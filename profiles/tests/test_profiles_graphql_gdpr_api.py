@@ -5,11 +5,11 @@ import requests
 from django.utils.translation import gettext as _
 
 from open_city_profile.consts import (
-    CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     MISSING_GDPR_API_TOKEN_ERROR,
     PROFILE_DOES_NOT_EXIST_ERROR,
     SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
+    SERVICE_GDPR_API_UNKNOWN_ERROR,
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
@@ -32,14 +32,32 @@ DOWNLOAD_MY_PROFILE_MUTATION = """
     }
 """
 DELETE_MY_PROFILE_MUTATION = """
-    mutation {
-        deleteMyProfile(input: {authorizationCode: "code123"}) {
+    mutation deleteMyProfileMutation($dryRun: Boolean) {
+        deleteMyProfile(input: {
+            authorizationCode: "code123"
+            dryRun: $dryRun
+        }) {
             clientMutationId
+            results {
+                service {
+                    name
+                    description
+                }
+                dryRun
+                success
+                errors {
+                    code
+                    message {
+                        lang
+                        text
+                    }
+                }
+            }
         }
     }
 """
 DELETE_MY_SERVICE_DATA_MUTATION = """
-    mutation deleteMyServiceMutation($serviceName: String!, $dryRun: Boolean) {
+    mutation deleteMyServiceDataMutation($serviceName: String!, $dryRun: Boolean) {
         deleteMyServiceData(
             input: {
                 authorizationCode: "code123",
@@ -48,6 +66,21 @@ DELETE_MY_SERVICE_DATA_MUTATION = """
             }
         ) {
             clientMutationId
+            result {
+                service {
+                    name
+                    description
+                }
+                dryRun
+                success
+                errors {
+                    code
+                    message {
+                        lang
+                        text
+                    }
+                }
+            }
         }
     }
 """
@@ -79,6 +112,45 @@ def service_2(service_factory):
         gdpr_query_scope=f"{SCOPE_2}.gdprquery",
         gdpr_delete_scope=f"{SCOPE_2}.gdprdelete",
     )
+
+
+def assert_match_error_code_in_results(response, error_code):
+    response_data = response["data"]
+
+    errors = []
+    for name, value in response_data.items():
+        if "results" in value:
+            errors.extend(
+                [
+                    error
+                    for result in value["results"]
+                    for error in result.get("errors", [])
+                ]
+            )
+        if "result" in value:
+            errors.extend(value["result"].get("errors", []))
+
+    assert len(errors) > 0
+    for error in errors:
+        assert error.get("code") == error_code
+
+
+def assert_success_result(response, expected_success=True):
+    response_data = response["data"]
+
+    success_results = []
+    for name, value in response_data.items():
+        if "results" in value:
+            success_results.extend(
+                [result.get("success") for result in value["results"]]
+            )
+        if "result" in value:
+            success_results.extend(value["result"]["success"])
+
+    if expected_success:
+        assert all(success_results)
+    else:
+        assert not all(success_results)
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
@@ -315,7 +387,22 @@ def test_user_can_delete_his_profile(
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, service=service_1)
 
     if with_serviceconnection:
-        expected_data = {"deleteMyProfile": {"clientMutationId": None}}
+        expected_data = {
+            "deleteMyProfile": {
+                "clientMutationId": None,
+                "results": [
+                    {
+                        "service": {
+                            "name": service_1.name,
+                            "description": service_1.description,
+                        },
+                        "dryRun": False,
+                        "success": True,
+                        "errors": [],
+                    }
+                ],
+            }
+        }
         assert executed["data"] == expected_data
 
         with pytest.raises(Profile.DoesNotExist):
@@ -332,13 +419,6 @@ def test_user_can_delete_his_profile(
 def test_user_can_dry_run_profile_deletion(
     user_gql_client, service_1, service_2, mocker, requests_mock, should_fail
 ):
-    query = """
-        mutation {
-            deleteMyProfile(input: {authorizationCode: "code123", dryRun: true}) {
-                clientMutationId
-            }
-        }
-    """
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
@@ -357,7 +437,10 @@ def test_user_can_dry_run_profile_deletion(
         service_2.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
     )
 
-    executed = user_gql_client.execute(query)
+    variables = {
+        "dryRun": True,
+    }
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, variables=variables)
 
     assert service1_mocker.call_count == 1
     assert service2_mocker.call_count == 1
@@ -367,9 +450,9 @@ def test_user_can_dry_run_profile_deletion(
     assert ServiceConnection.objects.count() == 2
 
     if should_fail:
-        assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
+        assert_match_error_code_in_results(executed, SERVICE_GDPR_API_UNKNOWN_ERROR)
     else:
-        assert "errors" not in executed
+        assert_success_result(executed)
 
 
 @pytest.mark.parametrize("kc_delete_user_response_code", [204, 403, 404])
@@ -391,7 +474,9 @@ def test_user_deletion_from_keycloak(
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     if kc_delete_user_response_code in [204, 404]:
-        assert executed["data"] == {"deleteMyProfile": {"clientMutationId": None}}
+        assert executed["data"] == {
+            "deleteMyProfile": {"clientMutationId": None, "results": []}
+        }
         assert "errors" not in executed
     else:
         assert Profile.objects.filter(pk=profile.pk).exists()
@@ -426,32 +511,55 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
-    expected_data = {"deleteMyProfile": None}
+    expected_data = {
+        "deleteMyProfile": {
+            "clientMutationId": None,
+            "results": [
+                {
+                    "service": {
+                        "name": service_1.name,
+                        "description": service_1.description,
+                    },
+                    "dryRun": False,
+                    "success": True,
+                    "errors": [],
+                },
+                {
+                    "service": {
+                        "name": service_2.name,
+                        "description": service_2.description,
+                    },
+                    "dryRun": False,
+                    "success": False,
+                    "errors": [
+                        {
+                            "code": "SERVICE_GDPR_API_UNKNOWN_ERROR",
+                            "message": [
+                                {
+                                    "lang": "en",
+                                    "text": "Unknown error occurred when trying to remove data from the service",
+                                },
+                            ],
+                        }
+                    ],
+                },
+            ],
+        }
+    }
 
     assert ServiceConnection.objects.count() == 1
     assert ServiceConnection.objects.first().service == service_2
     assert executed["data"] == expected_data
-    assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_FAILED_ERROR)
 
 
-@pytest.mark.parametrize(
-    "gdpr_url, response_status",
-    [("", 204), ("", 405), ("https://gdpr-url.example/", 405)],
-)
-def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
-    user_gql_client, service_1, requests_mock, gdpr_url, response_status, mocker
+def test_user_cannot_delete_their_profile_if_gdpr_url_is_not_set(
+    user_gql_client, service_1, mocker
 ):
-    """Profile cannot be deleted if connected service doesn't have GDPR URL configured or if the service
-    returns a failed status for the dry_run call.
-    """
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
     )
     profile = ProfileFactory(user=user_gql_client.user)
-    requests_mock.delete(
-        f"{gdpr_url}{profile.pk}", json={}, status_code=response_status
-    )
-    service_1.gdpr_url = gdpr_url
+    service_1.gdpr_url = ""
     service_1.save()
     ServiceConnectionFactory(profile=profile, service=service_1)
 
@@ -460,6 +568,25 @@ def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
     expected_data = {"deleteMyProfile": None}
     assert executed["data"] == expected_data
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
+
+
+@pytest.mark.parametrize(
+    "response_status", [404, 405, 500],
+)
+def test_user_cannot_delete_their_profile_if_service_returns_error_code(
+    user_gql_client, service_1, requests_mock, response_status, mocker
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    service_1_gdpr_url = service_1.get_gdpr_url_for_profile(profile)
+    requests_mock.delete(service_1_gdpr_url, status_code=response_status)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+
+    assert_success_result(executed, expected_success=False)
 
 
 def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
@@ -507,8 +634,7 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     mocked_token_exchange.assert_called_once()
     assert mocked_token_exchange.call_args == ((AUTHORIZATION_CODE,),)
 
-    expected_data = {"deleteMyProfile": {"clientMutationId": None}}
-    assert executed["data"] == expected_data
+    assert_success_result(executed)
     with pytest.raises(Profile.DoesNotExist):
         profile.refresh_from_db()
     with pytest.raises(User.DoesNotExist):
@@ -521,15 +647,123 @@ def test_connection_to_profile_service_without_gdpr_api_settings_does_not_preven
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=profile_service)
 
-    executed = user_gql_client.execute(
-        DELETE_MY_PROFILE_MUTATION, service=profile_service
-    )
+    user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, service=profile_service)
 
-    assert "errors" not in executed
     with pytest.raises(Profile.DoesNotExist):
         profile.refresh_from_db()
     with pytest.raises(User.DoesNotExist):
         user_gql_client.user.refresh_from_db()
+
+
+def test_deletion_errors_from_the_service_are_returned_to_the_caller(
+    user_gql_client, service_1, service_2, mocker, requests_mock
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+    ServiceConnectionFactory(profile=profile, service=service_2)
+
+    requests_mock.delete(service_1.get_gdpr_url_for_profile(profile), status_code=204)
+    requests_mock.delete(
+        service_2.get_gdpr_url_for_profile(profile),
+        status_code=403,
+        json={
+            "errors": [
+                {
+                    "code": "ERROR_CODE",
+                    "message": {"fi": "Sopimus", "en": "Contractual obligation"},
+                },
+                {"code": "ANOTHER_ERROR_CODE", "message": {"en": "Another error"}},
+            ],
+        },
+    )
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+
+    expected_data = {
+        "deleteMyProfile": {
+            "clientMutationId": None,
+            "results": [
+                {
+                    "service": {
+                        "name": service_1.name,
+                        "description": service_1.description,
+                    },
+                    "dryRun": True,
+                    "success": True,
+                    "errors": [],
+                },
+                {
+                    "service": {
+                        "name": service_2.name,
+                        "description": service_2.description,
+                    },
+                    "dryRun": True,
+                    "success": False,
+                    "errors": [
+                        {
+                            "code": "ERROR_CODE",
+                            "message": [
+                                {"lang": "fi", "text": "Sopimus"},
+                                {"lang": "en", "text": "Contractual obligation"},
+                            ],
+                        },
+                        {
+                            "code": "ANOTHER_ERROR_CODE",
+                            "message": [{"lang": "en", "text": "Another error"}],
+                        },
+                    ],
+                },
+            ],
+        }
+    }
+
+    assert ServiceConnection.objects.count() == 2
+    assert executed["data"] == expected_data
+
+
+def test_invalid_deletion_errors_from_the_service_are_not_returned(
+    user_gql_client, service_1, service_2, mocker, requests_mock
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+    )
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+    ServiceConnectionFactory(profile=profile, service=service_2)
+
+    requests_mock.delete(service_1.get_gdpr_url_for_profile(profile), status_code=204)
+    requests_mock.delete(
+        service_2.get_gdpr_url_for_profile(profile),
+        status_code=403,
+        json={
+            "errors": [
+                {"nonsense": "value"},
+                {"code": "ANOTHER_ERROR_CODE", "message": {"en": "Another error"}},
+            ],
+        },
+    )
+
+    executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
+
+    expected_errors = [
+        {
+            "code": "SERVICE_GDPR_API_UNKNOWN_ERROR",
+            "message": [
+                {
+                    "lang": "en",
+                    "text": "Unknown error occurred when trying to remove data from the service",
+                }
+            ],
+        }
+    ]
+
+    assert ServiceConnection.objects.count() == 2
+    assert (
+        executed["data"]["deleteMyProfile"]["results"][1]["errors"] == expected_errors
+    )
 
 
 def test_service_doesnt_have_gdpr_query_scope_set(user_gql_client, service_1, mocker):
@@ -652,7 +886,12 @@ def test_error_is_returned_when_service_returns_errors(
         DELETE_MY_SERVICE_DATA_MUTATION, variables={"serviceName": service_1.name}
     )
 
-    assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
+    if errors_from_service is None:
+        assert_match_error_code_in_results(executed, SERVICE_GDPR_API_UNKNOWN_ERROR)
+    else:
+        assert_match_error_code_in_results(
+            executed, errors_from_service["errors"][0]["code"]
+        )
 
     assert service_1_mocker.call_count == 1
     assert ServiceConnection.objects.count() == 1

@@ -182,6 +182,7 @@ input DeleteMyProfileMutationInput {
 }
 
 type DeleteMyProfileMutationPayload {
+  results: [ServiceConnectionDeletionResult!]!
   clientMutationId: String
 }
 
@@ -193,6 +194,7 @@ input DeleteMyServiceDataMutationInput {
 }
 
 type DeleteMyServiceDataMutationPayload {
+  result: ServiceConnectionDeletionResult!
   clientMutationId: String
 }
 
@@ -383,6 +385,18 @@ type SensitiveDataNode implements Node {
   ssn: String!
 }
 
+type ServiceConnectionDeletionError {
+  code: String!
+  message: [TranslatedMessage!]!
+}
+
+type ServiceConnectionDeletionResult {
+  service: ServiceNode!
+  dryRun: Boolean!
+  success: Boolean!
+  errors: [ServiceConnectionDeletionError!]!
+}
+
 input ServiceConnectionInput {
   service: ServiceInput
   enabled: Boolean
@@ -444,6 +458,11 @@ enum ServiceType {
 type TemporaryReadAccessTokenNode {
   token: UUID!
   expiresAt: DateTime
+}
+
+type TranslatedMessage {
+  lang: String!
+  text: String!
 }
 
 enum TranslationLanguage {
