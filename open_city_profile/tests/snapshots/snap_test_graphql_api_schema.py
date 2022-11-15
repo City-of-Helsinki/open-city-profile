@@ -190,12 +190,10 @@ input DeleteMyServiceDataMutationInput {
   authorizationCode: String!
   serviceName: String!
   dryRun: Boolean
-  clientMutationId: String
 }
 
 type DeleteMyServiceDataMutationPayload {
   result: ServiceConnectionDeletionResult!
-  clientMutationId: String
 }
 
 input EmailInput {
