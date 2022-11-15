@@ -65,7 +65,6 @@ DELETE_MY_SERVICE_DATA_MUTATION = """
                 dryRun: $dryRun
             }
         ) {
-            clientMutationId
             result {
                 service {
                     name

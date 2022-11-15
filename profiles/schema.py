@@ -1491,29 +1491,37 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         return DeleteMyProfileMutation(results=results)
 
 
-class DeleteMyServiceDataMutation(relay.ClientIDMutation):
-    class Input:
-        authorization_code = graphene.String(
-            required=True,
-            description=(
-                "OAuth/OIDC authorization code. When obtaining the code, it is required to use "
-                "service and operation specific GDPR API scopes."
-            ),
-        )
-        service_name = graphene.String(
-            required=True,
-            description=("The name of the service the data should be removed from"),
-        )
-        dry_run = graphene.Boolean(
-            required=False,
-            description="Can be used to see if the date can be removed from the service. Default is False.",
-        )
+class DeleteMyServiceDataMutationInput(graphene.InputObjectType):
+    authorization_code = graphene.String(
+        required=True,
+        description=(
+            "OAuth/OIDC authorization code. When obtaining the code, it is required to use "
+            "service and operation specific GDPR API scopes."
+        ),
+    )
+    service_name = graphene.String(
+        required=True,
+        description=("The name of the service the data should be removed from"),
+    )
+    dry_run = graphene.Boolean(
+        required=False,
+        description="Can be used to see if the date can be removed from the service. Default is False.",
+    )
 
+
+class DeleteMyServiceDataMutationPayload(graphene.ObjectType):
     result = graphene.Field(ServiceConnectionDeletionResult, required=True)
 
-    @classmethod
+
+class DeleteMyServiceDataMutation(graphene.Mutation):
+    class Arguments:
+        input = DeleteMyServiceDataMutationInput(required=True)
+
+    Output = DeleteMyServiceDataMutationPayload
+
+    @staticmethod
     @login_and_service_required
-    def mutate_and_get_payload(cls, root, info, **input):
+    def mutate(parent, info, input):
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
@@ -1537,9 +1545,8 @@ class DeleteMyServiceDataMutation(relay.ClientIDMutation):
             service_connections=service_connections,
             dry_run=input.get("dry_run", False),
         )
-        _raise_exception_on_error(info, results)
 
-        return DeleteMyServiceDataMutation(result=results[0])
+        return DeleteMyServiceDataMutationPayload(result=results[0])
 
 
 class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
@@ -1824,9 +1831,7 @@ class Mutation(graphene.ObjectType):
         "* `PROFILE_DOES_NOT_EXIST_ERROR`: Returned if there is no profile linked to "
         "the currently authenticated user.\n"
         "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing the service.\n"
-        "* `SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR`: The user is not connected to the service\n"
-        "* `CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR`: The profile deletion is disallowed by the service\n"
-        "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for the service."
+        "* `SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR`: The user is not connected to the service."
     )
     # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
