@@ -8,6 +8,33 @@ from open_city_profile.tests.graphql_test_helpers import do_graphql_call_as_user
 from services.enums import ServiceType
 from services.tests.factories import ProfileFactory, ServiceConnectionFactory
 
+SERVICE_CONNECTIONS_QUERY = """
+    {
+        myProfile {
+            serviceConnections {
+                edges {
+                    node {
+                        service {
+                            type
+                            name
+                            title
+                            description
+                            allowedDataFields {
+                                edges {
+                                    node {
+                                        fieldName
+                                        label
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
 
 @pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_normal_user_can_query_own_services(
@@ -21,32 +48,6 @@ def test_normal_user_can_query_own_services(
     service.allowed_data_fields.add(second_field)
     ServiceConnectionFactory(profile=profile, service=service)
 
-    query = """
-        {
-            myProfile {
-                serviceConnections {
-                    edges {
-                        node {
-                            service {
-                                type
-                                name
-                                title
-                                description
-                                allowedDataFields {
-                                    edges {
-                                        node {
-                                            fieldName
-                                            label
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    """
     expected_data = {
         "myProfile": {
             "serviceConnections": {
@@ -81,7 +82,7 @@ def test_normal_user_can_query_own_services(
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(SERVICE_CONNECTIONS_QUERY)
     assert executed["data"] == expected_data
 
 
