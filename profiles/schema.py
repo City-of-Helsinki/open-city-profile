@@ -561,7 +561,7 @@ class ProfileNode(RestrictedProfileNode):
     )
 
     def resolve_service_connections(self, info, **kwargs):
-        return ServiceConnection.objects.filter(profile=self)
+        return self.effective_service_connections_qs()
 
     def resolve_sensitivedata(self, info, **kwargs):
         service = info.context.service

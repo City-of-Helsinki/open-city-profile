@@ -86,6 +86,20 @@ def test_normal_user_can_query_own_services(
     assert executed["data"] == expected_data
 
 
+def test_profile_service_is_not_returned_in_service_connections(
+    profile_service, user_gql_client
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=profile_service)
+
+    expected_data = {"myProfile": {"serviceConnections": {"edges": []}}}
+
+    executed = user_gql_client.execute(
+        SERVICE_CONNECTIONS_QUERY, service=profile_service
+    )
+    assert executed["data"] == expected_data
+
+
 def test_service_connections_of_service_always_returns_an_empty_result(
     user_gql_client, service
 ):
