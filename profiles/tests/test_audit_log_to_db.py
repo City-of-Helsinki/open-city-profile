@@ -471,6 +471,33 @@ def test_actor_is_resolved_in_graphql_call(live_server, profile, service_client_
     assert log_entry.actor_user_id == user.uuid
 
 
+def test_system_user_actor_is_resolved_in_graphql_call(live_server, system_user):
+    assign_perm("profiles.manage_verified_personal_information", system_user)
+
+    query = """
+        mutation {
+            createOrUpdateUserProfile(
+                input: {
+                    userId: "9940aaea-f0e0-11ea-9089-c2a5d7831f23"
+                    profile: {
+                        firstName: "Test"
+                    }
+                },
+            ) {
+                profile {
+                    id
+                }
+            }
+        }
+    """
+
+    do_graphql_call_as_user(live_server, system_user, service=None, query=query)
+
+    log_entries = list(LogEntry.objects.all())
+    profile = Profile.objects.get()
+    assert_common_fields(log_entries, profile, "CREATE", actor_role="SYSTEM")
+
+
 def test_anonymous_user_actor_is_resolved_in_graphql_call(live_server, profile):
     token = TemporaryReadAccessTokenFactory(profile=profile)
 

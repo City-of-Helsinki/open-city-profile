@@ -501,6 +501,35 @@ def test_actor_is_resolved_in_graphql_call(
     assert log_message["audit_event"]["actor"]["user_id"] == str(user.uuid)
 
 
+def test_system_user_actor_is_resolved_in_graphql_call(
+    live_server, system_user, cap_audit_log
+):
+    assign_perm("profiles.manage_verified_personal_information", system_user)
+
+    query = """
+        mutation {
+            createOrUpdateUserProfile(
+                input: {
+                    userId: "9940aaea-f0e0-11ea-9089-c2a5d7831f23"
+                    profile: {
+                        firstName: "Test"
+                    }
+                },
+            ) {
+                profile {
+                    id
+                }
+            }
+        }
+    """
+
+    do_graphql_call_as_user(live_server, system_user, service=None, query=query)
+
+    audit_logs = cap_audit_log.get_logs()
+    profile = Profile.objects.get()
+    assert_common_fields(audit_logs, profile, "CREATE", actor_role="SYSTEM")
+
+
 def test_anonymous_user_actor_is_resolved_in_graphql_call(
     live_server, profile, cap_audit_log
 ):

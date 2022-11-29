@@ -86,12 +86,12 @@ def _resolve_role(current_user, profile_user_uuid):
     if profile_user_uuid and profile_user_uuid == getattr(current_user, "uuid", None):
         return "OWNER"
     elif current_user is not None:
-        if current_user.is_anonymous:
-            return "ANONYMOUS"
-        else:
+        if getattr(current_user, "is_system_user", False):
+            return "SYSTEM"
+        if not current_user.is_anonymous:
             return "ADMIN"
-    else:
-        return "SYSTEM"
+
+    return "ANONYMOUS"
 
 
 def _profile_part(instance):
