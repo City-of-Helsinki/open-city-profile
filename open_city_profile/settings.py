@@ -242,6 +242,8 @@ AUTHENTICATION_BACKENDS = [
     "guardian.backends.ObjectPermissionBackend",
 ]
 
+ANONYMOUS_USER_NAME = None
+
 HELUSERS_BACK_CHANNEL_LOGOUT_ENABLED = True
 
 # Profiles related settings

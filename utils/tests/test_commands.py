@@ -24,13 +24,9 @@ def test_command_seed_data_initializes_development_data():
     ]
     call_command("seed_data", *args)
 
-    anonymous_users = 1
     admin_users = 1
     normal_users = 50
-    assert (
-        User.objects.count()
-        == normal_users + len(SERVICES) + admin_users + anonymous_users
-    )
+    assert User.objects.count() == normal_users + len(SERVICES) + admin_users
     assert Profile.objects.count() == normal_users
     assert User.objects.filter(is_superuser=True).count() == admin_users
 

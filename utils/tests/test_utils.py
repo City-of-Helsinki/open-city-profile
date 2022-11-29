@@ -63,17 +63,17 @@ def test_assign_permissions(times, user, service):
 
 
 def test_creates_random_user():
-    assert User.objects.count() == 1  # anonymous user exists
+    assert User.objects.count() == 0
     user = create_user(faker=Faker())
     assert user
-    assert User.objects.count() == 2
+    assert User.objects.count() == 1
 
 
 def test_creates_defined_user():
-    assert User.objects.count() == 1  # anonymous user exists
+    assert User.objects.count() == 0
     faker = Faker()
     user = create_user(username="test_user", faker=faker)
-    assert User.objects.count() == 2
+    assert User.objects.count() == 1
     assert user.username == "test_user"
 
 
