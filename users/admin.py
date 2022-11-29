@@ -33,12 +33,22 @@ class UserAdmin(DjangoUserAdmin):
         "profile__verified_personal_information__last_name",
     )
 
+    def get_list_filter(self, request):
+        list_filter = super().get_list_filter(request)
+        return list_filter + ("is_system_user",)
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj:
             fieldsets = deepcopy(fieldsets)
             fieldsets[1][1]["fields"] += ("uuid", "get_profile_uuid_link")
-            fieldsets[2][1]["fields"] += ("department_name", "ad_groups")
+            permission_fields = list(fieldsets[2][1]["fields"])
+            superuser_index = permission_fields.index("is_superuser")
+            permission_fields.insert(superuser_index + 1, "is_system_user")
+            fieldsets[2][1]["fields"] = tuple(permission_fields) + (
+                "department_name",
+                "ad_groups",
+            )
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
