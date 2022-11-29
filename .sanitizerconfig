@@ -206,6 +206,7 @@ strategy:
     is_active: null
     is_staff: null
     is_superuser: null
+    is_system_user: null
     last_login: null
     last_name: "profile.last_name"
     password: null
