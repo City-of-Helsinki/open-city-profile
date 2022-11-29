@@ -22,6 +22,13 @@ class SuperuserFactory(UserFactory):
         model = User
 
 
+class SystemUserFactory(UserFactory):
+    is_system_user = True
+
+    class Meta:
+        model = User
+
+
 class GroupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Group

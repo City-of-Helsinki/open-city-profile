@@ -17,6 +17,7 @@ from open_city_profile.schema import schema
 from open_city_profile.tests.factories import (
     GroupFactory,
     SuperuserFactory,
+    SystemUserFactory,
     UserFactory,
 )
 from open_city_profile.views import GraphQLView
@@ -139,6 +140,11 @@ def anon_user():
 @pytest.fixture
 def superuser():
     return SuperuserFactory()
+
+
+@pytest.fixture
+def system_user():
+    return SystemUserFactory()
 
 
 @pytest.fixture
