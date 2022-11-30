@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from django.db.utils import IntegrityError
@@ -124,6 +125,32 @@ def test_remove_service_gdpr_data_no_url(profile, service):
     assert result.errors
     result = service_connection.delete_gdpr_data(api_token="token")
     assert result.errors
+
+
+@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
+def test_remove_service_gdpr_data_dry_run_request_conforms_with_specification(
+    profile, service, requests_mock
+):
+    requests_mock.delete(
+        f"{GDPR_URL}{profile.pk}",
+        json={},
+        status_code=204,
+        request_headers={"authorization": "Bearer token"},
+    )
+
+    service_connection = ServiceConnectionFactory(profile=profile, service=service)
+
+    service_connection.delete_gdpr_data(api_token="token", dry_run=True)
+
+    assert requests_mock.call_count == 1
+    request = requests_mock.last_request
+    parse_result = urlparse(request.url)
+    query_parameters = parse_qs(parse_result.query)
+
+    assert request.method == "DELETE"
+    assert request.body is None
+    assert "dry_run" in query_parameters
+    assert query_parameters["dry_run"] == ["true"]
 
 
 @pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])

@@ -267,11 +267,11 @@ class ServiceConnection(SerializableMixin):
 
         data = {}
         if dry_run:
-            data["dry_run"] = True
+            data["dry_run"] = "true"
 
         try:
             response = requests.delete(
-                url, auth=BearerAuth(api_token), timeout=5, data=data
+                url, auth=BearerAuth(api_token), timeout=5, params=data
             )
         except requests.RequestException:
             return _add_error_to_result(
