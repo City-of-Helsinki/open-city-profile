@@ -126,8 +126,8 @@ def test_user_can_dry_run_profile_deletion(
 
     assert service1_mocker.call_count == 1
     assert service2_mocker.call_count == 1
-    assert "dry_run=True" in service1_mocker.request_history[0].text
-    assert "dry_run=True" in service2_mocker.request_history[0].text
+    assert service1_mocker.request_history[0].qs["dry_run"] == ["true"]
+    assert service2_mocker.request_history[0].qs["dry_run"] == ["true"]
     assert Profile.objects.filter(pk=profile.pk).exists()
     assert ServiceConnection.objects.count() == 2
 
@@ -181,7 +181,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     ServiceConnectionFactory(profile=profile, service=service_2)
 
     def get_response(request, context):
-        if not request.body or "dry_run" not in request.body:
+        if request.qs.get("dry_run") != ["true"]:
             context.status_code = 403
 
     requests_mock.delete(service_1.get_gdpr_url_for_profile(profile), status_code=204)
@@ -247,13 +247,13 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
 
     def get_response(request, context):
         if (
-            request.url == service_1_gdpr_url
+            service_1_gdpr_url in request.url
             and request.headers["authorization"] == f"Bearer {API_TOKEN_1}"
         ):
             return
 
         if (
-            request.url == service_2_gdpr_url
+            service_2_gdpr_url in request.url
             and request.headers["authorization"] == f"Bearer {API_TOKEN_2}"
         ):
             return
