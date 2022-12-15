@@ -1,3 +1,5 @@
+from string import Template
+
 import pytest
 import requests
 
@@ -17,13 +19,16 @@ from users.models import User
 from utils.keycloak import KeycloakAdminClient
 
 AUTHORIZATION_CODE = "code123"
-DELETE_MY_PROFILE_MUTATION = """
+
+DELETE_MY_PROFILE_MUTATION = Template(
+    """
     mutation {
-        deleteMyProfile(input: {authorizationCode: "code123"}) {
+        deleteMyProfile(input: {authorizationCode: "${auth_code}"}) {
             clientMutationId
         }
     }
 """
+).substitute(auth_code=AUTHORIZATION_CODE)
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
@@ -75,13 +80,15 @@ def test_user_can_dry_run_profile_deletion(
     requests_mock,
     should_fail,
 ):
-    query = """
+    query = Template(
+        """
         mutation {
-            deleteMyProfile(input: {authorizationCode: "code123", dryRun: true}) {
+            deleteMyProfile(input: {authorizationCode: "${auth_code}", dryRun: true}) {
                 clientMutationId
             }
         }
     """
+    ).substitute(auth_code=AUTHORIZATION_CODE)
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )

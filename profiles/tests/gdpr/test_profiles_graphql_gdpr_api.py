@@ -1,4 +1,5 @@
 import json
+from string import Template
 
 import pytest
 import requests
@@ -25,16 +26,21 @@ from users.models import User
 from utils.keycloak import KeycloakAdminClient
 
 AUTHORIZATION_CODE = "code123"
-DOWNLOAD_MY_PROFILE_MUTATION = """
+
+DOWNLOAD_MY_PROFILE_MUTATION = Template(
+    """
     {
-        downloadMyProfile(authorizationCode: "code123")
+        downloadMyProfile(authorizationCode: "${auth_code}")
     }
 """
-DELETE_MY_PROFILE_MUTATION = """
-    mutation deleteMyProfileMutation($dryRun: Boolean) {
+).substitute(auth_code=AUTHORIZATION_CODE)
+
+DELETE_MY_PROFILE_MUTATION = Template(
+    """
+    mutation deleteMyProfileMutation($$dryRun: Boolean) {
         deleteMyProfile(input: {
-            authorizationCode: "code123"
-            dryRun: $dryRun
+            authorizationCode: "${auth_code}"
+            dryRun: $$dryRun
         }) {
             clientMutationId
             results {
@@ -55,13 +61,16 @@ DELETE_MY_PROFILE_MUTATION = """
         }
     }
 """
-DELETE_MY_SERVICE_DATA_MUTATION = """
-    mutation deleteMyServiceDataMutation($serviceName: String!, $dryRun: Boolean) {
+).substitute(auth_code=AUTHORIZATION_CODE)
+
+DELETE_MY_SERVICE_DATA_MUTATION = Template(
+    """
+    mutation deleteMyServiceDataMutation($$serviceName: String!, $$dryRun: Boolean) {
         deleteMyServiceData(
             input: {
-                authorizationCode: "code123",
-                serviceName: $serviceName,
-                dryRun: $dryRun
+                authorizationCode: "${auth_code}",
+                serviceName: $$serviceName,
+                dryRun: $$dryRun
             }
         ) {
             result {
@@ -82,6 +91,7 @@ DELETE_MY_SERVICE_DATA_MUTATION = """
         }
     }
 """
+).substitute(auth_code=AUTHORIZATION_CODE)
 
 
 def assert_match_error_code_in_results(response, error_code):
