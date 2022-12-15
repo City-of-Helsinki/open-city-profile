@@ -13,17 +13,16 @@ from open_city_profile.consts import (
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.models import ServiceConnection
-from services.tests.factories import ServiceConnectionFactory
-from users.models import User
-from utils.keycloak import KeycloakAdminClient
-
-from ..models import Profile
-from .factories import (
+from profiles.models import Profile
+from profiles.tests.factories import (
     ProfileFactory,
     ProfileWithPrimaryEmailFactory,
     VerifiedPersonalInformationFactory,
 )
+from services.models import ServiceConnection
+from services.tests.factories import ServiceConnectionFactory
+from users.models import User
+from utils.keycloak import KeycloakAdminClient
 
 AUTHORIZATION_CODE = "code123"
 DOWNLOAD_MY_PROFILE_MUTATION = """

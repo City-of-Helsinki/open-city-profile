@@ -9,13 +9,12 @@ from open_city_profile.consts import (
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles.models import Profile
+from profiles.tests.factories import ProfileFactory, ProfileWithPrimaryEmailFactory
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
 from utils.keycloak import KeycloakAdminClient
-
-from ..models import Profile
-from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
 
 AUTHORIZATION_CODE = "code123"
 DELETE_MY_PROFILE_MUTATION = """
