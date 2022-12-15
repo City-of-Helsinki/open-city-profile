@@ -82,34 +82,6 @@ DELETE_MY_SERVICE_DATA_MUTATION = """
         }
     }
 """
-SCOPE_1 = "https://api.hel.fi/auth/api-1"
-SCOPE_2 = "https://api.hel.fi/auth/api-2"
-API_TOKEN_1 = "api_token_1"
-API_TOKEN_2 = "api_token_2"
-GDPR_API_TOKENS = {
-    SCOPE_1: API_TOKEN_1,
-    SCOPE_2: API_TOKEN_2,
-}
-
-
-@pytest.fixture
-def service_1(service_factory):
-    return service_factory(
-        name="service-1",
-        gdpr_url="https://example-1.com/",
-        gdpr_query_scope=f"{SCOPE_1}.gdprquery",
-        gdpr_delete_scope=f"{SCOPE_1}.gdprdelete",
-    )
-
-
-@pytest.fixture
-def service_2(service_factory):
-    return service_factory(
-        name="service-2",
-        gdpr_url="https://example-2.com/",
-        gdpr_query_scope=f"{SCOPE_2}.gdprquery",
-        gdpr_delete_scope=f"{SCOPE_2}.gdprdelete",
-    )
 
 
 def assert_match_error_code_in_results(response, error_code):
@@ -295,7 +267,7 @@ def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
 
 
 def test_user_can_download_profile_with_connected_services(
-    user_gql_client, service_1, service_2, mocker
+    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker
 ):
     expected = {"key": "SERVICE-1", "children": [{"key": "CUSTOMERID", "value": "123"}]}
 
@@ -312,7 +284,7 @@ def test_user_can_download_profile_with_connected_services(
         side_effect=mock_download_gdpr_data,
     )
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -329,11 +301,17 @@ def test_user_can_download_profile_with_connected_services(
 
 
 def test_user_can_download_profile_using_correct_api_tokens(
-    user_gql_client, service_1, service_2, mocker
+    user_gql_client,
+    service_1,
+    service_2,
+    gdpr_api_tokens,
+    api_token_1,
+    api_token_2,
+    mocker,
 ):
     def mock_download_gdpr_data(self, api_token: str):
-        if (self.service.name == service_1.name and api_token == API_TOKEN_1) or (
-            self.service.name == service_2.name and api_token == API_TOKEN_2
+        if (self.service.name == service_1.name and api_token == api_token_1) or (
+            self.service.name == service_2.name and api_token == api_token_2
         ):
             return {}
 
@@ -349,7 +327,7 @@ def test_user_can_download_profile_using_correct_api_tokens(
         side_effect=mock_download_gdpr_data,
     )
     mocked_token_exchange = mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
@@ -365,6 +343,7 @@ def test_user_can_delete_his_profile(
     user_gql_client,
     profile_service,
     service_1,
+    gdpr_api_tokens,
     requests_mock,
     mocker,
     with_serviceconnection,
@@ -379,7 +358,7 @@ def test_user_can_delete_his_profile(
         )
         ServiceConnectionFactory(profile=profile, service=service_1)
         mocker.patch.object(
-            TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+            TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
         )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION, service=service_1)
@@ -415,10 +394,16 @@ def test_user_can_delete_his_profile(
 
 @pytest.mark.parametrize("should_fail", [False, True])
 def test_user_can_dry_run_profile_deletion(
-    user_gql_client, service_1, service_2, mocker, requests_mock, should_fail
+    user_gql_client,
+    service_1,
+    service_2,
+    gdpr_api_tokens,
+    mocker,
+    requests_mock,
+    should_fail,
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -485,14 +470,14 @@ def test_user_deletion_from_keycloak(
 
 
 def test_user_tries_deleting_his_profile_but_it_fails_partially(
-    user_gql_client, service_1, service_2, mocker, requests_mock
+    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
     """Test an edge case where dry runs passes for all connected services, but the
     proper service connection delete fails for a single connected service. All other
     connected services should still get deleted.
     """
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -551,10 +536,10 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
 
 
 def test_user_cannot_delete_their_profile_if_gdpr_url_is_not_set(
-    user_gql_client, service_1, mocker
+    user_gql_client, service_1, gdpr_api_tokens, mocker
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     service_1.gdpr_url = ""
@@ -572,10 +557,10 @@ def test_user_cannot_delete_their_profile_if_gdpr_url_is_not_set(
     "response_status", [404, 405, 500],
 )
 def test_user_cannot_delete_their_profile_if_service_returns_error_code(
-    user_gql_client, service_1, requests_mock, response_status, mocker
+    user_gql_client, service_1, gdpr_api_tokens, requests_mock, response_status, mocker
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     service_1_gdpr_url = service_1.get_gdpr_url_for_profile(profile)
@@ -596,7 +581,14 @@ def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
 
 
 def test_user_can_delete_his_profile_using_correct_api_tokens(
-    user_gql_client, service_1, service_2, mocker, requests_mock
+    user_gql_client,
+    service_1,
+    service_2,
+    gdpr_api_tokens,
+    api_token_1,
+    api_token_2,
+    mocker,
+    requests_mock,
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -608,13 +600,13 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     def get_response(request, context):
         if (
             service_1_gdpr_url in request.url
-            and request.headers["authorization"] == f"Bearer {API_TOKEN_1}"
+            and request.headers["authorization"] == f"Bearer {api_token_1}"
         ):
             return
 
         if (
             service_2_gdpr_url in request.url
-            and request.headers["authorization"] == f"Bearer {API_TOKEN_2}"
+            and request.headers["authorization"] == f"Bearer {api_token_2}"
         ):
             return
 
@@ -624,7 +616,7 @@ def test_user_can_delete_his_profile_using_correct_api_tokens(
     requests_mock.delete(service_2_gdpr_url, status_code=204, text=get_response)
 
     mocked_token_exchange = mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
@@ -654,10 +646,10 @@ def test_connection_to_profile_service_without_gdpr_api_settings_does_not_preven
 
 
 def test_deletion_errors_from_the_service_are_returned_to_the_caller(
-    user_gql_client, service_1, service_2, mocker, requests_mock
+    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -723,10 +715,10 @@ def test_deletion_errors_from_the_service_are_returned_to_the_caller(
 
 
 def test_invalid_deletion_errors_from_the_service_are_not_returned(
-    user_gql_client, service_1, service_2, mocker, requests_mock
+    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -764,7 +756,9 @@ def test_invalid_deletion_errors_from_the_service_are_not_returned(
     )
 
 
-def test_service_doesnt_have_gdpr_query_scope_set(user_gql_client, service_1, mocker):
+def test_service_doesnt_have_gdpr_query_scope_set(
+    user_gql_client, service_1, gdpr_api_tokens, mocker
+):
     """Missing query scope should make the query skip the service for a given connected profile."""
     service_1.gdpr_query_scope = ""
     service_1.save()
@@ -774,7 +768,7 @@ def test_service_doesnt_have_gdpr_query_scope_set(user_gql_client, service_1, mo
     }
     mocker.patch.object(ServiceConnection, "download_gdpr_data", return_value=response)
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -786,7 +780,9 @@ def test_service_doesnt_have_gdpr_query_scope_set(user_gql_client, service_1, mo
     assert response not in response_data
 
 
-def test_service_doesnt_have_gdpr_delete_scope_set(user_gql_client, service_1, mocker):
+def test_service_doesnt_have_gdpr_delete_scope_set(
+    user_gql_client, service_1, gdpr_api_tokens, mocker
+):
     """Missing delete scope shouldn't allow deleting a connected profile."""
     service_1.gdpr_delete_scope = ""
     service_1.save()
@@ -796,7 +792,7 @@ def test_service_doesnt_have_gdpr_delete_scope_set(user_gql_client, service_1, m
     }
     mocker.patch.object(ServiceConnection, "download_gdpr_data", return_value=response)
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -823,10 +819,16 @@ def test_api_tokens_missing(user_gql_client, service_1, query_or_delete, mocker)
 
 @pytest.mark.parametrize("dry_run", [True, False])
 def test_user_can_delete_data_from_a_service(
-    user_gql_client, service_1, service_2, mocker, requests_mock, dry_run
+    user_gql_client,
+    service_1,
+    service_2,
+    gdpr_api_tokens,
+    mocker,
+    requests_mock,
+    dry_run,
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
@@ -867,10 +869,15 @@ def test_user_can_delete_data_from_a_service(
     [None, {"errors": [{"code": "ERROR_CODE", "message": {"en": "Error"}}]}],
 )
 def test_error_is_returned_when_service_returns_errors(
-    user_gql_client, service_1, mocker, requests_mock, errors_from_service
+    user_gql_client,
+    service_1,
+    gdpr_api_tokens,
+    mocker,
+    requests_mock,
+    errors_from_service,
 ):
     mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=GDPR_API_TOKENS
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
