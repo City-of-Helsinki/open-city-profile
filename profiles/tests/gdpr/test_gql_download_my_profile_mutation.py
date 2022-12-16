@@ -246,14 +246,10 @@ def test_user_can_download_profile_using_correct_api_tokens(
 
 
 def test_when_service_does_not_have_gdpr_query_scope_set_then_error_is_returned(
-    user_gql_client, service_1, gdpr_api_tokens, mocker
+    user_gql_client, service_1
 ):
     service_1.gdpr_query_scope = ""
     service_1.save()
-
-    mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
-    )
 
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)

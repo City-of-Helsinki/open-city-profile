@@ -48,10 +48,22 @@ def _reload_settings(setting, **kwargs):
         _setup_keycloak_client()
 
 
+def _check_service_gdpr_query_configuration(service_connections):
+    for service_connection in service_connections:
+        service = service_connection.service
+
+        if not service.gdpr_query_scope:
+            raise ConnectedServiceDataQueryFailedError(
+                f"Connected service: {service.name} does not have an API for querying data."
+            )
+
+
 def download_connected_service_data(profile, authorization_code):
     external_data = []
 
     service_connections = profile.effective_service_connections_qs().all()
+
+    _check_service_gdpr_query_configuration(service_connections)
 
     if service_connections:
         tte = TunnistamoTokenExchange()
@@ -59,11 +71,6 @@ def download_connected_service_data(profile, authorization_code):
 
         for service_connection in service_connections:
             service = service_connection.service
-
-            if not service.gdpr_query_scope:
-                raise ConnectedServiceDataQueryFailedError(
-                    f"Connected service: {service.name} does not have an API for querying data."
-                )
 
             api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
             api_token = api_tokens.get(api_identifier, "")
