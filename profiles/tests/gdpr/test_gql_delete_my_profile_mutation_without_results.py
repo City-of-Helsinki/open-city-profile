@@ -32,7 +32,7 @@ DELETE_MY_PROFILE_MUTATION = Template(
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
-def test_user_can_delete_his_profile(
+def test_user_can_delete_their_profile(
     user_gql_client,
     profile_service,
     service_1,
@@ -151,7 +151,7 @@ def test_user_deletion_from_keycloak(
     mocked_keycloak_delete_user.assert_called_once_with(user.uuid)
 
 
-def test_user_tries_deleting_his_profile_but_it_fails_partially(
+def test_user_tries_deleting_their_profile_but_it_fails_partially(
     user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
     """Test an edge case where dry runs passes for all connected services, but the
@@ -188,7 +188,7 @@ def test_user_tries_deleting_his_profile_but_it_fails_partially(
     "gdpr_url, response_status",
     [("", 204), ("", 405), ("https://gdpr-url.example/", 405)],
 )
-def test_user_cannot_delete_his_profile_if_service_doesnt_allow_it(
+def test_user_cannot_delete_their_profile_if_service_doesnt_allow_it(
     user_gql_client,
     service_1,
     gdpr_api_tokens,
@@ -226,7 +226,7 @@ def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
     assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)
 
 
-def test_user_can_delete_his_profile_using_correct_api_tokens(
+def test_user_can_delete_their_profile_using_correct_api_tokens(
     user_gql_client,
     service_1,
     service_2,

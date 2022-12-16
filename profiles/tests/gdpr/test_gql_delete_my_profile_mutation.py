@@ -82,7 +82,7 @@ def assert_success_result(response, expected_success=True):
 
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
-def test_user_can_delete_his_profile(
+def test_user_can_delete_their_profile(
     user_gql_client,
     profile_service,
     service_1,
@@ -212,7 +212,7 @@ def test_user_deletion_from_keycloak(
     mocked_keycloak_delete_user.assert_called_once_with(user.uuid)
 
 
-def test_user_tries_deleting_his_profile_but_it_fails_partially(
+def test_user_tries_deleting_their_profile_but_it_fails_partially(
     user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
     """Test an edge case where dry runs passes for all connected services, but the
@@ -323,7 +323,7 @@ def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
     assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)
 
 
-def test_user_can_delete_his_profile_using_correct_api_tokens(
+def test_user_can_delete_their_profile_using_correct_api_tokens(
     user_gql_client,
     service_1,
     service_2,

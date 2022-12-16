@@ -367,7 +367,7 @@ def test_querying_non_existent_profile_doesnt_return_errors(user_gql_client, ser
 
 @pytest.mark.parametrize("with_service", (True, False))
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
-def test_normal_user_can_query_his_own_profile(
+def test_normal_user_can_query_their_own_profile(
     user_gql_client, service, with_service, with_serviceconnection
 ):
     profile = ProfileFactory(user=user_gql_client.user)
@@ -397,7 +397,7 @@ def test_normal_user_can_query_his_own_profile(
         assert executed["data"]["myProfile"] is None
 
 
-def test_normal_user_can_query_his_own_profiles_sensitivedata(user_gql_client):
+def test_normal_user_can_query_their_own_profiles_sensitivedata(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     sensitive_data = SensitiveDataFactory(profile=profile)
 
