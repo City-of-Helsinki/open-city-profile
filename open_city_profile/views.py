@@ -6,6 +6,7 @@ from helusers.oidc import AuthenticationError
 
 from open_city_profile.consts import (
     API_NOT_IMPLEMENTED_ERROR,
+    CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
@@ -25,6 +26,7 @@ from open_city_profile.consts import (
 )
 from open_city_profile.exceptions import (
     APINotImplementedError,
+    ConnectedServiceDataQueryFailedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
@@ -53,6 +55,7 @@ error_codes_shared = {
 }
 
 error_codes_profile = {
+    ConnectedServiceDataQueryFailedError: CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,

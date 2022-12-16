@@ -1604,6 +1604,8 @@ class Query(graphene.ObjectType):
         description="Get the user information stored in the profile and its connected services as "
         "machine readable JSON.\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n"
+        "* `CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR`: "
+        "Querying data from a connected service was not possible or failed.\n"
         "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.",
     )
     # TODO: Add the complete list of error codes

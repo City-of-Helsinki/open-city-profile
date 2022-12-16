@@ -12,6 +12,10 @@ class APINotImplementedError(ProfileGraphQLError):
     """The functionality is not yet implemented"""
 
 
+class ConnectedServiceDataQueryFailedError(GraphQLError):
+    """Querying data from a connected service failed."""
+
+
 class ConnectedServiceDeletionFailedError(GraphQLError):
     """Deleting a connected service has failed.
 

@@ -4,6 +4,7 @@ from django.core.signals import setting_changed
 from django.dispatch import receiver
 
 from open_city_profile.exceptions import (
+    ConnectedServiceDataQueryFailedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     MissingGDPRApiTokenError,
@@ -60,7 +61,9 @@ def download_connected_service_data(profile, authorization_code):
             service = service_connection.service
 
             if not service.gdpr_query_scope:
-                continue
+                raise ConnectedServiceDataQueryFailedError(
+                    f"Connected service: {service.name} does not have an API for querying data."
+                )
 
             api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
             api_token = api_tokens.get(api_identifier, "")

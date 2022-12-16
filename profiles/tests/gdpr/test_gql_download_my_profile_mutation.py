@@ -245,10 +245,9 @@ def test_user_can_download_profile_using_correct_api_tokens(
     assert SERVICE_DATA_2 in response_data
 
 
-def test_service_doesnt_have_gdpr_query_scope_set(
-    user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
+def test_when_service_does_not_have_gdpr_query_scope_set_then_error_is_returned(
+    user_gql_client, service_1, gdpr_api_tokens, mocker
 ):
-    """Missing query scope should make the query skip the service for a given connected profile."""
     service_1.gdpr_query_scope = ""
     service_1.save()
 
@@ -256,16 +255,13 @@ def test_service_doesnt_have_gdpr_query_scope_set(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
 
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
-
-    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=SERVICE_DATA_1)
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
-    response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
-    assert len(response_data) == 1
-    assert SERVICE_DATA_1 not in response_data
+    assert executed["data"]["downloadMyProfile"] is None
+    assert_match_error_code(executed, "CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR")
 
 
 def test_api_tokens_missing(user_gql_client, service_1, mocker):
