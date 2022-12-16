@@ -59,33 +59,34 @@ def _check_service_gdpr_query_configuration(service_connections):
 
 
 def download_connected_service_data(profile, authorization_code):
-    external_data = []
-
     service_connections = profile.effective_service_connections_qs().all()
+    if not service_connections:
+        return []
 
     _check_service_gdpr_query_configuration(service_connections)
 
-    if service_connections:
-        tte = TunnistamoTokenExchange()
-        api_tokens = tte.fetch_api_tokens(authorization_code)
+    tte = TunnistamoTokenExchange()
+    api_tokens = tte.fetch_api_tokens(authorization_code)
 
-        for service_connection in service_connections:
-            service = service_connection.service
+    external_data = []
 
-            api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
-            api_token = api_tokens.get(api_identifier, "")
+    for service_connection in service_connections:
+        service = service_connection.service
 
-            if not api_token:
-                raise MissingGDPRApiTokenError(
-                    f"Couldn't fetch an API token for service {service.name}."
-                )
+        api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
+        api_token = api_tokens.get(api_identifier, "")
 
-            service_connection_data = service_connection.download_gdpr_data(
-                api_token=api_token
+        if not api_token:
+            raise MissingGDPRApiTokenError(
+                f"Couldn't fetch an API token for service {service.name}."
             )
 
-            if service_connection_data:
-                external_data.append(service_connection_data)
+        service_connection_data = service_connection.download_gdpr_data(
+            api_token=api_token
+        )
+
+        if service_connection_data:
+            external_data.append(service_connection_data)
 
     return external_data
 
