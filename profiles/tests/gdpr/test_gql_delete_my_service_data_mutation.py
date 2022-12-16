@@ -66,14 +66,14 @@ def test_user_can_delete_data_from_a_service(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
     service_1_mocker = requests_mock.delete(
-        service_1.get_gdpr_url_for_profile(profile), status_code=204
+        service_connection_1.get_gdpr_url(), status_code=204
     )
     service_2_mocker = requests_mock.delete(
-        service_2.get_gdpr_url_for_profile(profile), status_code=204
+        service_connection_2.get_gdpr_url(), status_code=204
     )
     variables = {
         "serviceName": service_1.name,
@@ -115,12 +115,10 @@ def test_error_is_returned_when_service_returns_errors(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
 
     service_1_mocker = requests_mock.delete(
-        service_1.get_gdpr_url_for_profile(profile),
-        status_code=403,
-        json=errors_from_service,
+        service_connection.get_gdpr_url(), status_code=403, json=errors_from_service,
     )
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables={"serviceName": service_1.name}

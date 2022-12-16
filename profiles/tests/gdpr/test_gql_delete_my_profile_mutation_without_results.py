@@ -93,18 +93,18 @@ def test_user_can_dry_run_profile_deletion(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
     def get_response(request, context):
         if should_fail:
             context.status_code = 403
 
     service1_mocker = requests_mock.delete(
-        service_1.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+        service_connection_1.get_gdpr_url(), status_code=204, text=get_response
     )
     service2_mocker = requests_mock.delete(
-        service_2.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+        service_connection_2.get_gdpr_url(), status_code=204, text=get_response
     )
 
     executed = user_gql_client.execute(query)
@@ -162,16 +162,16 @@ def test_user_tries_deleting_their_profile_but_it_fails_partially(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
     def get_response(request, context):
         if request.qs.get("dry_run") != ["true"]:
             context.status_code = 403
 
-    requests_mock.delete(service_1.get_gdpr_url_for_profile(profile), status_code=204)
+    requests_mock.delete(service_connection_1.get_gdpr_url(), status_code=204)
     requests_mock.delete(
-        service_2.get_gdpr_url_for_profile(profile), status_code=204, text=get_response
+        service_connection_2.get_gdpr_url(), status_code=204, text=get_response
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
@@ -237,11 +237,11 @@ def test_user_can_delete_their_profile_using_correct_api_tokens(
     requests_mock,
 ):
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
-    service_1_gdpr_url = service_1.get_gdpr_url_for_profile(profile)
-    service_2_gdpr_url = service_2.get_gdpr_url_for_profile(profile)
+    service_1_gdpr_url = service_connection_1.get_gdpr_url()
+    service_2_gdpr_url = service_connection_2.get_gdpr_url()
 
     def get_response(request, context):
         if (

@@ -181,11 +181,11 @@ def test_user_can_download_profile_with_connected_services(
     )
 
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
-    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=SERVICE_DATA_1)
-    requests_mock.get(service_2.get_gdpr_url_for_profile(profile), json={})
+    requests_mock.get(service_connection_1.get_gdpr_url(), json=SERVICE_DATA_1)
+    requests_mock.get(service_connection_2.get_gdpr_url(), json={})
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
@@ -212,11 +212,11 @@ def test_user_can_download_profile_using_correct_api_tokens(
     )
 
     profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service_1)
-    ServiceConnectionFactory(profile=profile, service=service_2)
+    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
+    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
 
-    service_1_gdpr_url = service_1.get_gdpr_url_for_profile(profile)
-    service_2_gdpr_url = service_2.get_gdpr_url_for_profile(profile)
+    service_1_gdpr_url = service_connection_1.get_gdpr_url()
+    service_2_gdpr_url = service_connection_2.get_gdpr_url()
 
     def get_response(request, context):
         if (

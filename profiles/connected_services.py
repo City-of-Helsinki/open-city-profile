@@ -112,7 +112,7 @@ def _delete_service_connection_and_service_data(
     return results
 
 
-def _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens):
+def _check_service_gdpr_delete_configuration(service_connections, api_tokens):
     failed_services = []
 
     for service_connection in service_connections:
@@ -132,7 +132,7 @@ def _check_service_gdpr_delete_configuration(profile, service_connections, api_t
                 f"Couldn't fetch an API token for service {service.name}."
             )
 
-        if not service.get_gdpr_url_for_profile(profile):
+        if not service_connection.get_gdpr_url():
             failed_services.append(service.name)
 
     if failed_services:
@@ -154,7 +154,7 @@ def delete_connected_service_data(
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
 
-    _check_service_gdpr_delete_configuration(profile, service_connections, api_tokens)
+    _check_service_gdpr_delete_configuration(service_connections, api_tokens)
 
     results = _delete_service_connection_and_service_data(
         service_connections, api_tokens, dry_run=True
