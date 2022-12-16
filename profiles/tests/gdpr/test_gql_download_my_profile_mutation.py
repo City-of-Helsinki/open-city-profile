@@ -35,95 +35,90 @@ SERVICE_DATA_2 = {
 }
 
 
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
-def test_user_can_download_profile(
-    user_gql_client, service, mocker, with_serviceconnection
-):
+def test_user_can_download_profile(user_gql_client, profile_service):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    service_connection_created_at = None
-    if with_serviceconnection:
-        mocker.patch.object(
-            TunnistamoTokenExchange, "fetch_api_tokens", return_value=None
-        )
-        service_connection = ServiceConnectionFactory(profile=profile, service=service)
-        service_connection_created_at = service_connection.created_at.date().isoformat()
+    service_connection = ServiceConnectionFactory(
+        profile=profile, service=profile_service
+    )
+    service_connection_created_at = service_connection.created_at.date().isoformat()
 
     primary_email = profile.emails.first()
 
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, service=service)
+    executed = user_gql_client.execute(
+        DOWNLOAD_MY_PROFILE_MUTATION, service=profile_service
+    )
 
-    if with_serviceconnection:
-        expected_json = json.dumps(
-            {
-                "key": "DATA",
-                "children": [
-                    {
-                        "key": "PROFILE",
-                        "children": [
-                            {"key": "FIRST_NAME", "value": profile.first_name},
-                            {"key": "LAST_NAME", "value": profile.last_name},
-                            {"key": "NICKNAME", "value": profile.nickname},
-                            {"key": "LANGUAGE", "value": profile.language},
-                            {"key": "CONTACT_METHOD", "value": profile.contact_method},
-                            {
-                                "key": "EMAILS",
-                                "children": [
-                                    {
-                                        "key": "EMAIL",
-                                        "children": [
-                                            {
-                                                "key": "PRIMARY",
-                                                "value": primary_email.primary,
-                                            },
-                                            {
-                                                "key": "EMAIL_TYPE",
-                                                "value": primary_email.email_type.name,
-                                            },
-                                            {
-                                                "key": "EMAIL",
-                                                "value": primary_email.email,
-                                            },
-                                        ],
-                                    }
-                                ],
-                            },
-                            {"key": "PHONES", "children": []},
-                            {"key": "ADDRESSES", "children": []},
-                            {
-                                "key": "SERVICE_CONNECTIONS",
-                                "children": [
-                                    {
-                                        "key": "SERVICECONNECTION",
-                                        "children": [
-                                            {"key": "SERVICE", "value": service.name},
-                                            {
-                                                "key": "CREATED_AT",
-                                                "value": service_connection_created_at,
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    }
-                ],
-            }
-        )
-        assert executed["data"]["downloadMyProfile"] == expected_json, executed
-    else:
-        assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["downloadMyProfile"] is None
+    expected_json = json.dumps(
+        {
+            "key": "DATA",
+            "children": [
+                {
+                    "key": "PROFILE",
+                    "children": [
+                        {"key": "FIRST_NAME", "value": profile.first_name},
+                        {"key": "LAST_NAME", "value": profile.last_name},
+                        {"key": "NICKNAME", "value": profile.nickname},
+                        {"key": "LANGUAGE", "value": profile.language},
+                        {"key": "CONTACT_METHOD", "value": profile.contact_method},
+                        {
+                            "key": "EMAILS",
+                            "children": [
+                                {
+                                    "key": "EMAIL",
+                                    "children": [
+                                        {
+                                            "key": "PRIMARY",
+                                            "value": primary_email.primary,
+                                        },
+                                        {
+                                            "key": "EMAIL_TYPE",
+                                            "value": primary_email.email_type.name,
+                                        },
+                                        {"key": "EMAIL", "value": primary_email.email},
+                                    ],
+                                }
+                            ],
+                        },
+                        {"key": "PHONES", "children": []},
+                        {"key": "ADDRESSES", "children": []},
+                        {
+                            "key": "SERVICE_CONNECTIONS",
+                            "children": [
+                                {
+                                    "key": "SERVICECONNECTION",
+                                    "children": [
+                                        {
+                                            "key": "SERVICE",
+                                            "value": profile_service.name,
+                                        },
+                                        {
+                                            "key": "CREATED_AT",
+                                            "value": service_connection_created_at,
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+    assert executed["data"]["downloadMyProfile"] == expected_json, executed
 
 
-def download_verified_personal_information_with_loa(
-    loa, user_gql_client, service, mocker
+def test_user_can_not_download_profile_without_service_connection(
+    service_1, user_gql_client
 ):
-    profile = VerifiedPersonalInformationFactory(
-        profile__user=user_gql_client.user
-    ).profile
+    ProfileFactory(user=user_gql_client.user)
 
-    mocker.patch.object(TunnistamoTokenExchange, "fetch_api_tokens", return_value=None)
-    ServiceConnectionFactory(profile=profile, service=service)
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, service=service_1)
+    assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+    assert executed["data"]["downloadMyProfile"] is None
+
+
+def download_verified_personal_information_with_loa(loa, user_gql_client, service):
+    VerifiedPersonalInformationFactory(profile__user=user_gql_client.user)
 
     token_payload = {
         "loa": loa,
@@ -147,10 +142,10 @@ def download_verified_personal_information_with_loa(
 
 @pytest.mark.parametrize("loa", ["substantial", "high"])
 def test_verified_personal_information_is_included_in_the_downloaded_profile_when_loa_is_high_enough(
-    loa, user_gql_client, service, mocker
+    loa, user_gql_client, profile_service
 ):
     vpi_dump = download_verified_personal_information_with_loa(
-        loa, user_gql_client, service, mocker
+        loa, user_gql_client, profile_service
     )
 
     assert "error" not in vpi_dump
@@ -159,10 +154,10 @@ def test_verified_personal_information_is_included_in_the_downloaded_profile_whe
 
 @pytest.mark.parametrize("loa", [None, "foo", "low"])
 def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not_high_enough(
-    loa, user_gql_client, service, mocker
+    loa, user_gql_client, profile_service
 ):
     vpi_dump = download_verified_personal_information_with_loa(
-        loa, user_gql_client, service, mocker
+        loa, user_gql_client, profile_service
     )
 
     assert vpi_dump == {

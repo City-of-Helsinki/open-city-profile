@@ -50,11 +50,13 @@ def _reload_settings(setting, **kwargs):
 def download_connected_service_data(profile, authorization_code):
     external_data = []
 
-    if profile.service_connections.exists():
+    service_connections = profile.effective_service_connections_qs().all()
+
+    if service_connections:
         tte = TunnistamoTokenExchange()
         api_tokens = tte.fetch_api_tokens(authorization_code)
 
-        for service_connection in profile.service_connections.all():
+        for service_connection in service_connections:
             service = service_connection.service
 
             if not service.gdpr_query_scope:
