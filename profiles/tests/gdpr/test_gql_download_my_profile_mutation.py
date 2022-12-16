@@ -24,6 +24,16 @@ DOWNLOAD_MY_PROFILE_MUTATION = Template(
 """
 ).substitute(auth_code=AUTHORIZATION_CODE)
 
+SERVICE_DATA_1 = {
+    "key": "SERVICE-1",
+    "children": [{"key": "CUSTOMERID", "value": "123"}],
+}
+
+SERVICE_DATA_2 = {
+    "key": "SERVICE-2",
+    "children": [{"key": "STATUS", "value": "PENDING"}],
+}
+
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_user_can_download_profile(
@@ -171,8 +181,6 @@ def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
 def test_user_can_download_profile_with_connected_services(
     user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
 ):
-    expected = {"key": "SERVICE-1", "children": [{"key": "CUSTOMERID", "value": "123"}]}
-
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
@@ -181,14 +189,14 @@ def test_user_can_download_profile_with_connected_services(
     ServiceConnectionFactory(profile=profile, service=service_1)
     ServiceConnectionFactory(profile=profile, service=service_2)
 
-    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=expected)
+    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=SERVICE_DATA_1)
     requests_mock.get(service_2.get_gdpr_url_for_profile(profile), json={})
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
     assert len(response_data) == 2
-    assert expected in response_data
+    assert SERVICE_DATA_1 in response_data
 
     # Data does not contain the empty response from service_2
     assert {} not in response_data
@@ -204,15 +212,6 @@ def test_user_can_download_profile_using_correct_api_tokens(
     mocker,
     requests_mock,
 ):
-    service_1_data = {
-        "key": "SERVICE-1",
-        "children": [{"key": "CUSTOMERID", "value": "123"}],
-    }
-    service_2_data = {
-        "key": "SERVICE-2",
-        "children": [{"key": "STATUS", "value": "PENDING"}],
-    }
-
     mocked_token_exchange = mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )
@@ -229,13 +228,13 @@ def test_user_can_download_profile_using_correct_api_tokens(
             request.url == service_1_gdpr_url
             and request.headers["authorization"] == f"Bearer {api_token_1}"
         ):
-            return service_1_data
+            return SERVICE_DATA_1
 
         if (
             request.url == service_2_gdpr_url
             and request.headers["authorization"] == f"Bearer {api_token_2}"
         ):
-            return service_2_data
+            return SERVICE_DATA_2
 
         raise RuntimeError("Unexpected GDPR API call")
 
@@ -247,8 +246,8 @@ def test_user_can_download_profile_using_correct_api_tokens(
     mocked_token_exchange.assert_called_once()
     assert mocked_token_exchange.call_args == ((AUTHORIZATION_CODE,),)
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
-    assert service_1_data in response_data
-    assert service_2_data in response_data
+    assert SERVICE_DATA_1 in response_data
+    assert SERVICE_DATA_2 in response_data
 
 
 def test_service_doesnt_have_gdpr_query_scope_set(
@@ -257,10 +256,6 @@ def test_service_doesnt_have_gdpr_query_scope_set(
     """Missing query scope should make the query skip the service for a given connected profile."""
     service_1.gdpr_query_scope = ""
     service_1.save()
-    response = {
-        "key": "SERVICE",
-        "children": [{"key": "CUSTOMERID", "value": "123"}],
-    }
 
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
@@ -269,13 +264,13 @@ def test_service_doesnt_have_gdpr_query_scope_set(
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
 
-    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=response)
+    requests_mock.get(service_1.get_gdpr_url_for_profile(profile), json=SERVICE_DATA_1)
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
     assert len(response_data) == 1
-    assert response not in response_data
+    assert SERVICE_DATA_1 not in response_data
 
 
 def test_api_tokens_missing(user_gql_client, service_1, mocker):
