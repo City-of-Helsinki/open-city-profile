@@ -245,6 +245,21 @@ def test_user_can_download_profile_using_correct_api_tokens(
     assert SERVICE_DATA_2 in response_data
 
 
+def test_when_service_does_not_have_gdpr_url_set_then_error_is_returned(
+    user_gql_client, service_1
+):
+    service_1.gdpr_url = ""
+    service_1.save()
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service_1)
+
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
+
+    assert executed["data"]["downloadMyProfile"] is None
+    assert_match_error_code(executed, "CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR")
+
+
 def test_when_service_does_not_have_gdpr_query_scope_set_then_error_is_returned(
     user_gql_client, service_1
 ):

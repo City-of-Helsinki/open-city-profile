@@ -52,7 +52,7 @@ def _check_service_gdpr_query_configuration(service_connections):
     for service_connection in service_connections:
         service = service_connection.service
 
-        if not service.gdpr_query_scope:
+        if not service_connection.get_gdpr_url() or not service.gdpr_query_scope:
             raise ConnectedServiceDataQueryFailedError(
                 f"Connected service: {service.name} does not have an API for querying data."
             )
