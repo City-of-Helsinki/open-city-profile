@@ -173,31 +173,7 @@ def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
     assert "errors" not in executed
 
 
-def test_user_can_download_profile_with_connected_services(
-    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
-):
-    mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
-    )
-
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
-    service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
-
-    requests_mock.get(service_connection_1.get_gdpr_url(), json=SERVICE_DATA_1)
-    requests_mock.get(service_connection_2.get_gdpr_url(), json={})
-
-    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
-
-    response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
-    assert len(response_data) == 2
-    assert SERVICE_DATA_1 in response_data
-
-    # Data does not contain the empty response from service_2
-    assert {} not in response_data
-
-
-def test_user_can_download_profile_using_correct_api_tokens(
+def test_user_can_download_profile_with_connected_services_using_correct_api_tokens(
     user_gql_client,
     service_1,
     service_2,
@@ -243,6 +219,26 @@ def test_user_can_download_profile_using_correct_api_tokens(
     response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
     assert SERVICE_DATA_1 in response_data
     assert SERVICE_DATA_2 in response_data
+
+
+def test_empty_data_from_connected_service_is_not_included_in_response(
+    user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
+    )
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
+
+    requests_mock.get(service_connection.get_gdpr_url(), json={})
+
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
+
+    response_data = json.loads(executed["data"]["downloadMyProfile"])["children"]
+    assert len(response_data) == 1
+    # Data does not contain the empty response from service
+    assert {} not in response_data
 
 
 def test_when_service_does_not_have_gdpr_url_set_then_error_is_returned(
