@@ -280,3 +280,21 @@ def test_api_tokens_missing(user_gql_client, service_1, mocker):
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
     assert_match_error_code(executed, MISSING_GDPR_API_TOKEN_ERROR)
+
+
+def test_when_service_fails_to_return_data_then_error_is_returned(
+    user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
+):
+    mocker.patch.object(
+        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
+    )
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
+
+    requests_mock.get(service_connection.get_gdpr_url(), status_code=403)
+
+    executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
+
+    assert executed["data"]["downloadMyProfile"] is None
+    assert_match_error_code(executed, "CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR")

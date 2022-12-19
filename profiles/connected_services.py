@@ -10,6 +10,7 @@ from open_city_profile.exceptions import (
     MissingGDPRApiTokenError,
 )
 from open_city_profile.oidc import TunnistamoTokenExchange
+from utils.auth import BearerAuth
 from utils.keycloak import KeycloakAdminClient
 
 _keycloak_admin_client = None
@@ -81,9 +82,15 @@ def download_connected_service_data(profile, authorization_code):
                 f"Couldn't fetch an API token for service {service.name}."
             )
 
-        service_connection_data = service_connection.download_gdpr_data(
-            api_token=api_token
-        )
+        try:
+            url = service_connection.get_gdpr_url()
+            response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
+            response.raise_for_status()
+            service_connection_data = response.json()
+        except requests.RequestException:
+            raise ConnectedServiceDataQueryFailedError(
+                f"Invalid response from service {service.name}"
+            )
 
         if service_connection_data:
             external_data.append(service_connection_data)
