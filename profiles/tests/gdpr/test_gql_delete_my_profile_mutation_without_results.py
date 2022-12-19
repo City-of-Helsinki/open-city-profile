@@ -301,11 +301,7 @@ def test_service_doesnt_have_gdpr_delete_scope_set(
     """Missing delete scope shouldn't allow deleting a connected profile."""
     service_1.gdpr_delete_scope = ""
     service_1.save()
-    response = {
-        "key": "SERVICE-1",
-        "children": [{"key": "CUSTOMERID", "value": "123"}],
-    }
-    mocker.patch.object(ServiceConnection, "download_gdpr_data", return_value=response)
+
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
     )

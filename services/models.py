@@ -235,22 +235,6 @@ class ServiceConnection(SerializableMixin):
     def get_gdpr_url(self):
         return self.service.get_gdpr_url_for_profile(self.profile)
 
-    def download_gdpr_data(self, api_token: str):
-        """Download service specific GDPR data by profile.
-
-        API token needs to be for a user that can access information for the related
-        profile on the related GDPR API.
-        """
-        url = self.get_gdpr_url()
-        if url:
-            try:
-                response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
-                response.raise_for_status()
-                return response.json()
-            except requests.RequestException:
-                return {}
-        return {}
-
     def delete_gdpr_data(self, api_token: str, dry_run=False) -> DeleteGdprDataResult:
         """Delete service specific GDPR data by profile.
 

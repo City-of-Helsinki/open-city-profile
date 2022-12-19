@@ -71,53 +71,6 @@ def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
     assert second_data_field.order == 2
 
 
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_download_gdpr_data_with_valid_service_and_url(requests_mock, service, profile):
-    service_response = {
-        "some": "json",
-    }
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    requests_mock.get(
-        f"{GDPR_URL}{profile.pk}",
-        json=service_response,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    response = service_connection.download_gdpr_data(api_token="token")
-    assert response == service_response
-
-
-def test_download_gdpr_data_returns_empty_dict_if_no_url(
-    requests_mock, profile, service
-):
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    requests_mock.get(
-        f"{GDPR_URL}{profile.pk}",
-        json={},
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    response = service_connection.download_gdpr_data(api_token="token")
-    assert response == {}
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_download_gdpr_data_returns_empty_dict_if_request_fails(
-    requests_mock, profile, service
-):
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-    requests_mock.get(
-        f"{GDPR_URL}{profile.pk}",
-        json={},
-        status_code=404,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    response = service_connection.download_gdpr_data(api_token="token")
-    assert response == {}
-
-
 def test_remove_service_gdpr_data_no_url(profile, service):
     service_connection = ServiceConnectionFactory(profile=profile, service=service)
 
