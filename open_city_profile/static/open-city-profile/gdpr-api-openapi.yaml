@@ -15,14 +15,14 @@ paths:
         type: string
         format: uuid
     get:
-      summary: Retrieve all of the data related to the given id.
-      description: Retrieve all of the data related to the given id, represented in a tree structure.
+      summary: Retrieve all personal data related to the identified profile.
+      description: Retrieve all personal data related to the identified profile, represented in a tree structure.
       tags:
       - profiles
       operationId: getProfile
       responses:
         200:
-          description: Returned when the retrieval is successful. The body contains the profile data in a tree structure.
+          description: Returns the data for the profile. The body contains the profile data in a tree structure.
           content:
             application/json:
               schema:
@@ -40,7 +40,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
-      summary: Delete all data related to the given id.
+      summary: Perform the needed actions so that the service no longer contains personal data related to the profile.
       description: Deletes all data related to the given profile id, or just checks if the data can be deleted, depending on the `dry_run` parameter.
       tags:
       - profiles
