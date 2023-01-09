@@ -81,6 +81,10 @@ components:
       additionalProperties:
         description: A human-readable message in the language specified by the key.
         type: string
+      example:
+        en: "Existing contract"
+        fi: "Voimassaoleva sopimus"
+        sv: "Gällande avtal"
     Error:
       type: object
       required:
@@ -90,6 +94,7 @@ components:
         code:
           description: A service specific error code for debugging purposes.
           type: string
+          example: CONTRACT
         message:
           $ref: '#/components/schemas/LocalizedMessage'
     ErrorResponse:
