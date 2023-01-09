@@ -2,15 +2,7 @@ openapi: 3.0.3
 info:
   title: Open-city-profile GDPR API
   description: 'This is the API for performing GDPR operations on user data which relates to a certain profile. The GDPR operations provide the functionalities for removing all data or downloading all stored data.'
-  termsOfService: ''
-  contact:
-    email: kuva-open-city-profile-developers@googlegroups.com
   version: 1.0.0
-externalDocs:
-  description: Read more about Helsinkiprofile in Confluence
-  url: https://helsinkisolutionoffice.atlassian.net/wiki/spaces/DD/pages/917571
-servers:
-- url: https://localhost:8888/gdpr-api/v1
 paths:
   /profiles/{id}:
     get:
