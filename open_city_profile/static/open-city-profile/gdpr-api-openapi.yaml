@@ -7,7 +7,7 @@ paths:
   /profiles/{id}:
     get:
       summary: Retrieve all of the data related to the given id.
-      description: Retrieve all of the data related to the given id, represented in a tree structure. Depending on the `displayable` parameter, the response may contain additional metadata which can be used when formatting the data for a user.
+      description: Retrieve all of the data related to the given id, represented in a tree structure.
       tags:
       - profiles
       operationId: getProfile
@@ -18,12 +18,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: displayable
-        in: query
-        description: If this is set to true, the response is going to be used to display formatted content to a user. This means that the service may add additional data to the response so that the calling system may use that data to format the response further. See the specification of '#components/schemas/Node'. If this is false or missing, then the response is going to be used in some form of machine readable output.
-        required: false
-        schema:
-          type: boolean
       responses:
         200:
           description: Returned when the retrieval is successful. The body contains the profile data in a tree structure.
@@ -89,15 +83,7 @@ components:
       type: object
       additionalProperties:
         type: string
-        example: 'Some message/label in the language specified by the key'
-    Formatting:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: ['string', 'date', 'decimal']
-        precision:
-          type: integer
+        example: 'Some message in the language specified by the key'
     Error:
       type: object
       required:
@@ -119,116 +105,48 @@ components:
       example:
         {
           "key": "CUSTOMER",
-          "label": {
-            "fi": "Asiakkaan tiedot",
-            "en": "Customer information"
-          },
           "children": [
             {
               "key": "NAME",
-              "label": {
-                "fi": "Nimi",
-                "en": "Name"
-              },
               "value": "John Doe"
             },
             {
               "key": "ADDRESS",
-              "label": {
-                "fi": "Osoite",
-                "en": "Address"
-              },
               "value": "Bourbon Street 123"
             },
             {
               "key": "RESERVED_PARKING_SPACES",
-              "label": {
-                "fi": "Varatut parkkipaikat",
-                "en": "Reserved parking spaces"
-              },
               "children": [
                 {
                   "key": "PARKING_SPACE",
-                  "label": {
-                    "fi": "Parkkipaikka",
-                    "en": "Parking space"
-                  },
                   "children": [
                     {
                       "key": "NUMBER",
-                      "label": {
-                        "fi": "Parkkipaikan numero",
-                        "en": "Parking space number",
-                      },
-                      "formatting": {
-                        "datatype": "integer"
-                      },
                       "value": "66"
                     },
                     {
                       "key": "LENGTH",
-                      "label": {
-                        "fi": "Parkkipaikan pituus",
-                        "en": "Parking space length",
-                      },
-                      "formatting": {
-                        "datatype": "decimal",
-                        "precision": "2"
-                      },
                       "value": "4.280000000000"
                     },
                     {
                       "key": "RESERVATION_DATE",
-                      "label": {
-                        "fi": "Varauspäivämäärä",
-                        "en": "Reservation date",
-                      },
-                      "formatting": {
-                        "datatype": "date"
-                      },
                       "value": "2020-01-01"
                     }
                   ]
                 },
                 {
                   "key": "PARKING_SPACE",
-                  "label": {
-                    "fi": "Parkkipaikka",
-                    "en": "Parking space"
-                  },
                   "children": [
                     {
                       "key": "NUMBER",
-                      "label": {
-                        "fi": "Parkkipaikan numero",
-                        "en": "Parking spaces number",
-                      },
-                      "formatting": {
-                        "datatype": "integer"
-                      },
                       "value": "68"
                     },
                     {
                       "key": "LENGTH",
-                      "label": {
-                        "fi": "Parkkipaikan pituus",
-                        "en": "Parking space length",
-                      },
-                      "formatting": {
-                        "datatype": "decimal",
-                        "precision": "2"
-                      },
                       "value": "3.90000000004"
                     },
                     {
                       "key": "RESERVATION_DATE",
-                      "label": {
-                        "fi": "Varauspäivämäärä",
-                        "en": "Reservation date",
-                      },
-                      "formatting": {
-                        "datatype": "date"
-                      },
                       "value": "2020-02-02"
                     }
                   ]
@@ -237,16 +155,12 @@ components:
             }
           ]
         }
-      description: This represents a single node in the tree structure. You may use this as a key-value pair or only as a container for the child elements or a combination of both. The `label` and `formatting` properties should only be used when `displayable=true`. `label` should contain a label for this Node, preferrably in all fi/sv/en languages to facilitate localization. `formatting` may contain hints for formatting the node's value for the UI.
+      description: This represents a single node in the tree structure. You may use this as a key-value pair or only as a container for the child elements or a combination of both.
       type: object
       properties:
         key:
           description: This should be a technical identifier for the Node so that it can be used by a parser. If it's feasible, use a database column name here.
           type: string
-        label:
-          $ref: '#/components/schemas/LocalizedMessage'
-        formatting:
-          $ref: '#/components/schemas/Formatting'
         value:
           description: This is the value of the Node. This can be left empty if you want to use this Node as a sort of heading.
           type: string
