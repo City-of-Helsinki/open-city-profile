@@ -79,8 +79,8 @@ components:
     LocalizedMessage:
       type: object
       additionalProperties:
+        description: A human-readable message in the language specified by the key.
         type: string
-        example: 'Some message in the language specified by the key'
     Error:
       type: object
       required:
@@ -88,6 +88,7 @@ components:
         - message
       properties:
         code:
+          description: A service specific error code for debugging purposes.
           type: string
         message:
           $ref: '#/components/schemas/LocalizedMessage'
