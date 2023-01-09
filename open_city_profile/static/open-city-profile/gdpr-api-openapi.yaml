@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Open-city-profile GDPR API
   description: 'This is the API for performing GDPR operations on user data which relates to a certain profile. The GDPR operations provide the functionalities for removing all data or downloading all stored data.'
-  version: 1.0.0
+  version: 1.1.0
 paths:
   /service_specific_path/{profile_or_user_id}:
     description: The service can basically choose their URL by themself. The URL will have a user UUID or a profile ID (also an UUID, but separate from the user UUID) somewhere in the path.
