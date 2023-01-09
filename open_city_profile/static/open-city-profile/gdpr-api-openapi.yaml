@@ -4,20 +4,21 @@ info:
   description: 'This is the API for performing GDPR operations on user data which relates to a certain profile. The GDPR operations provide the functionalities for removing all data or downloading all stored data.'
   version: 1.0.0
 paths:
-  /profiles/{id}:
+  /profiles/{profile_or_user_id}:
+    parameters:
+    - name: profile_or_user_id
+      in: path
+      description: Profile or user id to identify the profile. The implementation may choose which id and at which location in the path (it doesn't need to be the last part in the path) they want to use.
+      required: true
+      schema:
+        type: string
+        format: uuid
     get:
       summary: Retrieve all of the data related to the given id.
       description: Retrieve all of the data related to the given id, represented in a tree structure.
       tags:
       - profiles
       operationId: getProfile
-      parameters:
-      - name: id
-        in: path
-        description: Profile id whose data is retrieved
-        required: true
-        schema:
-          type: string
       responses:
         200:
           description: Returned when the retrieval is successful. The body contains the profile data in a tree structure.
@@ -44,12 +45,6 @@ paths:
       - profiles
       operationId: deleteProfile
       parameters:
-      - name: id
-        in: path
-        description: Profile id to delete.
-        required: true
-        schema:
-          type: string
       - name: dry_run
         in: query
         description: If set to true, the actual removal will not be made. Instead the business rules are checked to see if the removal can be made.
