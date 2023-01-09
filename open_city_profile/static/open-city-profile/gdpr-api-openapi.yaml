@@ -25,12 +25,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Node'
+        204:
+          description: There is no data related to the profile. This can happen because the service does not contain such data for the profile or is completely unaware of the identified profile.
         400:
           description: Request’s parameters fail validation
         401:
           description: Request’s credentials are missing or invalid.
-        404:
-          description: Profile’s data cannot be found with the given id.
         500:
           description: There has been an unexpected error during the call.
           content:
@@ -58,7 +58,10 @@ paths:
           type: boolean
       responses:
         204:
-          description: Returned after a successful operation. Depending on the `dry_run` variable, this means either that the profile data has been deleted or that the called service is currently allowing the deletion.
+          description: |-
+            The service allows and has done everything needed so that it no longer contains personal data for the identified profile. This response is also given in the case that the service does not contain any data for the profile or is completely unaware of the identified profile.
+
+            If the `dry_run` parameter is `true`, and no actual data erasure takes place, this response means that the service allows the data erasure.
         400:
           description: Request’s parameters fail validation
         401:
@@ -69,8 +72,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        404:
-          description: Profile’s data cannot be found with the given id.
         500:
           description: There has been an unexpected error during the call.
           content:
