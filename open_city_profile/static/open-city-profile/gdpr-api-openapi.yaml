@@ -1,0 +1,265 @@
+openapi: 3.0.3
+info:
+  title: Helsinkiprofile GDPR API
+  description: 'This is the API for performing GDPR operations on user data which relates to a certain Helsinkiprofile. The GDPR operations provide the functionalities for removing all data or downloading all stored data.'
+  termsOfService: ''
+  contact:
+    email: kuva-open-city-profile-developers@googlegroups.com
+  version: 1.0.0
+externalDocs:
+  description: Read more about Helsinkiprofile in Confluence
+  url: https://helsinkisolutionoffice.atlassian.net/wiki/spaces/DD/pages/917571
+servers:
+- url: https://localhost:8888/gdpr-api/v1
+paths:
+  /profiles/{id}:
+    get:
+      summary: Retrieve all of the data related to the given id.
+      description: Retrieve all of the data related to the given id, represented in a tree structure. Depending on the `displayable` parameter, the response may contain additional metadata which can be used when formatting the data for a user.
+      tags:
+      - profiles
+      operationId: getProfile
+      parameters:
+      - name: id
+        in: path
+        description: Profile id whose data is retrieved
+        required: true
+        schema:
+          type: string
+      - name: displayable
+        in: query
+        description: If this is set to true, the response is going to be used to display formatted content to a user. This means that the service may add additional data to the response so that the calling system may use that data to format the response further. See the specification of '#components/schemas/Node'. If this is false or missing, then the response is going to be used in some form of machine readable output.
+        required: false
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: Returned when the retrieval is successful. The body contains the profile data in a tree structure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        400:
+          description: Request’s parameters fail validation
+        401:
+          description: Request’s credentials are missing or invalid.
+        404:
+          description: Profile’s data cannot be found with the given id.
+        500:
+          description: There has been an unexpected error during the call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete all data related to the given id.
+      description: Deletes all data related to the given profile id, or just checks if the data can be deleted, depending on the `dry_run` parameter.
+      tags:
+      - profiles
+      operationId: deleteProfile
+      parameters:
+      - name: id
+        in: path
+        description: Profile id to delete.
+        required: true
+        schema:
+          type: string
+      - name: dry_run
+        in: query
+        description: If set to true, the actual removal will not be made. Instead the business rules are checked to see if the removal can be made.
+        required: false
+        schema:
+          type: boolean
+      responses:
+        204:
+          description: Returned after a successful operation. Depending on the `dry_run` variable, this means either that the profile data has been deleted or that the called service is currently allowing the deletion.
+        400:
+          description: Request’s parameters fail validation
+        401:
+          description: Request’s credentials are missing or invalid.
+        403:
+          description: Profile cannot be removed from the called service because of some business rules. The reason(s) for failure are detailed in the returned response object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: Profile’s data cannot be found with the given id.
+        500:
+          description: There has been an unexpected error during the call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    LocalizedMessage:
+      type: object
+      additionalProperties:
+        type: string
+        example: 'Some message/label in the language specified by the key'
+    Formatting:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ['string', 'date', 'decimal']
+        precision:
+          type: integer
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          $ref: '#/components/schemas/LocalizedMessage'
+    ErrorResponse:
+      type: "object"
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+    Node:
+      example:
+        {
+          "key": "CUSTOMER",
+          "label": {
+            "fi": "Asiakkaan tiedot",
+            "en": "Customer information"
+          },
+          "children": [
+            {
+              "key": "NAME",
+              "label": {
+                "fi": "Nimi",
+                "en": "Name"
+              },
+              "value": "John Doe"
+            },
+            {
+              "key": "ADDRESS",
+              "label": {
+                "fi": "Osoite",
+                "en": "Address"
+              },
+              "value": "Bourbon Street 123"
+            },
+            {
+              "key": "RESERVED_PARKING_SPACES",
+              "label": {
+                "fi": "Varatut parkkipaikat",
+                "en": "Reserved parking spaces"
+              },
+              "children": [
+                {
+                  "key": "PARKING_SPACE",
+                  "label": {
+                    "fi": "Parkkipaikka",
+                    "en": "Parking space"
+                  },
+                  "children": [
+                    {
+                      "key": "NUMBER",
+                      "label": {
+                        "fi": "Parkkipaikan numero",
+                        "en": "Parking space number",
+                      },
+                      "formatting": {
+                        "datatype": "integer"
+                      },
+                      "value": "66"
+                    },
+                    {
+                      "key": "LENGTH",
+                      "label": {
+                        "fi": "Parkkipaikan pituus",
+                        "en": "Parking space length",
+                      },
+                      "formatting": {
+                        "datatype": "decimal",
+                        "precision": "2"
+                      },
+                      "value": "4.280000000000"
+                    },
+                    {
+                      "key": "RESERVATION_DATE",
+                      "label": {
+                        "fi": "Varauspäivämäärä",
+                        "en": "Reservation date",
+                      },
+                      "formatting": {
+                        "datatype": "date"
+                      },
+                      "value": "2020-01-01"
+                    }
+                  ]
+                },
+                {
+                  "key": "PARKING_SPACE",
+                  "label": {
+                    "fi": "Parkkipaikka",
+                    "en": "Parking space"
+                  },
+                  "children": [
+                    {
+                      "key": "NUMBER",
+                      "label": {
+                        "fi": "Parkkipaikan numero",
+                        "en": "Parking spaces number",
+                      },
+                      "formatting": {
+                        "datatype": "integer"
+                      },
+                      "value": "68"
+                    },
+                    {
+                      "key": "LENGTH",
+                      "label": {
+                        "fi": "Parkkipaikan pituus",
+                        "en": "Parking space length",
+                      },
+                      "formatting": {
+                        "datatype": "decimal",
+                        "precision": "2"
+                      },
+                      "value": "3.90000000004"
+                    },
+                    {
+                      "key": "RESERVATION_DATE",
+                      "label": {
+                        "fi": "Varauspäivämäärä",
+                        "en": "Reservation date",
+                      },
+                      "formatting": {
+                        "datatype": "date"
+                      },
+                      "value": "2020-02-02"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      description: This represents a single node in the tree structure. You may use this as a key-value pair or only as a container for the child elements or a combination of both. The `label` and `formatting` properties should only be used when `displayable=true`. `label` should contain a label for this Node, preferrably in all fi/sv/en languages to facilitate localization. `formatting` may contain hints for formatting the node's value for the UI.
+      type: object
+      properties:
+        key:
+          description: This should be a technical identifier for the Node so that it can be used by a parser. If it's feasible, use a database column name here.
+          type: string
+        label:
+          $ref: '#/components/schemas/LocalizedMessage'
+        formatting:
+          $ref: '#/components/schemas/Formatting'
+        value:
+          description: This is the value of the Node. This can be left empty if you want to use this Node as a sort of heading.
+          type: string
+        children:
+          description: These are the current Node's children which can be for example the properties of an entity or more complex Nodes themselves.
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
