@@ -52,10 +52,10 @@ from utils.validation import model_field_validation
 
 from .connected_services import (
     delete_connected_service_data,
-    delete_profile_from_keycloak,
     download_connected_service_data,
 )
 from .enums import AddressType, EmailType, PhoneType
+from .keycloak_integration import delete_profile_from_keycloak
 from .models import (
     Address,
     ClaimToken,

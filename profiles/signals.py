@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 
-from .connected_services import send_profile_changes_to_keycloak
+from .keycloak_integration import send_profile_changes_to_keycloak
 from .schema import profile_updated
 
 
