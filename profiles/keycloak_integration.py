@@ -2,7 +2,10 @@ from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
 
-from open_city_profile.exceptions import ConnectedServiceDeletionFailedError
+from open_city_profile.exceptions import (
+    ConnectedServiceDeletionFailedError,
+    DataConflictError,
+)
 from utils import keycloak
 
 _keycloak_admin_client = None
@@ -90,7 +93,10 @@ def send_profile_changes_to_keycloak(instance):
     if email_changed:
         updated_data["emailVerified"] = False
 
-    _keycloak_admin_client.update_user(user_id, updated_data)
+    try:
+        _keycloak_admin_client.update_user(user_id, updated_data)
+    except keycloak.ConflictError as err:
+        raise DataConflictError("Conflict in remote system") from err
 
     if email_changed:
         try:

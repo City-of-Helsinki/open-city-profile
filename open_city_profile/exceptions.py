@@ -31,6 +31,10 @@ class ConnectedServiceDeletionNotAllowedError(ProfileGraphQLError):
     """Deleting a connected service is not allowed."""
 
 
+class DataConflictError(ProfileGraphQLError):
+    """Conflicting data encountered"""
+
+
 class InvalidEmailFormatError(ProfileGraphQLError):
     """Email must be in valid email format"""
 

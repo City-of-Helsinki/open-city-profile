@@ -1,9 +1,10 @@
 import pytest
 
+from open_city_profile.exceptions import DataConflictError
 from profiles.schema import profile_updated
 from utils import keycloak
 
-from .factories import ProfileFactory
+from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
 
 
 @pytest.fixture(autouse=True)
@@ -124,3 +125,26 @@ def test_if_there_are_no_changes_then_nothing_is_sent_to_keycloak(mocker):
     profile_updated.send(sender=profile.__class__, instance=profile)
 
     mocked_update_user.assert_not_called()
+
+
+def test_when_update_causes_a_conflict_then_data_conflict_error_is_raised(mocker):
+    profile = ProfileWithPrimaryEmailFactory()
+
+    mocker.patch.object(
+        keycloak.KeycloakAdminClient,
+        "get_user",
+        return_value={
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+            "email": "old@email.example",
+        },
+    )
+
+    mocker.patch.object(
+        keycloak.KeycloakAdminClient,
+        "update_user",
+        side_effect=keycloak.ConflictError(),
+    )
+
+    with pytest.raises(DataConflictError):
+        profile_updated.send(sender=profile.__class__, instance=profile)
