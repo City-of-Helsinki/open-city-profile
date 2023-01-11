@@ -10,6 +10,7 @@ from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import EmailType
 from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
+from utils import keycloak
 
 from .factories import (
     AddressFactory,
@@ -269,6 +270,48 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
         EMAILS_MUTATION, service=service, variables=variables,
     )
     assert executed["data"] == expected_data
+
+
+def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
+    user_gql_client, service, keycloak_setup, mocker
+):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    email = profile.emails.first()
+
+    setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+
+    mocker.patch.object(
+        keycloak.KeycloakAdminClient,
+        "get_user",
+        return_value={
+            "firstName": profile.first_name,
+            "lastName": profile.last_name,
+            "email": "old@email.example",
+        },
+    )
+
+    mocker.patch.object(
+        keycloak.KeycloakAdminClient,
+        "update_user",
+        side_effect=keycloak.ConflictError(),
+    )
+
+    variables = {
+        "profileInput": {
+            "id": to_global_id("ProfileNode", profile.id),
+            "updateEmails": [
+                {
+                    "id": to_global_id("EmailNode", email.id),
+                    "email": "new@email.example",
+                }
+            ],
+        }
+    }
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, service=service, variables=variables
+    )
+
+    assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
 
 
 class TestProfileInputValidation(ExistingProfileInputValidationBase):

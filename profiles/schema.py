@@ -1803,7 +1803,8 @@ class Mutation(graphene.ObjectType):
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
         "\n* Phone\n\nRequires authentication.\n\n"
         "Possible error codes:\n\n"
-        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
+        "* `DATA_CONFLICT_ERROR`: Could not update with the provided data because it would cause a conflict."
     )
     update_profile = UpdateProfileMutation.Field(
         description="Updates the profile with id given as an argument based on the given data."
@@ -1812,7 +1813,8 @@ class Mutation(graphene.ObjectType):
         "and linked to the profile **or** the existing data set will be updated if the profile is "
         "already linked to it.\n\nRequires elevated privileges.\n\n"
         "Possible error codes:\n\n"
-        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email."
+        "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
+        "* `DATA_CONFLICT_ERROR`: Could not update with the provided data because it would cause a conflict."
     )
     # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(

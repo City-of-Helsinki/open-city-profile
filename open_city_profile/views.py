@@ -9,6 +9,7 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
+    DATA_CONFLICT_ERROR,
     GENERAL_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
     JWT_AUTHENTICATION_ERROR,
@@ -29,6 +30,7 @@ from open_city_profile.exceptions import (
     ConnectedServiceDataQueryFailedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
+    DataConflictError,
     InvalidEmailFormatError,
     MissingGDPRApiTokenError,
     ProfileDoesNotExistError,
@@ -52,6 +54,7 @@ error_codes_shared = {
     graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
     AuthenticationError: JWT_AUTHENTICATION_ERROR,
+    DataConflictError: DATA_CONFLICT_ERROR,
 }
 
 error_codes_profile = {
