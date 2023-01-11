@@ -55,22 +55,26 @@ def delete_profile_from_keycloak(profile):
         raise ConnectedServiceDeletionFailedError("User deletion unsuccessful.")
 
 
+def _get_user_data_from_keycloak(user_id):
+    try:
+        user_data = _keycloak_admin_client.get_user(user_id)
+
+        return {
+            "firstName": user_data.get("firstName"),
+            "lastName": user_data.get("lastName"),
+            "email": user_data.get("email"),
+        }
+    except keycloak.UserNotFoundError:
+        return None
+
+
 def send_profile_changes_to_keycloak(instance):
     if not instance.user or _keycloak_admin_client is None:
         return
 
     user_id = instance.user.uuid
 
-    try:
-        user_data = _keycloak_admin_client.get_user(user_id)
-    except keycloak.UserNotFoundError:
-        return
-
-    current_kc_data = {
-        "firstName": user_data.get("firstName"),
-        "lastName": user_data.get("lastName"),
-        "email": user_data.get("email"),
-    }
+    current_kc_data = _get_user_data_from_keycloak(user_id)
 
     updated_data = {
         "firstName": instance.first_name,
@@ -78,7 +82,7 @@ def send_profile_changes_to_keycloak(instance):
         "email": instance.get_primary_email_value(),
     }
 
-    if current_kc_data == updated_data:
+    if not current_kc_data or current_kc_data == updated_data:
         return
 
     email_changed = current_kc_data["email"] != updated_data["email"]
