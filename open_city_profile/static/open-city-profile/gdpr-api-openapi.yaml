@@ -1,7 +1,81 @@
 openapi: 3.0.3
 info:
   title: Open-city-profile GDPR API
-  description: 'This is the API for performing GDPR operations on user data which relates to a certain profile. The GDPR operations provide the functionalities for removing all data or downloading all stored data.'
+  description: |-
+    This is the API for performing GDPR operations on user data which relates to a certain profile. The GDPR operations
+    provide the functionalities for removing all data or downloading all stored data.
+
+    The GDPR API consists of a single URL that is called using HTTP. The different use cases are separated by the used
+    HTTP method and parameters within the call.
+
+    The service can basically choose their URL by themself. The URL will have a user UUID or a profile ID (also an UUID,
+    but separate from the user UUID) somewhere in the path. The GDPR API URL could for example be any of these
+    (`$user_uuid` and `$profile_id` would be replaced with the corresponding UUID):
+
+        https://myservice.hel.fi/api/v1/gdpr/$profile_id
+        https://myservice.hel.fi/user/$user_uuid/gdpr-api
+
+    The UUID representing any id will be inserted into the path with this format: `f611424a-9668-435e-8473-1501c4d67af5`.
+
+    ## Authorization of the GDPR API
+
+    The service's GDPR API implementation must perform appropriate authorization checks before allowing access to the
+    endpoints. If authorization fails, a `401` HTTP status code must be returned.
+
+    As a prerequisite, the GDPR API implementation must be aware of a trusted OpenID Provider (OP), identified by its
+    URL (see [OpenID Connect Core 1.0 specification](https://openid.net/specs/openid-connect-core-1_0.html)). Some
+    configuration is also needed in that OP, which is done by the Helsinki profile team. As an output of that
+    configuration some identifiers are created that will be used in the authorization process that a GDPR API
+    implementation must perform.
+
+    The caller of the GDPR API provides a token in the HTTP request which is to be used for authorization. The token is
+    provided in an HTTP `Authorization` header as specified in
+    [RFC 6750 section 2.1](https://www.rfc-editor.org/rfc/rfc6750#section-2.1). The token is a JWT as specified in
+    [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519). The token is signed but not encrypted.
+
+    The GDPR API implementation must perform the following authorization checks:
+
+    1. Verify the signature of the JWT as specified in [RFC 7515](https://www.rfc-editor.org/rfc/rfc7515). The needed
+    public key can be obtained from the OP's JSON Web Key Set document, which can be fetched from the URL specified by
+    the `jwks_uri` in the OP configuration metadata. The way to obtain the OP configuration metadata is specified in the
+    [OpenID Connect Discovery 1.0 specification](https://openid.net/specs/openid-connect-discovery-1_0.html).
+
+    1. Validate the `iss` claim. The value must match exactly to the URL of the trusted OP. See
+    [RFC 7519 section 4.1.1](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.1).
+
+    1. Validate the `aud` claim. The `aud` claim identifies the party to whom the token is meant for, in this case the
+    specific GDPR API implementation. The value must match exactly to the value agreed with Helsinki profile team. See
+    [RFC 7519 section 4.1.3](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3).
+
+    1. Validate the `exp` claim as specified in
+    [RFC 7519 section 4.1.4](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4).
+
+    1. Validate the `sub` claim if applicable. The `sub` claim contains the UUID of the user who is performing the GDPR
+    API request. Check that this UUID corresponds to the same profile/user that is identified in the GDPR API’s URL. If
+    the GDPR API implementation doesn’t handle user UUIDs at all, this step can not be performed and may be skipped. See
+    [RFC 7519 section 4.1.2](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.2).
+
+    1. Validate API scopes. Helsinki profile team has provided two API scope values for the service, one for each GDPR
+    API use case. The API scope values may look for example like this:<br/><br/>
+    `https://api.hel.fi/auth/myservice.gdprquery` (for the data download use case)<br/>
+    `https://api.hel.fi/auth/myservice.gdprdelete` (for the data deletion use case)<br/><br/>
+    Each of these values actually consists of two parts, a domain part, and a scope part, separated by the last slash
+    (`/`) character. In the example values above in both the domain part is `https://api.hel.fi/auth`. The scope values
+    are `myservice.gdprquery` and `myservice.gdprdelete`. The domain value is the same for both API scopes of a service.
+    The scope values follow the structure shown here, which is a service specific identifier (`myservice`), followed by
+    a dot (`.`), followed by either `gdprquery` or `gdprdelete`.<br/><br/>
+    Depending on which use case of GDPR API is used, select the correct API scope value. Split it into the domain and
+    scope parts. Look for a claim from the JWT named similarly to the domain. The claim's value is an array of strings.
+    Verify that the scope is found from that array.<br/><br/>
+    Continuing with the previously shown example API scope values, a valid claim for the data download use case could
+    look for example like this:<br/><br/>
+    `"https://api.hel.fi/auth": [ "myservice.gdprquery", "other_scope" ]`
+
+    If all the above checks succeed, the authorization passes.
+
+    The last step in the above list (API scope validation) is a Helsinki specific extension. All the other steps are
+    specified by OpenID Connect and other specifications. That means that there exists libraries that can help in
+    implementation of the authorization logic.
   version: 1.1.0
 paths:
   /service_specific_path/{profile_or_user_id}:
@@ -22,13 +96,47 @@ paths:
       operationId: getProfile
       responses:
         200:
-          description: Returns the data for the profile. The body contains the profile data in a tree structure.
+          description: |-
+            Returns the data for the profile. The body contains the profile data in a tree structure.
+
+            ## The effect of authentication level
+
+            Users can authenticate with different levels of assurance. The level of assurance is included in the JWT
+            used for authorization in the `loa` claim. The possible values for the `loa` claim are `low`, `substantial`,
+            `high` and `unknown`. If the service requires a certain level of assurance for the user to control some of
+            their personal data, this same requirement needs to be considered also in the GDPR API implementation. For
+            example, if at least `substantial` level of assurance is required to create a contract with the service,
+            perhaps the same level of assurance is required also to retrieve personal data related to this contract via
+            the GDPR API. Any such requirement needs to be decided by the service itself.
+
+            **Note**: even if the service itself uses and accepts only high enough authentication levels in its own UI,
+            the GDPR API can still be called with any authentication level. That’s because the user requesting their
+            data is not authenticated to the service but to the Helsinki Profile UI, which accepts any level of
+            authentication.
+
+            If the level of assurance isn’t high enough for getting some data when using the GDPR API, an error message
+            can be included into the returned data. The response could then look for example like this:
+
+                {
+                  "key": "CUSTOMER",
+                  "children": [
+                    {
+                      "key": "NOT_SO_SECRET_DATA",
+                      "value": "This data is available with any level of assurance"
+                    },
+                    {
+                      "key": "SECRET_DATA",
+                      "error": "Insufficient authentication level to read data"
+                    }
+                  ]
+                }
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Node'
         204:
-          description: There is no data related to the profile. This can happen because the service does not contain such data for the profile or is completely unaware of the identified profile.
+          description: "There is no personal data related to the profile. This can happen because the service does not
+            contain such data for the profile or is completely unaware of the identified profile."
         400:
           description: Request’s parameters fail validation
         401:
@@ -48,7 +156,10 @@ paths:
       parameters:
       - name: dry_run
         in: query
-        description: If set to true, the actual removal will not be made. Instead the business rules are checked to see if the removal can be made.
+        description: "If set to `true`, the API must do all checks it would normally do before performing the deletion,
+          without actually deleting any data. It should then return an HTTP response that it would normally return when
+          performing the deletion, either allowing or denying the deletion. A request with this parameter can be used to
+          check whether the deletion would be allowed."
         required: false
         schema:
           type: boolean
@@ -63,7 +174,8 @@ paths:
         401:
           description: Request’s credentials are missing or invalid.
         403:
-          description: Profile cannot be removed from the called service because of some business rules. The reason(s) for failure are detailed in the returned response object.
+          description: "Service data related to the identified profile can't be removed from the called service because
+            of some legal reason. The reason(s) for failure are detailed in the response."
           content:
             application/json:
               schema:
@@ -79,7 +191,9 @@ components:
     LocalizedMessage:
       type: object
       additionalProperties:
-        description: A human-readable message in the language specified by the key.
+        description: "Human readable error messages localized to various languages: the object’s keys specify languages
+          and the values are the localized messages. The language codes are not well specified. It’s suggested that
+          services provide any messages in Finnish (`fi`), Swedish (`sv`) and English (`en`)."
         type: string
       example:
         en: "Existing contract"
@@ -92,7 +206,8 @@ components:
         - message
       properties:
         code:
-          description: A service specific error code for debugging purposes.
+          description: "A service specific error code for debugging purposes.
+            There is no specification for allowed values."
           type: string
           example: CONTRACT
         message:
@@ -162,13 +277,17 @@ components:
       type: object
       properties:
         key:
-          description: This should be a technical identifier for the Node so that it can be used by a parser. If it's feasible, use a database column name here.
+          description: "This should be a technical identifier for the Node so that it can be used by a parser. As a
+            convention the value of this member should be formatted as `SNAKE_CASE_WITH_CAPITAL_LETTERS`."
           type: string
         value:
-          description: This is the value of the Node. This can be left empty if you want to use this Node as a sort of heading.
+          description: "This is the value of the Node. Usually a Node contains either this or the `children` property,
+            but not both. Note that string is the only accepted data type! Otherwise this property’s value has no
+            specified format(s)."
           type: string
         children:
-          description: These are the current Node's children which can be for example the properties of an entity or more complex Nodes themselves.
+          description: "These are the current Node's children which can be for example the properties of an entity or
+            more complex Nodes themselves. Usually a Node contains either this or the `value` property, but not both."
           type: array
           items:
             $ref: '#/components/schemas/Node'
