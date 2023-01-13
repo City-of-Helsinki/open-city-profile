@@ -3,7 +3,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
 
 from open_city_profile.views import GraphQLView
 
@@ -16,6 +18,17 @@ urlpatterns = [
         ),
     ),
     path("auth/", include("helusers.urls")),
+    path(
+        "docs/gdpr-api/",
+        TemplateView.as_view(
+            template_name="swagger-ui.html",
+            extra_context={
+                "title": _("Open-city-profile GDPR API specification"),
+                "openapi_url": "open-city-profile/gdpr-api-openapi.yaml",
+            },
+        ),
+        name="gdpr-api-docs",
+    ),
 ]
 
 
