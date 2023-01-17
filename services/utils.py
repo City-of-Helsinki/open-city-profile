@@ -1,4 +1,6 @@
-from services.models import ServiceClientId
+from django.db import transaction
+
+from services.models import AllowedDataField, ServiceClientId
 
 
 def set_service_to_request(request):
@@ -20,3 +22,19 @@ def set_service_to_request(request):
 
         request.client_id = service_client_id.client_id
         request.service = service_client_id.service
+
+
+@transaction.atomic
+def generate_data_fields(allowed_data_fields_spec):
+    """Create data fields if they don't exist."""
+    for value in allowed_data_fields_spec:
+        if not AllowedDataField.objects.filter(
+            field_name=value.get("field_name")
+        ).exists():
+            data_field = AllowedDataField.objects.create(
+                field_name=value.get("field_name")
+            )
+            for translation in value.get("translations"):
+                data_field.set_current_language(translation["code"])
+                data_field.label = translation["label"]
+            data_field.save()

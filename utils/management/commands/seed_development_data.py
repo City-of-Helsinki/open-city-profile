@@ -4,9 +4,9 @@ from django.core.management.base import BaseCommand
 from faker import Faker
 
 from services.models import Service
+from services.utils import generate_data_fields
 from utils.utils import (
     assign_permissions,
-    generate_data_fields,
     generate_group_admins,
     generate_groups_for_services,
     generate_profiles,
