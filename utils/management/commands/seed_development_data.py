@@ -17,6 +17,50 @@ from utils.utils import (
 available_permissions = [item[0] for item in Service._meta.permissions]
 
 
+DATA_FIELD_VALUES = [
+    {
+        "field_name": "name",
+        "translations": [
+            {"code": "en", "label": "Name"},
+            {"code": "fi", "label": "Nimi"},
+            {"code": "sv", "label": "Namn"},
+        ],
+    },
+    {
+        "field_name": "email",
+        "translations": [
+            {"code": "en", "label": "Email"},
+            {"code": "fi", "label": "Sähköposti"},
+            {"code": "sv", "label": "Epost"},
+        ],
+    },
+    {
+        "field_name": "address",
+        "translations": [
+            {"code": "en", "label": "Address"},
+            {"code": "fi", "label": "Osoite"},
+            {"code": "sv", "label": "Adress"},
+        ],
+    },
+    {
+        "field_name": "phone",
+        "translations": [
+            {"code": "en", "label": "Phone"},
+            {"code": "fi", "label": "Puhelinnumero"},
+            {"code": "sv", "label": "Telefonnummer"},
+        ],
+    },
+    {
+        "field_name": "ssn",
+        "translations": [
+            {"code": "en", "label": "Social Security Number"},
+            {"code": "fi", "label": "Henkilötunnus"},
+            {"code": "sv", "label": "Personnnumer"},
+        ],
+    },
+]
+
+
 class Command(BaseCommand):
     help = "Seed environment with development data"
 
@@ -64,7 +108,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Done - Admin user"))
 
         self.stdout.write("Generating data fields...")
-        generate_data_fields()
+        generate_data_fields(DATA_FIELD_VALUES)
         self.stdout.write("Generating services...")
         services = generate_services()
         self.stdout.write("Generating groups...")

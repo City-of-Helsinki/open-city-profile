@@ -12,54 +12,11 @@ from profiles.models import Address, Email, Phone, Profile
 from services.models import AllowedDataField, Service, ServiceConnection
 from users.models import User
 
-DATA_FIELD_VALUES = [
-    {
-        "field_name": "name",
-        "translations": [
-            {"code": "en", "label": "Name"},
-            {"code": "fi", "label": "Nimi"},
-            {"code": "sv", "label": "Namn"},
-        ],
-    },
-    {
-        "field_name": "email",
-        "translations": [
-            {"code": "en", "label": "Email"},
-            {"code": "fi", "label": "Sähköposti"},
-            {"code": "sv", "label": "Epost"},
-        ],
-    },
-    {
-        "field_name": "address",
-        "translations": [
-            {"code": "en", "label": "Address"},
-            {"code": "fi", "label": "Osoite"},
-            {"code": "sv", "label": "Adress"},
-        ],
-    },
-    {
-        "field_name": "phone",
-        "translations": [
-            {"code": "en", "label": "Phone"},
-            {"code": "fi", "label": "Puhelinnumero"},
-            {"code": "sv", "label": "Telefonnummer"},
-        ],
-    },
-    {
-        "field_name": "ssn",
-        "translations": [
-            {"code": "en", "label": "Social Security Number"},
-            {"code": "fi", "label": "Henkilötunnus"},
-            {"code": "sv", "label": "Personnnumer"},
-        ],
-    },
-]
-
 
 @transaction.atomic
-def generate_data_fields():
+def generate_data_fields(allowed_data_fields_spec):
     """Create data fields if they don't exist."""
-    for value in DATA_FIELD_VALUES:
+    for value in allowed_data_fields_spec:
         if not AllowedDataField.objects.filter(
             field_name=value.get("field_name")
         ).exists():

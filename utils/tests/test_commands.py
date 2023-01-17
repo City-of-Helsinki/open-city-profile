@@ -5,7 +5,8 @@ from django.core.management import call_command
 from profiles.models import Profile
 from services.models import AllowedDataField, Service
 from users.models import User
-from utils.utils import DATA_FIELD_VALUES, SERVICES
+from utils.management.commands.seed_development_data import DATA_FIELD_VALUES
+from utils.utils import SERVICES
 
 
 @pytest.mark.parametrize("create_superuser", [True, False])
