@@ -1,3 +1,5 @@
+import pytest
+
 from services.models import AllowedDataField
 from services.utils import generate_data_fields
 
@@ -52,5 +54,12 @@ def test_adding_a_new_field():
             ],
         }
     ]
+
+    _test_changed_spec(new_spec)
+
+
+@pytest.mark.parametrize("num_removed", [1, 2])
+def test_removing_a_field(num_removed):
+    new_spec = _get_initial_spec()[num_removed:]
 
     _test_changed_spec(new_spec)

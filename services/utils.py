@@ -26,7 +26,6 @@ def set_service_to_request(request):
 
 @transaction.atomic
 def generate_data_fields(allowed_data_fields_spec):
-    """Create data fields if they don't exist."""
     for value in allowed_data_fields_spec:
         if not AllowedDataField.objects.filter(
             field_name=value.get("field_name")
@@ -38,3 +37,7 @@ def generate_data_fields(allowed_data_fields_spec):
                 data_field.set_current_language(translation["code"])
                 data_field.label = translation["label"]
             data_field.save()
+
+    current_field_names = [fs["field_name"] for fs in allowed_data_fields_spec]
+
+    AllowedDataField.objects.exclude(field_name__in=current_field_names).delete()
