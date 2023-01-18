@@ -31,9 +31,14 @@ def _test_changed_spec(new_spec):
         allowed_data_fields = AllowedDataField.objects.all()
         assert len(allowed_data_fields) == len(spec)
 
+        previous_order = -1
+
         for value in spec:
             field = allowed_data_fields.filter(field_name=value["field_name"]).first()
             assert field is not None
+
+            assert field.order > previous_order
+            previous_order = field.order
 
             for translation in value["translations"]:
                 field.set_current_language(translation["code"])
@@ -90,5 +95,12 @@ def test_remove_translations_from_an_existing_field():
     new_spec = _get_initial_spec()
     new_spec[1]["translations"].pop(2)
     new_spec[1]["translations"].pop(0)
+
+    _test_changed_spec(new_spec)
+
+
+def test_change_order_of_fields():
+    new_spec = _get_initial_spec()
+    new_spec.reverse()
 
     _test_changed_spec(new_spec)

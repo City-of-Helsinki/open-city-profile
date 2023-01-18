@@ -26,10 +26,12 @@ def set_service_to_request(request):
 
 @transaction.atomic
 def generate_data_fields(allowed_data_fields_spec):
-    for value in allowed_data_fields_spec:
+    for index, value in enumerate(allowed_data_fields_spec):
         data_field, created = AllowedDataField.objects.get_or_create(
             field_name=value.get("field_name")
         )
+
+        data_field.order = index + 1
 
         for translation in value.get("translations"):
             data_field.set_current_language(translation["code"])
