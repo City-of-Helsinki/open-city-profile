@@ -63,3 +63,19 @@ def test_removing_a_field(num_removed):
     new_spec = _get_initial_spec()[num_removed:]
 
     _test_changed_spec(new_spec)
+
+
+def test_add_new_translations_to_an_existing_field():
+    new_spec = _get_initial_spec()
+    new_spec[0]["translations"].append({"code": "en", "label": "Name"})
+    new_spec[0]["translations"].append({"code": "no", "label": "Navn"})
+
+    _test_changed_spec(new_spec)
+
+
+def test_update_translations_for_an_existing_field():
+    new_spec = _get_initial_spec()
+    new_spec[0]["translations"][0].update({"label": "Uusi nimi"})
+    new_spec[0]["translations"][1].update({"label": "Ny namn"})
+
+    _test_changed_spec(new_spec)
