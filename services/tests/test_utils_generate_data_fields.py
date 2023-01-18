@@ -34,9 +34,14 @@ def _test_changed_spec(new_spec):
         for value in spec:
             field = allowed_data_fields.filter(field_name=value["field_name"]).first()
             assert field is not None
+
             for translation in value["translations"]:
                 field.set_current_language(translation["code"])
                 assert field.label == translation["label"]
+
+            expected_lang_codes = {tr["code"] for tr in value["translations"]}
+            actual_lang_codes = set(field.get_available_languages())
+            assert expected_lang_codes == actual_lang_codes
 
 
 def test_unchanged_configuration_changes_nothing():
@@ -77,5 +82,13 @@ def test_update_translations_for_an_existing_field():
     new_spec = _get_initial_spec()
     new_spec[0]["translations"][0].update({"label": "Uusi nimi"})
     new_spec[0]["translations"][1].update({"label": "Ny namn"})
+
+    _test_changed_spec(new_spec)
+
+
+def test_remove_translations_from_an_existing_field():
+    new_spec = _get_initial_spec()
+    new_spec[1]["translations"].pop(2)
+    new_spec[1]["translations"].pop(0)
 
     _test_changed_spec(new_spec)

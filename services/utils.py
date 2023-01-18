@@ -34,6 +34,12 @@ def generate_data_fields(allowed_data_fields_spec):
         for translation in value.get("translations"):
             data_field.set_current_language(translation["code"])
             data_field.label = translation["label"]
+
+        current_lang_codes = {tr["code"] for tr in value.get("translations")}
+        lang_codes_in_db = set(data_field.get_available_languages())
+        for removable_lang_code in lang_codes_in_db - current_lang_codes:
+            data_field.delete_translation(removable_lang_code)
+
         data_field.save()
 
     current_field_names = [fs["field_name"] for fs in allowed_data_fields_spec]
