@@ -16,6 +16,10 @@ class AuthenticationError(KeycloakError):
     """Failed authentication with Keycloak."""
 
 
+class UserNotFoundError(KeycloakError):
+    """User is not found from Keycloak."""
+
+
 class KeycloakAdminClient:
     def __init__(self, server_url, realm_name, client_id, client_secret):
         self._server_url = server_url
@@ -96,9 +100,15 @@ class KeycloakAdminClient:
     def get_user(self, user_id):
         url = self._single_user_url(user_id)
 
-        response = self._handle_request_with_auth(
-            lambda auth: self._session.get(url, auth=auth)
-        )
+        try:
+            response = self._handle_request_with_auth(
+                lambda auth: self._session.get(url, auth=auth)
+            )
+        except requests.HTTPError as err:
+            if err.response.status_code == 404:
+                raise UserNotFoundError("User not found in Keycloak") from err
+            raise CommunicationError("Failed communicating with Keycloak") from err
+
         return response.json()
 
     def update_user(self, user_id, update_data: dict):

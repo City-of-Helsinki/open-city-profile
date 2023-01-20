@@ -175,16 +175,18 @@ def test_fetch_single_user_data(keycloak_client):
     assert received_user == user_data
 
 
-def test_raise_exception_when_can_not_fetch_user_data(keycloak_client):
+def test_raise_user_not_found_error_when_trying_to_get_data_for_non_existing_user(
+    keycloak_client,
+):
     setup_well_known()
     setup_client_credentials()
     setup_user_response(user_id, user_data, response=404)
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(keycloak.UserNotFoundError):
         keycloak_client.get_user(user_id)
 
 
-@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+@pytest.mark.parametrize("response", (400, 403, 500, 599, requests.RequestException))
 def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_user_data_fetch(
     keycloak_client, response
 ):

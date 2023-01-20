@@ -1,5 +1,4 @@
 import pytest
-from requests import Response
 
 from profiles.schema import profile_updated
 from utils import keycloak
@@ -26,13 +25,10 @@ def test_do_nothing_if_profile_has_no_user(mocker):
 
 
 def test_do_nothing_if_user_is_not_found_in_keycloak(mocker):
-    def not_found_error(*args, **kwargs):
-        response = Response()
-        response.status_code = 404
-        response.raise_for_status()
-
     mocker.patch.object(
-        keycloak.KeycloakAdminClient, "get_user", side_effect=not_found_error
+        keycloak.KeycloakAdminClient,
+        "get_user",
+        side_effect=keycloak.UserNotFoundError(),
     )
     mocked_update_user = mocker.patch.object(
         keycloak.KeycloakAdminClient, "update_user"

@@ -1,4 +1,3 @@
-import requests
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
@@ -63,10 +62,8 @@ def send_profile_changes_to_keycloak(instance):
 
     try:
         user_data = _keycloak_admin_client.get_user(user_id)
-    except requests.HTTPError as err:
-        if err.response.status_code == 404:
-            return
-        raise
+    except keycloak.UserNotFoundError:
+        return
 
     current_kc_data = {
         "firstName": user_data.get("firstName"),
