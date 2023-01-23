@@ -274,16 +274,18 @@ def test_send_verify_email_to_user(keycloak_client):
     assert send_email_mock.call_count == 1
 
 
-def test_raise_exception_when_can_not_send_verify_email_to_user(keycloak_client):
+def test_raise_user_not_found_error_when_trying_to_send_verify_email_to_non_existing_user(
+    keycloak_client,
+):
     setup_well_known()
     setup_client_credentials()
     setup_send_verify_email_response(user_id, response=404)
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(keycloak.UserNotFoundError):
         keycloak_client.send_verify_email(user_id)
 
 
-@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+@pytest.mark.parametrize("response", (400, 403, 500, 599, requests.RequestException))
 def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_verify_email_send(
     keycloak_client, response
 ):
