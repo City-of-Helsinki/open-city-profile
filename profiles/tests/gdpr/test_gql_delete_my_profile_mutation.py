@@ -1,7 +1,6 @@
 from string import Template
 
 import pytest
-import requests
 
 from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
@@ -181,25 +180,29 @@ def test_user_can_dry_run_profile_deletion(
         assert_success_result(executed)
 
 
-@pytest.mark.parametrize("kc_delete_user_response_code", [204, 403, 404])
+@pytest.mark.parametrize(
+    "kc_delete_user_error,is_success",
+    [
+        (None, True),
+        (keycloak.UserNotFoundError, True),
+        (keycloak.CommunicationError, False),
+    ],
+)
 def test_user_deletion_from_keycloak(
-    user_gql_client, mocker, kc_delete_user_response_code, keycloak_setup
+    user_gql_client, mocker, kc_delete_user_error, is_success, keycloak_setup
 ):
     user = user_gql_client.user
     profile = ProfileFactory(user=user)
 
-    def kc_delete_user_response(*args, **kwargs):
-        response = requests.Response()
-        response.status_code = kc_delete_user_response_code
-        response.raise_for_status()
-
     mocked_keycloak_delete_user = mocker.patch.object(
-        keycloak.KeycloakAdminClient, "delete_user", side_effect=kc_delete_user_response
+        keycloak.KeycloakAdminClient,
+        "delete_user",
+        side_effect=None if kc_delete_user_error is None else kc_delete_user_error(),
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
-    if kc_delete_user_response_code in [204, 404]:
+    if is_success:
         assert executed["data"] == {
             "deleteMyProfile": {"clientMutationId": None, "results": []}
         }

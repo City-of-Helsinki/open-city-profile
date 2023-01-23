@@ -49,9 +49,10 @@ def delete_profile_from_keycloak(profile):
 
     try:
         _keycloak_admin_client.delete_user(user_id)
-    except Exception as err:
-        if not isinstance(err, requests.HTTPError) or err.response.status_code != 404:
-            raise ConnectedServiceDeletionFailedError("User deletion unsuccessful.")
+    except keycloak.UserNotFoundError:
+        pass
+    except Exception:
+        raise ConnectedServiceDeletionFailedError("User deletion unsuccessful.")
 
 
 def send_profile_changes_to_keycloak(instance):
