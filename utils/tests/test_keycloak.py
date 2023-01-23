@@ -208,16 +208,18 @@ def test_update_single_user_data(keycloak_client):
     assert update_mock.call_count == 1
 
 
-def test_raise_exception_when_can_not_update_user_data(keycloak_client):
+def test_raise_user_not_found_error_when_trying_to_update_data_for_non_existing_user(
+    keycloak_client,
+):
     setup_well_known()
     setup_client_credentials()
     setup_update_user_response(user_id, user_data, response=404)
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(keycloak.UserNotFoundError):
         keycloak_client.update_user(user_id, user_data)
 
 
-@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+@pytest.mark.parametrize("response", (400, 403, 500, 599, requests.RequestException))
 def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_user_data_update(
     keycloak_client, response
 ):

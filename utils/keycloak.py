@@ -92,45 +92,53 @@ class KeycloakAdminClient:
                 response = requester(self._get_auth(force_renew=True))
             return response
 
-        response = self._handle_request_common_errors(reauth_requester)
+        return self._handle_request_common_errors(reauth_requester)
 
-        response.raise_for_status()
+    def _handle_user_request(self, requester):
+        response = self._handle_request_with_auth(requester)
+
+        if response.status_code == 404:
+            raise UserNotFoundError("User not found in Keycloak")
+
+        if not response.ok:
+            raise CommunicationError(
+                f"Failed communicating with Keycloak (status code {response.status_code}"
+            )
+
         return response
 
     def get_user(self, user_id):
         url = self._single_user_url(user_id)
 
-        try:
-            response = self._handle_request_with_auth(
-                lambda auth: self._session.get(url, auth=auth)
-            )
-        except requests.HTTPError as err:
-            if err.response.status_code == 404:
-                raise UserNotFoundError("User not found in Keycloak") from err
-            raise CommunicationError("Failed communicating with Keycloak") from err
+        response = self._handle_user_request(
+            lambda auth: self._session.get(url, auth=auth)
+        )
 
         return response.json()
 
     def update_user(self, user_id, update_data: dict):
         url = self._single_user_url(user_id)
 
-        self._handle_request_with_auth(
+        self._handle_user_request(
             lambda auth: self._session.put(url, auth=auth, json=update_data)
         )
 
     def delete_user(self, user_id):
         url = self._single_user_url(user_id)
 
-        self._handle_request_with_auth(
+        response = self._handle_request_with_auth(
             lambda auth: self._session.delete(url, auth=auth)
         )
+        response.raise_for_status()
 
     def send_verify_email(self, user_id):
         url = self._single_user_url(user_id)
         url += f"/send-verify-email"
 
-        return self._handle_request_with_auth(
+        response = self._handle_request_with_auth(
             lambda auth: self._session.put(
                 url, auth=auth, params={"client_id": self._client_id}
             )
         )
+        response.raise_for_status()
+        return response
