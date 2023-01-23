@@ -20,6 +20,10 @@ class UserNotFoundError(KeycloakError):
     """User is not found from Keycloak."""
 
 
+class ConflictError(KeycloakError):
+    """A conflict occured in Keycloak."""
+
+
 class KeycloakAdminClient:
     def __init__(self, server_url, realm_name, client_id, client_secret):
         self._server_url = server_url
@@ -99,6 +103,9 @@ class KeycloakAdminClient:
 
         if response.status_code == 404:
             raise UserNotFoundError("User not found in Keycloak")
+
+        if response.status_code == 409:
+            raise ConflictError("Keycloak reported a conflict")
 
         if not response.ok:
             raise CommunicationError(
