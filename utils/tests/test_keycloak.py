@@ -3,7 +3,7 @@ import urllib
 import pytest
 import requests
 
-from utils.keycloak import KeycloakAdminClient
+from utils import keycloak
 
 server_url = "https://keycloak.example"
 realm_name = "test-realm"
@@ -36,7 +36,9 @@ def global_requests_mock(requests_mock):
 
 @pytest.fixture
 def keycloak_client():
-    return KeycloakAdminClient(server_url, realm_name, client_id, client_secret)
+    return keycloak.KeycloakAdminClient(
+        server_url, realm_name, client_id, client_secret
+    )
 
 
 def setup_well_known(status_code=200):

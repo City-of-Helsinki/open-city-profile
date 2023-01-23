@@ -16,7 +16,7 @@ from profiles.tests.factories import ProfileFactory, ProfileWithPrimaryEmailFact
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
-from utils.keycloak import KeycloakAdminClient
+from utils import keycloak
 
 AUTHORIZATION_CODE = "code123"
 
@@ -194,7 +194,7 @@ def test_user_deletion_from_keycloak(
         response.raise_for_status()
 
     mocked_keycloak_delete_user = mocker.patch.object(
-        KeycloakAdminClient, "delete_user", side_effect=kc_delete_user_response
+        keycloak.KeycloakAdminClient, "delete_user", side_effect=kc_delete_user_response
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)

@@ -4,7 +4,7 @@ from django.core.signals import setting_changed
 from django.dispatch import receiver
 
 from open_city_profile.exceptions import ConnectedServiceDeletionFailedError
-from utils.keycloak import KeycloakAdminClient
+from utils import keycloak
 
 _keycloak_admin_client = None
 
@@ -18,7 +18,7 @@ def _setup_keycloak_client():
         and settings.KEYCLOAK_CLIENT_ID
         and settings.KEYCLOAK_CLIENT_SECRET
     ):
-        _keycloak_admin_client = KeycloakAdminClient(
+        _keycloak_admin_client = keycloak.KeycloakAdminClient(
             settings.KEYCLOAK_BASE_URL,
             settings.KEYCLOAK_REALM,
             settings.KEYCLOAK_CLIENT_ID,
