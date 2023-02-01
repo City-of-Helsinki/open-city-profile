@@ -84,18 +84,15 @@ def setup_client_credentials(response_access_tokens=None, response=200):
     )
 
 
-def setup_user_response(user_id, user_data, token=access_token, status_code=200):
+def setup_user_response(user_id, user_data, token=access_token, response=200):
     req_mock.get(
         f"{server_url}/admin/realms/{realm_name}/users/{user_id}",
         request_headers={"Authorization": f"Bearer {token}"},
-        json=user_data,
-        status_code=status_code,
+        **build_mock_kwargs(response, user_data),
     )
 
 
-def setup_update_user_response(
-    user_id, update_data, token=access_token, status_code=200
-):
+def setup_update_user_response(user_id, update_data, token=access_token, response=200):
     def body_matcher(request):
         return request.json() == update_data
 
@@ -106,23 +103,23 @@ def setup_update_user_response(
             "Content-Type": "application/json",
         },
         additional_matcher=body_matcher,
-        status_code=status_code,
+        **build_mock_kwargs(response),
     )
 
 
-def setup_delete_user_response(user_id, token=access_token, status_code=200):
+def setup_delete_user_response(user_id, token=access_token, response=200):
     return req_mock.delete(
         f"{server_url}/admin/realms/{realm_name}/users/{user_id}",
         request_headers={"Authorization": f"Bearer {token}"},
-        status_code=status_code,
+        **build_mock_kwargs(response),
     )
 
 
-def setup_send_verify_email_response(user_id, token=access_token, status_code=200):
+def setup_send_verify_email_response(user_id, token=access_token, response=200):
     return req_mock.put(
         f"{server_url}/admin/realms/{realm_name}/users/{user_id}/send-verify-email?client_id={client_id}",
         request_headers={"Authorization": f"Bearer {token}"},
-        status_code=status_code,
+        **build_mock_kwargs(response),
     )
 
 
@@ -175,9 +172,21 @@ def test_fetch_single_user_data(keycloak_client):
 def test_raise_exception_when_can_not_fetch_user_data(keycloak_client):
     setup_well_known()
     setup_client_credentials()
-    setup_user_response(user_id, user_data, status_code=404)
+    setup_user_response(user_id, user_data, response=404)
 
     with pytest.raises(requests.HTTPError):
+        keycloak_client.get_user(user_id)
+
+
+@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_user_data_fetch(
+    keycloak_client, response
+):
+    setup_well_known()
+    setup_client_credentials()
+    setup_user_response(user_id, user_data, response=response)
+
+    with pytest.raises(keycloak.CommunicationError):
         keycloak_client.get_user(user_id)
 
 
@@ -194,9 +203,21 @@ def test_update_single_user_data(keycloak_client):
 def test_raise_exception_when_can_not_update_user_data(keycloak_client):
     setup_well_known()
     setup_client_credentials()
-    setup_update_user_response(user_id, user_data, status_code=501)
+    setup_update_user_response(user_id, user_data, response=404)
 
     with pytest.raises(requests.HTTPError):
+        keycloak_client.update_user(user_id, user_data)
+
+
+@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_user_data_update(
+    keycloak_client, response
+):
+    setup_well_known()
+    setup_client_credentials()
+    setup_update_user_response(user_id, user_data, response=response)
+
+    with pytest.raises(keycloak.CommunicationError):
         keycloak_client.update_user(user_id, user_data)
 
 
@@ -213,9 +234,21 @@ def test_delete_single_user_data(keycloak_client):
 def test_raise_exception_when_can_not_delete_user_data(keycloak_client):
     setup_well_known()
     setup_client_credentials()
-    setup_delete_user_response(user_id, status_code=404)
+    setup_delete_user_response(user_id, response=404)
 
     with pytest.raises(requests.HTTPError):
+        keycloak_client.delete_user(user_id)
+
+
+@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_user_data_delete(
+    keycloak_client, response
+):
+    setup_well_known()
+    setup_client_credentials()
+    setup_delete_user_response(user_id, response=response)
+
+    with pytest.raises(keycloak.CommunicationError):
         keycloak_client.delete_user(user_id)
 
 
@@ -232,9 +265,21 @@ def test_send_verify_email_to_user(keycloak_client):
 def test_raise_exception_when_can_not_send_verify_email_to_user(keycloak_client):
     setup_well_known()
     setup_client_credentials()
-    setup_send_verify_email_response(user_id, status_code=404)
+    setup_send_verify_email_response(user_id, response=404)
 
     with pytest.raises(requests.HTTPError):
+        keycloak_client.send_verify_email(user_id)
+
+
+@pytest.mark.parametrize("response", (500, 599, requests.RequestException))
+def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_verify_email_send(
+    keycloak_client, response
+):
+    setup_well_known()
+    setup_client_credentials()
+    setup_send_verify_email_response(user_id, response=response)
+
+    with pytest.raises(keycloak.CommunicationError):
         keycloak_client.send_verify_email(user_id)
 
 
@@ -259,9 +304,7 @@ def test_renew_access_token_when_old_one_is_not_accepted_with_user_data_fetch(
     setup_client_credentials(
         response_access_tokens=[unaccepted_access_token, access_token]
     )
-    setup_user_response(
-        user_id, user_data, token=unaccepted_access_token, status_code=401
-    )
+    setup_user_response(user_id, user_data, token=unaccepted_access_token, response=401)
     setup_user_response(user_id, user_data, token=access_token)
 
     received_user = keycloak_client.get_user(user_id)
@@ -277,7 +320,7 @@ def test_renew_access_token_when_old_one_is_not_accepted_with_user_update(
         response_access_tokens=[unaccepted_access_token, access_token]
     )
     setup_update_user_response(
-        user_id, user_data, token=unaccepted_access_token, status_code=401
+        user_id, user_data, token=unaccepted_access_token, response=401
     )
     success_mock = setup_update_user_response(user_id, user_data, token=access_token)
 
@@ -294,7 +337,7 @@ def test_renew_access_token_when_old_one_is_not_accepted_with_verify_email_sendi
         response_access_tokens=[unaccepted_access_token, access_token]
     )
     setup_send_verify_email_response(
-        user_id, token=unaccepted_access_token, status_code=401
+        user_id, token=unaccepted_access_token, response=401
     )
     success_mock = setup_send_verify_email_response(user_id, token=access_token)
 

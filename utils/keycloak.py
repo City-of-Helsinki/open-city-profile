@@ -74,9 +74,14 @@ class KeycloakAdminClient:
         return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}"
 
     def _handle_request_with_auth(self, requester):
-        response = requester(self._get_auth())
-        if response.status_code == 401:
-            response = requester(self._get_auth(force_renew=True))
+        def reauth_requester():
+            response = requester(self._get_auth())
+            if response.status_code == 401:
+                response = requester(self._get_auth(force_renew=True))
+            return response
+
+        response = self._handle_request_common_errors(reauth_requester)
+
         response.raise_for_status()
         return response
 
