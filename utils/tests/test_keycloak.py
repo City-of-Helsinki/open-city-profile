@@ -41,15 +41,26 @@ def keycloak_client():
     )
 
 
-def setup_well_known(status_code=200):
+def build_mock_kwargs(response, json={}):
+    if isinstance(response, int):
+        mock_kwargs = {
+            "status_code": response,
+            "json": json,
+        }
+    else:
+        mock_kwargs = {"exc": response}
+
+    return mock_kwargs
+
+
+def setup_well_known(response=200):
     return req_mock.get(
         f"{server_url}/realms/{realm_name}/.well-known/openid-configuration",
-        status_code=status_code,
-        json={"token_endpoint": token_endpoint_url},
+        **build_mock_kwargs(response, json={"token_endpoint": token_endpoint_url}),
     )
 
 
-def setup_client_credentials(response_access_tokens=None, status_code=200):
+def setup_client_credentials(response_access_tokens=None, response=200):
     def body_matcher(request):
         body = urllib.parse.parse_qs(request.text, strict_parsing=True)
         return body == {
@@ -61,7 +72,7 @@ def setup_client_credentials(response_access_tokens=None, status_code=200):
     if response_access_tokens is None:
         response_access_tokens = [access_token]
     responses = [
-        {"status_code": status_code, "json": {"access_token": token}}
+        build_mock_kwargs(response, {"access_token": token})
         for token in response_access_tokens
     ]
 
@@ -115,8 +126,29 @@ def setup_send_verify_email_response(user_id, token=access_token, status_code=20
     )
 
 
+@pytest.mark.parametrize(
+    "well_known_response,client_credentials_response",
+    (
+        (500, 200),
+        (599, 200),
+        (requests.RequestException, 200),
+        (200, 500),
+        (200, 599),
+        (200, requests.RequestException),
+    ),
+)
+def test_raise_communication_error_when_can_not_communicate_with_keycloak_during_authentication(
+    keycloak_client, well_known_response, client_credentials_response
+):
+    setup_well_known(response=well_known_response)
+    setup_client_credentials(response=client_credentials_response)
+
+    with pytest.raises(keycloak.CommunicationError):
+        keycloak_client.get_user(user_id)
+
+
 def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
-    setup_well_known(status_code=404)
+    setup_well_known(response=404)
 
     with pytest.raises(requests.HTTPError):
         keycloak_client.get_user(user_id)
@@ -124,7 +156,7 @@ def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
 
 def test_raise_exception_when_can_not_get_client_credentials(keycloak_client):
     setup_well_known()
-    setup_client_credentials(status_code=400)
+    setup_client_credentials(response=400)
 
     with pytest.raises(requests.HTTPError):
         keycloak_client.get_user(user_id)

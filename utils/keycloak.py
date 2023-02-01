@@ -4,6 +4,14 @@ from django.utils.functional import cached_property
 from utils.auth import BearerAuth
 
 
+class KeycloakError(RuntimeError):
+    """Base class for Keycloak errors."""
+
+
+class CommunicationError(KeycloakError):
+    """Communication with Keycloak server failed."""
+
+
 class KeycloakAdminClient:
     def __init__(self, server_url, realm_name, client_id, client_secret):
         self._server_url = server_url
@@ -14,11 +22,27 @@ class KeycloakAdminClient:
         self._session = requests.Session()
         self._auth = None
 
+    def _handle_request_common_errors(self, requester):
+        try:
+            result = requester()
+        except requests.RequestException as err:
+            raise CommunicationError("Failed communicating with Keycloak") from err
+
+        if 500 <= result.status_code < 600:
+            raise CommunicationError(
+                f"Failed communicating with Keycloak (status code {result.status_code})"
+            )
+
+        return result
+
     @cached_property
     def _well_known(self):
         well_known_url = f"{self._server_url}/realms/{self._realm_name}/.well-known/openid-configuration"
 
-        result = self._session.get(well_known_url)
+        result = self._handle_request_common_errors(
+            lambda: self._session.get(well_known_url)
+        )
+
         result.raise_for_status()
         return result.json()
 
@@ -33,7 +57,11 @@ class KeycloakAdminClient:
                 "client_id": self._client_id,
                 "client_secret": self._client_secret,
             }
-            result = self._session.post(token_endpoint_url, data=credentials_request)
+
+            result = self._handle_request_common_errors(
+                lambda: self._session.post(token_endpoint_url, data=credentials_request)
+            )
+
             result.raise_for_status()
             client_credentials = result.json()
             access_token = client_credentials["access_token"]
