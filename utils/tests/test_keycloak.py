@@ -144,18 +144,24 @@ def test_raise_communication_error_when_can_not_communicate_with_keycloak_during
         keycloak_client.get_user(user_id)
 
 
-def test_raise_exception_when_can_not_get_openid_configuration(keycloak_client):
-    setup_well_known(response=404)
+@pytest.mark.parametrize("status_code", (400, 404))
+def test_raise_authentication_error_when_can_not_get_openid_configuration(
+    keycloak_client, status_code
+):
+    setup_well_known(response=status_code)
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(keycloak.AuthenticationError):
         keycloak_client.get_user(user_id)
 
 
-def test_raise_exception_when_can_not_get_client_credentials(keycloak_client):
+@pytest.mark.parametrize("status_code", (400, 404))
+def test_raise_authentication_error_when_can_not_get_client_credentials(
+    keycloak_client, status_code
+):
     setup_well_known()
-    setup_client_credentials(response=400)
+    setup_client_credentials(response=status_code)
 
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(keycloak.AuthenticationError):
         keycloak_client.get_user(user_id)
 
 

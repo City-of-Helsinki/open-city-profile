@@ -12,6 +12,10 @@ class CommunicationError(KeycloakError):
     """Communication with Keycloak server failed."""
 
 
+class AuthenticationError(KeycloakError):
+    """Failed authentication with Keycloak."""
+
+
 class KeycloakAdminClient:
     def __init__(self, server_url, realm_name, client_id, client_secret):
         self._server_url = server_url
@@ -43,7 +47,9 @@ class KeycloakAdminClient:
             lambda: self._session.get(well_known_url)
         )
 
-        result.raise_for_status()
+        if not result.ok:
+            raise AuthenticationError("Couldn't get OpenID configuration")
+
         return result.json()
 
     def _get_auth(self, force_renew=False):
@@ -62,7 +68,9 @@ class KeycloakAdminClient:
                 lambda: self._session.post(token_endpoint_url, data=credentials_request)
             )
 
-            result.raise_for_status()
+            if not result.ok:
+                raise AuthenticationError(f"Couldn't authenticate to Keycloak")
+
             client_credentials = result.json()
             access_token = client_credentials["access_token"]
 
