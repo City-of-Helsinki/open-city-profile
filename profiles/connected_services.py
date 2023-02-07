@@ -1,3 +1,5 @@
+import logging
+
 import requests
 
 from open_city_profile.exceptions import (
@@ -8,12 +10,17 @@ from open_city_profile.exceptions import (
 from open_city_profile.oidc import TunnistamoTokenExchange
 from utils.auth import BearerAuth
 
+logger = logging.getLogger(__name__)
+
 
 def _check_service_gdpr_query_configuration(service_connections):
     for service_connection in service_connections:
         service = service_connection.service
 
         if not service_connection.get_gdpr_url() or not service.gdpr_query_scope:
+            logger.error(
+                "GDPR URL or GDPR query scope missing for service %s", service.name
+            )
             raise ConnectedServiceDataQueryFailedError(
                 f"Connected service: {service.name} does not have an API for querying data."
             )
@@ -22,32 +29,55 @@ def _check_service_gdpr_query_configuration(service_connections):
 def download_connected_service_data(profile, authorization_code):
     service_connections = profile.effective_service_connections_qs().all()
     if not service_connections:
+        logger.debug("No service connections for profile %s", profile.id)
         return []
 
     _check_service_gdpr_query_configuration(service_connections)
 
+    logger.debug("Downloading connected service data for profile %s", profile.id)
+
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
+    logger.debug("API Tokens: %s", api_tokens)
 
     external_data = []
 
     for service_connection in service_connections:
         service = service_connection.service
+        logger.debug("Starting GDPR query for service %s", service.name)
 
         api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
         api_token = api_tokens.get(api_identifier, "")
 
         if not api_token:
+            logger.error(
+                "API Token missing for service %s (profile %s)",
+                service.name,
+                profile.id,
+            )
             raise MissingGDPRApiTokenError(
                 f"Couldn't fetch an API token for service {service.name}."
             )
 
         try:
             url = service_connection.get_gdpr_url()
+            logger.debug("GDPR URL: %s", url)
             response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
+            logger.debug(
+                "Response status code: %s, headers: %s, body: %s",
+                response.status_code,
+                response.headers,
+                response.text,
+            )
             response.raise_for_status()
             service_connection_data = response.json()
-        except requests.RequestException:
+        except requests.RequestException as e:
+            logger.error(
+                "Invalid response for profile %s from service %s. Exception: %s.",
+                profile.id,
+                service.name,
+                e,
+            )
             raise ConnectedServiceDataQueryFailedError(
                 f"Invalid response from service {service.name}"
             )
