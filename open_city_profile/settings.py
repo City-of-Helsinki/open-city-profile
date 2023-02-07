@@ -346,6 +346,21 @@ LOGGING = {
     "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
 }
 
+if DEBUG:
+    LOGGING["formatters"] = {
+        "simple": {"format": "%(module)s %(asctime)s %(levelname)s %(message)s"},
+    }
+    LOGGING["handlers"]["console"] = {
+        "level": "DEBUG",
+        "class": "logging.StreamHandler",
+        "formatter": "simple",
+    }
+    LOGGING["loggers"]["profiles.connected_services"] = {
+        "handlers": ["console"],
+        "level": "DEBUG",
+        "propagate": True,
+    }
+
 GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")
 TUNNISTAMO_CLIENT_ID = env("OIDC_CLIENT_ID")
 TUNNISTAMO_CLIENT_SECRET = env("OIDC_CLIENT_SECRET")
