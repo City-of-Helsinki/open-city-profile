@@ -6,7 +6,6 @@ from pytest_factoryboy import register
 
 from open_city_profile.tests.conftest import *  # noqa
 from profiles.models import _default_temporary_read_access_token_validity_duration
-from profiles.schema import profile_updated
 from profiles.tests.factories import (
     AddressDataDictFactory,
     EmailDataDictFactory,
@@ -59,13 +58,6 @@ def phone_data(primary=False):
 @pytest.fixture
 def address_data(primary=False):
     return AddressDataDictFactory(primary=primary)
-
-
-@pytest.fixture
-def profile_updated_listener(mocker):
-    profile_updated_listener = mocker.MagicMock()
-    profile_updated.connect(profile_updated_listener)
-    return profile_updated_listener
 
 
 # Register factory fixtures

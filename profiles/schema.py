@@ -1,6 +1,5 @@
 from itertools import chain
 
-import django.dispatch
 import graphene
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -55,7 +54,10 @@ from .connected_services import (
     download_connected_service_data,
 )
 from .enums import AddressType, EmailType, PhoneType
-from .keycloak_integration import delete_profile_from_keycloak
+from .keycloak_integration import (
+    delete_profile_from_keycloak,
+    send_profile_changes_to_keycloak,
+)
 from .models import (
     Address,
     ClaimToken,
@@ -83,10 +85,6 @@ AllowedPhoneType = graphene.Enum.from_enum(
 AllowedAddressType = graphene.Enum.from_enum(
     AddressType, description=lambda e: e.label if e else ""
 )
-
-
-"""Provides the updated Profile instance as a keyword argument called `instance`."""
-profile_updated = django.dispatch.Signal()
 
 
 def get_claimable_profile(token=None):
@@ -1286,7 +1284,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        profile_updated.send(sender=profile.__class__, instance=profile)
+        send_profile_changes_to_keycloak(profile)
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -1362,7 +1360,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        profile_updated.send(sender=profile.__class__, instance=profile)
+        send_profile_changes_to_keycloak(profile)
 
         return UpdateProfileMutation(profile=profile)
 
@@ -1394,10 +1392,6 @@ class ClaimProfileMutation(relay.ClientIDMutation):
                 profile_to_claim.user = info.context.user
                 profile_to_claim.save()
                 profile_to_claim.claim_tokens.all().delete()
-
-            profile_updated.send(
-                sender=profile_to_claim.__class__, instance=profile_to_claim
-            )
 
             return ClaimProfileMutation(profile=profile_to_claim)
 

@@ -4,7 +4,7 @@ import pytest
 from graphql_relay.node.node import to_global_id
 
 from open_city_profile.tests.asserts import assert_match_error_code
-from profiles.models import Address, Email, Phone, Profile
+from profiles.models import Address, Email, Phone
 from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
 from services.tests.factories import ServiceConnectionFactory
 from utils import keycloak
@@ -21,12 +21,7 @@ from .factories import (
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_update_profile(
-    user_gql_client,
-    email_data,
-    profile_data,
-    service,
-    profile_updated_listener,
-    with_serviceconnection,
+    user_gql_client, email_data, profile_data, service, with_serviceconnection,
 ):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     if with_serviceconnection:
@@ -102,15 +97,9 @@ def test_update_profile(
     executed = user_gql_client.execute(mutation, service=service)
     if with_serviceconnection:
         assert executed["data"] == expected_data
-
-        profile_updated_listener.assert_called_once()
-        assert profile_updated_listener.call_args[1]["sender"] == Profile
-        assert profile_updated_listener.call_args[1]["instance"] == profile
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["updateMyProfile"] is None
-
-        profile_updated_listener.assert_not_called()
 
 
 def test_update_profile_without_email(user_gql_client, profile_data):
