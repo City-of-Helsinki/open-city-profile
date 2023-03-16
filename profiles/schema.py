@@ -1284,7 +1284,12 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        send_profile_changes_to_keycloak(profile)
+        send_profile_changes_to_keycloak(
+            profile.user.uuid,
+            profile.first_name,
+            profile.last_name,
+            profile.get_primary_email_value(),
+        )
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -1360,7 +1365,12 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        send_profile_changes_to_keycloak(profile)
+        send_profile_changes_to_keycloak(
+            profile.user.uuid,
+            profile.first_name,
+            profile.last_name,
+            profile.get_primary_email_value(),
+        )
 
         return UpdateProfileMutation(profile=profile)
 

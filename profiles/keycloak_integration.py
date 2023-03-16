@@ -71,18 +71,16 @@ def _get_user_data_from_keycloak(user_id):
         return None
 
 
-def send_profile_changes_to_keycloak(instance):
-    if not instance.user or _keycloak_admin_client is None:
+def send_profile_changes_to_keycloak(user_uuid, first_name, last_name, email):
+    if not user_uuid or _keycloak_admin_client is None:
         return
 
-    user_id = instance.user.uuid
-
-    current_kc_data = _get_user_data_from_keycloak(user_id)
+    current_kc_data = _get_user_data_from_keycloak(user_uuid)
 
     updated_data = {
-        "firstName": instance.first_name,
-        "lastName": instance.last_name,
-        "email": instance.get_primary_email_value(),
+        "firstName": first_name,
+        "lastName": last_name,
+        "email": email,
     }
 
     if not current_kc_data or current_kc_data == updated_data:
@@ -94,12 +92,12 @@ def send_profile_changes_to_keycloak(instance):
         updated_data["emailVerified"] = False
 
     try:
-        _keycloak_admin_client.update_user(user_id, updated_data)
+        _keycloak_admin_client.update_user(user_uuid, updated_data)
     except keycloak.ConflictError as err:
         raise DataConflictError("Conflict in remote system") from err
 
     if email_changed:
         try:
-            _keycloak_admin_client.send_verify_email(user_id)
+            _keycloak_admin_client.send_verify_email(user_uuid)
         except Exception:
             pass
