@@ -155,15 +155,9 @@ def test_staff_user_can_update_a_profile(
     executed = user_gql_client.execute(query, service=service)
     if with_serviceconnection:
         assert executed["data"] == expected_data
-
-        profile_updated_listener.assert_called_once()
-        assert profile_updated_listener.call_args[1]["sender"] == Profile
-        assert profile_updated_listener.call_args[1]["instance"] == profile
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"]["updateProfile"] is None
-
-        profile_updated_listener.assert_not_called()
 
 
 EMAILS_MUTATION = """

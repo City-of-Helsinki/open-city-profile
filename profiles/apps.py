@@ -6,4 +6,3 @@ class ProfilesConfig(AppConfig):
 
     def ready(self):
         import profiles.log_signals  # noqa isort:skip
-        import profiles.signals  # noqa isort:skip
