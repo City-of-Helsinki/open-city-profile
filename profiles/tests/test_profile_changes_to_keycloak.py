@@ -4,22 +4,27 @@ from open_city_profile.exceptions import DataConflictError
 from profiles.keycloak_integration import send_profile_changes_to_keycloak
 from utils import keycloak
 
-from .factories import ProfileFactory, ProfileWithPrimaryEmailFactory
-
 
 @pytest.fixture(autouse=True)
 def setup_profile_change_handling(keycloak_setup):
     return keycloak_setup
 
 
-def test_do_nothing_if_profile_has_no_user(mocker):
+USER_ID = "user id"
+FIRST_NAME = "First name"
+LAST_NAME = "Last name"
+EMAIL = "email@email.example"
+
+
+def test_do_nothing_if_user_id_is_not_provided(mocker):
     mocked_get_user = mocker.patch.object(keycloak.KeycloakAdminClient, "get_user")
     mocked_update_user = mocker.patch.object(
         keycloak.KeycloakAdminClient, "update_user"
     )
-    profile = ProfileFactory(user=None)
 
-    send_profile_changes_to_keycloak(profile)
+    send_profile_changes_to_keycloak(
+        None, FIRST_NAME, LAST_NAME, EMAIL,
+    )
 
     mocked_get_user.assert_not_called()
     mocked_update_user.assert_not_called()
@@ -35,17 +40,17 @@ def test_do_nothing_if_user_is_not_found_in_keycloak(mocker):
         keycloak.KeycloakAdminClient, "update_user"
     )
 
-    profile = ProfileFactory()
-
-    send_profile_changes_to_keycloak(profile)
+    send_profile_changes_to_keycloak(
+        "not found user id", FIRST_NAME, LAST_NAME, EMAIL,
+    )
 
     mocked_update_user.assert_not_called()
 
 
 def test_changed_names_are_sent_to_keycloak(mocker):
     new_values = {
-        "firstName": "New first name",
-        "lastName": "New last name",
+        "firstName": FIRST_NAME,
+        "lastName": LAST_NAME,
         "email": None,
     }
 
@@ -58,13 +63,11 @@ def test_changed_names_are_sent_to_keycloak(mocker):
         keycloak.KeycloakAdminClient, "update_user"
     )
 
-    profile = ProfileFactory(
-        first_name=new_values["firstName"], last_name=new_values["lastName"]
+    send_profile_changes_to_keycloak(
+        USER_ID, new_values["firstName"], new_values["lastName"], None,
     )
-    user_id = profile.user.uuid
-    send_profile_changes_to_keycloak(profile)
 
-    mocked_update_user.assert_called_once_with(user_id, new_values)
+    mocked_update_user.assert_called_once_with(USER_ID, new_values)
 
 
 @pytest.mark.parametrize("send_verify_email_succeeds", (True, False))
@@ -72,9 +75,9 @@ def test_changing_email_causes_it_to_be_marked_unverified(
     mocker, send_verify_email_succeeds
 ):
     new_values = {
-        "firstName": "First name",
-        "lastName": "Last name",
-        "email": "new@email.example",
+        "firstName": FIRST_NAME,
+        "lastName": LAST_NAME,
+        "email": EMAIL,
         "emailVerified": False,
     }
 
@@ -100,42 +103,36 @@ def test_changing_email_causes_it_to_be_marked_unverified(
         ),
     )
 
-    profile = ProfileFactory(
-        first_name=new_values["firstName"], last_name=new_values["lastName"]
+    send_profile_changes_to_keycloak(
+        USER_ID, new_values["firstName"], new_values["lastName"], new_values["email"],
     )
-    profile.emails.create(email=new_values["email"], primary=True)
-    user_id = profile.user.uuid
-    send_profile_changes_to_keycloak(profile)
 
-    mocked_update_user.assert_called_once_with(user_id, new_values)
-    mocked_send_verify_email.assert_called_once_with(user_id)
+    mocked_update_user.assert_called_once_with(USER_ID, new_values)
+    mocked_send_verify_email.assert_called_once_with(USER_ID)
 
 
 def test_if_there_are_no_changes_then_nothing_is_sent_to_keycloak(mocker):
-    values = {"firstName": "First name", "lastName": "Last name"}
+    values = {"firstName": FIRST_NAME, "lastName": LAST_NAME}
 
     mocker.patch.object(keycloak.KeycloakAdminClient, "get_user", return_value=values)
     mocked_update_user = mocker.patch.object(
         keycloak.KeycloakAdminClient, "update_user"
     )
 
-    profile = ProfileFactory(
-        first_name=values["firstName"], last_name=values["lastName"]
+    send_profile_changes_to_keycloak(
+        USER_ID, values["firstName"], values["lastName"], None,
     )
-    send_profile_changes_to_keycloak(profile)
 
     mocked_update_user.assert_not_called()
 
 
 def test_when_update_causes_a_conflict_then_data_conflict_error_is_raised(mocker):
-    profile = ProfileWithPrimaryEmailFactory()
-
     mocker.patch.object(
         keycloak.KeycloakAdminClient,
         "get_user",
         return_value={
-            "firstName": profile.first_name,
-            "lastName": profile.last_name,
+            "firstName": FIRST_NAME,
+            "lastName": LAST_NAME,
             "email": "old@email.example",
         },
     )
@@ -147,4 +144,6 @@ def test_when_update_causes_a_conflict_then_data_conflict_error_is_raised(mocker
     )
 
     with pytest.raises(DataConflictError):
-        send_profile_changes_to_keycloak(profile)
+        send_profile_changes_to_keycloak(
+            USER_ID, FIRST_NAME, LAST_NAME, EMAIL,
+        )
