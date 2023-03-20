@@ -32,5 +32,5 @@ def assert_match_error_code(response, error_code):
     error = response["errors"][0]
     assert "extensions" in error
     extensions = error["extensions"]
-    assert "code" in extensions
-    assert extensions["code"] == error_code
+    assert "code" in extensions, error
+    assert extensions["code"] == error_code, error
