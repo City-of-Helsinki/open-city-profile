@@ -107,10 +107,23 @@ def _create_nested(model, profile, data):
         item.save()
 
 
-def _update_nested(model, profile, data, field_callback):
+def _update_nested(node, profile, data, field_callback):
+    model = node._meta.model
+
     for update_input in filter(None, data):
         id = update_input.pop("id")
-        item = model.objects.get(profile=profile, pk=from_global_id(id)[1])
+        try:
+            id_type, id_id = from_global_id(id)
+            if id_type != node._meta.name:
+                raise Exception()
+            id_id = int(id_id)
+        except Exception:
+            raise model.DoesNotExist(
+                f"{model._meta.object_name} with id {id} not found"
+            )
+
+        item = model.objects.get(profile=profile, pk=id_id)
+
         for field, value in update_input.items():
             if field_callback:
                 field_callback(item, field, value)
@@ -138,12 +151,12 @@ def update_profile(profile, profile_data):
     ]
     nested_to_update = [
         (
-            Email,
+            EmailNode,
             profile_data.pop("update_emails", []),
             email_change_makes_it_unverified,
         ),
-        (Phone, profile_data.pop("update_phones", []), None),
-        (Address, profile_data.pop("update_addresses", []), None),
+        (PhoneNode, profile_data.pop("update_phones", []), None),
+        (AddressNode, profile_data.pop("update_addresses", []), None),
     ]
     nested_to_delete = [
         (Email, profile_data.pop("remove_emails", [])),
@@ -163,8 +176,8 @@ def update_profile(profile, profile_data):
     for model, data in nested_to_create:
         _create_nested(model, profile, data)
 
-    for model, data, field_callback in nested_to_update:
-        _update_nested(model, profile, data, field_callback)
+    for node, data, field_callback in nested_to_update:
+        _update_nested(node, profile, data, field_callback)
 
     for model, data in nested_to_delete:
         _delete_nested(model, profile, data)
