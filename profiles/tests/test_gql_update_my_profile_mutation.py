@@ -4,7 +4,7 @@ import pytest
 from graphql_relay.node.node import to_global_id
 
 from open_city_profile.tests.asserts import assert_match_error_code
-from profiles.models import Email, Profile
+from profiles.models import Address, Email, Phone, Profile
 from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
 from services.tests.factories import ServiceConnectionFactory
 from utils import keycloak
@@ -291,6 +291,25 @@ def test_update_email(user_gql_client, email_data):
     assert dict(executed["data"]) == expected_data
 
 
+def test_can_not_update_email_of_another_profile(user_gql_client):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    another_email = ProfileWithPrimaryEmailFactory().emails.first()
+
+    email_updates = [
+        {
+            "id": to_global_id(type="EmailNode", id=another_email.id),
+            "email": "new@email.example",
+        }
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Email.objects.get(id=another_email.id).email == another_email.email
+
+
 def test_change_primary_email_to_another_one(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     email = EmailFactory(profile=profile, primary=False)
@@ -496,6 +515,22 @@ def test_remove_email(user_gql_client):
     assert dict(executed["data"]) == expected_data
 
 
+def test_can_not_remove_email_of_another_profile(user_gql_client):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    another_email = ProfileWithPrimaryEmailFactory().emails.first()
+
+    email_deletes = [
+        to_global_id(type="EmailNode", id=another_email.id),
+    ]
+    executed = user_gql_client.execute(
+        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Email.objects.filter(id=another_email.id).exists()
+
+
 def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     email1 = EmailFactory(profile=profile, primary=False)
@@ -653,6 +688,29 @@ def test_update_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
+def test_can_not_update_phone_of_another_profile(user_gql_client):
+    ProfileFactory(user=user_gql_client.user)
+    another_phone = PhoneFactory(profile=ProfileFactory())
+
+    executed = user_gql_client.execute(
+        PHONES_MUTATION,
+        variables={
+            "profileInput": {
+                "updatePhones": [
+                    {
+                        "id": to_global_id(type="PhoneNode", id=another_phone.id),
+                        "phone": "New phone",
+                    }
+                ]
+            }
+        },
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Phone.objects.get(id=another_phone.id).phone == another_phone.phone
+
+
 def test_remove_phone(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
@@ -668,6 +726,24 @@ def test_remove_phone(user_gql_client):
         },
     )
     assert dict(executed["data"]) == expected_data
+
+
+def test_can_not_remove_phone_of_another_profile(user_gql_client):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    another_phone = PhoneFactory(profile=ProfileFactory())
+
+    executed = user_gql_client.execute(
+        PHONES_MUTATION,
+        variables={
+            "profileInput": {
+                "removePhones": [to_global_id(type="PhoneNode", id=another_phone.id)]
+            }
+        },
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Phone.objects.filter(id=another_phone.id).exists()
 
 
 class TestProfileInputValidation(ExistingProfileInputValidationBase):
@@ -803,6 +879,29 @@ def test_update_address(user_gql_client, address_data):
     assert dict(executed["data"]) == expected_data
 
 
+def test_can_not_update_address_of_another_profile(user_gql_client):
+    ProfileFactory(user=user_gql_client.user)
+    another_address = AddressFactory(profile=ProfileFactory())
+
+    executed = user_gql_client.execute(
+        ADDRESSES_MUTATION,
+        variables={
+            "profileInput": {
+                "updateAddresses": [
+                    {
+                        "id": to_global_id(type="AddressNode", id=another_address.id),
+                        "address": "New address",
+                    }
+                ]
+            }
+        },
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Address.objects.get(id=another_address.id).address == another_address.address
+
+
 def test_remove_address(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
@@ -819,6 +918,26 @@ def test_remove_address(user_gql_client):
     )
 
     assert dict(executed["data"]) == expected_data
+
+
+def test_can_not_remove_address_of_another_profile(user_gql_client):
+    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    another_address = AddressFactory(profile=ProfileFactory())
+
+    executed = user_gql_client.execute(
+        ADDRESSES_MUTATION,
+        variables={
+            "profileInput": {
+                "removeAddresses": [
+                    to_global_id(type="AddressNode", id=another_address.id)
+                ]
+            }
+        },
+    )
+
+    assert executed["data"]["updateMyProfile"] is None
+    assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
+    assert Address.objects.filter(id=another_address.id).exists()
 
 
 def test_change_primary_contact_details(
