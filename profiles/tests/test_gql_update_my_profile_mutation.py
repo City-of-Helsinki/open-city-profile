@@ -253,42 +253,64 @@ EMAILS_MUTATION = """
 """
 
 
-def test_update_email(user_gql_client, email_data):
+@pytest.mark.parametrize(
+    "global_id_type, global_id_id, succeeds",
+    (
+        (None, None, True),
+        ("PhoneNode", None, False),
+        ("NonExisting", None, False),
+        (None, "something", False),
+        (None, 10000, False),
+        (None, -1, False),
+    ),
+)
+def test_update_email(
+    global_id_type, global_id_id, succeeds, user_gql_client, email_data
+):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "emails": {
-                    "edges": [
-                        {
-                            "node": {
-                                "id": to_global_id(type="EmailNode", id=email.id),
-                                "email": email_data["email"],
-                                "emailType": email_data["email_type"],
-                                "primary": email_data["primary"],
-                                "verified": False,
-                            }
-                        }
-                    ]
-                }
-            }
-        }
-    }
+    global_id_type = global_id_type or "EmailNode"
+    global_id_id = global_id_id or email.id
 
     email_updates = [
         {
-            "id": to_global_id(type="EmailNode", id=email.id),
+            "id": to_global_id(type=global_id_type, id=global_id_id),
             "email": email_data["email"],
             "emailType": email_data["email_type"],
             "primary": email_data["primary"],
         }
     ]
+
     executed = user_gql_client.execute(
         EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
     )
-    assert dict(executed["data"]) == expected_data
+
+    if succeeds:
+        expected_data = {
+            "updateMyProfile": {
+                "profile": {
+                    "emails": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": to_global_id(type="EmailNode", id=email.id),
+                                    "email": email_data["email"],
+                                    "emailType": email_data["email_type"],
+                                    "primary": email_data["primary"],
+                                    "verified": False,
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        assert dict(executed["data"]) == expected_data
+    else:
+        assert executed["data"]["updateMyProfile"] is None
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
 
 def test_can_not_update_email_of_another_profile(user_gql_client):
@@ -646,28 +668,25 @@ def test_add_phone(user_gql_client, phone_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_update_phone(user_gql_client, phone_data):
+@pytest.mark.parametrize(
+    "global_id_type, global_id_id, succeeds",
+    (
+        (None, None, True),
+        ("AddressNode", None, False),
+        ("NonExisting", None, False),
+        (None, "something", False),
+        (None, 10000, False),
+        (None, -1, False),
+    ),
+)
+def test_update_phone(
+    global_id_type, global_id_id, succeeds, user_gql_client, phone_data
+):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "phones": {
-                    "edges": [
-                        {
-                            "node": {
-                                "id": to_global_id(type="PhoneNode", id=phone.id),
-                                "phone": phone_data["phone"],
-                                "phoneType": phone_data["phone_type"],
-                                "primary": phone_data["primary"],
-                            }
-                        }
-                    ]
-                }
-            }
-        }
-    }
+    global_id_type = global_id_type or "PhoneNode"
+    global_id_id = global_id_id or phone.id
 
     executed = user_gql_client.execute(
         PHONES_MUTATION,
@@ -675,7 +694,7 @@ def test_update_phone(user_gql_client, phone_data):
             "profileInput": {
                 "updatePhones": [
                     {
-                        "id": to_global_id(type="PhoneNode", id=phone.id),
+                        "id": to_global_id(type=global_id_type, id=global_id_id),
                         "phone": phone_data["phone"],
                         "phoneType": phone_data["phone_type"],
                         "primary": phone_data["primary"],
@@ -685,7 +704,30 @@ def test_update_phone(user_gql_client, phone_data):
         },
     )
 
-    assert dict(executed["data"]) == expected_data
+    if succeeds:
+        expected_data = {
+            "updateMyProfile": {
+                "profile": {
+                    "phones": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": to_global_id(type="PhoneNode", id=phone.id),
+                                    "phone": phone_data["phone"],
+                                    "phoneType": phone_data["phone_type"],
+                                    "primary": phone_data["primary"],
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        assert dict(executed["data"]) == expected_data
+    else:
+        assert executed["data"]["updateMyProfile"] is None
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
 
 def test_can_not_update_phone_of_another_profile(user_gql_client):
@@ -831,9 +873,25 @@ def test_add_address(user_gql_client, address_data):
     assert dict(executed["data"]) == expected_data
 
 
-def test_update_address(user_gql_client, address_data):
+@pytest.mark.parametrize(
+    "global_id_type, global_id_id, succeeds",
+    (
+        (None, None, True),
+        ("EmailNode", None, False),
+        ("NonExisting", None, False),
+        (None, "something", False),
+        (None, 10000, False),
+        (None, -1, False),
+    ),
+)
+def test_update_address(
+    global_id_type, global_id_id, succeeds, user_gql_client, address_data
+):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
+
+    global_id_type = global_id_type or "AddressNode"
+    global_id_id = global_id_id or address.id
 
     executed = user_gql_client.execute(
         ADDRESSES_MUTATION,
@@ -841,7 +899,7 @@ def test_update_address(user_gql_client, address_data):
             "profileInput": {
                 "updateAddresses": [
                     {
-                        "id": to_global_id(type="AddressNode", id=address.id),
+                        "id": to_global_id(type=global_id_type, id=global_id_id),
                         "address": address_data["address"],
                         "postalCode": address_data["postal_code"],
                         "city": address_data["city"],
@@ -854,29 +912,35 @@ def test_update_address(user_gql_client, address_data):
         },
     )
 
-    expected_data = {
-        "updateMyProfile": {
-            "profile": {
-                "addresses": {
-                    "edges": [
-                        {
-                            "node": {
-                                "id": to_global_id(type="AddressNode", id=address.id),
-                                "address": address_data["address"],
-                                "postalCode": address_data["postal_code"],
-                                "city": address_data["city"],
-                                "countryCode": address_data["country_code"],
-                                "addressType": address_data["address_type"],
-                                "primary": address_data["primary"],
+    if succeeds:
+        expected_data = {
+            "updateMyProfile": {
+                "profile": {
+                    "addresses": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": to_global_id(
+                                        type="AddressNode", id=address.id
+                                    ),
+                                    "address": address_data["address"],
+                                    "postalCode": address_data["postal_code"],
+                                    "city": address_data["city"],
+                                    "countryCode": address_data["country_code"],
+                                    "addressType": address_data["address_type"],
+                                    "primary": address_data["primary"],
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         }
-    }
 
-    assert dict(executed["data"]) == expected_data
+        assert dict(executed["data"]) == expected_data
+    else:
+        assert executed["data"]["updateMyProfile"] is None
+        assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
 
 def test_can_not_update_address_of_another_profile(user_gql_client):
