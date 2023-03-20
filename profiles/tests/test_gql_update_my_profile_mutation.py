@@ -680,46 +680,55 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
         )
 
 
-def test_add_address(user_gql_client, address_data):
-    ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            addAddresses: [
-                                {
-                                    addressType: ${address_type},
-                                    address:"${address}",
-                                    postalCode: "${postal_code}",
-                                    city: "${city}",
-                                    countryCode: "${country_code}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        addresses {
-                            edges {
-                                node {
-                                    address
-                                    postalCode
-                                    city
-                                    countryCode
-                                    addressType
-                                    primary
-                                }
-                            }
+ADDRESSES_MUTATION = """
+    mutation updateMyAddresses($profileInput: ProfileInput!) {
+        updateMyProfile(
+            input: {
+                profile: $profileInput
+            }
+        ) {
+            profile {
+                addresses {
+                    edges {
+                        node {
+                            id
+                            address
+                            postalCode
+                            city
+                            countryCode
+                            addressType
+                            primary
                         }
                     }
                 }
             }
-        """
+        }
+    }
+"""
+
+
+def test_add_address(user_gql_client, address_data):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+
+    executed = user_gql_client.execute(
+        ADDRESSES_MUTATION,
+        variables={
+            "profileInput": {
+                "addAddresses": [
+                    {
+                        "address": address_data["address"],
+                        "postalCode": address_data["postal_code"],
+                        "city": address_data["city"],
+                        "countryCode": address_data["country_code"],
+                        "addressType": address_data["address_type"],
+                        "primary": address_data["primary"],
+                    }
+                ]
+            }
+        },
     )
+
+    address = profile.addresses.get()
 
     expected_data = {
         "updateMyProfile": {
@@ -728,6 +737,7 @@ def test_add_address(user_gql_client, address_data):
                     "edges": [
                         {
                             "node": {
+                                "id": to_global_id("AddressNode", address.id),
                                 "address": address_data["address"],
                                 "postalCode": address_data["postal_code"],
                                 "city": address_data["city"],
@@ -742,15 +752,6 @@ def test_add_address(user_gql_client, address_data):
         }
     }
 
-    mutation = t.substitute(
-        address=address_data["address"],
-        postal_code=address_data["postal_code"],
-        city=address_data["city"],
-        country_code=address_data["country_code"],
-        address_type=address_data["address_type"],
-        primary=str(address_data["primary"]).lower(),
-    )
-    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
@@ -758,42 +759,23 @@ def test_update_address(user_gql_client, address_data):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            updateAddresses: [
-                                {
-                                    id: "${address_id}",
-                                    addressType: ${address_type},
-                                    address:"${address}",
-                                    postalCode:"${postal_code}",
-                                    city:"${city}",
-                                    primary: ${primary}
-                                }
-                            ]
-                        }
+    executed = user_gql_client.execute(
+        ADDRESSES_MUTATION,
+        variables={
+            "profileInput": {
+                "updateAddresses": [
+                    {
+                        "id": to_global_id(type="AddressNode", id=address.id),
+                        "address": address_data["address"],
+                        "postalCode": address_data["postal_code"],
+                        "city": address_data["city"],
+                        "countryCode": address_data["country_code"],
+                        "addressType": address_data["address_type"],
+                        "primary": address_data["primary"],
                     }
-                ) {
-                    profile {
-                        addresses {
-                            edges {
-                                node {
-                                    id
-                                    address
-                                    postalCode
-                                    city
-                                    addressType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
+                ]
             }
-        """
+        },
     )
 
     expected_data = {
@@ -807,6 +789,7 @@ def test_update_address(user_gql_client, address_data):
                                 "address": address_data["address"],
                                 "postalCode": address_data["postal_code"],
                                 "city": address_data["city"],
+                                "countryCode": address_data["country_code"],
                                 "addressType": address_data["address_type"],
                                 "primary": address_data["primary"],
                             }
@@ -817,15 +800,6 @@ def test_update_address(user_gql_client, address_data):
         }
     }
 
-    mutation = t.substitute(
-        address_id=to_global_id(type="AddressNode", id=address.id),
-        address=address_data["address"],
-        postal_code=address_data["postal_code"],
-        city=address_data["city"],
-        address_type=address_data["address_type"],
-        primary=str(address_data["primary"]).lower(),
-    )
-    executed = user_gql_client.execute(mutation)
     assert dict(executed["data"]) == expected_data
 
 
@@ -833,39 +807,17 @@ def test_remove_address(user_gql_client):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
-    t = Template(
-        """
-            mutation {
-                updateMyProfile(
-                    input: {
-                        profile: {
-                            removeAddresses: [
-                                "${address_id}"
-                            ]
-                        }
-                    }
-                ) {
-                    profile {
-                        addresses {
-                            edges {
-                                node {
-                                    id
-                                    address
-                                    addressType
-                                    primary
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        """
-    )
-
     expected_data = {"updateMyProfile": {"profile": {"addresses": {"edges": []}}}}
 
-    mutation = t.substitute(address_id=to_global_id(type="AddressNode", id=address.id))
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(
+        ADDRESSES_MUTATION,
+        variables={
+            "profileInput": {
+                "removeAddresses": [to_global_id(type="AddressNode", id=address.id)]
+            }
+        },
+    )
+
     assert dict(executed["data"]) == expected_data
 
 
