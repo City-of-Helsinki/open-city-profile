@@ -112,8 +112,12 @@ def _safely_get_item_by_global_id(node, id, profile):
     return item
 
 
-def _create_nested(model, profile, data):
-    for add_input in filter(None, data):
+def _handle_nested(
+    profile, node, add_data, update_data, update_field_callback, remove_data
+):
+    model = node._meta.model
+
+    for add_input in filter(None, add_data):
         item = model(profile=profile)
         for field, value in add_input.items():
             if field == "primary" and value is True:
@@ -122,26 +126,20 @@ def _create_nested(model, profile, data):
 
         item.save()
 
-
-def _update_nested(node, profile, data, field_callback):
-    model = node._meta.model
-
-    for update_input in filter(None, data):
+    for update_input in filter(None, update_data):
         id = update_input.pop("id")
         item = _safely_get_item_by_global_id(node, id, profile)
 
         for field, value in update_input.items():
-            if field_callback:
-                field_callback(item, field, value)
+            if update_field_callback:
+                update_field_callback(item, field, value)
             if field == "primary" and value is True:
                 model.objects.filter(profile=profile).update(primary=False)
             setattr(item, field, value)
 
         item.save()
 
-
-def _delete_nested(node, profile, data):
-    for remove_id in filter(None, data):
+    for remove_id in filter(None, remove_data):
         _safely_get_item_by_global_id(node, remove_id, profile).delete()
 
 
@@ -150,25 +148,29 @@ def update_profile(profile, profile_data):
         if field == "email" and item.email != value:
             item.verified = False
 
-    nested_to_create = [
-        (Email, profile_data.pop("add_emails", [])),
-        (Phone, profile_data.pop("add_phones", [])),
-        (Address, profile_data.pop("add_addresses", [])),
-    ]
-    nested_to_update = [
+    nested_handling_args = (
         (
             EmailNode,
+            profile_data.pop("add_emails", []),
             profile_data.pop("update_emails", []),
             email_change_makes_it_unverified,
+            profile_data.pop("remove_emails", []),
         ),
-        (PhoneNode, profile_data.pop("update_phones", []), None),
-        (AddressNode, profile_data.pop("update_addresses", []), None),
-    ]
-    nested_to_delete = [
-        (EmailNode, profile_data.pop("remove_emails", [])),
-        (PhoneNode, profile_data.pop("remove_phones", [])),
-        (AddressNode, profile_data.pop("remove_addresses", [])),
-    ]
+        (
+            PhoneNode,
+            profile_data.pop("add_phones", []),
+            profile_data.pop("update_phones", []),
+            None,
+            profile_data.pop("remove_phones", []),
+        ),
+        (
+            AddressNode,
+            profile_data.pop("add_addresses", []),
+            profile_data.pop("update_addresses", []),
+            None,
+            profile_data.pop("remove_addresses", []),
+        ),
+    )
 
     # Remove image field from input. It's not supposed to do anything anymore.
     profile_data.pop("image", None)
@@ -179,14 +181,8 @@ def update_profile(profile, profile_data):
         setattr(profile, field, value)
     profile.save()
 
-    for model, data in nested_to_create:
-        _create_nested(model, profile, data)
-
-    for node, data, field_callback in nested_to_update:
-        _update_nested(node, profile, data, field_callback)
-
-    for node, data in nested_to_delete:
-        _delete_nested(node, profile, data)
+    for args in nested_handling_args:
+        _handle_nested(profile, *args)
 
     if profile_had_primary_email and not bool(profile.get_primary_email_value()):
         raise ProfileMustHavePrimaryEmailError(
