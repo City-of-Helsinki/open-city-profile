@@ -821,21 +821,12 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
         validate(cls, root, info, **input)
 
         profile_data = input.pop("profile")
-        nested_to_create = [
-            (Email, profile_data.pop("add_emails", [])),
-            (Phone, profile_data.pop("add_phones", [])),
-            (Address, profile_data.pop("add_addresses", [])),
-        ]
 
         sensitive_data = profile_data.pop("sensitivedata", None)
 
-        # Remove image field from input. It's not supposed to do anything anymore.
-        profile_data.pop("image", None)
+        profile = Profile(user=info.context.user)
 
-        profile = Profile.objects.create(user=info.context.user, **profile_data)
-
-        for model, data in nested_to_create:
-            _create_nested(model, profile, data)
+        update_profile(profile, profile_data)
 
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
@@ -903,26 +894,14 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         validate(cls, root, info, **input)
 
-        nested_to_create = [
-            (Email, profile_data.pop("add_emails", [])),
-            (Phone, profile_data.pop("add_phones", [])),
-            (Address, profile_data.pop("add_addresses", [])),
-        ]
-
         profile_data.pop("sensitivedata", None)
 
-        # Remove image field from input. It's not supposed to do anything anymore.
-        profile_data.pop("image", None)
+        profile = Profile()
 
-        profile = Profile(**profile_data)
-        profile.save()
-
-        for model, data in nested_to_create:
-            _create_nested(model, profile, data)
+        update_profile(profile, profile_data)
 
         if sensitivedata:
-            SensitiveData.objects.create(profile=profile, **sensitivedata)
-            profile.refresh_from_db()
+            update_sensitivedata(profile, sensitivedata)
 
         # create the service connection for the profile
         profile.service_connections.create(service=service)
