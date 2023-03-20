@@ -96,6 +96,22 @@ def get_claimable_profile(token=None):
     return Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
 
 
+def _safely_get_item_by_global_id(node, id, profile):
+    model = node._meta.model
+
+    try:
+        id_type, id_id = from_global_id(id)
+        if id_type != node._meta.name:
+            raise Exception()
+        id_id = int(id_id)
+    except Exception:
+        raise model.DoesNotExist(f"{model._meta.object_name} with id {id} not found")
+
+    item = model.objects.get(profile=profile, pk=id_id)
+
+    return item
+
+
 def _create_nested(model, profile, data):
     for add_input in filter(None, data):
         item = model(profile=profile)
@@ -112,17 +128,7 @@ def _update_nested(node, profile, data, field_callback):
 
     for update_input in filter(None, data):
         id = update_input.pop("id")
-        try:
-            id_type, id_id = from_global_id(id)
-            if id_type != node._meta.name:
-                raise Exception()
-            id_id = int(id_id)
-        except Exception:
-            raise model.DoesNotExist(
-                f"{model._meta.object_name} with id {id} not found"
-            )
-
-        item = model.objects.get(profile=profile, pk=id_id)
+        item = _safely_get_item_by_global_id(node, id, profile)
 
         for field, value in update_input.items():
             if field_callback:
@@ -134,9 +140,9 @@ def _update_nested(node, profile, data, field_callback):
         item.save()
 
 
-def _delete_nested(model, profile, data):
+def _delete_nested(node, profile, data):
     for remove_id in filter(None, data):
-        model.objects.get(profile=profile, pk=from_global_id(remove_id)[1]).delete()
+        _safely_get_item_by_global_id(node, remove_id, profile).delete()
 
 
 def update_profile(profile, profile_data):
@@ -159,9 +165,9 @@ def update_profile(profile, profile_data):
         (AddressNode, profile_data.pop("update_addresses", []), None),
     ]
     nested_to_delete = [
-        (Email, profile_data.pop("remove_emails", [])),
-        (Phone, profile_data.pop("remove_phones", [])),
-        (Address, profile_data.pop("remove_addresses", [])),
+        (EmailNode, profile_data.pop("remove_emails", [])),
+        (PhoneNode, profile_data.pop("remove_phones", [])),
+        (AddressNode, profile_data.pop("remove_addresses", [])),
     ]
 
     # Remove image field from input. It's not supposed to do anything anymore.
@@ -179,8 +185,8 @@ def update_profile(profile, profile_data):
     for node, data, field_callback in nested_to_update:
         _update_nested(node, profile, data, field_callback)
 
-    for model, data in nested_to_delete:
-        _delete_nested(model, profile, data)
+    for node, data in nested_to_delete:
+        _delete_nested(node, profile, data)
 
     if profile_had_primary_email and not bool(profile.get_primary_email_value()):
         raise ProfileMustHavePrimaryEmailError(
