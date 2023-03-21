@@ -96,20 +96,29 @@ def get_claimable_profile(token=None):
     return Profile.objects.filter(user=None).get(claim_tokens__id=claim_token.id)
 
 
-def _safely_get_item_by_global_id(node, id, profile):
-    model = node._meta.model
-
+def _safely_get_item_by_global_id(node, id, all_items):
     try:
         id_type, id_id = from_global_id(id)
         if id_type != node._meta.name:
             raise Exception()
         id_id = int(id_id)
+
+        return next(item for item in all_items if item.pk == id_id)
     except Exception:
+        model = node._meta.model
         raise model.DoesNotExist(f"{model._meta.object_name} with id {id} not found")
 
-    item = model.objects.get(profile=profile, pk=id_id)
 
-    return item
+class _NestedObjectsResult:
+    def __init__(self, to_save, to_delete):
+        self._to_save = to_save
+        self._to_delete = to_delete
+
+    def persist(self):
+        for item in self._to_save:
+            item.save()
+        for item in self._to_delete:
+            item.delete()
 
 
 def _handle_nested(
@@ -117,30 +126,35 @@ def _handle_nested(
 ):
     model = node._meta.model
 
-    for add_input in filter(None, add_data):
-        item = model(profile=profile)
-        for field, value in add_input.items():
+    related_name_from_profile = model.profile.field.remote_field.related_name
+    all_items = list(getattr(profile, related_name_from_profile).all())
+
+    def modify_item(item, field_data, field_callback=None):
+        for field, value in field_data.items():
+            if field_callback:
+                field_callback(item, field, value)
             if field == "primary" and value is True:
-                model.objects.filter(profile=profile).update(primary=False)
+                for other_item in all_items:
+                    other_item.primary = False
             setattr(item, field, value)
 
-        item.save()
+    for add_input in filter(None, add_data):
+        item = model(profile=profile)
+        modify_item(item, add_input)
+        all_items.append(item)
 
     for update_input in filter(None, update_data):
         id = update_input.pop("id")
-        item = _safely_get_item_by_global_id(node, id, profile)
+        item = _safely_get_item_by_global_id(node, id, all_items)
+        modify_item(item, update_input, update_field_callback)
 
-        for field, value in update_input.items():
-            if update_field_callback:
-                update_field_callback(item, field, value)
-            if field == "primary" and value is True:
-                model.objects.filter(profile=profile).update(primary=False)
-            setattr(item, field, value)
-
-        item.save()
-
+    to_delete = []
     for remove_id in filter(None, remove_data):
-        _safely_get_item_by_global_id(node, remove_id, profile).delete()
+        item = _safely_get_item_by_global_id(node, remove_id, all_items)
+        all_items.remove(item)
+        to_delete.append(item)
+
+    return _NestedObjectsResult(all_items, to_delete)
 
 
 def update_profile(profile, profile_data):
@@ -182,7 +196,8 @@ def update_profile(profile, profile_data):
     profile.save()
 
     for args in nested_handling_args:
-        _handle_nested(profile, *args)
+        nested_result = _handle_nested(profile, *args)
+        nested_result.persist()
 
     if profile_had_primary_email and not bool(profile.get_primary_email_value()):
         raise ProfileMustHavePrimaryEmailError(
