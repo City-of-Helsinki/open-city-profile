@@ -3,11 +3,11 @@ from string import Template
 import pytest
 from graphql_relay.node.node import to_global_id
 
+from open_city_profile.exceptions import DataConflictError
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Address, Email, Phone
 from profiles.tests.profile_input_validation import ExistingProfileInputValidationBase
 from services.tests.factories import ServiceConnectionFactory
-from utils import keycloak
 
 from .factories import (
     AddressFactory,
@@ -579,25 +579,14 @@ def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
 
 
 def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
-    user_gql_client, keycloak_setup, mocker
+    user_gql_client, mocker
 ):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
-    mocker.patch.object(
-        keycloak.KeycloakAdminClient,
-        "get_user",
-        return_value={
-            "firstName": profile.first_name,
-            "lastName": profile.last_name,
-            "email": "old@email.example",
-        },
-    )
-
-    mocker.patch.object(
-        keycloak.KeycloakAdminClient,
-        "update_user",
-        side_effect=keycloak.ConflictError(),
+    mocker.patch(
+        "profiles.schema.send_profile_changes_to_keycloak",
+        side_effect=DataConflictError(""),
     )
 
     email_updates = [

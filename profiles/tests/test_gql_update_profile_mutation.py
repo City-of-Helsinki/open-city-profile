@@ -5,12 +5,12 @@ from django.utils.translation import gettext_lazy as _
 from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
+from open_city_profile.exceptions import DataConflictError
 from open_city_profile.tests.asserts import assert_match_error_code
 from open_city_profile.tests.factories import GroupFactory
 from profiles.enums import EmailType
 from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
-from utils import keycloak
 
 from .factories import (
     AddressFactory,
@@ -267,27 +267,16 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
 
 
 def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
-    user_gql_client, service, keycloak_setup, mocker
+    user_gql_client, service, mocker
 ):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
     setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
 
-    mocker.patch.object(
-        keycloak.KeycloakAdminClient,
-        "get_user",
-        return_value={
-            "firstName": profile.first_name,
-            "lastName": profile.last_name,
-            "email": "old@email.example",
-        },
-    )
-
-    mocker.patch.object(
-        keycloak.KeycloakAdminClient,
-        "update_user",
-        side_effect=keycloak.ConflictError(),
+    mocker.patch(
+        "profiles.schema.send_profile_changes_to_keycloak",
+        side_effect=DataConflictError(""),
     )
 
     variables = {
