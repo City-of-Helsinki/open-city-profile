@@ -114,6 +114,10 @@ class _NestedObjectsResult:
         self._to_save = to_save
         self._to_delete = to_delete
 
+    @property
+    def primary_item(self):
+        return next((item for item in self._to_save if item.primary), None)
+
     def persist(self, profile):
         for item in self._to_save:
             item.profile = profile
@@ -193,6 +197,11 @@ def update_profile(profile, profile_data):
         profile_data.pop("remove_addresses", []),
     )
 
+    if profile_had_primary_email and emails_result.primary_item is None:
+        raise ProfileMustHavePrimaryEmailError(
+            "Must maintain a primary email on a profile"
+        )
+
     for field, value in profile_data.items():
         setattr(profile, field, value)
 
@@ -200,11 +209,6 @@ def update_profile(profile, profile_data):
     emails_result.persist(profile)
     phones_result.persist(profile)
     addresses_result.persist(profile)
-
-    if profile_had_primary_email and not bool(profile.get_primary_email_value()):
-        raise ProfileMustHavePrimaryEmailError(
-            "Must maintain a primary email on a profile"
-        )
 
 
 def update_sensitivedata(profile, sensitive_data):
