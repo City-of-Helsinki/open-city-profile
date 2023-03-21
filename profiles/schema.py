@@ -114,8 +114,9 @@ class _NestedObjectsResult:
         self._to_save = to_save
         self._to_delete = to_delete
 
-    def persist(self):
+    def persist(self, profile):
         for item in self._to_save:
+            item.profile = profile
             item.save()
         for item in self._to_delete:
             item.delete()
@@ -139,7 +140,7 @@ def _handle_nested(
             setattr(item, field, value)
 
     for add_input in filter(None, add_data):
-        item = model(profile=profile)
+        item = model()
         modify_item(item, add_input)
         all_items.append(item)
 
@@ -162,42 +163,43 @@ def update_profile(profile, profile_data):
         if field == "email" and item.email != value:
             item.verified = False
 
-    nested_handling_args = (
-        (
-            EmailNode,
-            profile_data.pop("add_emails", []),
-            profile_data.pop("update_emails", []),
-            email_change_makes_it_unverified,
-            profile_data.pop("remove_emails", []),
-        ),
-        (
-            PhoneNode,
-            profile_data.pop("add_phones", []),
-            profile_data.pop("update_phones", []),
-            None,
-            profile_data.pop("remove_phones", []),
-        ),
-        (
-            AddressNode,
-            profile_data.pop("add_addresses", []),
-            profile_data.pop("update_addresses", []),
-            None,
-            profile_data.pop("remove_addresses", []),
-        ),
-    )
-
     # Remove image field from input. It's not supposed to do anything anymore.
     profile_data.pop("image", None)
 
     profile_had_primary_email = bool(profile.get_primary_email_value())
 
+    emails_result = _handle_nested(
+        profile,
+        EmailNode,
+        profile_data.pop("add_emails", []),
+        profile_data.pop("update_emails", []),
+        email_change_makes_it_unverified,
+        profile_data.pop("remove_emails", []),
+    )
+    phones_result = _handle_nested(
+        profile,
+        PhoneNode,
+        profile_data.pop("add_phones", []),
+        profile_data.pop("update_phones", []),
+        None,
+        profile_data.pop("remove_phones", []),
+    )
+    addresses_result = _handle_nested(
+        profile,
+        AddressNode,
+        profile_data.pop("add_addresses", []),
+        profile_data.pop("update_addresses", []),
+        None,
+        profile_data.pop("remove_addresses", []),
+    )
+
     for field, value in profile_data.items():
         setattr(profile, field, value)
-    profile.save()
 
-    for args in nested_handling_args:
-        nested_result = _handle_nested(profile, *args)
-        nested_result.persist()
+    profile.save()
+    emails_result.persist(profile)
+    phones_result.persist(profile)
+    addresses_result.persist(profile)
 
     if profile_had_primary_email and not bool(profile.get_primary_email_value()):
         raise ProfileMustHavePrimaryEmailError(
