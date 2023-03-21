@@ -126,6 +126,20 @@ class _NestedObjectsResult:
             item.delete()
 
 
+class _ProfileUpdateResult:
+    def __init__(self, profile, emails_result, phones_result, addresses_result):
+        self._profile = profile
+        self._emails_result = emails_result
+        self._phones_result = phones_result
+        self._addresses_result = addresses_result
+
+    def persist(self):
+        self._profile.save()
+        self._emails_result.persist(self._profile)
+        self._phones_result.persist(self._profile)
+        self._addresses_result.persist(self._profile)
+
+
 def _handle_nested(
     profile, node, add_data, update_data, update_field_callback, remove_data
 ):
@@ -162,7 +176,7 @@ def _handle_nested(
     return _NestedObjectsResult(all_items, to_delete)
 
 
-def update_profile(profile, profile_data):
+def update_profile_data(profile, profile_data):
     def email_change_makes_it_unverified(item, field, value):
         if field == "email" and item.email != value:
             item.verified = False
@@ -205,10 +219,12 @@ def update_profile(profile, profile_data):
     for field, value in profile_data.items():
         setattr(profile, field, value)
 
-    profile.save()
-    emails_result.persist(profile)
-    phones_result.persist(profile)
-    addresses_result.persist(profile)
+    return _ProfileUpdateResult(profile, emails_result, phones_result, addresses_result)
+
+
+def update_profile_to_db(profile, profile_data):
+    update_result = update_profile_data(profile, profile_data)
+    update_result.persist()
 
 
 def update_sensitivedata(profile, sensitive_data):
@@ -843,7 +859,7 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 
         profile = Profile(user=info.context.user)
 
-        update_profile(profile, profile_data)
+        update_profile_to_db(profile, profile_data)
 
         if sensitive_data:
             update_sensitivedata(profile, sensitive_data)
@@ -915,7 +931,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
 
         profile = Profile()
 
-        update_profile(profile, profile_data)
+        update_profile_to_db(profile, profile_data)
 
         if sensitivedata:
             update_sensitivedata(profile, sensitivedata)
@@ -1265,7 +1281,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             profile_data = input.pop("profile")
             sensitive_data = profile_data.pop("sensitivedata", None)
 
-            update_profile(profile, profile_data)
+            update_profile_to_db(profile, profile_data)
 
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
@@ -1341,7 +1357,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
 
             profile_data.pop("sensitivedata", None)
 
-            update_profile(profile, profile_data)
+            update_profile_to_db(profile, profile_data)
 
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
@@ -1374,7 +1390,7 @@ class ClaimProfileMutation(relay.ClientIDMutation):
         else:
             with transaction.atomic():
                 # Logged in user has no profile, let's use claimed profile
-                update_profile(profile_to_claim, input["profile"])
+                update_profile_to_db(profile_to_claim, input["profile"])
                 profile_to_claim.user = info.context.user
                 profile_to_claim.save()
                 profile_to_claim.claim_tokens.all().delete()
