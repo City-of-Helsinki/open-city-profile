@@ -131,6 +131,9 @@ class _ProfileUpdateResult:
         self._phones_result = phones_result
         self._addresses_result = addresses_result
 
+    def get_primary_email(self):
+        return self._emails_result.primary_item
+
     def persist(self):
         self._profile.save()
         self._emails_result.persist(self._profile)
@@ -1266,30 +1269,32 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
     @classmethod
     @login_and_service_required
     def mutate_and_get_payload(cls, root, info, **input):
-        with transaction.atomic():
-            profile = Profile.objects.get(user=info.context.user)
+        profile = Profile.objects.get(user=info.context.user)
 
-            if not info.context.service.has_connection_to_profile(profile):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+        if not info.context.service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
-            validate(cls, root, info, **input)
+        validate(cls, root, info, **input)
 
-            profile_data = input.pop("profile")
-            sensitive_data = profile_data.pop("sensitivedata", None)
+        profile_data = input.pop("profile")
+        sensitive_data = profile_data.pop("sensitivedata", None)
 
-            update_profile_to_db(profile, profile_data)
-
-            if sensitive_data:
-                update_sensitivedata(profile, sensitive_data)
+        update_result = update_profile_data(profile, profile_data)
 
         send_profile_changes_to_keycloak(
             profile.user.uuid,
             profile.first_name,
             profile.last_name,
-            profile.get_primary_email_value(),
+            getattr(update_result.get_primary_email(), "email", None),
         )
+
+        with transaction.atomic():
+            update_result.persist()
+
+            if sensitive_data:
+                update_sensitivedata(profile, sensitive_data)
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -1335,42 +1340,44 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     @classmethod
     @staff_required(required_permission="manage")
     def mutate_and_get_payload(cls, root, info, **input):
-        with transaction.atomic():
-            service = info.context.service
-            profile_data = input.get("profile")
-            profile = graphene.Node.get_node_from_global_id(
-                info, profile_data.pop("id"), only_type=ProfileNode
+        service = info.context.service
+        profile_data = input.get("profile")
+        profile = graphene.Node.get_node_from_global_id(
+            info, profile_data.pop("id"), only_type=ProfileNode
+        )
+
+        if not service.has_connection_to_profile(profile):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
             )
 
-            if not service.has_connection_to_profile(profile):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+        sensitive_data = profile_data.get("sensitivedata", None)
 
-            sensitive_data = profile_data.get("sensitivedata", None)
+        if sensitive_data and not info.context.user.has_perm(
+            "can_manage_sensitivedata", service
+        ):
+            raise PermissionDenied(
+                _("You do not have permission to perform this action.")
+            )
 
-            if sensitive_data and not info.context.user.has_perm(
-                "can_manage_sensitivedata", service
-            ):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+        validate(cls, root, info, **input)
 
-            validate(cls, root, info, **input)
+        profile_data.pop("sensitivedata", None)
 
-            profile_data.pop("sensitivedata", None)
-
-            update_profile_to_db(profile, profile_data)
-
-            if sensitive_data:
-                update_sensitivedata(profile, sensitive_data)
+        update_result = update_profile_data(profile, profile_data)
 
         send_profile_changes_to_keycloak(
             profile.user.uuid,
             profile.first_name,
             profile.last_name,
-            profile.get_primary_email_value(),
+            getattr(update_result.get_primary_email(), "email", None),
         )
+
+        with transaction.atomic():
+            update_result.persist()
+
+            if sensitive_data:
+                update_sensitivedata(profile, sensitive_data)
 
         return UpdateProfileMutation(profile=profile)
 

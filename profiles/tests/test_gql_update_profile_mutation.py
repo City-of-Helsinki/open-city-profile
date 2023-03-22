@@ -266,12 +266,12 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
     assert executed["data"] == expected_data
 
 
-def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
+def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced_and_data_remains_unmodified(
     user_gql_client, service, mocker
 ):
     user = user_gql_client.user
     profile = ProfileWithPrimaryEmailFactory(user=user)
-    email = profile.emails.first()
+    email = profile.emails.get()
     NEW_FIRST_NAME = "New first name"
     NEW_LAST_NAME = "New last name"
 
@@ -300,6 +300,10 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
     keycloak_mock.assert_called_once_with(
         user.uuid, NEW_FIRST_NAME, NEW_LAST_NAME, NEW_EMAIL_VALUE
     )
+    profile_afterwards = Profile.objects.get(user=user)
+    assert profile_afterwards.first_name == profile.first_name
+    assert profile_afterwards.last_name == profile.last_name
+    assert profile_afterwards.emails.get().email == email.email
 
 
 class TestProfileInputValidation(ExistingProfileInputValidationBase):
