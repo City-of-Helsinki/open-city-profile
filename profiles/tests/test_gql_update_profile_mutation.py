@@ -182,6 +182,8 @@ EMAILS_MUTATION = """
     }
 """
 
+NEW_EMAIL_VALUE = "new@email.example"
+
 
 def test_can_not_change_primary_email_to_non_primary(user_gql_client, service):
     profile = ProfileWithPrimaryEmailFactory()
@@ -231,8 +233,6 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
 
     setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
 
-    new_email_value = "new@email.example"
-
     expected_data = {
         "updateProfile": {
             "profile": {
@@ -241,7 +241,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
                         {
                             "node": {
                                 "id": to_global_id("EmailNode", email.id),
-                                "email": new_email_value,
+                                "email": NEW_EMAIL_VALUE,
                                 "verified": False,
                             }
                         },
@@ -255,7 +255,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
         "profileInput": {
             "id": to_global_id("ProfileNode", profile.id),
             "updateEmails": [
-                {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+                {"id": to_global_id("EmailNode", email.id), "email": NEW_EMAIL_VALUE}
             ],
         }
     }
@@ -269,12 +269,15 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
 def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
     user_gql_client, service, mocker
 ):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    user = user_gql_client.user
+    profile = ProfileWithPrimaryEmailFactory(user=user)
     email = profile.emails.first()
+    NEW_FIRST_NAME = "New first name"
+    NEW_LAST_NAME = "New last name"
 
-    setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
+    setup_profile_and_staff_user_to_service(profile, user, service)
 
-    mocker.patch(
+    keycloak_mock = mocker.patch(
         "profiles.schema.send_profile_changes_to_keycloak",
         side_effect=DataConflictError(""),
     )
@@ -282,11 +285,10 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
     variables = {
         "profileInput": {
             "id": to_global_id("ProfileNode", profile.id),
+            "firstName": NEW_FIRST_NAME,
+            "lastName": NEW_LAST_NAME,
             "updateEmails": [
-                {
-                    "id": to_global_id("EmailNode", email.id),
-                    "email": "new@email.example",
-                }
+                {"id": to_global_id("EmailNode", email.id), "email": NEW_EMAIL_VALUE}
             ],
         }
     }
@@ -295,6 +297,9 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
     )
 
     assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
+    keycloak_mock.assert_called_once_with(
+        user.uuid, NEW_FIRST_NAME, NEW_LAST_NAME, NEW_EMAIL_VALUE
+    )
 
 
 class TestProfileInputValidation(ExistingProfileInputValidationBase):
