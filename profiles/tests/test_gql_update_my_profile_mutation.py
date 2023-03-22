@@ -241,6 +241,8 @@ EMAILS_MUTATION = """
     }
 """
 
+NEW_EMAIL_VALUE = "new@email.example"
+
 
 @pytest.mark.parametrize(
     "global_id_type, global_id_id, succeeds",
@@ -309,7 +311,7 @@ def test_can_not_update_email_of_another_profile(user_gql_client):
     email_updates = [
         {
             "id": to_global_id(type="EmailNode", id=another_email.id),
-            "email": "new@email.example",
+            "email": NEW_EMAIL_VALUE,
         }
     ]
     executed = user_gql_client.execute(
@@ -459,7 +461,6 @@ def test_can_replace_a_primary_email_with_a_newly_created_one(
 def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     profile = ProfileFactory(user=user_gql_client.user)
     email = EmailFactory(profile=profile, email="old@email.example", verified=True)
-    new_email_value = "new@email.example"
 
     expected_data = {
         "updateMyProfile": {
@@ -469,7 +470,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
                         {
                             "node": {
                                 "id": to_global_id("EmailNode", email.id),
-                                "email": new_email_value,
+                                "email": NEW_EMAIL_VALUE,
                                 "emailType": email.email_type.name,
                                 "primary": email.primary,
                                 "verified": False,
@@ -482,7 +483,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     }
 
     email_updates = [
-        {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
+        {"id": to_global_id("EmailNode", email.id), "email": NEW_EMAIL_VALUE}
     ]
     executed = user_gql_client.execute(
         EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
@@ -581,22 +582,32 @@ def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
 def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
     user_gql_client, mocker
 ):
-    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    user = user_gql_client.user
+    profile = ProfileWithPrimaryEmailFactory(user=user)
     email = profile.emails.first()
+    NEW_FIRST_NAME = "New first name"
+    NEW_LAST_NAME = "New last name"
 
-    mocker.patch(
+    keycloak_mock = mocker.patch(
         "profiles.schema.send_profile_changes_to_keycloak",
         side_effect=DataConflictError(""),
     )
 
-    email_updates = [
-        {"id": to_global_id("EmailNode", email.id), "email": "new@email.example"}
-    ]
-    executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
-    )
+    variables = {
+        "profileInput": {
+            "firstName": NEW_FIRST_NAME,
+            "lastName": NEW_LAST_NAME,
+            "updateEmails": [
+                {"id": to_global_id("EmailNode", email.id), "email": NEW_EMAIL_VALUE}
+            ],
+        }
+    }
+    executed = user_gql_client.execute(EMAILS_MUTATION, variables=variables)
 
     assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
+    keycloak_mock.assert_called_once_with(
+        user.uuid, NEW_FIRST_NAME, NEW_LAST_NAME, NEW_EMAIL_VALUE
+    )
 
 
 PHONES_MUTATION = """
