@@ -342,24 +342,30 @@ else:
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"audit": _audit_log_handler},
-    "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
+    "formatters": {
+        "simple": {
+            "format": "%(module)s %(asctime)s.%(msecs)03dZ %(levelname)s %(message)s",
+            "()": "open_city_profile.logging.UtcFormatter",
+            "datefmt": "%Y-%m-%dT%H:%M:%S",
+        },
+    },
+    "handlers": {
+        "audit": _audit_log_handler,
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "audit": {"handlers": ["audit"], "level": "INFO", "propagate": True},
+        "profiles": {
+            "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": True,
+        },
+    },
 }
-
-if DEBUG:
-    LOGGING["formatters"] = {
-        "simple": {"format": "%(module)s %(asctime)s %(levelname)s %(message)s"},
-    }
-    LOGGING["handlers"]["console"] = {
-        "level": "DEBUG",
-        "class": "logging.StreamHandler",
-        "formatter": "simple",
-    }
-    LOGGING["loggers"]["profiles.connected_services"] = {
-        "handlers": ["console"],
-        "level": "DEBUG",
-        "propagate": True,
-    }
 
 GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")
 TUNNISTAMO_CLIENT_ID = env("OIDC_CLIENT_ID")
