@@ -51,6 +51,12 @@ It's possible to configure open-city-profile to communicate with a https://www.k
 - `KEYCLOAK_CLIENT_ID`: Authentication to the Keycloak instance happens https://www.keycloak.org/docs/latest/server_development/#authenticate-with-a-service-account[using a service account]. This is the client id.
 - `KEYCLOAK_CLIENT_SECRET`: ...and this is the client secret.
 
+== Application logging
+
+Application logs are output to stderr.
+
+- `OPEN_CITY_PROFILE_LOG_LEVEL`: sets logging level. Use any string representation of a https://docs.python.org/dev/library/logging.html#levels[Python logging level]. Default is "DEBUG" if Django's `DEBUG` setting is on, otherwise it's "INFO".
+
 == Audit events
 
 Profile data access produces audit events. Audit events may be output to multiple destinations. The destinations can be enabled individually. By default all outputs are disabled.

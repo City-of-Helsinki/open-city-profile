@@ -47,6 +47,7 @@ env = environ.Env(
     AUDIT_LOG_TO_LOGGER_ENABLED=(bool, False),
     AUDIT_LOG_LOGGER_FILENAME=(str, ""),
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
+    OPEN_CITY_PROFILE_LOG_LEVEL=(str, None),
     ENABLE_GRAPHIQL=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
@@ -339,18 +340,15 @@ else:
         "stream": stdout,
     }
 
+_log_level = env("OPEN_CITY_PROFILE_LOG_LEVEL")
+if not _log_level:
+    _log_level = "DEBUG" if DEBUG else "INFO"
+
 _loggers = {
     "audit": {"handlers": ["audit"], "level": "INFO", "propagate": True},
 }
 _loggers.update(
-    (
-        app_name,
-        {
-            "handlers": ["console"],
-            "level": "DEBUG" if DEBUG else "INFO",
-            "propagate": True,
-        },
-    )
+    (app_name, {"handlers": ["console"], "level": _log_level, "propagate": True})
     for app_name in (
         "audit_log",
         "open_city_profile",
