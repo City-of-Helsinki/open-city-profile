@@ -339,11 +339,39 @@ else:
         "stream": stdout,
     }
 
+_loggers = {
+    "audit": {"handlers": ["audit"], "level": "INFO", "propagate": True},
+}
+_loggers.update(
+    (
+        app_name,
+        {
+            "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": True,
+        },
+    )
+    for app_name in (
+        "audit_log",
+        "open_city_profile",
+        "profiles",
+        "services",
+        "users",
+        "utils",
+    )
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"audit": _audit_log_handler},
-    "loggers": {"audit": {"handlers": ["audit"], "level": "INFO", "propagate": True}},
+    "formatters": {
+        "simple": {"format": "%(name)s %(asctime)s %(levelname)s %(message)s"},
+    },
+    "handlers": {
+        "audit": _audit_log_handler,
+        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "loggers": _loggers,
 }
 
 GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")
