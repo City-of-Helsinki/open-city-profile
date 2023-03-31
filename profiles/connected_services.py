@@ -37,7 +37,7 @@ def _check_service_gdpr_query_configuration(service_connections):
 def download_connected_service_data(profile, authorization_code):
     service_connections = profile.effective_service_connections_qs().all()
     if not service_connections:
-        logger.debug("No service connections for profile %s", profile.id)
+        logger.debug("No service connections for profile %s (query)", profile.id)
         return []
 
     _check_service_gdpr_query_configuration(service_connections)
@@ -46,7 +46,7 @@ def download_connected_service_data(profile, authorization_code):
 
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
-    logger.debug("API Tokens: %s", api_tokens)
+    logger.debug("API Tokens for query: %s", api_tokens)
 
     external_data = []
 
@@ -59,7 +59,7 @@ def download_connected_service_data(profile, authorization_code):
 
         if not api_token:
             logger.error(
-                "API Token missing for service %s (profile %s)",
+                "API Token missing for service %s in query (profile %s)",
                 service.name,
                 profile.id,
             )
@@ -81,7 +81,7 @@ def download_connected_service_data(profile, authorization_code):
             service_connection_data = response.json()
         except requests.RequestException as e:
             logger.error(
-                "Invalid response for profile %s from service %s. Exception: %s.",
+                "Invalid GDPR query response for profile %s from service %s. Exception: %s.",
                 profile.id,
                 service.name,
                 e,
@@ -175,8 +175,10 @@ def _delete_service_data(
     The errors content from the service is returned if the service provides a JSON
     response with an "errors" key containing valid error content.
     """
+    service = service_connection.service
+
     result = DeleteGdprDataResult(
-        service=service_connection.service, dry_run=dry_run, success=False, errors=[],
+        service=service, dry_run=dry_run, success=False, errors=[],
     )
 
     url = service_connection.get_gdpr_url()
@@ -189,7 +191,14 @@ def _delete_service_data(
         response = requests.delete(
             url, auth=BearerAuth(api_token), timeout=5, params=data
         )
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.error(
+            "GDPR delete request (dry run: %s) failed for profile %s to service %s. Exception: %s.",
+            dry_run,
+            service_connection.profile.id,
+            service.name,
+            e,
+        )
         return _add_error_to_result(
             result,
             SERVICE_GDPR_API_REQUEST_ERROR,
@@ -197,6 +206,12 @@ def _delete_service_data(
         )
 
     if response.status_code == 204:
+        logger.debug(
+            "GDPR delete request (dry run: %s) for profile %s to service %s successful",
+            dry_run,
+            service_connection.profile.id,
+            service.name,
+        )
         result.success = True
         return result
 
@@ -206,8 +221,28 @@ def _delete_service_data(
             if _validate_gdpr_api_errors(errors_from_the_service):
                 result.errors = _convert_gdpr_api_errors(errors_from_the_service)
                 return result
+            else:
+                logger.warning(
+                    "Badly formatted delete response from service %s (profile %s): '%s'",
+                    service.name,
+                    service_connection.profile.id,
+                    response.text,
+                )
         except JSONDecodeError:
-            pass
+            logger.debug(
+                "Couldn't parse GDPR delete response (status: %s) from service %s as JSON (profile %s). Body '%s'.",
+                response.status_code,
+                service.name,
+                service_connection.profile.id,
+                response.text,
+            )
+    else:
+        logger.warning(
+            "Unexpected status code %s for GDPR delete request to service %s (profile %s)",
+            response.status_code,
+            service.name,
+            service_connection.profile.id,
+        )
 
     return _add_error_to_result(
         result,
@@ -235,13 +270,16 @@ def _delete_service_connection_and_service_data(
     return results
 
 
-def _check_service_gdpr_delete_configuration(service_connections, api_tokens):
+def _check_service_gdpr_delete_configuration(service_connections, api_tokens, profile):
     failed_services = []
 
     for service_connection in service_connections:
         service = service_connection.service
 
         if not service.gdpr_delete_scope:
+            logger.error(
+                "GDPR delete scope missing for service %s", service.name,
+            )
             raise ConnectedServiceDeletionNotAllowedError(
                 f"Connected services: {service.name}"
                 f"does not have an API for removing data."
@@ -251,11 +289,21 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens):
         api_token = api_tokens.get(api_identifier, "")
 
         if not api_token:
+            logger.error(
+                "API Token missing for service %s in delete (profile %s)",
+                service.name,
+                profile.id,
+            )
             raise MissingGDPRApiTokenError(
                 f"Couldn't fetch an API token for service {service.name}."
             )
 
         if not service_connection.get_gdpr_url():
+            logger.error(
+                "GDPR URL missing for service %s in delete (profile %s)",
+                service.name,
+                profile.id,
+            )
             failed_services.append(service.name)
 
     if failed_services:
@@ -272,12 +320,16 @@ def delete_connected_service_data(
         service_connections = profile.effective_service_connections_qs().all()
 
     if not service_connections:
+        logger.debug("No service connections for profile %s (delete)", profile.id)
         return []
+
+    logger.debug("Deleting connected service data for profile %s", profile.id)
 
     tte = TunnistamoTokenExchange()
     api_tokens = tte.fetch_api_tokens(authorization_code)
+    logger.debug("API Tokens for delete: %s", api_tokens)
 
-    _check_service_gdpr_delete_configuration(service_connections, api_tokens)
+    _check_service_gdpr_delete_configuration(service_connections, api_tokens, profile)
 
     results = _delete_service_connection_and_service_data(
         service_connections, api_tokens, dry_run=True
