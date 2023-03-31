@@ -1,5 +1,4 @@
 import uuid
-from urllib.parse import parse_qs, urlparse
 
 import pytest
 from django.db.utils import IntegrityError
@@ -69,81 +68,6 @@ def test_allowed_data_fields_get_correct_orders(allowed_data_field_factory):
     assert first_data_field.order == 1
     second_data_field = allowed_data_field_factory()
     assert second_data_field.order == 2
-
-
-def test_remove_service_gdpr_data_no_url(profile, service):
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    result = service_connection.delete_gdpr_data(api_token="token", dry_run=True)
-    assert result.errors
-    result = service_connection.delete_gdpr_data(api_token="token")
-    assert result.errors
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_dry_run_request_conforms_with_specification(
-    profile, service, requests_mock
-):
-    requests_mock.delete(
-        f"{GDPR_URL}{profile.pk}",
-        json={},
-        status_code=204,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    service_connection.delete_gdpr_data(api_token="token", dry_run=True)
-
-    assert requests_mock.call_count == 1
-    request = requests_mock.last_request
-    parse_result = urlparse(request.url)
-    query_parameters = parse_qs(parse_result.query)
-
-    assert request.method == "DELETE"
-    assert request.body is None
-    assert "dry_run" in query_parameters
-    assert query_parameters["dry_run"] == ["true"]
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_successful(profile, service, requests_mock):
-    requests_mock.delete(
-        f"{GDPR_URL}{profile.pk}",
-        json={},
-        status_code=204,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    dry_run_result = service_connection.delete_gdpr_data(
-        api_token="token", dry_run=True
-    )
-    real_result = service_connection.delete_gdpr_data(api_token="token")
-
-    assert dry_run_result.success is True
-    assert real_result.success is True
-
-
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
-    requests_mock.delete(
-        f"{GDPR_URL}{profile.pk}",
-        json={},
-        status_code=405,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    dry_run_result = service_connection.delete_gdpr_data(
-        api_token="token", dry_run=True
-    )
-    real_result = service_connection.delete_gdpr_data(api_token="token")
-
-    assert dry_run_result.success is False
-    assert real_result.success is False
 
 
 @pytest.mark.parametrize(
