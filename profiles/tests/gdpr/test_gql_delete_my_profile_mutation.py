@@ -460,8 +460,31 @@ def test_deletion_errors_from_the_service_are_returned_to_the_caller(
     assert executed["data"] == expected_data
 
 
+@pytest.mark.parametrize(
+    "error_content",
+    [
+        {"unknown_key": "data"},
+        {"message": {"en": "No code"}},
+        {"code": "no message"},
+        {"code": None, "message": None},
+        {"code": None, "message": {}},
+        {"code": "ERROR_CODE", "message": None},
+        {"code": "ERROR_CODE", "message": {}},
+        {"code": "ERROR_CODE", "message": {"en": None}},
+        {"code": "ERROR_CODE", "message": {"": "Message with empty key"}},
+        {"code": 123, "message": {"en": "Code is wrong type"}},
+        {"code": "", "message": {"en": "Code is empty"}},
+        {"code": "ERROR_CODE", "message": "Message not an object"},
+    ],
+)
 def test_invalid_deletion_errors_from_the_service_are_not_returned(
-    user_gql_client, service_1, service_2, gdpr_api_tokens, mocker, requests_mock
+    user_gql_client,
+    service_1,
+    service_2,
+    gdpr_api_tokens,
+    error_content,
+    mocker,
+    requests_mock,
 ):
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
@@ -472,14 +495,7 @@ def test_invalid_deletion_errors_from_the_service_are_not_returned(
 
     requests_mock.delete(service_connection_1.get_gdpr_url(), status_code=204)
     requests_mock.delete(
-        service_connection_2.get_gdpr_url(),
-        status_code=403,
-        json={
-            "errors": [
-                {"nonsense": "value"},
-                {"code": "ANOTHER_ERROR_CODE", "message": {"en": "Another error"}},
-            ],
-        },
+        service_connection_2.get_gdpr_url(), status_code=403, json=error_content,
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)

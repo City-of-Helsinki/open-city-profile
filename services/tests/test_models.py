@@ -146,41 +146,6 @@ def test_remove_service_gdpr_data_fail(profile, service, requests_mock):
     assert real_result.success is False
 
 
-@pytest.mark.parametrize("service__gdpr_url", [GDPR_URL])
-@pytest.mark.parametrize(
-    "error_content",
-    [
-        {"unknown_key": "data"},
-        {"message": {"en": "No code"}},
-        {"code": "no message"},
-        {"code": None, "message": None},
-        {"code": None, "message": {}},
-        {"code": "ERROR_CODE", "message": None},
-        {"code": "ERROR_CODE", "message": {}},
-        {"code": "ERROR_CODE", "message": {"en": None}},
-        {"code": "ERROR_CODE", "message": {"": "Message with empty key"}},
-        {"code": 123, "message": {"en": "Code is wrong type"}},
-        {"code": "", "message": {"en": "Code is empty"}},
-        {"code": "ERROR_CODE", "message": "Message not an object"},
-    ],
-)
-def test_invalid_error_messages_from_service_gdpr_api_results_in_unknown_error(
-    profile, service, requests_mock, error_content
-):
-    requests_mock.delete(
-        f"{GDPR_URL}{profile.pk}",
-        json={"errors": [error_content]},
-        status_code=403,
-        request_headers={"authorization": "Bearer token"},
-    )
-
-    service_connection = ServiceConnectionFactory(profile=profile, service=service)
-
-    result = service_connection.delete_gdpr_data(api_token="token")
-
-    assert result.errors[0].code == "SERVICE_GDPR_API_UNKNOWN_ERROR"
-
-
 @pytest.mark.parametrize(
     "service__gdpr_url, expected",
     [
