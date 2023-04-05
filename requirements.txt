@@ -22,7 +22,7 @@ database-sanitizer==1.1.0
     # via django-sanitized-dump
 deprecation==2.1.0
     # via django-helusers
-django==3.2.16
+django==3.2.18
     # via
     #   -r requirements.in
     #   django-admin-sortable
