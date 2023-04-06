@@ -1,2 +1,2 @@
 [tool.black]
-exclude = 'snapshots'
+extend-exclude = 'snapshots'
