@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0046_change_null_to_empty_value_field_implementation__noop"),
     ]

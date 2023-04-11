@@ -9,7 +9,6 @@ def copy_service_type_to_name(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0015_serviceclientid"),
     ]
@@ -21,7 +20,7 @@ class Migration(migrations.Migration):
             field=models.CharField(max_length=200, null=True, unique=True),
         ),
         migrations.RunPython(
-            copy_service_type_to_name, reverse_code=migrations.RunPython.noop,
+            copy_service_type_to_name, reverse_code=migrations.RunPython.noop
         ),
         migrations.AlterField(
             model_name="service",

@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0008_add_first_name_and_last_name_to_profile")]
 
     operations = [

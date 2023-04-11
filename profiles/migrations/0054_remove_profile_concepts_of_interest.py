@@ -4,11 +4,10 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0053_remove_legal_relationship"),
     ]
 
     operations = [
-        migrations.RemoveField(model_name="profile", name="concepts_of_interest",),
+        migrations.RemoveField(model_name="profile", name="concepts_of_interest"),
     ]

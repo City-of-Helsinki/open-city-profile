@@ -49,7 +49,7 @@ class ServiceConnectionType(DjangoObjectType):
 
 class ServiceNode(DjangoParlerObjectType):
     type = AllowedServiceType(
-        source="service_type", deprecation_reason="See 'name' field for a replacement.",
+        source="service_type", deprecation_reason="See 'name' field for a replacement."
     )
     requires_service_connection = graphene.Boolean(
         required=True,

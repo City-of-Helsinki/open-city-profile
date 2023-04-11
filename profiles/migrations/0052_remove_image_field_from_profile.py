@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0051_address_fields_blank_and_country_code_validator__noop"),
     ]

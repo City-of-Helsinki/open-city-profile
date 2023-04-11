@@ -299,9 +299,7 @@ def test_user_cannot_delete_their_profile_if_gdpr_url_is_not_set(
     assert_match_error_code(executed, CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR)
 
 
-@pytest.mark.parametrize(
-    "response_status", [404, 405, 500],
-)
+@pytest.mark.parametrize("response_status", [404, 405, 500])
 def test_user_cannot_delete_their_profile_if_service_returns_error_code(
     user_gql_client, service_1, gdpr_api_tokens, requests_mock, response_status, mocker
 ):
@@ -495,7 +493,7 @@ def test_invalid_deletion_errors_from_the_service_are_not_returned(
 
     requests_mock.delete(service_connection_1.get_gdpr_url(), status_code=204)
     requests_mock.delete(
-        service_connection_2.get_gdpr_url(), status_code=403, json=error_content,
+        service_connection_2.get_gdpr_url(), status_code=403, json=error_content
     )
 
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)

@@ -27,7 +27,6 @@ class RepresentativeConfirmationDegree(enumfields.fields.Enum):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0013_change_foreign_key_type")]
 
     operations = [

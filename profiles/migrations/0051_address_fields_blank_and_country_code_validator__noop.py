@@ -7,7 +7,6 @@ import utils.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0050_change_name_fields_to_null_to_empty_value_fields__noop"),
     ]

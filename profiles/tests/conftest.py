@@ -101,8 +101,9 @@ VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES = (
 
 class TemporaryProfileReadAccessTokenTestBase:
     def create_expired_token(self, profile):
-        over_default_validity_duration = _default_temporary_read_access_token_validity_duration() + timedelta(
-            seconds=1
+        over_default_validity_duration = (
+            _default_temporary_read_access_token_validity_duration()
+            + timedelta(seconds=1)
         )
         expired_token_creation_time = (
             django_timezone.now() - over_default_validity_duration

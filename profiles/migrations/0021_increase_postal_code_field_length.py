@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0020_add_indexes_to_searchable_fields")]
 
     operations = [

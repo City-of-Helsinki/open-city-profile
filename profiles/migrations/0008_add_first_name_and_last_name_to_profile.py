@@ -13,7 +13,6 @@ def populate_name_from_user_for_existing_profiles(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0007_add_legal_relationship_model")]
 
     operations = [

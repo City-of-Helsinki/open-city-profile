@@ -35,7 +35,7 @@ def superuser_required(function):
 
 class AlwaysChangedModelForm(ModelForm):
     def has_changed(self):
-        """ Return always True to enable "empty" objects """
+        """Return always True to enable "empty" objects"""
         return True
 
 

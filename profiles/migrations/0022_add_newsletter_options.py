@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0021_increase_postal_code_field_length")]
 
     operations = [

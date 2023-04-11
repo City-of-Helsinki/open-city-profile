@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0003_pre_profile_uuid"),
         ("profiles", "0010_switch_profile_to_uuid"),

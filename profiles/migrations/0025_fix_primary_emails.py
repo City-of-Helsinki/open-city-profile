@@ -31,7 +31,6 @@ def fix_primary_emails(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0024_order_emails")]
 
     operations = [migrations.RunPython(fix_primary_emails, migrations.RunPython.noop)]

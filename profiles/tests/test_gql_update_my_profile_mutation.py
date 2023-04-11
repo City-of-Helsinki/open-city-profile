@@ -150,7 +150,7 @@ def test_update_profile_without_email(user_gql_client, profile_data):
         }
     }
 
-    mutation = t.substitute(nickname=profile_data["nickname"],)
+    mutation = t.substitute(nickname=profile_data["nickname"])
     executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
 
@@ -832,7 +832,7 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
 
     def execute_query(self, user_gql_client, profile_input):
         return user_gql_client.execute(
-            PHONES_MUTATION, variables={"profileInput": profile_input},
+            PHONES_MUTATION, variables={"profileInput": profile_input}
         )
 
 

@@ -118,7 +118,7 @@ def test_error_is_returned_when_service_returns_errors(
     service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
 
     service_1_mocker = requests_mock.delete(
-        service_connection.get_gdpr_url(), status_code=403, json=errors_from_service,
+        service_connection.get_gdpr_url(), status_code=403, json=errors_from_service
     )
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables={"serviceName": service_1.name}

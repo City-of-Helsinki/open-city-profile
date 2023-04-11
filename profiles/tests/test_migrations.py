@@ -65,7 +65,7 @@ def test_fix_primary_email_migration(execute_migration_test):
         assert profile.emails.filter(primary=True).count() == 1
 
     execute_migration_test(
-        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration,
+        "0024_order_emails", "0025_fix_primary_emails", create_data, verify_migration
     )
 
 

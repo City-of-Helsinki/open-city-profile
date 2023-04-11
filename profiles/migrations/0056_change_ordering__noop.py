@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0055_remove_divisions_of_interest"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name="address", options={"ordering": ["-primary", "id"]},
+            name="address", options={"ordering": ["-primary", "id"]}
         ),
         migrations.AlterModelOptions(
-            name="email", options={"ordering": ["-primary", "id"]},
+            name="email", options={"ordering": ["-primary", "id"]}
         ),
         migrations.AlterModelOptions(
-            name="phone", options={"ordering": ["-primary", "id"]},
+            name="phone", options={"ordering": ["-primary", "id"]}
         ),
-        migrations.AlterModelOptions(name="profile", options={"ordering": ["id"]},),
+        migrations.AlterModelOptions(name="profile", options={"ordering": ["id"]}),
     ]

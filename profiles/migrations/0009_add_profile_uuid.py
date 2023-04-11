@@ -70,7 +70,6 @@ def match_uuid_to_id(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0008_add_first_name_and_last_name_to_profile")]
 
     operations = [

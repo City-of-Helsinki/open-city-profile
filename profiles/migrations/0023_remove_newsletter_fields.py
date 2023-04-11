@@ -4,12 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0022_add_newsletter_options"),
     ]
 
     operations = [
-        migrations.RemoveField(model_name="profile", name="newsletters_via_email",),
-        migrations.RemoveField(model_name="profile", name="newsletters_via_sms",),
+        migrations.RemoveField(model_name="profile", name="newsletters_via_email"),
+        migrations.RemoveField(model_name="profile", name="newsletters_via_sms"),
     ]

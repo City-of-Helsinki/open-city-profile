@@ -25,7 +25,6 @@ def set_implicit_connection_service_as_profile_service(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0020_change_gdpr_url_help_text"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0022_remove_service_implicit_connection"),
     ]
@@ -27,6 +26,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AlterModelOptions(
-            name="serviceconnection", options={"ordering": ["id"]},
+            name="serviceconnection", options={"ordering": ["id"]}
         ),
     ]

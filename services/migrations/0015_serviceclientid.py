@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0014_change_gdpr_url_to_charfield"),
     ]

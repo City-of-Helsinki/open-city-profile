@@ -7,7 +7,6 @@ import profiles.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0044_add_validator_to_vpi_postal_code_field__noop"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0018_add_verified_personal_information_permissions"),
     ]

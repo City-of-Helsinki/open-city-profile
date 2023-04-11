@@ -10,7 +10,6 @@ import profiles.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0026_email_verified"),
     ]

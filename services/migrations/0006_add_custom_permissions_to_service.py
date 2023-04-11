@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("services", "0005_move_service_to_model")]
 
     operations = [

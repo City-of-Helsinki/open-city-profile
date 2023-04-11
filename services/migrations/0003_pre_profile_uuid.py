@@ -38,7 +38,6 @@ def match_uuid_to_id(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0002_services_unique_on_profile"),
         ("profiles", "0009_add_profile_uuid"),

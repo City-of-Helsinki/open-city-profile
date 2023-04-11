@@ -7,7 +7,6 @@ import profiles.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0040_add_validator_to_vpi_text_fields__noop"),
     ]

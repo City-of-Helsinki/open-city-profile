@@ -701,13 +701,13 @@ class AddressInput(graphene.InputObjectType):
 
 class CreateAddressInput(AddressInput):
     address = graphene.String(
-        description="Street address. Maximum length is 128 characters.", required=True,
+        description="Street address. Maximum length is 128 characters.", required=True
     )
     postal_code = graphene.String(
-        description="Postal code. Maximum length is 32 characters.", required=True,
+        description="Postal code. Maximum length is 32 characters.", required=True
     )
     city = graphene.String(
-        description="City. Maximum length is 64 characters.", required=True,
+        description="City. Maximum length is 64 characters.", required=True
     )
     address_type = AllowedAddressType(description="Address type.", required=True)
 
@@ -784,9 +784,9 @@ class ProfileInputBase(graphene.InputObjectType):
 class ProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
-* `image`
+    * `image`
 
-There's no replacement for these."""
+    There's no replacement for these."""
 
     update_emails = graphene.List(
         UpdateEmailInput, description="Update profile emails."
@@ -837,15 +837,15 @@ class CreateMyProfileMutation(relay.ClientIDMutation):
 class CreateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
-* `image`
-* `update_emails`
-* `remove_emails`
-* `update_phones`
-* `remove_phones`
-* `update_addresses`
-* `remove_addresses`
+    * `image`
+    * `update_emails`
+    * `remove_emails`
+    * `update_phones`
+    * `remove_phones`
+    * `update_addresses`
+    * `remove_addresses`
 
-There's no replacement for these."""
+    There's no replacement for these."""
 
     update_emails = graphene.List(
         UpdateEmailInput, description="**DEPRECATED**. Any input is ignored."
@@ -1261,9 +1261,9 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
 class UpdateProfileInput(ProfileInputBase):
     """The following fields are deprecated:
 
-* `image`
+    * `image`
 
-There's no replacement for these."""
+    There's no replacement for these."""
 
     id = graphene.Argument(graphene.ID, required=True)
     update_emails = graphene.List(

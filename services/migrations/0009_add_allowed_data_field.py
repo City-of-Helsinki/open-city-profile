@@ -8,7 +8,6 @@ import services.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("services", "0008_servicetranslation")]
 
     operations = [

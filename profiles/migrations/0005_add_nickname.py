@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0004_set_default_language_and_contact_method")]
 
     operations = [

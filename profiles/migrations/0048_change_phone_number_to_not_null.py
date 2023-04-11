@@ -7,14 +7,13 @@ def delete_null_phones(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0047_remove_verifiedpersonalinformation_email"),
     ]
 
     operations = [
         migrations.RunPython(
-            delete_null_phones, reverse_code=migrations.RunPython.noop,
+            delete_null_phones, reverse_code=migrations.RunPython.noop
         ),
         migrations.AlterField(
             model_name="phone",

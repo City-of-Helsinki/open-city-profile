@@ -7,7 +7,6 @@ import services.enums
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("services", "0006_add_custom_permissions_to_service")]
 
     operations = [

@@ -26,7 +26,7 @@ def test_jwt_claims_are_usable_in_field_resolvers(
 ):
     service = service_client_id.service
     service_connection_factory(
-        profile=profile_with_verified_personal_information, service=service,
+        profile=profile_with_verified_personal_information, service=service
     )
 
     user_uuid = profile_with_verified_personal_information.user.uuid
@@ -41,7 +41,7 @@ def test_jwt_claims_are_usable_in_field_resolvers(
     }
     """
     data, errors = do_graphql_call(
-        live_server, BearerTokenAuth(extra_claims=claims), query=query,
+        live_server, BearerTokenAuth(extra_claims=claims), query=query
     )
 
     assert isinstance(errors, list) == returns_errors
@@ -70,7 +70,7 @@ def test_determine_service_from_the_azp_claim(
     """
 
     data, errors = do_graphql_call(
-        live_server, BearerTokenAuth(extra_claims=claims), query=query,
+        live_server, BearerTokenAuth(extra_claims=claims), query=query
     )
     expected_data = {
         "profiles": {"edges": [{"node": {"firstName": profile.first_name}}]}

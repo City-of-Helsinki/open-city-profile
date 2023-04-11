@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name="verifiedpersonalinformation", name="first_name",
+            model_name="verifiedpersonalinformation", name="first_name"
         ),
         migrations.RenameField(
             model_name="verifiedpersonalinformation",
@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             new_name="first_name",
         ),
         migrations.RemoveField(
-            model_name="verifiedpersonalinformation", name="last_name",
+            model_name="verifiedpersonalinformation", name="last_name"
         ),
         migrations.RenameField(
             model_name="verifiedpersonalinformation",

@@ -7,7 +7,6 @@ import profiles.enums
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0014_fix_enums")]
 
     operations = [

@@ -106,9 +106,7 @@ class DjangoParlerObjectType(DjangoObjectType):
         abstract = True
 
     @classmethod
-    def _add_parler_fields_to_type(
-        cls, model, fields=None, exclude=None,
-    ):
+    def _add_parler_fields_to_type(cls, model, fields=None, exclude=None):
         """Adds fields in the model that are translated with Parler to the Object Type
 
         If the class defines an attribute with the same name already, the attribute is

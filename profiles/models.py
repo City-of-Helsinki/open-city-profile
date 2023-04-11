@@ -157,7 +157,7 @@ class Profile(UUIDModel, SerializableMixin):
                     )
                 if service:
                     ServiceConnection.objects.create(
-                        profile=profile, service=service, enabled=False,
+                        profile=profile, service=service, enabled=False
                     )
                 result[item["customer_id"]] = profile.pk
             except Exception as err:
@@ -251,7 +251,7 @@ class EncryptedAddress(SerializableMixin):
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
     )
     postal_code = NullToEmptyEncryptedCharField(
-        max_length=1024, blank=True, validators=[validate_finnish_postal_code],
+        max_length=1024, blank=True, validators=[validate_finnish_postal_code]
     )
     post_office = NullToEmptyEncryptedCharField(
         max_length=100, blank=True, validators=[validate_visible_latin_characters_only]
@@ -401,7 +401,7 @@ class Email(Contact):
             return
 
         existing_primary_emails = Email.objects.filter(
-            profile=self.profile, primary=True,
+            profile=self.profile, primary=True
         )
         if self.pk:
             existing_primary_emails = existing_primary_emails.exclude(pk=self.pk)

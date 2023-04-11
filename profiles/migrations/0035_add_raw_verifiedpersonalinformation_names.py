@@ -40,6 +40,6 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, help_text="Last name.", max_length=1024),
         ),
         migrations.RunPython(
-            copy_names_to_raw_fields, reverse_code=copy_names_from_raw_fields,
+            copy_names_to_raw_fields, reverse_code=copy_names_from_raw_fields
         ),
     ]

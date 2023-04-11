@@ -170,9 +170,9 @@ def vpi_factory_with_addresses(*wanted_address_models):
             "verified personal information permanent foreign address",
             ["verified personal information"],
         ),
-        (PhoneFactory, "phones", "phone", [],),
-        (EmailFactory, "emails", "email", [],),
-        (AddressFactory, "addresses", "address", [],),
+        (PhoneFactory, "phones", "phone", []),
+        (EmailFactory, "emails", "email", []),
+        (AddressFactory, "addresses", "address", []),
     ]
 )
 def profile_with_related(request):

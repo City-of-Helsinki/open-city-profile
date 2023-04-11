@@ -7,7 +7,6 @@ import profiles.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         (
             "profiles",

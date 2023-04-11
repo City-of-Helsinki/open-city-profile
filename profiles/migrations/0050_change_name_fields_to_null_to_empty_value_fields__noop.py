@@ -6,7 +6,6 @@ import utils.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0049_add_validator_to_sensitivedata__noop"),
     ]

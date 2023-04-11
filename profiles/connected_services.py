@@ -178,7 +178,7 @@ def _delete_service_data(
     service = service_connection.service
 
     result = DeleteGdprDataResult(
-        service=service, dry_run=dry_run, success=False, errors=[],
+        service=service, dry_run=dry_run, success=False, errors=[]
     )
 
     url = service_connection.get_gdpr_url()
@@ -277,9 +277,7 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens, pr
         service = service_connection.service
 
         if not service.gdpr_delete_scope:
-            logger.error(
-                "GDPR delete scope missing for service %s", service.name,
-            )
+            logger.error("GDPR delete scope missing for service %s", service.name)
             raise ConnectedServiceDeletionNotAllowedError(
                 f"Connected services: {service.name}"
                 f"does not have an API for removing data."

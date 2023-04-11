@@ -171,7 +171,7 @@ def test_staff_user_can_filter_profiles_by_a_field(
 
     search_term = getattr(profile_2, field_name)[1:].upper()
     executed = user_gql_client.execute(
-        query, variables={"searchString": search_term}, service=service,
+        query, variables={"searchString": search_term}, service=service
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
@@ -361,7 +361,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"email": email.email}, service=service,
+        query, variables={"email": email.email}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -379,7 +379,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"emailType": email.email_type.value}, service=service,
+        query, variables={"emailType": email.email_type.value}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -397,7 +397,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, service=service,
+        query, variables={"primary": False}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -415,7 +415,7 @@ def test_staff_user_can_filter_profiles_by_emails(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"verified": True}, service=service,
+        query, variables={"verified": True}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -446,7 +446,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"phone": phone.phone}, service=service,
+        query, variables={"phone": phone.phone}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -464,7 +464,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"phoneType": phone.phone_type.value}, service=service,
+        query, variables={"phoneType": phone.phone_type.value}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -482,7 +482,7 @@ def test_staff_user_can_filter_profiles_by_phones(user_gql_client, group, servic
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, service=service,
+        query, variables={"primary": False}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -534,7 +534,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"address": address.address}, service=service,
+        query, variables={"address": address.address}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -552,7 +552,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"postalCode": address.postal_code}, service=service,
+        query, variables={"postalCode": address.postal_code}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -570,7 +570,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"city": address.city}, service=service,
+        query, variables={"city": address.city}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -588,7 +588,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"countryCode": address.country_code}, service=service,
+        query, variables={"countryCode": address.country_code}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -606,7 +606,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 1, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"addressType": address.address_type.value}, service=service,
+        query, variables={"addressType": address.address_type.value}, service=service
     )
     assert executed["data"] == expected_data
 
@@ -624,7 +624,7 @@ def test_staff_user_can_filter_profiles_by_addresses(user_gql_client, group, ser
     expected_data = {"profiles": {"count": 2, "totalCount": 3}}
 
     executed = user_gql_client.execute(
-        query, variables={"primary": False}, service=service,
+        query, variables={"primary": False}, service=service
     )
     assert executed["data"] == expected_data
 

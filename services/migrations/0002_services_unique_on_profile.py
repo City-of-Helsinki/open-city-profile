@@ -22,7 +22,6 @@ def remove_duplicate_services_for_profiles(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0008_add_first_name_and_last_name_to_profile"),
         ("services", "0001_initial"),

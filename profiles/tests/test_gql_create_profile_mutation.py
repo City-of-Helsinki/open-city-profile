@@ -14,7 +14,7 @@ from .profile_input_validation import ProfileInputValidationBase
 @pytest.mark.parametrize("with_email", [True, False])
 @pytest.mark.parametrize("service__service_type", [ServiceType.BERTH])
 def test_staff_user_can_create_a_profile(
-    user_gql_client, email_data, phone_data, address_data, group, service, with_email,
+    user_gql_client, email_data, phone_data, address_data, group, service, with_email
 ):
     user = user_gql_client.user
     user.groups.add(group)

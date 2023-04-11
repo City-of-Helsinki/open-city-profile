@@ -50,7 +50,7 @@ def test_new_profile_with_non_existing_name_and_default_name(user):
 
 class UnorderedList(list):
     """Just like a regular list, except that this compares equal with
-       another list even if the two lists' order of members differ."""
+    another list even if the two lists' order of members differ."""
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -69,7 +69,7 @@ class UnorderedList(list):
 
 def children_lists_to_unordered(obj):
     """Recursively goes through an object tree and changes all list values
-       of keys named "children" to UnorderedList type."""
+    of keys named "children" to UnorderedList type."""
 
     def handle(kv_tuple):
         key, value = kv_tuple
@@ -540,7 +540,7 @@ class TestVerifiedPersonalInformationValidation(ValidationTestBase):
 @pytest.mark.parametrize("address_type", ["permanent_address", "temporary_address"])
 class TestVerifiedPersonalInformationAddressValidation(ValidationTestBase):
     @pytest.mark.parametrize(
-        "field_name,max_length", [("street_address", 100), ("post_office", 100)],
+        "field_name,max_length", [("street_address", 100), ("post_office", 100)]
     )
     def test_string_field_max_length(self, address_type, field_name, max_length):
         address = getattr(VerifiedPersonalInformationFactory(), address_type)
@@ -573,7 +573,7 @@ class TestVerifiedPersonalInformationPermanentForeignAddressValidation(
     ValidationTestBase
 ):
     @pytest.mark.parametrize(
-        "field_name,max_length", [("street_address", 100), ("additional_address", 100)],
+        "field_name,max_length", [("street_address", 100), ("additional_address", 100)]
     )
     def test_string_field_max_length(self, field_name, max_length):
         address = VerifiedPersonalInformationFactory().permanent_foreign_address

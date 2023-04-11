@@ -8,7 +8,6 @@ def set_implicit_connection_to_profile_service(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0021_add_is_profile_service_field"),
     ]
@@ -18,5 +17,5 @@ class Migration(migrations.Migration):
             migrations.RunPython.noop,
             reverse_code=set_implicit_connection_to_profile_service,
         ),
-        migrations.RemoveField(model_name="service", name="implicit_connection",),
+        migrations.RemoveField(model_name="service", name="implicit_connection"),
     ]

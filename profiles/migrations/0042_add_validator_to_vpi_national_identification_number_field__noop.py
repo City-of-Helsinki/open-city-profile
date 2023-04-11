@@ -7,7 +7,6 @@ import profiles.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0041_shorten_vpi_text_field_max_lengths"),
     ]

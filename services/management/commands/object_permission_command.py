@@ -8,9 +8,7 @@ available_permissions = [item[0] for item in Service._meta.permissions]
 
 class ObjectPermissionCommand(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument(
-            "service", type=str, help="Service, identified by its name",
-        )
+        parser.add_argument("service", type=str, help="Service, identified by its name")
         parser.add_argument(
             "group_name",
             type=str,

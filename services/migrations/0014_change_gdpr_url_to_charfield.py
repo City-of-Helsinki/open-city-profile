@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0013_add_gdpr_api_scopes_to_services"),
     ]

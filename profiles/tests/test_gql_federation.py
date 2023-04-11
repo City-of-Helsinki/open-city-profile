@@ -98,7 +98,7 @@ def test_anonymous_user_can_not_resolve_profile_entity(
 ):
     profile, variables = _create_profile_and_variables(with_serviceconnection, service)
     executed = anon_user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
@@ -117,7 +117,7 @@ def test_owner_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     if with_service and with_serviceconnection:
@@ -137,7 +137,7 @@ def test_non_owner_user_can_not_resolve_profile_entity(
 ):
     profile, variables = _create_profile_and_variables(with_serviceconnection, service)
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     if not with_service:
@@ -148,9 +148,7 @@ def test_non_owner_user_can_not_resolve_profile_entity(
         assert executed["data"]["_entities"] is None
 
 
-@pytest.mark.parametrize(
-    "with_serviceconnection", (True, False),
-)
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_staff_user_can_resolve_profile_entity(
     user_gql_client, group, service, with_serviceconnection
 ):
@@ -163,7 +161,7 @@ def test_staff_user_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service,
+        ENTITY_QUERY, variables=variables, service=service
     )
 
     if with_serviceconnection:
@@ -180,7 +178,7 @@ def test_anonymous_user_can_not_resolve_address_entity(
 ):
     address, variables = _create_address_and_variables(with_serviceconnection, service)
     executed = anon_user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
@@ -206,7 +204,7 @@ def test_owner_can_resolve_address_entity(
     }
 
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     if with_service and with_serviceconnection:
@@ -226,7 +224,7 @@ def test_non_owner_user_can_not_resolve_address_entity(
 ):
     address, variables = _create_address_and_variables(with_serviceconnection, service)
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None,
+        ENTITY_QUERY, variables=variables, service=service if with_service else None
     )
 
     if not with_service:
@@ -237,9 +235,7 @@ def test_non_owner_user_can_not_resolve_address_entity(
         assert executed["data"]["_entities"] is None
 
 
-@pytest.mark.parametrize(
-    "with_serviceconnection", (True, False),
-)
+@pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_staff_user_can_resolve_address_entity(
     user_gql_client, group, service, with_serviceconnection
 ):
@@ -258,7 +254,7 @@ def test_staff_user_can_resolve_address_entity(
         ]
     }
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service,
+        ENTITY_QUERY, variables=variables, service=service
     )
 
     if with_serviceconnection:

@@ -112,9 +112,7 @@ def test_changing_email_causes_it_to_be_marked_unverified(
 def test_if_there_are_no_changes_then_nothing_is_sent_to_keycloak(mocker):
     values = {"firstName": "First name", "lastName": "Last name"}
 
-    mocker.patch.object(
-        keycloak.KeycloakAdminClient, "get_user", return_value=values,
-    )
+    mocker.patch.object(keycloak.KeycloakAdminClient, "get_user", return_value=values)
     mocked_update_user = mocker.patch.object(
         keycloak.KeycloakAdminClient, "update_user"
     )

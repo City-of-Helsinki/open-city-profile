@@ -63,7 +63,7 @@ def _validate_country_code_in_any_index(value, indices):
                 return
 
     raise ValidationError(
-        _("Invalid country code: %(value)s"), code="invalid", params={"value": value},
+        _("Invalid country code: %(value)s"), code="invalid", params={"value": value}
     )
 
 

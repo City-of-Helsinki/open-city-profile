@@ -20,7 +20,7 @@ def test_not_presenting_an_access_token_with_operation_needing_authentication_re
 
 
 def test_presenting_an_expired_access_token_with_any_operation_returns_jwt_authentication_error(
-    unix_timestamp_now, live_server,
+    unix_timestamp_now, live_server
 ):
     claims = {"exp": unix_timestamp_now - 1}
     data, errors = do_graphql_call(live_server, BearerTokenAuth(extra_claims=claims))
@@ -34,11 +34,11 @@ def test_presenting_an_expired_access_token_with_any_operation_returns_jwt_authe
         assert error["extensions"]["code"] == "JWT_AUTHENTICATION_ERROR"
 
 
-def test_presenting_a_logged_out_token_returns_jwt_authentication_error(live_server,):
+def test_presenting_a_logged_out_token_returns_jwt_authentication_error(live_server):
     jwt_data, encoded_jwt_token = generate_jwt_token()
 
     OIDCBackChannelLogoutEvent.objects.create(
-        iss=jwt_data["iss"], sid=jwt_data["sid"], sub=jwt_data["sub"],
+        iss=jwt_data["iss"], sid=jwt_data["sid"], sub=jwt_data["sub"]
     )
 
     data, errors = do_graphql_call(

@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("services", "0009_add_allowed_data_field")]
 
     operations = [

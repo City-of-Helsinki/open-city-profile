@@ -155,7 +155,7 @@ def test_existing_profile_with_verified_personal_information_is_updated(
     profile_with_verified_personal_information, user_gql_client
 ):
     execute_successful_profile_creation_test(
-        profile_with_verified_personal_information.user.uuid, user_gql_client,
+        profile_with_verified_personal_information.user.uuid, user_gql_client
     )
 
 
@@ -185,9 +185,7 @@ def test_all_basic_fields_can_be_set_to_null(user_gql_client):
     assert verified_personal_information.municipality_of_residence_number == ""
 
 
-@pytest.mark.parametrize(
-    "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
-)
+@pytest.mark.parametrize("address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES)
 @pytest.mark.parametrize("address_field_index_to_nullify", [0, 1, 2])
 def test_address_fields_can_be_set_to_null(
     profile_with_verified_personal_information,
@@ -229,11 +227,9 @@ def test_address_fields_can_be_set_to_null(
             assert getattr(address, field_name) == getattr(existing_address, field_name)
 
 
-@pytest.mark.parametrize(
-    "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
-)
+@pytest.mark.parametrize("address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES)
 def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
-    profile_with_verified_personal_information, address_type, user_gql_client,
+    profile_with_verified_personal_information, address_type, user_gql_client
 ):
     existing_address = getattr(
         profile_with_verified_personal_information.verified_personal_information,
@@ -256,11 +252,9 @@ def test_do_not_touch_an_address_if_it_is_not_included_in_the_mutation(
         assert getattr(address, field_name) == getattr(existing_address, field_name)
 
 
-@pytest.mark.parametrize(
-    "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
-)
+@pytest.mark.parametrize("address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES)
 def test_delete_an_address_if_it_no_longer_has_any_data(
-    profile_with_verified_personal_information, address_type, user_gql_client,
+    profile_with_verified_personal_information, address_type, user_gql_client
 ):
     user_id = profile_with_verified_personal_information.user.uuid
 
@@ -460,12 +454,10 @@ def test_invalid_input_causes_a_validation_error(user_gql_client, field_name):
     assert executed["errors"][0]["extensions"]["code"] == "VALIDATION_ERROR"
 
 
-@pytest.mark.parametrize(
-    "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
-)
+@pytest.mark.parametrize("address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES)
 @pytest.mark.parametrize("address_field_index", [0, 1, 2])
 def test_invalid_address_input_causes_a_validation_error(
-    user_gql_client, address_type, address_field_index,
+    user_gql_client, address_type, address_field_index
 ):
     address_field_name = VERIFIED_PERSONAL_INFORMATION_ADDRESS_FIELD_NAMES[
         address_type
@@ -473,7 +465,7 @@ def test_invalid_address_input_causes_a_validation_error(
     address_fields = {to_graphql_name(address_field_name): "x" * 101}
 
     input_data = generate_input_data(
-        uuid.uuid1(), overrides={to_graphql_name(address_type): address_fields},
+        uuid.uuid1(), overrides={to_graphql_name(address_type): address_fields}
     )
     executed = execute_mutation(input_data, user_gql_client)
 

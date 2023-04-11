@@ -8,7 +8,6 @@ import utils.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0038_start_using_searchable_national_identification_number"),
     ]

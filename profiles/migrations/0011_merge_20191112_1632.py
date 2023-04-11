@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0009_sensitivedata"),
         ("profiles", "0010_switch_profile_to_uuid"),

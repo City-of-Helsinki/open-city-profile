@@ -7,7 +7,6 @@ import profiles.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0048_change_phone_number_to_not_null"),
     ]

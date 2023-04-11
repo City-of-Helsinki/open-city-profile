@@ -280,15 +280,13 @@ class TestProfileWithVerifiedPersonalInformation:
         assert executed["data"] == expected_data
 
     @pytest.mark.parametrize(
-        "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES,
+        "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES
     )
     def test_when_address_does_not_exist_returns_null(
         self, address_type, user_gql_client
     ):
         profile = ProfileFactory(user=user_gql_client.user)
-        VerifiedPersonalInformationFactory(
-            profile=profile, **{address_type: None},
-        )
+        VerifiedPersonalInformationFactory(profile=profile, **{address_type: None})
 
         executed = self._execute_query(user_gql_client)
 

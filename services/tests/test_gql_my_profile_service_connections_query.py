@@ -144,7 +144,7 @@ def test_service_connections_of_service_always_returns_an_empty_result(
 
 
 def test_normal_user_can_query_own_services_gdpr_api_scopes(
-    user_gql_client, service_factory,
+    user_gql_client, service_factory
 ):
     query_scope = "query_scope"
     delete_scope = "delete_scope"

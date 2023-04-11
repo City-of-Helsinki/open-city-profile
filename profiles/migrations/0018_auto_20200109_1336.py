@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("profiles", "0017_allow_profile_user_null_and_protect")]
 
     operations = [

@@ -48,6 +48,6 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.RunPython(
-            copy_data_to_searchable_field, reverse_code=copy_data_from_searchable_field,
+            copy_data_to_searchable_field, reverse_code=copy_data_from_searchable_field
         ),
     ]

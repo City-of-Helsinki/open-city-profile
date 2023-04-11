@@ -4,11 +4,10 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0023_remove_newsletter_fields"),
     ]
 
     operations = [
-        migrations.AlterModelOptions(name="email", options={"ordering": ["-primary"]},),
+        migrations.AlterModelOptions(name="email", options={"ordering": ["-primary"]}),
     ]

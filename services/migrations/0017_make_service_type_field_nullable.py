@@ -7,7 +7,6 @@ import services.enums
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0016_add_name_field_to_service"),
     ]

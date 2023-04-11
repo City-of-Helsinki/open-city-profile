@@ -40,7 +40,7 @@ def setup_profile_and_staff_user_to_service(
 
 @pytest.mark.parametrize("with_serviceconnection", (True, False))
 def test_staff_user_can_update_a_profile(
-    user_gql_client, service, profile_updated_listener, with_serviceconnection,
+    user_gql_client, service, profile_updated_listener, with_serviceconnection
 ):
     profile = ProfileWithPrimaryEmailFactory(first_name="Joe")
     phone = PhoneFactory(profile=profile)
@@ -267,7 +267,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
     }
 
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, service=service, variables=variables,
+        EMAILS_MUTATION, service=service, variables=variables
     )
     assert executed["data"] == expected_data
 
@@ -329,7 +329,7 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
         variables = {"profileInput": profile_input}
 
         return user_gql_client.execute(
-            EMAILS_MUTATION, service=service, variables=variables,
+            EMAILS_MUTATION, service=service, variables=variables
         )
 
 
@@ -365,7 +365,7 @@ def test_staff_user_cannot_update_profile_sensitive_data_without_correct_permiss
         }
     """
     )
-    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), ssn="010199-1234",)
+    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), ssn="010199-1234")
     executed = user_gql_client.execute(query, service=service)
 
     assert "errors" in executed
@@ -398,7 +398,7 @@ def test_normal_user_cannot_update_a_profile_using_update_profile_mutation(
         }
     """
     )
-    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), first_name="John",)
+    query = t.substitute(id=to_global_id("ProfileNode", profile.pk), first_name="John")
     executed = user_gql_client.execute(query, service=service)
     assert "errors" in executed
     assert executed["errors"][0]["message"] == _(
