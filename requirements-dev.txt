@@ -20,7 +20,7 @@ black==23.3.0
     # via -r requirements-dev.in
 build==0.10.0
     # via pip-tools
-certifi==2020.4.5.1
+certifi==2022.12.7
     # via
     #   -c requirements.txt
     #   requests
