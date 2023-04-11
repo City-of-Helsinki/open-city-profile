@@ -42,10 +42,6 @@ decorator==4.4.2
     #   traitlets
 distlib==0.3.0
     # via virtualenv
-ecdsa==0.16.1
-    # via
-    #   -c requirements.txt
-    #   python-jose
 entrypoints==0.3
     # via flake8
 exceptiongroup==1.0.4
@@ -68,10 +64,6 @@ flake8-polyfill==1.0.2
     # via pep8-naming
 freezegun==0.3.15
     # via -r requirements-dev.in
-future==0.17.1
-    # via
-    #   -c requirements.txt
-    #   python-jose
 identify==1.4.15
     # via pre-commit
 idna==2.9
@@ -140,10 +132,6 @@ prompt-toolkit==3.0.5
     # via ipython
 ptyprocess==0.6.0
     # via pexpect
-pyasn1==0.4.5
-    # via
-    #   -c requirements.txt
-    #   rsa
 pycodestyle==2.5.0
     # via
     #   autopep8
@@ -177,10 +165,6 @@ python-dateutil==2.8.1
     # via
     #   faker
     #   freezegun
-python-jose==3.0.1
-    # via
-    #   -c requirements.txt
-    #   -r requirements-dev.in
 pyyaml==5.4.1
     # via
     #   -c requirements.txt
@@ -193,17 +177,11 @@ requests-mock==1.8.0
     # via -r requirements-dev.in
 rope==0.16.0
     # via -r requirements-dev.in
-rsa==4.7.2
-    # via
-    #   -c requirements.txt
-    #   python-jose
 six==1.14.0
     # via
     #   -c requirements.txt
-    #   ecdsa
     #   freezegun
     #   python-dateutil
-    #   python-jose
     #   requests-mock
     #   snapshottest
     #   traitlets
