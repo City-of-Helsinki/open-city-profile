@@ -283,8 +283,14 @@ def test_api_tokens_missing(user_gql_client, service_1, mocker):
     assert_match_error_code(executed, MISSING_GDPR_API_TOKEN_ERROR)
 
 
+@pytest.mark.parametrize("service_status_code", (401, 403, 404, 500))
 def test_when_service_fails_to_return_data_then_error_is_returned(
-    user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
+    service_status_code,
+    user_gql_client,
+    service_1,
+    gdpr_api_tokens,
+    mocker,
+    requests_mock,
 ):
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
@@ -293,7 +299,9 @@ def test_when_service_fails_to_return_data_then_error_is_returned(
     profile = ProfileFactory(user=user_gql_client.user)
     service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
 
-    requests_mock.get(service_connection.get_gdpr_url(), status_code=403)
+    requests_mock.get(
+        service_connection.get_gdpr_url(), status_code=service_status_code
+    )
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
