@@ -78,7 +78,11 @@ def download_connected_service_data(profile, authorization_code):
                 response.text,
             )
             response.raise_for_status()
-            service_connection_data = response.json()
+
+            if response.status_code == 200:
+                service_connection_data = response.json()
+            else:
+                service_connection_data = {}
         except requests.RequestException as e:
             logger.error(
                 "Invalid GDPR query response for profile %s from service %s. Exception: %s.",

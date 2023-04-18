@@ -221,8 +221,9 @@ def test_user_can_download_profile_with_connected_services_using_correct_api_tok
     assert SERVICE_DATA_2 in response_data
 
 
+@pytest.mark.parametrize("service_response", ({"json": {}}, {"status_code": 204}))
 def test_empty_data_from_connected_service_is_not_included_in_response(
-    user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
+    service_response, user_gql_client, service_1, gdpr_api_tokens, mocker, requests_mock
 ):
     mocker.patch.object(
         TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
@@ -231,7 +232,7 @@ def test_empty_data_from_connected_service_is_not_included_in_response(
     profile = ProfileFactory(user=user_gql_client.user)
     service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
 
-    requests_mock.get(service_connection.get_gdpr_url(), json={})
+    requests_mock.get(service_connection.get_gdpr_url(), **service_response)
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION)
 
