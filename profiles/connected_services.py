@@ -219,6 +219,13 @@ def _delete_service_data(
         try:
             errors_from_the_service = response.json().get("errors")
             if _validate_gdpr_api_errors(errors_from_the_service):
+                logger.debug(
+                    "GDPR delete request (dry run: %s) for profile %s to service %s denied with reasons %s",
+                    dry_run,
+                    service_connection.profile.id,
+                    service.name,
+                    errors_from_the_service,
+                )
                 result.errors = _convert_gdpr_api_errors(errors_from_the_service)
                 return result
             else:
