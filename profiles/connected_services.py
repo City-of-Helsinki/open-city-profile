@@ -72,7 +72,9 @@ def download_connected_service_data(profile, authorization_code):
             logger.debug("GDPR URL: %s", url)
             response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
             logger.debug(
-                "Response status code: %s, headers: %s, body: %s",
+                "GDPR query response for profile %s to service %s status code: %s, headers: %s, body: %s",
+                profile.id,
+                service.name,
                 response.status_code,
                 response.headers,
                 response.text,
@@ -194,6 +196,15 @@ def _delete_service_data(
     try:
         response = requests.delete(
             url, auth=BearerAuth(api_token), timeout=5, params=data
+        )
+        logger.debug(
+            "GDPR delete (dry run: %s) response for profile %s to service %s status code: %s, headers: %s, body: %s",
+            dry_run,
+            service_connection.profile.id,
+            service.name,
+            response.status_code,
+            response.headers,
+            response.text,
         )
     except requests.RequestException as e:
         logger.error(
