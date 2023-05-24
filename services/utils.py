@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from services.models import AllowedDataField, ServiceClientId
+from services.models import AllowedDataField, Service, ServiceClientId
 
 
 def set_service_to_request(request):
@@ -45,5 +45,25 @@ def generate_data_fields(allowed_data_fields_spec):
         data_field.save()
 
     current_field_names = [fs["field_name"] for fs in allowed_data_fields_spec]
+
+    for obsolete_field in AllowedDataField.objects.exclude(
+        field_name__in=current_field_names
+    ).all():
+        affected_services = list(
+            Service.objects.filter(allowed_data_fields__in=[obsolete_field]).all()
+        )
+        if affected_services:
+            new_field_spec = next(
+                filter(
+                    lambda spec: obsolete_field.field_name in spec.get("aliases", []),
+                    allowed_data_fields_spec,
+                )
+            )
+            new_field = AllowedDataField.objects.get(
+                field_name=new_field_spec["field_name"]
+            )
+            for service in affected_services:
+                service.allowed_data_fields.add(new_field)
+                service.save()
 
     AllowedDataField.objects.exclude(field_name__in=current_field_names).delete()

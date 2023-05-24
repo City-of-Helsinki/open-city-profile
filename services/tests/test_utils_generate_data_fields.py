@@ -1,6 +1,7 @@
 import pytest
 
 from services.models import AllowedDataField
+from services.tests.factories import ServiceFactory
 from services.utils import generate_data_fields
 
 
@@ -104,3 +105,37 @@ def test_change_order_of_fields():
     new_spec.reverse()
 
     _test_changed_spec(new_spec)
+
+
+@pytest.mark.parametrize("num_fields_to_replace", (1, 2))
+def test_replace_allowed_data_fields_in_services_with_another_one_using_an_alias(
+    num_fields_to_replace,
+):
+    allowed_fields_spec = _get_initial_spec()
+    generate_data_fields(allowed_fields_spec)
+
+    services = ServiceFactory.create_batch(2)
+    for service in services:
+        service.allowed_data_fields.set(AllowedDataField.objects.all())
+
+    for field_index in range(num_fields_to_replace):
+        replaceable_field = allowed_fields_spec[field_index]
+        original_field_name = replaceable_field["field_name"]
+        replaceable_field.update(
+            {
+                "field_name": original_field_name + "_new",
+                "aliases": (
+                    original_field_name,
+                    f"another_old_name_{original_field_name}",
+                ),
+            }
+        )
+
+    _test_changed_spec(allowed_fields_spec)
+
+    current_field_names = {f["field_name"] for f in allowed_fields_spec}
+    for service in services:
+        current_service_field_names = {
+            f.field_name for f in service.allowed_data_fields.all()
+        }
+        assert current_field_names == current_service_field_names
