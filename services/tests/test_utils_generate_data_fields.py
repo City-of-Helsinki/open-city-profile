@@ -25,29 +25,32 @@ def _get_initial_spec():
     ]
 
 
+def _assert_fields_match_spec(spec):
+    allowed_data_fields = AllowedDataField.objects.all()
+    assert len(allowed_data_fields) == len(spec)
+
+    previous_order = -1
+
+    for value in spec:
+        field = allowed_data_fields.filter(field_name=value["field_name"]).first()
+        assert field is not None
+
+        assert field.order > previous_order
+        previous_order = field.order
+
+        for translation in value["translations"]:
+            field.set_current_language(translation["code"])
+            assert field.label == translation["label"]
+
+        expected_lang_codes = {tr["code"] for tr in value["translations"]}
+        actual_lang_codes = set(field.get_available_languages())
+        assert expected_lang_codes == actual_lang_codes
+
+
 def _test_changed_spec(new_spec):
     for spec in _get_initial_spec(), new_spec:
         generate_data_fields(spec)
-
-        allowed_data_fields = AllowedDataField.objects.all()
-        assert len(allowed_data_fields) == len(spec)
-
-        previous_order = -1
-
-        for value in spec:
-            field = allowed_data_fields.filter(field_name=value["field_name"]).first()
-            assert field is not None
-
-            assert field.order > previous_order
-            previous_order = field.order
-
-            for translation in value["translations"]:
-                field.set_current_language(translation["code"])
-                assert field.label == translation["label"]
-
-            expected_lang_codes = {tr["code"] for tr in value["translations"]}
-            actual_lang_codes = set(field.get_available_languages())
-            assert expected_lang_codes == actual_lang_codes
+        _assert_fields_match_spec(spec)
 
 
 def test_unchanged_configuration_changes_nothing():
