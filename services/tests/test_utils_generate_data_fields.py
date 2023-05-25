@@ -142,3 +142,20 @@ def test_replace_allowed_data_fields_in_services_with_another_one_using_an_alias
             f.field_name for f in service.allowed_data_fields.all()
         }
         assert current_field_names == current_service_field_names
+
+
+def test_when_no_alias_for_a_removed_field_is_found_then_a_valueerror_is_raised():
+    allowed_fields_spec = _get_initial_spec()
+    generate_data_fields(allowed_fields_spec)
+
+    service = ServiceFactory()
+    service.allowed_data_fields.set(AllowedDataField.objects.all())
+
+    allowed_fields_spec[0]["field_name"] = "new_field_name"
+
+    with pytest.raises(ValueError):
+        generate_data_fields(allowed_fields_spec)
+
+    _assert_fields_match_spec(_get_initial_spec())
+
+    assert set(service.allowed_data_fields.all()) == set(AllowedDataField.objects.all())

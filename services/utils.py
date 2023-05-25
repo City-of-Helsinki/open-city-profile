@@ -53,12 +53,17 @@ def generate_data_fields(allowed_data_fields_spec):
             Service.objects.filter(allowed_data_fields__in=[obsolete_field]).all()
         )
         if affected_services:
-            new_field_spec = next(
-                filter(
-                    lambda spec: obsolete_field.field_name in spec.get("aliases", []),
-                    allowed_data_fields_spec,
+            try:
+                new_field_spec = next(
+                    filter(
+                        lambda spec: obsolete_field.field_name
+                        in spec.get("aliases", []),
+                        allowed_data_fields_spec,
+                    )
                 )
-            )
+            except StopIteration:
+                raise ValueError(f"No alias found for '{obsolete_field.field_name}'")
+
             new_field = AllowedDataField.objects.get(
                 field_name=new_field_spec["field_name"]
             )
