@@ -22,12 +22,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-c",
-            "--clear",
-            help="Flush the DB before initializing the data",
-            action="store_true",
-        )
-        parser.add_argument(
             "--no-clear",
             help="Don't flush the DB before initializing the data",
             action="store_true",
@@ -51,14 +45,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        clear = kwargs["clear"]
         no_clear = kwargs["no_clear"]
         superuser = kwargs["superuser"]
         locale = kwargs["locale"]
         faker = Faker(locale)
         profile_count = kwargs["profilecount"]
 
-        if not no_clear and clear:
+        if not no_clear:
             self.stdout.write("Clearing data...")
             management.call_command("flush", verbosity=0, interactive=False)
             self.stdout.write(self.style.SUCCESS("Done - Data cleared"))
