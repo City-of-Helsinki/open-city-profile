@@ -7,8 +7,8 @@ from users.models import User
 from utils.utils import DATA_FIELD_VALUES, SERVICES
 
 
-def test_command_seed_data_works_without_arguments():
-    call_command("seed_data")
+def test_command_seed_development_data_works_without_arguments():
+    call_command("seed_development_data")
 
     assert Service.objects.count() == len(SERVICES)
     assert Group.objects.count() == len(SERVICES)
@@ -16,13 +16,12 @@ def test_command_seed_data_works_without_arguments():
     assert AllowedDataField.objects.count() == len(DATA_FIELD_VALUES)
 
 
-def test_command_seed_data_initializes_development_data():
+def test_command_seed_development_data_initializes_development_data():
     args = [
-        "--development",
         "--no-clear",  # Flushing not needed in tests + it caused test failures
         "--superuser",
     ]
-    call_command("seed_data", *args)
+    call_command("seed_development_data", *args)
 
     admin_users = 1
     normal_users = 50
@@ -31,14 +30,13 @@ def test_command_seed_data_initializes_development_data():
     assert User.objects.filter(is_superuser=True).count() == admin_users
 
 
-def test_command_seed_data_works_withs_arguments():
+def test_command_seed_development_data_works_withs_arguments():
     args = [
-        "--development",
         "--no-clear",  # Flushing not needed in tests + it caused test failures
         "--profilecount=20",
         "--locale=fi_FI",
         "--superuser",
     ]
-    call_command("seed_data", *args)
+    call_command("seed_development_data", *args)
     assert Profile.objects.count() == 20
     assert User.objects.filter(is_superuser=True).count() == 1

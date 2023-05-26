@@ -58,10 +58,10 @@ Prerequisites:
     * Taken care by the example env
     * `docker exec profile-backend python manage.py migrate`
 
-2. Seed data
+2. Seed development data
     * Taken care by the example env
     * See also _Seed development data_ below
-    * `docker exec profile-backend python manage.py seed_data`
+    * `docker exec profile-backend python manage.py seed_development_data`
 
 3. Create superuser:
     * Taken care by the example env
@@ -80,8 +80,8 @@ Prerequisites:
 6. Seed development data
     * **Note!** This command will flush the database.
     * Add all data with defaults: `docker exec profile-backend python manage.py
-    seed_data --development`
-    * See `python manage.py help seed_data` for optional arguments
+    seed_development_data`
+    * See `python manage.py help seed_development_data` for optional arguments
     * Command will generate:
       * All available services
       * One group per service (with `can_manage_profiles` permissions)

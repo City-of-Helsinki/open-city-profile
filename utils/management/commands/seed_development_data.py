@@ -18,15 +18,9 @@ available_permissions = [item[0] for item in Service._meta.permissions]
 
 
 class Command(BaseCommand):
-    help = "Seed environment with initial data"
+    help = "Seed environment with development data"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "-d",
-            "--development",
-            help="Add randomized development data, implies --clear",
-            action="store_true",
-        )
         parser.add_argument(
             "-c",
             "--clear",
@@ -59,13 +53,12 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         clear = kwargs["clear"]
         no_clear = kwargs["no_clear"]
-        development = kwargs["development"]
         superuser = kwargs["superuser"]
         locale = kwargs["locale"]
         faker = Faker(locale)
         profile_count = kwargs["profilecount"]
 
-        if not no_clear and (development or clear):
+        if not no_clear and clear:
             self.stdout.write("Clearing data...")
             management.call_command("flush", verbosity=0, interactive=False)
             self.stdout.write(self.style.SUCCESS("Done - Data cleared"))
@@ -77,7 +70,6 @@ class Command(BaseCommand):
             management.call_command("add_admin_user")
             self.stdout.write(self.style.SUCCESS("Done - Admin user"))
 
-        # Initial profile data
         self.stdout.write("Generating data fields...")
         generate_data_fields()
         self.stdout.write("Generating services...")
@@ -87,17 +79,15 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Done - Profile data"))
 
-        # Development
-        if development:
-            self.stdout.write("Assigning group permissions for services...")
-            assign_permissions(groups=groups)
+        self.stdout.write("Assigning group permissions for services...")
+        assign_permissions(groups=groups)
 
-            with factory.Faker.override_default_locale(locale):
-                self.stdout.write("Generating group admins...")
-                generate_group_admins(groups=groups, faker=faker)
-                self.stdout.write(f"Generating profiles ({profile_count})...")
-                generate_profiles(profile_count, faker=faker)
-                self.stdout.write("Generating service connections...")
-                generate_service_connections()
+        with factory.Faker.override_default_locale(locale):
+            self.stdout.write("Generating group admins...")
+            generate_group_admins(groups=groups, faker=faker)
+            self.stdout.write(f"Generating profiles ({profile_count})...")
+            generate_profiles(profile_count, faker=faker)
+            self.stdout.write("Generating service connections...")
+            generate_service_connections()
 
-            self.stdout.write(self.style.SUCCESS("Done - Development fake data"))
+        self.stdout.write(self.style.SUCCESS("Done - Development fake data"))

@@ -20,10 +20,7 @@ fi
 
 if [[ "$APPLY_MIGRATIONS" = "1" ]] && [[ "$SEED_DEVELOPMENT_DATA" = "1" ]]; then
     echo "Seeding initial development data..."
-    ./manage.py seed_data --development
-elif [[ "$APPLY_MIGRATIONS" = "1" ]]; then
-    echo "Seeding initial data..."
-    ./manage.py seed_data
+    ./manage.py seed_development_data
 fi
 
 # Create superuser
