@@ -18,7 +18,7 @@ certifi==2022.12.7
     #   sentry-sdk
 cffi==1.15.1
     # via cryptography
-chardet==3.0.4
+charset-normalizer==3.1.0
     # via requests
 cryptography==41.0.1
     # via python-jose
@@ -105,7 +105,7 @@ pyyaml==5.4.1
     #   -r requirements.in
     #   database-sanitizer
     #   django-sanitized-dump
-requests==2.25.1
+requests==2.31.0
     # via
     #   -r requirements.in
     #   django-helusers
