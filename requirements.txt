@@ -129,7 +129,7 @@ six==1.14.0
     #   graphql-relay
     #   promise
     #   singledispatch
-sqlparse==0.4.2
+sqlparse==0.4.4
     # via django
 typing-extensions==4.5.0
     # via asgiref
