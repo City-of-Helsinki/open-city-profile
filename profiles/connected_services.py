@@ -14,7 +14,8 @@ from open_city_profile.exceptions import (
     ConnectedServiceDeletionNotAllowedError,
     MissingGDPRApiTokenError,
 )
-from open_city_profile.oidc import TunnistamoTokenExchange
+from open_city_profile.oidc import KeycloakTokenExchange, TunnistamoTokenExchange
+from services.enums import ServiceIdp
 from services.models import Service
 from utils.auth import BearerAuth
 
@@ -33,8 +34,44 @@ def _check_service_gdpr_query_configuration(service_connections):
                 f"Connected service: {service.name} does not have an API for querying data."
             )
 
+        if (
+            service.idp
+            and ServiceIdp.KEYCLOAK in service.idp
+            and not service.gdpr_audience
+        ):
+            logger.error("GDPR audience missing for service %s", service.name)
+            raise ConnectedServiceDataQueryFailedError(
+                f'Connected service: Keycloak connected service "{service.name}" does not have GDPR audience set'
+            )
 
-def download_connected_service_data(profile, authorization_code):
+
+def _any_tunnistamo_connected_services(service_connections):
+    return any([not sc.service.is_pure_keycloak for sc in service_connections])
+
+
+def _any_pure_keycloak_connected_services(service_connections):
+    return any([sc.service.is_pure_keycloak for sc in service_connections])
+
+
+def _get_api_token(service, scope, api_tokens, keycloak_token_exchange):
+    api_token = ""
+    if not service.is_pure_keycloak:
+        api_identifier = scope.rsplit(".", 1)[0]
+        api_token = api_tokens.get(api_identifier, "")
+
+    if not api_token and service.idp and ServiceIdp.KEYCLOAK in service.idp:
+        logger.debug("Fetch Keycloak API Token for service %s", service.name)
+        api_token = keycloak_token_exchange.fetch_api_token(
+            service.gdpr_audience, scope
+        )
+        logger.debug("Keycloak API Token: %s", api_token)
+
+    return api_token
+
+
+def download_connected_service_data(
+    profile, authorization_code, authorization_code_keycloak
+):
     service_connections = profile.effective_service_connections_qs().all()
     if not service_connections:
         logger.debug("No service connections for profile %s (query)", profile.id)
@@ -44,9 +81,17 @@ def download_connected_service_data(profile, authorization_code):
 
     logger.debug("Downloading connected service data for profile %s", profile.id)
 
-    tte = TunnistamoTokenExchange()
-    api_tokens = tte.fetch_api_tokens(authorization_code)
-    logger.debug("API Tokens for query: %s", api_tokens)
+    api_tokens = {}
+    if _any_tunnistamo_connected_services(service_connections):
+        tte = TunnistamoTokenExchange()
+        api_tokens = tte.fetch_api_tokens(authorization_code)
+        logger.debug("Tunnistamo API Tokens for query: %s", api_tokens)
+
+    keycloak_token_exchange = None
+    if _any_pure_keycloak_connected_services(service_connections):
+        logger.debug("Pure Keycloak services exist. Fetch Keycloak access token.")
+        keycloak_token_exchange = KeycloakTokenExchange()
+        keycloak_token_exchange.fetch_access_token(authorization_code_keycloak)
 
     external_data = []
 
@@ -54,9 +99,9 @@ def download_connected_service_data(profile, authorization_code):
         service = service_connection.service
         logger.debug("Starting GDPR query for service %s", service.name)
 
-        api_identifier = service.gdpr_query_scope.rsplit(".", 1)[0]
-        api_token = api_tokens.get(api_identifier, "")
-
+        api_token = _get_api_token(
+            service, service.gdpr_query_scope, api_tokens, keycloak_token_exchange
+        )
         if not api_token:
             logger.error(
                 "API Token missing for service %s in query (profile %s)",
@@ -274,15 +319,15 @@ def _delete_service_data(
 
 
 def _delete_service_connection_and_service_data(
-    service_connections, api_tokens, dry_run=False
+    service_connections, api_tokens, keycloak_token_exchange, dry_run=False
 ):
     results = []
 
     for service_connection in service_connections:
         service = service_connection.service
-        api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
-        api_token = api_tokens.get(api_identifier, "")
-
+        api_token = _get_api_token(
+            service, service.gdpr_delete_scope, api_tokens, keycloak_token_exchange
+        )
         result = _delete_service_data(service_connection, api_token, dry_run=dry_run)
         if result.success and not dry_run:
             service_connection.delete()
@@ -304,18 +349,19 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens, pr
                 f"Connected services: {service.name} does not have an API for removing data."
             )
 
-        api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
-        api_token = api_tokens.get(api_identifier, "")
+        if not service.is_pure_keycloak:
+            api_identifier = service.gdpr_delete_scope.rsplit(".", 1)[0]
+            api_token = api_tokens.get(api_identifier, "")
 
-        if not api_token:
-            logger.error(
-                "API Token missing for service %s in delete (profile %s)",
-                service.name,
-                profile.id,
-            )
-            raise MissingGDPRApiTokenError(
-                f"Couldn't fetch an API token for service {service.name}."
-            )
+            if not api_token:
+                logger.error(
+                    "API Token missing for service %s in delete (profile %s)",
+                    service.name,
+                    profile.id,
+                )
+                raise MissingGDPRApiTokenError(
+                    f"Couldn't fetch an API token for service {service.name}."
+                )
 
         if not service_connection.get_gdpr_url():
             logger.error(
@@ -333,7 +379,11 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens, pr
 
 
 def delete_connected_service_data(
-    profile, authorization_code, service_connections=None, dry_run=False
+    profile,
+    authorization_code,
+    authorization_code_keycloak,
+    service_connections=None,
+    dry_run=False,
 ):
     if service_connections is None:
         service_connections = profile.effective_service_connections_qs().all()
@@ -344,20 +394,28 @@ def delete_connected_service_data(
 
     logger.debug("Deleting connected service data for profile %s", profile.id)
 
-    tte = TunnistamoTokenExchange()
-    api_tokens = tte.fetch_api_tokens(authorization_code)
-    logger.debug("API Tokens for delete: %s", api_tokens)
+    api_tokens = {}
+    if _any_tunnistamo_connected_services(service_connections):
+        tte = TunnistamoTokenExchange()
+        api_tokens = tte.fetch_api_tokens(authorization_code)
+        logger.debug("Tunnistamo API Tokens for delete: %s", api_tokens)
+
+    keycloak_token_exchange = None
+    if _any_pure_keycloak_connected_services(service_connections):
+        logger.debug("Pure Keycloak services exist. Fetch Keycloak access token.")
+        keycloak_token_exchange = KeycloakTokenExchange()
+        keycloak_token_exchange.fetch_access_token(authorization_code_keycloak)
 
     _check_service_gdpr_delete_configuration(service_connections, api_tokens, profile)
 
     results = _delete_service_connection_and_service_data(
-        service_connections, api_tokens, dry_run=True
+        service_connections, api_tokens, keycloak_token_exchange, dry_run=True
     )
     if dry_run or any([len(r.errors) for r in results]):
         return results
 
     if not dry_run:
         results = _delete_service_connection_and_service_data(
-            service_connections, api_tokens, dry_run=False
+            service_connections, api_tokens, keycloak_token_exchange, dry_run=False
         )
         return results

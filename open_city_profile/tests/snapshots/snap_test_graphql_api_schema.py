@@ -177,6 +177,7 @@ scalar DateTime
 
 input DeleteMyProfileMutationInput {
   authorizationCode: String!
+  authorizationCodeKeycloak: String
   dryRun: Boolean
   clientMutationId: String
 }
@@ -188,6 +189,7 @@ type DeleteMyProfileMutationPayload {
 
 input DeleteMyServiceDataMutationInput {
   authorizationCode: String!
+  authorizationCodeKeycloak: String
   serviceName: String!
   dryRun: Boolean
 }
@@ -349,7 +351,7 @@ type Query {
   services(before: String, after: String, first: Int, last: Int, clientId: String): ServiceNodeConnection
   profile(id: ID!, serviceType: ServiceType): ProfileNode
   myProfile: ProfileNode
-  downloadMyProfile(authorizationCode: String!): JSONString
+  downloadMyProfile(authorizationCode: String!, authorizationCodeKeycloak: String): JSONString
   profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, orderBy: String): ProfileNodeConnection
   claimableProfile(token: UUID!): ProfileNode
   profileWithAccessToken(token: UUID!): RestrictedProfileNode
