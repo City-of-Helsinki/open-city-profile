@@ -40,7 +40,15 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
             fieldsets.append(
                 (
                     _("GDPR API"),
-                    {"fields": ("gdpr_url", "gdpr_query_scope", "gdpr_delete_scope")},
+                    {
+                        "fields": (
+                            "gdpr_url",
+                            "gdpr_query_scope",
+                            "gdpr_delete_scope",
+                            "idp",
+                            "gdpr_audience",
+                        )
+                    },
                 )
             )
 

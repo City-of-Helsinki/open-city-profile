@@ -2,6 +2,8 @@ import urllib.parse
 from string import Template
 
 from adminsortable.models import SortableMixin
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Max, Q
 from enumfields import EnumField
@@ -9,7 +11,7 @@ from parler.models import TranslatableModel, TranslatedFields
 
 from utils.models import SerializableMixin
 
-from .enums import ServiceType
+from .enums import ServiceIdp, ServiceType
 
 
 def get_next_data_field_order():
@@ -33,6 +35,26 @@ class AllowedDataField(TranslatableModel, SortableMixin):
         return self.safe_translation_getter("label", super().__str__())
 
 
+class ChoiceArrayField(ArrayField):
+    """Arrayfield where the widget in model forms (e.g. in the admin) is changed
+
+    The default widget for ArrayField is a simple text input. This modification
+    changes the widget to multiple checkboxes.
+
+    from https://stackoverflow.com/a/66059615"""
+
+    def formfield(self, **kwargs):
+        kwargs.update(
+            {
+                "form_class": forms.TypedMultipleChoiceField,
+                "choices": self.base_field.choices,
+                "coerce": self.base_field.to_python,
+                "widget": forms.CheckboxSelectMultiple,
+            }
+        )
+        return super(ArrayField, self).formfield(**kwargs)
+
+
 class Service(TranslatableModel):
     service_type = EnumField(
         ServiceType, max_length=32, blank=False, null=True, unique=True
@@ -44,6 +66,15 @@ class Service(TranslatableModel):
     )
     allowed_data_fields = models.ManyToManyField(AllowedDataField)
     created_at = models.DateTimeField(auto_now_add=True)
+    # The idp field is only temporary as long as we have services that use both
+    # Tunnistamo and/or Keycloak. After all the services are moved to Keycloak we
+    # can remove the idp field altogether.
+    idp = ChoiceArrayField(
+        EnumField(ServiceIdp, max_length=32),
+        blank=True,
+        null=True,
+        help_text="Identity providers the service supports. Tunnistamo is implied If none selected.",
+    )
     gdpr_url = models.CharField(
         max_length=2000,
         blank=True,
@@ -58,6 +89,11 @@ class Service(TranslatableModel):
     )
     gdpr_delete_scope = models.CharField(
         max_length=200, blank=True, help_text="GDPR API delete operation scope"
+    )
+    gdpr_audience = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Audience of the GDPR API. Must be filled if the API accepts tokens from Keycloak",
     )
     is_profile_service = models.BooleanField(
         default=False,
@@ -126,6 +162,10 @@ class Service(TranslatableModel):
             return urllib.parse.urljoin(self.gdpr_url, str(profile.pk))
 
         return gdpr_url
+
+    @property
+    def is_pure_keycloak(self):
+        return bool(self.idp and {ServiceIdp.KEYCLOAK} == set(self.idp))
 
 
 class ServiceClientId(models.Model):

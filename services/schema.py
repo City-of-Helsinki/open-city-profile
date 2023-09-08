@@ -61,6 +61,10 @@ class ServiceNode(DjangoParlerObjectType):
         deprecation_reason="Always returns an empty result. "
         "Getting connections for a service is not supported and there is no replacement.",
     )
+    is_pure_keycloak = graphene.Boolean(
+        required=True,
+        description="If this service accepts only Keycloak API tokens",
+    )
 
     class Meta:
         model = Service
