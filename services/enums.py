@@ -13,3 +13,12 @@ class ServiceType(Enum):
         BERTH = _("Berth")
         YOUTH_MEMBERSHIP = _("Youth Membership")
         GODCHILDREN_OF_CULTURE = _("Godchildren of Culture")
+
+
+class ServiceIdp(Enum):
+    TUNNISTAMO = "tunnistamo"
+    KEYCLOAK = "keycloak"
+
+    class Labels:
+        TUNNISTAMO = _("Tunnistamo")
+        KEYCLOAK = _("Keycloak")

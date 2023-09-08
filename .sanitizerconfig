@@ -171,6 +171,8 @@ strategy:
     is_profile_service: null
     name: null
     service_type: null
+    idp: null
+    gdpr_audience: null
   services_service_allowed_data_fields:
     alloweddatafield_id: null
     id: null
