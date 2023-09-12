@@ -13,7 +13,7 @@ RUN apt-install.sh \
     build-essential \
     libpq-dev \
     gdal-bin \
-    netcat \
+    netcat-openbsd \
     pkg-config \
     python3-gdal \
     postgresql-client \
