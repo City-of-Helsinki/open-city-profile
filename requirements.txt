@@ -12,7 +12,7 @@ asgiref==3.4.1
     # via django
 cachetools==4.2.0
     # via django-helusers
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   requests
     #   sentry-sdk
