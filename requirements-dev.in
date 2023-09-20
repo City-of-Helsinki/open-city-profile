@@ -1,13 +1,9 @@
 -c requirements.txt
-autoflake
-autopep8
 black
 flake8
 freezegun
-importmagic
 inflection
 isort
-jedi
 pep8-naming
 pip-tools
 pre-commit
@@ -18,7 +14,5 @@ pytest-django
 pytest-mock
 requests-mock
 pytest-factoryboy
-rope
-yapf
 factory_boy
 snapshottest
