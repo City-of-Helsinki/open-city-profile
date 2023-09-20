@@ -6,7 +6,6 @@ flake8
 freezegun
 importmagic
 inflection
-ipython
 isort
 jedi
 pep8-naming
