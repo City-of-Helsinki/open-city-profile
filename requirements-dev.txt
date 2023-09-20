@@ -14,8 +14,6 @@ autoflake==1.3.1
     # via -r requirements-dev.in
 autopep8==1.5.2
     # via -r requirements-dev.in
-backcall==0.1.0
-    # via ipython
 black==23.3.0
     # via -r requirements-dev.in
 build==0.10.0
@@ -36,10 +34,6 @@ click==8.1.3
     #   pip-tools
 coverage==5.1
     # via pytest-cov
-decorator==4.4.2
-    # via
-    #   ipython
-    #   traitlets
 distlib==0.3.0
     # via virtualenv
 entrypoints==0.3
@@ -86,18 +80,10 @@ inflection==0.4.0
     #   pytest-factoryboy
 iniconfig==1.1.1
     # via pytest
-ipython==7.32.0
-    # via -r requirements-dev.in
-ipython-genutils==0.2.0
-    # via traitlets
 isort==4.3.21
     # via -r requirements-dev.in
 jedi==0.17.0
-    # via
-    #   -r requirements-dev.in
-    #   ipython
-matplotlib-inline==0.1.3
-    # via ipython
+    # via -r requirements-dev.in
 mccabe==0.6.1
     # via flake8
 mypy-extensions==1.0.0
@@ -116,10 +102,6 @@ pathspec==0.11.1
     # via black
 pep8-naming==0.10.0
     # via -r requirements-dev.in
-pexpect==4.8.0
-    # via ipython
-pickleshare==0.7.5
-    # via ipython
 pip-tools==6.13.0
     # via -r requirements-dev.in
 platformdirs==3.2.0
@@ -128,10 +110,6 @@ pluggy==0.13.1
     # via pytest
 pre-commit==2.3.0
     # via -r requirements-dev.in
-prompt-toolkit==3.0.5
-    # via ipython
-ptyprocess==0.6.0
-    # via pexpect
 pycodestyle==2.5.0
     # via
     #   autopep8
@@ -142,8 +120,6 @@ pyflakes==2.1.1
     # via
     #   autoflake
     #   flake8
-pygments==2.9.0
-    # via ipython
 pyproject-hooks==1.0.0
     # via build
 pytest==7.2.0
@@ -184,7 +160,6 @@ six==1.14.0
     #   python-dateutil
     #   requests-mock
     #   snapshottest
-    #   traitlets
     #   virtualenv
 snapshottest==0.6.0
     # via -r requirements-dev.in
@@ -201,10 +176,6 @@ tomli==2.0.1
     #   black
     #   build
     #   pytest
-traitlets==4.3.3
-    # via
-    #   ipython
-    #   matplotlib-inline
 typed-ast==1.5.4
     # via black
 typing-extensions==4.5.0
@@ -218,10 +189,6 @@ urllib3==1.26.6
     #   requests
 virtualenv==20.0.20
     # via pre-commit
-wasmer==0.4.1
-    # via fastdiff
-wcwidth==0.1.9
-    # via prompt-toolkit
 wheel==0.40.0
     # via pip-tools
 yapf==0.30.0
