@@ -81,16 +81,24 @@ https://pypi.org/project/django-searchable-encrypted-fields[Django-searchable-en
 
 == GDPR API
 
-GDPR API functionality needs to communicate with an authentication server. The implementation uses https://github.com/City-of-Helsinki/tunnistamo[Tunnistamo] specific endpoints, so this works only with Tunnistamo.
+GDPR API functionality needs to communicate with an authentication server. The implementation can use https://github.com/City-of-Helsinki/tunnistamo[Tunnistamo] and/or Keycloak depending on the connected services.
 
-All the following environment variables are required for the GDPR API functionality to work correctly.
+The following settings are required when there are services that are connected to Tunnistamo:
 
-First of all, `TOKEN_AUTH_AUTHSERVER_URL` is used as the authentication server, so that environment variable needs to point to the correct Tunnistamo instance.
+- `TOKEN_AUTH_AUTHSERVER_URL`: The authentication server. Needs to point to the correct Tunnistamo instance.
+- `OIDC_CLIENT_ID`: Client id to use in the authorization code flow
+- `OIDC_CLIENT_SECRET`: Client secret to use in the authorization code flow
+- `TUNNISTAMO_API_TOKENS_URL`: Tunnistamo URL from which the backend will fetch API tokens for GDPR API use
 
-- `OIDC_CLIENT_ID`: Client id to use in the authorization code flow.
-- `OIDC_CLIENT_SECRET`: Client secret to use in the authorization code flow.
+Required environment variables when there are services that are connected only to Keycloak:
+
+- `KEYCLOAK_BASE_URL` and `KEYCLOAK_REALM`: Described <<Authentication and authorization, above>>
+- `KEYCLOAK_GDPR_CLIENT_ID`: Client id to use in the authorization code flow.
+- `KEYCLOAK_GDPR_CLIENT_SECRET`: Client secret to use in the authorization code flow.
+
+Common environment variable that is required in either case:
+
 - `GDPR_AUTH_CALLBACK_URL`: Callback URL should be the same which is used by the UI for fetching OAuth/OIDC authorization token for using the GDPR API.
-- `TUNNISTAMO_API_TOKENS_URL`: Tunnistamo URL from which the backend will fetch API tokens for GDPR API use.
 
 == Feature flags
 
