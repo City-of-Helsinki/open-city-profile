@@ -55,8 +55,12 @@ info:
     the GDPR API implementation doesn’t handle user UUIDs at all, this step can not be performed and may be skipped. See
     [RFC 7519 section 4.1.2](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.2).
 
-    1. Validate API scopes. Helsinki profile team has provided two API scope values for the service, one for each GDPR
-    API use case. The API scope values may look for example like this:<br/><br/>
+    1. Validate API scopes. There are two variants of scopes in the tokens, *Tunnistamo* style and *Keycloak* style.
+    A service's GDPR API may be marked to support either Tunnistamo or Keycloak style tokens and that's the style of
+    tokens it then receives.<br/><br/>
+    <strong>Tunnistamo style</strong><br/><br/>
+    Helsinki profile team has provided two API scope values for the service, one for each GDPR API use case.
+    The API scope values may look for example like this:<br/><br/>
     `https://api.hel.fi/auth/myservice.gdprquery` (for the data download use case)<br/>
     `https://api.hel.fi/auth/myservice.gdprdelete` (for the data deletion use case)<br/><br/>
     Each of these values actually consists of two parts, a domain part, and a scope part, separated by the last slash
@@ -69,7 +73,16 @@ info:
     Verify that the scope is found from that array.<br/><br/>
     Continuing with the previously shown example API scope values, a valid claim for the data download use case could
     look for example like this:<br/><br/>
-    `"https://api.hel.fi/auth": [ "myservice.gdprquery", "other_scope" ]`
+    `"https://api.hel.fi/auth": [ "myservice.gdprquery", "other_scope" ]`<br/><br/>
+    <strong>Keycloak style</strong><br/><br/>
+    The Keycloak style token's scope check is somewhat easier. First of all, it's exactly the same for every GDPR API
+    instance, there are no service specific identifiers in place. The JWT has an `authorization` claim. The value is
+    an object with a `permissions` member. That member's value is an array that may contain objects with a `scopes`
+    member. That member's value again is an array that should contain either the string `gdprquery` or `gdprdelete`,
+    depending on whether the GDPR API operation is data download or deletion. Here's the structure as JSON:<br/><br/>
+    `"authorization": { "permissions": [ { "scopes": [ "gdprquery" ] } ] }`<br/><br/>
+    Note that `permissions` and `scopes` values are arrays so they may contain other values too (the above example
+    doesn't contain anything extra). The implementation should check that the correct values are found among them.
 
     If all the above checks succeed, the authorization passes.
 
