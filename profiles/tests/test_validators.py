@@ -49,6 +49,34 @@ class TestValidateFinnishNationalIdentificationNumber:
     def test_accept_valid_string(self, number):
         assert validate_finnish_national_identification_number(number) is None
 
+    @pytest.mark.parametrize(
+        "intermediary",
+        [
+            "+",
+            "-",
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "U",
+            "V",
+            "W",
+            "X",
+            "X",
+        ],
+    )
+    def test_accept_valid_intermediary_letters(self, intermediary):
+        assert (
+            validate_finnish_national_identification_number(f"010101{intermediary}1231")
+            is None
+        )
+
+    @pytest.mark.parametrize("intermediary", ["_", "G", "1"])
+    def test_deny_invalid_intermediary_letters(self, intermediary):
+        self.execute_denied_number_test(f"010101{intermediary}1231")
+
     @pytest.mark.parametrize("number", ["9101010-1111", "101010-11115"])
     def test_deny_extra_characters(self, number):
         self.execute_denied_number_test(number)
@@ -62,10 +90,6 @@ class TestValidateFinnishNationalIdentificationNumber:
 
     @pytest.mark.parametrize("number", ["401010-1111", "102010-1111"])
     def test_deny_non_existing_birthdate(self, number):
-        self.execute_denied_number_test(number)
-
-    @pytest.mark.parametrize("number", ["101010_1111", "101010a1111", "10101051111"])
-    def test_deny_invalid_century_character(self, number):
         self.execute_denied_number_test(number)
 
     @pytest.mark.parametrize("number", ["101010-i111", "101010-1a11", "101010-11.1"])
