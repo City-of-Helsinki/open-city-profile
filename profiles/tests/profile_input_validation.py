@@ -95,7 +95,7 @@ class ProfileInputValidationBase:
 
     def test_giving_invalid_ssn_causes_a_validation_error(self, user_gql_client):
         profile_input = {
-            "sensitivedata": {"ssn": "101010X1234"},
+            "sensitivedata": {"ssn": "101010H1234"},
         }
 
         executed = self._execute_query(user_gql_client, profile_input)
