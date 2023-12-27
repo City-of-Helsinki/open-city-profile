@@ -30,6 +30,7 @@ jobs:
         uses: andersinno/kolga-build-action@v2
 
   review:
+    if: false
     runs-on: ubuntu-latest
     needs: build
     name: Review
