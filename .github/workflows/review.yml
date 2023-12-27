@@ -38,7 +38,7 @@ jobs:
       - uses: andersinno/kolga-setup-action@v2
 
       - name: Review-Services
-        uses: andersinno/kolga-deploy-service-action@v2
+        uses: andersinno/kolga-deploy-service-action@v3
         with:
           projects: OPEN_CITY_PROFILE
         env:
