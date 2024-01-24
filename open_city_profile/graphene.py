@@ -79,7 +79,7 @@ class GQLDataLoaders:
 
 def _parler_field_resolver(attname, instance, info, language=None):
     if language:
-        return instance.safe_translation_getter(attname, language_code=language)
+        return instance.safe_translation_getter(attname, language_code=language.value)
 
     return getattr(instance, attname)
 
