@@ -38,27 +38,25 @@ class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBas
     def test_only_a_limited_set_of_fields_is_returned_from_the_profile(
         self, gql_schema
     ):
-        query_type = gql_schema.get_query_type()
+        query_type = gql_schema.query_type
         operation = query_type.fields["profileWithAccessToken"]
         return_type = operation.type
         return_fields = return_type.fields.keys()
-        assert set(return_fields) == set(
-            [
-                "firstName",
-                "lastName",
-                "nickname",
-                "image",
-                "language",
-                "id",
-                "primaryEmail",
-                "primaryPhone",
-                "primaryAddress",
-                "emails",
-                "phones",
-                "addresses",
-                "contactMethod",
-            ]
-        )
+        assert set(return_fields) == {
+            "firstName",
+            "lastName",
+            "nickname",
+            "image",
+            "language",
+            "id",
+            "primaryEmail",
+            "primaryPhone",
+            "primaryAddress",
+            "emails",
+            "phones",
+            "addresses",
+            "contactMethod",
+        }
 
     def test_using_non_existing_token_reports_profile_not_found_error(
         self, anon_user_gql_client
