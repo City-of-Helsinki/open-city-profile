@@ -29,15 +29,15 @@ class ServiceFactory(factory.django.DjangoModelFactory):
 
 class ServiceClientIdFactory(factory.django.DjangoModelFactory):
     service = factory.SubFactory(ServiceFactory)
-
-    @factory.lazy_attribute
-    def client_id(self):
-        id_format = f"{self.service.name}_client_id_%%%"
-        faker = factory.Faker("numerify", text=id_format)
-        return faker.generate()
+    client_id = factory.LazyAttribute(
+        lambda o: f"{o.service.name}{o.numerified_client_id}"
+    )
 
     class Meta:
         model = ServiceClientId
+
+    class Params:
+        numerified_client_id = factory.Faker("numerify", text="_client_id_%%%")
 
 
 class ServiceConnectionFactory(factory.django.DjangoModelFactory):
