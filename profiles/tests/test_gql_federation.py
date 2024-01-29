@@ -36,7 +36,7 @@ ENTITY_QUERY = """
 @pytest.mark.parametrize("schema_type", ["ProfileNode", "AddressNode"])
 def test_node_exposes_key_for_federation_gateway(schema_type, anon_user_gql_client):
     executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
-    type_definition = f'type {schema_type} implements Node  @key(fields: "id")'
+    type_definition = f'type {schema_type} implements Node @key(fields: "id")'
     sdl = executed["data"]["_service"]["sdl"]
     assert type_definition in sdl
 
@@ -91,8 +91,17 @@ def _create_address_and_variables(with_serviceconnection, service, user=None):
     return address, variables
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_anonymous_user_can_not_resolve_profile_entity(
     anon_user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -102,11 +111,20 @@ def test_anonymous_user_can_not_resolve_profile_entity(
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-    assert executed["data"]["_entities"] is None
+    assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_owner_can_resolve_profile_entity(
     user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -124,14 +142,23 @@ def test_owner_can_resolve_profile_entity(
         assert executed["data"] == expected_data
     elif not with_service:
         assert_match_error_code(executed, "SERVICE_NOT_IDENTIFIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_non_owner_user_can_not_resolve_profile_entity(
     user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -142,13 +169,19 @@ def test_non_owner_user_can_not_resolve_profile_entity(
 
     if not with_service:
         assert_match_error_code(executed, "SERVICE_NOT_IDENTIFIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_staff_user_can_resolve_profile_entity(
     user_gql_client, group, service, with_serviceconnection
 ):
@@ -168,11 +201,20 @@ def test_staff_user_can_resolve_profile_entity(
         assert executed["data"] == expected_data
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_anonymous_user_can_not_resolve_address_entity(
     anon_user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -182,11 +224,20 @@ def test_anonymous_user_can_not_resolve_address_entity(
     )
 
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-    assert executed["data"]["_entities"] is None
+    assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_owner_can_resolve_address_entity(
     user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -211,14 +262,23 @@ def test_owner_can_resolve_address_entity(
         assert executed["data"] == expected_data
     elif not with_service:
         assert_match_error_code(executed, "SERVICE_NOT_IDENTIFIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_service", (True, False))
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_service",
+    (pytest.param(True, id="service"), pytest.param(False, id="no_service")),
+)
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_non_owner_user_can_not_resolve_address_entity(
     user_gql_client, service, with_service, with_serviceconnection
 ):
@@ -229,13 +289,19 @@ def test_non_owner_user_can_not_resolve_address_entity(
 
     if not with_service:
         assert_match_error_code(executed, "SERVICE_NOT_IDENTIFIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
 
 
-@pytest.mark.parametrize("with_serviceconnection", (True, False))
+@pytest.mark.parametrize(
+    "with_serviceconnection",
+    (
+        pytest.param(True, id="serviceconnection"),
+        pytest.param(False, id="no_serviceconnection"),
+    ),
+)
 def test_staff_user_can_resolve_address_entity(
     user_gql_client, group, service, with_serviceconnection
 ):
@@ -261,4 +327,4 @@ def test_staff_user_can_resolve_address_entity(
         assert executed["data"] == expected_data
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
-        assert executed["data"]["_entities"] is None
+        assert executed["data"] is None
