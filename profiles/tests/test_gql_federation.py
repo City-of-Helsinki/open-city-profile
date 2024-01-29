@@ -43,18 +43,31 @@ def test_node_exposes_key_for_federation_gateway(schema_type, anon_user_gql_clie
 
 def test_profile_connection_schema_matches_federated_schema(anon_user_gql_client):
     executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
+
     assert (
-        "type ProfileNodeConnection {   pageInfo: PageInfo!   "
-        "edges: [ProfileNodeEdge]!   count: Int!   totalCount: Int! }"
-        in executed["data"]["_service"]["sdl"]
+        "type ProfileNodeConnection {\n"
+        '  """Pagination data for this connection."""\n'
+        "  pageInfo: PageInfo!\n"
+        "\n"
+        '  """Contains the nodes in this connection."""\n'
+        "  edges: [ProfileNodeEdge]!\n"
+        "  count: Int!\n"
+        "  totalCount: Int!\n"
+        "}\n" in executed["data"]["_service"]["sdl"]
     )
 
 
 def test_address_connection_schema_matches_federated_schema(anon_user_gql_client):
     executed = anon_user_gql_client.execute(GRAPHQL_SDL_QUERY)
+
     assert (
-        "type AddressNodeConnection {   pageInfo: PageInfo!   edges: [AddressNodeEdge]! }"
-        in executed["data"]["_service"]["sdl"]
+        "type AddressNodeConnection {\n"
+        '  """Pagination data for this connection."""\n'
+        "  pageInfo: PageInfo!\n"
+        "\n"
+        '  """Contains the nodes in this connection."""\n'
+        "  edges: [AddressNodeEdge]!\n"
+        "}\n" in executed["data"]["_service"]["sdl"]
     )
 
 
