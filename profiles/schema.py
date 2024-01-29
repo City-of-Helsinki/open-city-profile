@@ -240,11 +240,11 @@ class PrimaryContactInfoOrderingFilter(OrderingFilter):
     # 3. field name of the related model
 
     FIELDS = (
-        ("primaryCity", "Primary City", Address, "city"),
-        ("primaryPostalCode", "Primary Postal Code", Address, "postal_code"),
-        ("primaryAddress", "Primary Address", Address, "address"),
-        ("primaryCountryCode", "Primary Country Code", Address, "country_code"),
-        ("primaryEmail", "Primary Email", Email, "email"),
+        ("primary_city", "Primary City", Address, "city"),
+        ("primary_postal_code", "Primary Postal Code", Address, "postal_code"),
+        ("primary_address", "Primary Address", Address, "address"),
+        ("primary_country_code", "Primary Country Code", Address, "country_code"),
+        ("primary_email", "Primary Email", Email, "email"),
     )
 
     def __init__(self, *args, **kwargs):
@@ -334,8 +334,8 @@ class ProfileFilter(FilterSet):
     language = CharFilter()
     order_by = PrimaryContactInfoOrderingFilter(
         fields=(
-            ("first_name", "firstName"),
-            ("last_name", "lastName"),
+            ("first_name", "first_name"),
+            ("last_name", "last_name"),
             ("nickname", "nickname"),
             ("language", "language"),
         )
