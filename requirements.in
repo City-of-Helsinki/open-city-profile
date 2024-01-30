@@ -11,6 +11,7 @@ django-sanitized-dump
 django-searchable-encrypted-fields
 graphene-django
 graphene-federation
+graphql-sync-dataloaders
 git+https://github.com/City-of-Helsinki/graphene-validator.git@graphene3
 ipython
 iso3166

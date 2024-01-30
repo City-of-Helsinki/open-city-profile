@@ -1,54 +1,48 @@
+import uuid
 from collections import defaultdict
-
-from promise import Promise
-from promise.dataloader import DataLoader
+from typing import Callable, List
 
 from profiles.models import Address, Email, Phone
 
 
-def loader_for_profile(model):
-    class BaseByProfileIdLoader(DataLoader):
-        def batch_load_fn(self, profile_ids):
-            items_by_profile_ids = defaultdict(list)
-            for item in model.objects.filter(profile_id__in=profile_ids).iterator():
-                items_by_profile_ids[item.profile_id].append(item)
-            return Promise.resolve(
-                [items_by_profile_ids.get(profile_id, []) for profile_id in profile_ids]
-            )
+def loader_for_profile(model) -> Callable:
+    def batch_load_fn(profile_ids: List[uuid.UUID]) -> List[List[model]]:
+        items_by_profile_ids = defaultdict(list)
+        for item in model.objects.filter(profile_id__in=profile_ids).iterator():
+            items_by_profile_ids[item.profile_id].append(item)
 
-    return BaseByProfileIdLoader
+        return [items_by_profile_ids[profile_id] for profile_id in profile_ids]
+
+    return batch_load_fn
 
 
-def loader_for_profile_primary(model):
-    class BaseByProfileIdPrimaryLoader(DataLoader):
-        def batch_load_fn(self, profile_ids):
-            items_by_profile_ids = defaultdict()
-            for item in model.objects.filter(
-                profile_id__in=profile_ids, primary=True
-            ).iterator():
-                items_by_profile_ids[item.profile_id] = item
+def loader_for_profile_primary(model) -> Callable:
+    def batch_load_fn(profile_ids: List[uuid.UUID]) -> List[model]:
+        items_by_profile_ids = {}
+        for item in model.objects.filter(
+            profile_id__in=profile_ids, primary=True
+        ).iterator():
+            items_by_profile_ids[item.profile_id] = item
 
-            return Promise.resolve(
-                [items_by_profile_ids.get(profile_id) for profile_id in profile_ids]
-            )
+        return [items_by_profile_ids.get(profile_id) for profile_id in profile_ids]
 
-    return BaseByProfileIdPrimaryLoader
+    return batch_load_fn
 
 
-EmailsByProfileIdLoader = loader_for_profile(Email)
-PhonesByProfileIdLoader = loader_for_profile(Phone)
-AddressesByProfileIdLoader = loader_for_profile(Address)
+addresses_by_profile_id_loader = loader_for_profile(Address)
+emails_by_profile_id_loader = loader_for_profile(Email)
+phones_by_profile_id_loader = loader_for_profile(Phone)
 
-PrimaryEmailForProfileLoader = loader_for_profile_primary(Email)
-PrimaryPhoneForProfileLoader = loader_for_profile_primary(Phone)
-PrimaryAddressForProfileLoader = loader_for_profile_primary(Address)
+primary_address_for_profile_loader = loader_for_profile_primary(Address)
+primary_email_for_profile_loader = loader_for_profile_primary(Email)
+primary_phone_for_profile_loader = loader_for_profile_primary(Phone)
 
 
 __all__ = [
-    "AddressesByProfileIdLoader",
-    "EmailsByProfileIdLoader",
-    "PhonesByProfileIdLoader",
-    "PrimaryAddressForProfileLoader",
-    "PrimaryEmailForProfileLoader",
-    "PrimaryPhoneForProfileLoader",
+    "addresses_by_profile_id_loader",
+    "emails_by_profile_id_loader",
+    "phones_by_profile_id_loader",
+    "primary_address_for_profile_loader",
+    "primary_email_for_profile_loader",
+    "primary_phone_for_profile_loader",
 ]

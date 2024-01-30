@@ -81,10 +81,13 @@ graphql-core==3.2.3
     #   graphene-django
     #   graphene-federation
     #   graphql-relay
+    #   graphql-sync-dataloaders
 graphql-relay==3.2.0
     # via
     #   graphene
     #   graphene-django
+graphql-sync-dataloaders==0.1.1
+    # via -r requirements.in
 idna==3.6
     # via requests
 ipython==8.21.0

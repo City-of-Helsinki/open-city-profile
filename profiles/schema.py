@@ -547,13 +547,13 @@ class RestrictedProfileNode(DjangoObjectType):
         return info.context.primary_address_for_profile_loader.load(self.id)
 
     def resolve_emails(self: Profile, info, **kwargs):
-        return info.context.emails_by_profile_id_loader.load(self.id)
+        return self.emails.all()
 
     def resolve_phones(self: Profile, info, **kwargs):
-        return info.context.phones_by_profile_id_loader.load(self.id)
+        return self.phones.all()
 
     def resolve_addresses(self: Profile, info, **kwargs):
-        return info.context.addresses_by_profile_id_loader.load(self.id)
+        return self.addresses.all()
 
 
 @key(fields="id")

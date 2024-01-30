@@ -1061,7 +1061,7 @@ def test_can_not_remove_address_of_another_profile(user_gql_client):
 
 
 def test_change_primary_contact_details(
-    user_gql_client, email_data, phone_data, address_data
+    user_gql_client, email_data, phone_data, address_data, execution_context_class
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     PhoneFactory(profile=profile, primary=True)
@@ -1159,7 +1159,10 @@ def test_change_primary_contact_details(
         address_type=address_data["address_type"],
         primary="true",
     )
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(
+        mutation, execution_context_class=execution_context_class
+    )
+    assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
 
 
