@@ -2,7 +2,7 @@ from functools import wraps
 
 from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
-from graphql.execution.base import ResolveInfo
+from graphql.type import GraphQLResolveInfo
 
 from open_city_profile.exceptions import ServiceNotIdentifiedError
 
@@ -13,7 +13,7 @@ def _use_context_tests(*test_funcs):
         def wrapper(function):
             @wraps(function)
             def context_tester(*args, **kwargs):
-                info = next(arg for arg in args if isinstance(arg, ResolveInfo))
+                info = next(arg for arg in args if isinstance(arg, GraphQLResolveInfo))
                 context = info.context
 
                 for test_func in test_funcs:

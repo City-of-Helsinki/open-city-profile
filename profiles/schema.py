@@ -89,7 +89,7 @@ AllowedAddressType = graphene.Enum.from_enum(
 profile_updated = django.dispatch.Signal()
 
 
-def get_claimable_profile(token=None):
+def get_claimable_profile(token=None) -> Profile:
     claim_token = ClaimToken.objects.get(token=token)
     if claim_token.expires_at and claim_token.expires_at < timezone.now():
         raise TokenExpiredError("Token for claiming this profile has expired")
@@ -206,7 +206,7 @@ def update_sensitivedata(profile, sensitive_data):
 
 with override("en"):
     Language = graphene.Enum(
-        "Language", [(l[1].upper(), l[0]) for l in settings.LANGUAGES]
+        "Language", [(lang[1].upper(), lang[0]) for lang in settings.LANGUAGES]
     )
     ContactMethod = graphene.Enum(
         "ContactMethod", [(cm[1].upper(), cm[0]) for cm in settings.CONTACT_METHODS]
@@ -537,22 +537,22 @@ class RestrictedProfileNode(DjangoObjectType):
     language = Language()
     contact_method = ContactMethod()
 
-    def resolve_primary_email(self, info, **kwargs):
+    def resolve_primary_email(self: Profile, info, **kwargs):
         return info.context.primary_email_for_profile_loader.load(self.id)
 
-    def resolve_primary_phone(self, info, **kwargs):
+    def resolve_primary_phone(self: Profile, info, **kwargs):
         return info.context.primary_phone_for_profile_loader.load(self.id)
 
-    def resolve_primary_address(self, info, **kwargs):
+    def resolve_primary_address(self: Profile, info, **kwargs):
         return info.context.primary_address_for_profile_loader.load(self.id)
 
-    def resolve_emails(self, info, **kwargs):
+    def resolve_emails(self: Profile, info, **kwargs):
         return info.context.emails_by_profile_id_loader.load(self.id)
 
-    def resolve_phones(self, info, **kwargs):
+    def resolve_phones(self: Profile, info, **kwargs):
         return info.context.phones_by_profile_id_loader.load(self.id)
 
-    def resolve_addresses(self, info, **kwargs):
+    def resolve_addresses(self: Profile, info, **kwargs):
         return info.context.addresses_by_profile_id_loader.load(self.id)
 
 
@@ -579,10 +579,10 @@ class ProfileNode(RestrictedProfileNode):
         "privileges to access this information.",
     )
 
-    def resolve_service_connections(self, info, **kwargs):
+    def resolve_service_connections(self: Profile, info, **kwargs):
         return self.effective_service_connections_qs()
 
-    def resolve_sensitivedata(self, info, **kwargs):
+    def resolve_sensitivedata(self: Profile, info, **kwargs):
         service = info.context.service
 
         if info.context.user == self.user or info.context.user.has_perm(
@@ -593,7 +593,7 @@ class ProfileNode(RestrictedProfileNode):
             # TODO: We should return PermissionDenied as a partial error here.
             return None
 
-    def resolve_verified_personal_information(self, info, **kwargs):
+    def resolve_verified_personal_information(self: Profile, info, **kwargs):
         loa = info.context.user_auth.data.get("loa")
         if (
             info.context.user == self.user and loa in ["substantial", "high"]
@@ -608,7 +608,7 @@ class ProfileNode(RestrictedProfileNode):
             )
 
     @login_and_service_required
-    def __resolve_reference(self, info, **kwargs):
+    def __resolve_reference(self: Profile, info, **kwargs):
         profile = graphene.Node.get_node_from_global_id(
             info, self.id, only_type=ProfileNode
         )

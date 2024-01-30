@@ -2,7 +2,6 @@ from string import Template
 
 import pytest
 from django.utils.translation import gettext_lazy as _
-from graphql_relay.node.node import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_match_error_code
@@ -12,6 +11,7 @@ from profiles.models import Profile
 from services.tests.factories import ServiceConnectionFactory, ServiceFactory
 from utils import keycloak
 
+from ..helpers import to_global_id
 from .factories import (
     AddressFactory,
     EmailFactory,

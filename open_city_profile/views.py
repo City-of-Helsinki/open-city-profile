@@ -93,8 +93,7 @@ class GraphQLView(BaseGraphQLView):
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send some of them to Sentry"""
         result = super().execute_graphql_request(request, data, query, *args, **kwargs)
-        # If 'invalid' is set, it's a bad request
-        if result and result.errors and not result.invalid:
+        if result and result.errors:
             errors = [
                 e
                 for e in result.errors

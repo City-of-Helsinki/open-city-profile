@@ -2,12 +2,12 @@ from datetime import timedelta
 from string import Template
 
 from django.utils import timezone
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
+from ..helpers import to_global_id
 from .factories import (
     ClaimTokenFactory,
     EmailFactory,
@@ -164,6 +164,7 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     }
 
     executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+    assert "errors" not in executed
     assert executed["data"] == expected_data
 
 

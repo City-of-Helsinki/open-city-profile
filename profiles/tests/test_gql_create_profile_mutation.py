@@ -111,17 +111,19 @@ ${email_input}
                     ]
                 },
                 "emails": {
-                    "edges": [
-                        {
-                            "node": {
-                                "emailType": email_data["email_type"],
-                                "email": email_data["email"],
-                                "primary": True,
+                    "edges": (
+                        [
+                            {
+                                "node": {
+                                    "emailType": email_data["email_type"],
+                                    "email": email_data["email"],
+                                    "primary": True,
+                                }
                             }
-                        }
-                    ]
-                    if with_email
-                    else []
+                        ]
+                        if with_email
+                        else []
+                    )
                 },
                 "serviceConnections": {
                     "edges": [

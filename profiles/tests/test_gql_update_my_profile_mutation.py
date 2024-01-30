@@ -1,7 +1,6 @@
 from string import Template
 
 import pytest
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Address, Email, Phone, Profile
@@ -9,6 +8,7 @@ from profiles.tests.profile_input_validation import ExistingProfileInputValidati
 from services.tests.factories import ServiceConnectionFactory
 from utils import keycloak
 
+from ..helpers import to_global_id
 from .factories import (
     AddressFactory,
     EmailFactory,

@@ -134,7 +134,10 @@ def test_user_can_delete_their_profile(
         assert Profile.objects.filter(pk=profile.pk).exists()
 
 
-@pytest.mark.parametrize("should_fail", [False, True])
+@pytest.mark.parametrize(
+    "should_fail",
+    [pytest.param(False, id="should_not_fail"), pytest.param(True, id="should_fail")],
+)
 def test_user_can_dry_run_profile_deletion(
     user_gql_client,
     service_1,

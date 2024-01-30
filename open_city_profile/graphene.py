@@ -151,7 +151,7 @@ class DjangoParlerObjectType(DjangoObjectType):
         interfaces=(),
         convert_choices_to_enum=True,
         _meta=None,
-        **options
+        **options,
     ):
         assert issubclass(model, TranslatableModel), (
             'You need to pass a valid Django Parler Model in {}.Meta, received "{}".'
@@ -176,5 +176,5 @@ class DjangoParlerObjectType(DjangoObjectType):
             interfaces=interfaces,
             convert_choices_to_enum=convert_choices_to_enum,
             _meta=_meta,
-            **options
+            **options,
         )

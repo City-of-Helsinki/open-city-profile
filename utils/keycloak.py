@@ -77,7 +77,7 @@ class KeycloakAdminClient:
             )
 
             if not result.ok:
-                raise AuthenticationError(f"Couldn't authenticate to Keycloak")
+                raise AuthenticationError("Couldn't authenticate to Keycloak")
 
             client_credentials = result.json()
             access_token = client_credentials["access_token"]
@@ -137,7 +137,7 @@ class KeycloakAdminClient:
 
     def send_verify_email(self, user_id):
         url = self._single_user_url(user_id)
-        url += f"/send-verify-email"
+        url += "/send-verify-email"
 
         return self._handle_user_request(
             lambda auth: self._session.put(

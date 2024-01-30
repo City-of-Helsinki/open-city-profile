@@ -1,11 +1,12 @@
 import pytest
-from graphql_relay import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.schema import AddressNode, ProfileNode
 from profiles.tests.factories import AddressFactory, ProfileFactory
 from services.tests.factories import ServiceConnectionFactory
+
+from ..helpers import to_global_id
 
 GRAPHQL_SDL_QUERY = """
     query {

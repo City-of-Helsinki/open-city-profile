@@ -1,8 +1,8 @@
+import enumfields
 from django.utils.translation import gettext_lazy as _
-from enumfields import Enum
 
 
-class ServiceType(Enum):
+class ServiceType(enumfields.Enum):
     HKI_MY_DATA = "hki_my_data"
     BERTH = "berth"
     YOUTH_MEMBERSHIP = "youth_membership"
@@ -15,7 +15,7 @@ class ServiceType(Enum):
         GODCHILDREN_OF_CULTURE = _("Godchildren of Culture")
 
 
-class ServiceIdp(Enum):
+class ServiceIdp(enumfields.Enum):
     TUNNISTAMO = "tunnistamo"
     KEYCLOAK = "keycloak"
 

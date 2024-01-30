@@ -28,7 +28,7 @@ def test_presenting_an_expired_access_token_with_any_operation_returns_jwt_authe
     assert len(errors) == 2
 
     for path in ["myProfile", "_service"]:
-        assert data[path] is None
+        assert data is None
 
         error = next(err for err in errors if err["path"] == [path])
         assert error["extensions"]["code"] == "JWT_AUTHENTICATION_ERROR"
@@ -51,7 +51,7 @@ def test_presenting_a_logged_out_token_returns_jwt_authentication_error(live_ser
     assert len(errors) == 2
 
     for path in ["myProfile", "_service"]:
-        assert data[path] is None
+        assert data is None
 
         error = next(err for err in errors if err["path"] == [path])
         assert error["extensions"]["code"] == "JWT_AUTHENTICATION_ERROR"

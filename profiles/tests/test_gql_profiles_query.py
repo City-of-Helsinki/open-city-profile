@@ -1,8 +1,9 @@
-import pytest
 import uuid
+from string import Template
+
+import pytest
 from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import assign_perm
-from string import Template
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code

@@ -2,11 +2,11 @@ from datetime import timedelta
 from string import Template
 
 from django.utils import timezone
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 
+from ..helpers import to_global_id
 from .factories import ClaimTokenFactory, ProfileFactory
 
 

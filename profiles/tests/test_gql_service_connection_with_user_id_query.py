@@ -1,10 +1,11 @@
 import datetime
 import uuid
 
-from graphql_relay import to_global_id
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests.asserts import assert_match_error_code
+
+from ..helpers import to_global_id
 
 QUERY = """
     query ($userId: UUID!, $serviceClientId: String!)

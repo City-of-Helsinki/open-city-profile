@@ -93,9 +93,11 @@ def test_changing_email_causes_it_to_be_marked_unverified(
     mocked_send_verify_email = mocker.patch.object(
         keycloak.KeycloakAdminClient,
         "send_verify_email",
-        side_effect=None
-        if send_verify_email_succeeds
-        else Exception("send_verify_email failed"),
+        side_effect=(
+            None
+            if send_verify_email_succeeds
+            else Exception("send_verify_email failed")
+        ),
     )
 
     profile = ProfileFactory(
