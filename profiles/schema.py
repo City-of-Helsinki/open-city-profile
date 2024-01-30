@@ -1382,7 +1382,7 @@ def _raise_exception_on_error(info, results):
     # No need to raise exception if the client requested results
     if [
         field
-        for field in info.field_asts[0].selection_set.selections
+        for field in info.field_nodes[0].selection_set.selections
         if field.name.value in ["result", "results"]
     ]:
         return
