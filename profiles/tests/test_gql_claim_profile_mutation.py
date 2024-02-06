@@ -2,12 +2,12 @@ from datetime import timedelta
 from string import Template
 
 from django.utils import timezone
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
+from ..helpers import to_global_id
 from .factories import (
     ClaimTokenFactory,
     EmailFactory,
@@ -129,7 +129,9 @@ def test_can_not_delete_primary_email(user_gql_client):
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
 
-def test_changing_an_email_address_marks_it_unverified(user_gql_client):
+def test_changing_an_email_address_marks_it_unverified(
+    user_gql_client, execution_context_class
+):
     profile = ProfileFactory(user=None)
     email = EmailFactory(profile=profile, verified=True)
     claim_token = ClaimTokenFactory(profile=profile)
@@ -163,7 +165,12 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
         },
     }
 
-    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+    executed = user_gql_client.execute(
+        CLAIM_PROFILE_MUTATION,
+        variables=variables,
+        execution_context_class=execution_context_class,
+    )
+    assert "errors" not in executed
     assert executed["data"] == expected_data
 
 

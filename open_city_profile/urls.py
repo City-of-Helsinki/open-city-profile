@@ -6,6 +6,7 @@ from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+from graphql_sync_dataloaders import DeferredExecutionContext
 
 from open_city_profile.views import GraphQLView
 
@@ -14,7 +15,10 @@ urlpatterns = [
     path(
         "graphql/",
         csrf_exempt(
-            GraphQLView.as_view(graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG)
+            GraphQLView.as_view(
+                graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG,
+                execution_context_class=DeferredExecutionContext,
+            )
         ),
     ),
     path("auth/", include("helusers.urls")),

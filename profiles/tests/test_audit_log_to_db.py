@@ -4,7 +4,6 @@ from string import Template
 from typing import Any, List, Optional
 
 import pytest
-from graphql_relay import to_global_id
 from guardian.shortcuts import assign_perm
 
 from audit_log.models import LogEntry
@@ -22,6 +21,7 @@ from profiles.models import (
 )
 from services.tests.factories import ServiceConnectionFactory
 
+from ..helpers import to_global_id
 from .factories import (
     AddressFactory,
     EmailFactory,

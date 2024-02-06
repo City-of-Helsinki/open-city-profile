@@ -38,7 +38,7 @@ def generate_jwt_token(extra_claims=None):
         "iat": get_unix_timestamp_now() - 10,
         "aud": AUDIENCE,
         "sub": str(uuid.uuid4()),
-        "sid": get_random_string(),
+        "sid": get_random_string(12),
         "exp": get_unix_timestamp_now() + 120,
     }
     jwt_data.update(extra_claims)

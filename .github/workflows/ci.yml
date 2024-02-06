@@ -5,11 +5,9 @@ on:
     branches: [develop, master]
   pull_request:
 
-
 env:
   SECRET_KEY: topsecret123
   FIELD_ENCRYPTION_KEYS: f164ec6bd6fbc4aef5647abc15199da0f9badcc1d2127bde2087ae0d794a9a0b
-
 
 jobs:
   test:
@@ -18,7 +16,7 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:9.6-2.5
+        image: postgis/postgis:13-3.2
         ports:
           - 5432:5432
         options: >-
@@ -33,15 +31,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.7'
+          python-version: '3.11'
 
       - name: Cache pip packages
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-pip-modules
         with:
@@ -74,15 +72,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.7'
+          python-version: '3.11'
 
       - name: Cache pip packages
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-pip-modules
         with:
@@ -99,7 +97,7 @@ jobs:
         run: flake8
 
       - name: Import sorting
-        run: isort -c
+        run: isort . --check --diff
 
       - name: Formatting
         run: black --check .

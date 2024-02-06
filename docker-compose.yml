@@ -1,7 +1,7 @@
 version: '3.7'
 services:
     postgres:
-        image: helsinkitest/postgis:9.6-2.5-alpine
+        image: postgis/postgis:13-3.2-alpine
         restart: on-failure
         environment:
             POSTGRES_USER: open_city_profile
@@ -35,7 +35,6 @@ volumes:
         pgdata:
             driver: local
         django-media-volume:
-
 
 networks:
     default:

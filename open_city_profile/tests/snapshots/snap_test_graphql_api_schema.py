@@ -4,57 +4,56 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
-snapshots['test_graphql_schema_matches_the_reference 1'] = '''schema {
-  query: Query
-  mutation: Mutation
+snapshots['test_graphql_schema_matches_the_reference 1'] = '''type Query {
+  services(offset: Int, before: String, after: String, first: Int, last: Int, clientId: String): ServiceNodeConnection
+  profile(id: ID!, serviceType: ServiceType): ProfileNode
+  myProfile: ProfileNode
+  downloadMyProfile(authorizationCode: String!, authorizationCodeKeycloak: String): JSONString
+  profiles(serviceType: ServiceType, offset: Int, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, orderBy: String): ProfileNodeConnection
+  claimableProfile(token: UUID!): ProfileNode
+  profileWithAccessToken(token: UUID!): RestrictedProfileNode
+  serviceConnectionWithUserId(userId: UUID!, serviceClientId: String!): ServiceConnectionType
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
 }
 
-input AddServiceConnectionMutationInput {
-  serviceConnection: ServiceConnectionInput!
-  clientMutationId: String
-}
-
-type AddServiceConnectionMutationPayload {
-  serviceConnection: ServiceConnectionType
-  clientMutationId: String
-}
-
-type AddressNode implements Node {
-  id: ID!
-  primary: Boolean!
-  address: String!
-  postalCode: String!
-  city: String!
-  countryCode: String!
-  addressType: AddressType
-}
-
-type AddressNodeConnection {
+type ServiceNodeConnection {
   pageInfo: PageInfo!
-  edges: [AddressNodeEdge]!
+  edges: [ServiceNodeEdge]!
 }
 
-type AddressNodeEdge {
-  node: AddressNode
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type ServiceNodeEdge {
+  node: ServiceNode
   cursor: String!
 }
 
-enum AddressType {
-  NONE
-  WORK
-  HOME
-  OTHER
+type ServiceNode implements Node {
+  id: ID!
+  name: String!
+  allowedDataFields(offset: Int, before: String, after: String, first: Int, last: Int): AllowedDataFieldNodeConnection!
+  createdAt: DateTime!
+  gdprUrl: String!
+  gdprQueryScope: String!
+  gdprDeleteScope: String!
+  type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
+  requiresServiceConnection: Boolean!
+  serviceconnectionSet(offset: Int, before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection! @deprecated(reason: "Always returns an empty result. Getting connections for a service is not supported and there is no replacement.")
+  isPureKeycloak: Boolean!
+  title(language: TranslationLanguage): String
+  description(language: TranslationLanguage): String
 }
 
-type AllowedDataFieldNode implements Node {
+interface Node {
   id: ID!
-  fieldName: String!
-  order: Int!
-  serviceSet(before: String, after: String, first: Int, last: Int): ServiceNodeConnection!
-  label(language: TranslationLanguage): String
 }
 
 type AllowedDataFieldNodeConnection {
@@ -67,140 +66,69 @@ type AllowedDataFieldNodeEdge {
   cursor: String!
 }
 
-input ClaimProfileMutationInput {
-  token: UUID!
-  profile: ProfileInput
-  clientMutationId: String
+type AllowedDataFieldNode implements Node {
+  id: ID!
+  fieldName: String!
+  order: Int!
+  serviceSet(offset: Int, before: String, after: String, first: Int, last: Int): ServiceNodeConnection!
+  label(language: TranslationLanguage): String
 }
 
-type ClaimProfileMutationPayload {
-  profile: ProfileNode
-  clientMutationId: String
-}
-
-enum ContactMethod {
-  EMAIL
-  SMS
-}
-
-input CreateAddressInput {
-  countryCode: String
-  primary: Boolean
-  address: String!
-  postalCode: String!
-  city: String!
-  addressType: AddressType!
-}
-
-input CreateEmailInput {
-  primary: Boolean
-  email: String!
-  emailType: EmailType!
-}
-
-input CreateMyProfileMutationInput {
-  profile: ProfileInput!
-  clientMutationId: String
-}
-
-type CreateMyProfileMutationPayload {
-  profile: ProfileNode
-  clientMutationId: String
-}
-
-input CreateMyProfileTemporaryReadAccessTokenMutationInput {
-  clientMutationId: String
-}
-
-type CreateMyProfileTemporaryReadAccessTokenMutationPayload {
-  temporaryReadAccessToken: TemporaryReadAccessTokenNode
-  clientMutationId: String
-}
-
-input CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput {
-  userId: UUID!
-  serviceClientId: String
-  profile: ProfileWithVerifiedPersonalInformationInput!
-}
-
-type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
-  profile: ProfileWithVerifiedPersonalInformationOutput
-}
-
-input CreateOrUpdateUserProfileMutationInput {
-  userId: UUID!
-  serviceClientId: String
-  profile: ProfileWithVerifiedPersonalInformationInput!
-}
-
-type CreateOrUpdateUserProfileMutationPayload {
-  profile: ProfileNode
-}
-
-input CreatePhoneInput {
-  primary: Boolean
-  phone: String!
-  phoneType: PhoneType!
-}
-
-input CreateProfileInput {
-  firstName: String
-  lastName: String
-  nickname: String
-  image: String
-  language: Language
-  contactMethod: ContactMethod
-  addEmails: [CreateEmailInput]
-  addPhones: [CreatePhoneInput]
-  addAddresses: [CreateAddressInput]
-  sensitivedata: SensitiveDataFields
-  updateEmails: [UpdateEmailInput]
-  removeEmails: [ID]
-  updatePhones: [UpdatePhoneInput]
-  removePhones: [ID]
-  updateAddresses: [UpdateAddressInput]
-  removeAddresses: [ID]
-}
-
-input CreateProfileMutationInput {
-  serviceType: ServiceType
-  profile: CreateProfileInput!
-  clientMutationId: String
-}
-
-type CreateProfileMutationPayload {
-  profile: ProfileNode
-  clientMutationId: String
+enum TranslationLanguage {
+  FI
+  EN
+  SV
 }
 
 scalar DateTime
 
-input DeleteMyProfileMutationInput {
-  authorizationCode: String!
-  authorizationCodeKeycloak: String
-  dryRun: Boolean
-  clientMutationId: String
+enum ServiceType {
+  HKI_MY_DATA @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  BERTH @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  YOUTH_MEMBERSHIP @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
+  GODCHILDREN_OF_CULTURE @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
 }
 
-type DeleteMyProfileMutationPayload {
-  results: [ServiceConnectionDeletionResult!]!
-  clientMutationId: String
+type ServiceConnectionTypeConnection {
+  pageInfo: PageInfo!
+  edges: [ServiceConnectionTypeEdge]!
 }
 
-input DeleteMyServiceDataMutationInput {
-  authorizationCode: String!
-  authorizationCodeKeycloak: String
-  serviceName: String!
-  dryRun: Boolean
+type ServiceConnectionTypeEdge {
+  node: ServiceConnectionType
+  cursor: String!
 }
 
-type DeleteMyServiceDataMutationPayload {
-  result: ServiceConnectionDeletionResult!
+type ServiceConnectionType implements Node {
+  service: ServiceNode!
+  createdAt: DateTime!
+  enabled: Boolean!
+  id: ID!
 }
 
-input EmailInput {
-  email: String!
-  verified: Boolean
+type ProfileNode implements Node {
+  firstName: String!
+  lastName: String!
+  nickname: String!
+  language: Language
+  id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
+  primaryEmail: EmailNode
+  primaryPhone: PhoneNode
+  primaryAddress: AddressNode
+  emails(offset: Int, before: String, after: String, first: Int, last: Int): EmailNodeConnection
+  phones(offset: Int, before: String, after: String, first: Int, last: Int): PhoneNodeConnection
+  addresses(offset: Int, before: String, after: String, first: Int, last: Int): AddressNodeConnection
+  contactMethod: ContactMethod
+  sensitivedata: SensitiveDataNode
+  serviceConnections(offset: Int, before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
+  verifiedPersonalInformation: VerifiedPersonalInformationNode
+}
+
+enum Language {
+  FINNISH
+  ENGLISH
+  SWEDISH
 }
 
 type EmailNode implements Node {
@@ -209,6 +137,45 @@ type EmailNode implements Node {
   email: String!
   emailType: EmailType
   verified: Boolean!
+}
+
+enum EmailType {
+  NONE
+  WORK
+  PERSONAL
+  OTHER
+}
+
+type PhoneNode implements Node {
+  id: ID!
+  primary: Boolean!
+  phone: String!
+  phoneType: PhoneType
+}
+
+enum PhoneType {
+  NONE
+  WORK
+  HOME
+  MOBILE
+  OTHER
+}
+
+type AddressNode implements Node {
+  id: ID!
+  primary: Boolean!
+  address: String!
+  postalCode: String!
+  city: String!
+  countryCode: String!
+  addressType: AddressType
+}
+
+enum AddressType {
+  NONE
+  WORK
+  HOME
+  OTHER
 }
 
 type EmailNodeConnection {
@@ -221,19 +188,98 @@ type EmailNodeEdge {
   cursor: String!
 }
 
-enum EmailType {
-  NONE
-  WORK
-  PERSONAL
-  OTHER
+type PhoneNodeConnection {
+  pageInfo: PageInfo!
+  edges: [PhoneNodeEdge]!
+}
+
+type PhoneNodeEdge {
+  node: PhoneNode
+  cursor: String!
+}
+
+type AddressNodeConnection {
+  pageInfo: PageInfo!
+  edges: [AddressNodeEdge]!
+}
+
+type AddressNodeEdge {
+  node: AddressNode
+  cursor: String!
+}
+
+enum ContactMethod {
+  EMAIL
+  SMS
+}
+
+type SensitiveDataNode implements Node {
+  id: ID!
+  ssn: String!
+}
+
+type VerifiedPersonalInformationNode {
+  firstName: String!
+  lastName: String!
+  givenName: String!
+  nationalIdentificationNumber: String!
+  municipalityOfResidence: String!
+  municipalityOfResidenceNumber: String!
+  permanentAddress: VerifiedPersonalInformationAddressNode
+  temporaryAddress: VerifiedPersonalInformationAddressNode
+  permanentForeignAddress: VerifiedPersonalInformationForeignAddressNode
+}
+
+type VerifiedPersonalInformationAddressNode {
+  streetAddress: String!
+  postalCode: String!
+  postOffice: String!
+}
+
+type VerifiedPersonalInformationForeignAddressNode {
+  streetAddress: String!
+  additionalAddress: String!
+  countryCode: String!
 }
 
 scalar JSONString
 
-enum Language {
-  FINNISH
-  ENGLISH
-  SWEDISH
+type ProfileNodeConnection {
+  pageInfo: PageInfo!
+  edges: [ProfileNodeEdge]!
+  count: Int!
+  totalCount: Int!
+}
+
+type ProfileNodeEdge {
+  node: ProfileNode
+  cursor: String!
+}
+
+scalar UUID
+
+type RestrictedProfileNode implements Node {
+  firstName: String!
+  lastName: String!
+  nickname: String!
+  language: Language
+  id: ID!
+  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
+  primaryEmail: EmailNode
+  primaryPhone: PhoneNode
+  primaryAddress: AddressNode
+  emails(offset: Int, before: String, after: String, first: Int, last: Int): EmailNodeConnection
+  phones(offset: Int, before: String, after: String, first: Int, last: Int): PhoneNodeConnection
+  addresses(offset: Int, before: String, after: String, first: Int, last: Int): AddressNodeConnection
+  contactMethod: ContactMethod
+}
+
+union _Entity = ProfileNode | AddressNode
+
+scalar _Any
+
+type _Service {
+  sdl: String
 }
 
 type Mutation {
@@ -250,40 +296,33 @@ type Mutation {
   createMyProfileTemporaryReadAccessToken(input: CreateMyProfileTemporaryReadAccessTokenMutationInput!): CreateMyProfileTemporaryReadAccessTokenMutationPayload
 }
 
-interface Node {
-  id: ID!
+type AddServiceConnectionMutationPayload {
+  serviceConnection: ServiceConnectionType
+  clientMutationId: String
 }
 
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
+input AddServiceConnectionMutationInput {
+  serviceConnection: ServiceConnectionInput!
+  clientMutationId: String
 }
 
-type PhoneNode implements Node {
-  id: ID!
-  primary: Boolean!
-  phone: String!
-  phoneType: PhoneType
+input ServiceConnectionInput {
+  service: ServiceInput
+  enabled: Boolean
 }
 
-type PhoneNodeConnection {
-  pageInfo: PageInfo!
-  edges: [PhoneNodeEdge]!
+input ServiceInput {
+  type: ServiceType
 }
 
-type PhoneNodeEdge {
-  node: PhoneNode
-  cursor: String!
+type CreateMyProfileMutationPayload {
+  profile: ProfileNode
+  clientMutationId: String
 }
 
-enum PhoneType {
-  NONE
-  WORK
-  HOME
-  MOBILE
-  OTHER
+input CreateMyProfileMutationInput {
+  profile: ProfileInput!
+  clientMutationId: String
 }
 
 input ProfileInput {
@@ -305,174 +344,44 @@ input ProfileInput {
   removeAddresses: [ID]
 }
 
-type ProfileNode implements Node {
-  firstName: String!
-  lastName: String!
-  nickname: String!
-  language: Language
-  id: ID!
-  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
-  primaryEmail: EmailNode
-  primaryPhone: PhoneNode
-  primaryAddress: AddressNode
-  emails(before: String, after: String, first: Int, last: Int): EmailNodeConnection
-  phones(before: String, after: String, first: Int, last: Int): PhoneNodeConnection
-  addresses(before: String, after: String, first: Int, last: Int): AddressNodeConnection
-  contactMethod: ContactMethod
-  sensitivedata: SensitiveDataNode
-  serviceConnections(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
-  verifiedPersonalInformation: VerifiedPersonalInformationNode
+input CreateEmailInput {
+  primary: Boolean
+  email: String!
+  emailType: EmailType!
 }
 
-type ProfileNodeConnection {
-  pageInfo: PageInfo!
-  edges: [ProfileNodeEdge]!
-  count: Int!
-  totalCount: Int!
+input CreatePhoneInput {
+  primary: Boolean
+  phone: String!
+  phoneType: PhoneType!
 }
 
-type ProfileNodeEdge {
-  node: ProfileNode
-  cursor: String!
-}
-
-input ProfileWithVerifiedPersonalInformationInput {
-  firstName: String
-  lastName: String
-  verifiedPersonalInformation: VerifiedPersonalInformationInput
-  primaryEmail: EmailInput
-}
-
-type ProfileWithVerifiedPersonalInformationOutput implements Node {
-  id: ID!
-}
-
-type Query {
-  services(before: String, after: String, first: Int, last: Int, clientId: String): ServiceNodeConnection
-  profile(id: ID!, serviceType: ServiceType): ProfileNode
-  myProfile: ProfileNode
-  downloadMyProfile(authorizationCode: String!, authorizationCodeKeycloak: String): JSONString
-  profiles(serviceType: ServiceType, before: String, after: String, first: Int, last: Int, id: [UUID!], firstName: String, lastName: String, nickname: String, nationalIdentificationNumber: String, emails_Email: String, emails_EmailType: String, emails_Primary: Boolean, emails_Verified: Boolean, phones_Phone: String, phones_PhoneType: String, phones_Primary: Boolean, addresses_Address: String, addresses_PostalCode: String, addresses_City: String, addresses_CountryCode: String, addresses_AddressType: String, addresses_Primary: Boolean, language: String, orderBy: String): ProfileNodeConnection
-  claimableProfile(token: UUID!): ProfileNode
-  profileWithAccessToken(token: UUID!): RestrictedProfileNode
-  serviceConnectionWithUserId(userId: UUID!, serviceClientId: String!): ServiceConnectionType
-  _entities(representations: [_Any]): [_Entity]
-  _service: _Service
-}
-
-type RestrictedProfileNode implements Node {
-  firstName: String!
-  lastName: String!
-  nickname: String!
-  language: Language
-  id: ID!
-  image: String @deprecated(reason: "There is no image in the Profile. This field always just returns null.")
-  primaryEmail: EmailNode
-  primaryPhone: PhoneNode
-  primaryAddress: AddressNode
-  emails(before: String, after: String, first: Int, last: Int): EmailNodeConnection
-  phones(before: String, after: String, first: Int, last: Int): PhoneNodeConnection
-  addresses(before: String, after: String, first: Int, last: Int): AddressNodeConnection
-  contactMethod: ContactMethod
+input CreateAddressInput {
+  countryCode: String
+  primary: Boolean
+  address: String!
+  postalCode: String!
+  city: String!
+  addressType: AddressType!
 }
 
 input SensitiveDataFields {
   ssn: String
 }
 
-type SensitiveDataNode implements Node {
+input UpdateEmailInput {
+  primary: Boolean
   id: ID!
-  ssn: String!
+  email: String
+  emailType: EmailType
 }
 
-type ServiceConnectionDeletionError {
-  code: String!
-  message: [TranslatedMessage!]!
-}
-
-type ServiceConnectionDeletionResult {
-  service: ServiceNode!
-  dryRun: Boolean!
-  success: Boolean!
-  errors: [ServiceConnectionDeletionError!]!
-}
-
-input ServiceConnectionInput {
-  service: ServiceInput
-  enabled: Boolean
-}
-
-type ServiceConnectionType implements Node {
-  service: ServiceNode!
-  createdAt: DateTime!
-  enabled: Boolean!
+input UpdatePhoneInput {
+  primary: Boolean
   id: ID!
+  phone: String
+  phoneType: PhoneType
 }
-
-type ServiceConnectionTypeConnection {
-  pageInfo: PageInfo!
-  edges: [ServiceConnectionTypeEdge]!
-}
-
-type ServiceConnectionTypeEdge {
-  node: ServiceConnectionType
-  cursor: String!
-}
-
-input ServiceInput {
-  type: ServiceType
-}
-
-type ServiceNode implements Node {
-  id: ID!
-  name: String!
-  allowedDataFields(before: String, after: String, first: Int, last: Int): AllowedDataFieldNodeConnection!
-  createdAt: DateTime!
-  gdprUrl: String!
-  gdprQueryScope: String!
-  gdprDeleteScope: String!
-  type: ServiceType @deprecated(reason: "See \'name\' field for a replacement.")
-  requiresServiceConnection: Boolean!
-  serviceconnectionSet(before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection! @deprecated(reason: "Always returns an empty result. Getting connections for a service is not supported and there is no replacement.")
-  isPureKeycloak: Boolean!
-  title(language: TranslationLanguage): String
-  description(language: TranslationLanguage): String
-}
-
-type ServiceNodeConnection {
-  pageInfo: PageInfo!
-  edges: [ServiceNodeEdge]!
-}
-
-type ServiceNodeEdge {
-  node: ServiceNode
-  cursor: String!
-}
-
-enum ServiceType {
-  HKI_MY_DATA @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
-  BERTH @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
-  YOUTH_MEMBERSHIP @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
-  GODCHILDREN_OF_CULTURE @deprecated(reason: "The whole ServiceType enum is deprecated and shouldn\'t be used anymore. There are different replacements in various places, depending on how this type was used.")
-}
-
-type TemporaryReadAccessTokenNode {
-  token: UUID!
-  expiresAt: DateTime
-}
-
-type TranslatedMessage {
-  lang: String!
-  text: String!
-}
-
-enum TranslationLanguage {
-  FI
-  EN
-  SV
-}
-
-scalar UUID
 
 input UpdateAddressInput {
   countryCode: String
@@ -484,16 +393,94 @@ input UpdateAddressInput {
   addressType: AddressType
 }
 
-input UpdateEmailInput {
-  primary: Boolean
-  id: ID!
-  email: String
-  emailType: EmailType
+type CreateProfileMutationPayload {
+  profile: ProfileNode
+  clientMutationId: String
 }
 
-input UpdateMyProfileMutationInput {
-  profile: ProfileInput!
+input CreateProfileMutationInput {
+  serviceType: ServiceType
+  profile: CreateProfileInput!
   clientMutationId: String
+}
+
+input CreateProfileInput {
+  firstName: String
+  lastName: String
+  nickname: String
+  image: String
+  language: Language
+  contactMethod: ContactMethod
+  addEmails: [CreateEmailInput]
+  addPhones: [CreatePhoneInput]
+  addAddresses: [CreateAddressInput]
+  sensitivedata: SensitiveDataFields
+  updateEmails: [UpdateEmailInput]
+  removeEmails: [ID]
+  updatePhones: [UpdatePhoneInput]
+  removePhones: [ID]
+  updateAddresses: [UpdateAddressInput]
+  removeAddresses: [ID]
+}
+
+type CreateOrUpdateProfileWithVerifiedPersonalInformationMutationPayload {
+  profile: ProfileWithVerifiedPersonalInformationOutput
+}
+
+type ProfileWithVerifiedPersonalInformationOutput implements Node {
+  id: ID!
+}
+
+input CreateOrUpdateProfileWithVerifiedPersonalInformationMutationInput {
+  userId: UUID!
+  serviceClientId: String
+  profile: ProfileWithVerifiedPersonalInformationInput!
+}
+
+input ProfileWithVerifiedPersonalInformationInput {
+  firstName: String
+  lastName: String
+  verifiedPersonalInformation: VerifiedPersonalInformationInput
+  primaryEmail: EmailInput
+}
+
+input VerifiedPersonalInformationInput {
+  firstName: String
+  lastName: String
+  givenName: String
+  nationalIdentificationNumber: String
+  municipalityOfResidence: String
+  municipalityOfResidenceNumber: String
+  permanentAddress: VerifiedPersonalInformationAddressInput
+  temporaryAddress: VerifiedPersonalInformationAddressInput
+  permanentForeignAddress: VerifiedPersonalInformationForeignAddressInput
+}
+
+input VerifiedPersonalInformationAddressInput {
+  streetAddress: String
+  postalCode: String
+  postOffice: String
+}
+
+input VerifiedPersonalInformationForeignAddressInput {
+  streetAddress: String
+  additionalAddress: String
+  countryCode: String
+}
+
+input EmailInput {
+  email: String!
+  verified: Boolean
+}
+
+type CreateOrUpdateUserProfileMutationPayload {
+  profile: ProfileNode
+}
+
+input CreateOrUpdateUserProfileMutationInput {
+  userId: UUID!
+  serviceClientId: String
+  profile: ProfileWithVerifiedPersonalInformationInput!
 }
 
 type UpdateMyProfileMutationPayload {
@@ -501,11 +488,20 @@ type UpdateMyProfileMutationPayload {
   clientMutationId: String
 }
 
-input UpdatePhoneInput {
-  primary: Boolean
-  id: ID!
-  phone: String
-  phoneType: PhoneType
+input UpdateMyProfileMutationInput {
+  profile: ProfileInput!
+  clientMutationId: String
+}
+
+type UpdateProfileMutationPayload {
+  profile: ProfileNode
+  clientMutationId: String
+}
+
+input UpdateProfileMutationInput {
+  serviceType: ServiceType
+  profile: UpdateProfileInput!
+  clientMutationId: String
 }
 
 input UpdateProfileInput {
@@ -528,70 +524,67 @@ input UpdateProfileInput {
   removeAddresses: [ID]
 }
 
-input UpdateProfileMutationInput {
-  serviceType: ServiceType
-  profile: UpdateProfileInput!
+type DeleteMyProfileMutationPayload {
+  results: [ServiceConnectionDeletionResult!]!
   clientMutationId: String
 }
 
-type UpdateProfileMutationPayload {
+type ServiceConnectionDeletionResult {
+  service: ServiceNode!
+  dryRun: Boolean!
+  success: Boolean!
+  errors: [ServiceConnectionDeletionError!]!
+}
+
+type ServiceConnectionDeletionError {
+  code: String!
+  message: [TranslatedMessage!]!
+}
+
+type TranslatedMessage {
+  lang: String!
+  text: String!
+}
+
+input DeleteMyProfileMutationInput {
+  authorizationCode: String!
+  authorizationCodeKeycloak: String
+  dryRun: Boolean
+  clientMutationId: String
+}
+
+type DeleteMyServiceDataMutationPayload {
+  result: ServiceConnectionDeletionResult!
+}
+
+input DeleteMyServiceDataMutationInput {
+  authorizationCode: String!
+  authorizationCodeKeycloak: String
+  serviceName: String!
+  dryRun: Boolean
+}
+
+type ClaimProfileMutationPayload {
   profile: ProfileNode
   clientMutationId: String
 }
 
-input VerifiedPersonalInformationAddressInput {
-  streetAddress: String
-  postalCode: String
-  postOffice: String
+input ClaimProfileMutationInput {
+  token: UUID!
+  profile: ProfileInput
+  clientMutationId: String
 }
 
-type VerifiedPersonalInformationAddressNode {
-  streetAddress: String!
-  postalCode: String!
-  postOffice: String!
+type CreateMyProfileTemporaryReadAccessTokenMutationPayload {
+  temporaryReadAccessToken: TemporaryReadAccessTokenNode
+  clientMutationId: String
 }
 
-input VerifiedPersonalInformationForeignAddressInput {
-  streetAddress: String
-  additionalAddress: String
-  countryCode: String
+type TemporaryReadAccessTokenNode {
+  token: UUID!
+  expiresAt: DateTime
 }
 
-type VerifiedPersonalInformationForeignAddressNode {
-  streetAddress: String!
-  additionalAddress: String!
-  countryCode: String!
-}
-
-input VerifiedPersonalInformationInput {
-  firstName: String
-  lastName: String
-  givenName: String
-  nationalIdentificationNumber: String
-  municipalityOfResidence: String
-  municipalityOfResidenceNumber: String
-  permanentAddress: VerifiedPersonalInformationAddressInput
-  temporaryAddress: VerifiedPersonalInformationAddressInput
-  permanentForeignAddress: VerifiedPersonalInformationForeignAddressInput
-}
-
-type VerifiedPersonalInformationNode {
-  firstName: String!
-  lastName: String!
-  givenName: String!
-  nationalIdentificationNumber: String!
-  municipalityOfResidence: String!
-  municipalityOfResidenceNumber: String!
-  permanentAddress: VerifiedPersonalInformationAddressNode
-  temporaryAddress: VerifiedPersonalInformationAddressNode
-  permanentForeignAddress: VerifiedPersonalInformationForeignAddressNode
-}
-
-scalar _Any
-
-union _Entity = AddressNode | ProfileNode
-
-type _Service {
-  sdl: String
-}
-'''
+input CreateMyProfileTemporaryReadAccessTokenMutationInput {
+  clientMutationId: String
+}'''

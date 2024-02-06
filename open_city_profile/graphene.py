@@ -8,15 +8,16 @@ from django_filters import MultipleChoiceFilter
 from graphene_django import DjangoObjectType
 from graphene_django.forms.converter import convert_form_field
 from graphene_django.types import ALL_FIELDS
+from graphql_sync_dataloaders import SyncDataLoader
 from parler.models import TranslatableModel
 
 from profiles.loaders import (
-    AddressesByProfileIdLoader,
-    EmailsByProfileIdLoader,
-    PhonesByProfileIdLoader,
-    PrimaryAddressForProfileLoader,
-    PrimaryEmailForProfileLoader,
-    PrimaryPhoneForProfileLoader,
+    addresses_by_profile_id_loader,
+    emails_by_profile_id_loader,
+    phones_by_profile_id_loader,
+    primary_address_for_profile_loader,
+    primary_email_for_profile_loader,
+    primary_phone_for_profile_loader,
 )
 
 
@@ -52,12 +53,12 @@ class UUIDMultipleChoiceFilter(MultipleChoiceFilter):
 
 
 _LOADERS = {
-    "addresses_by_profile_id_loader": AddressesByProfileIdLoader,
-    "emails_by_profile_id_loader": EmailsByProfileIdLoader,
-    "phones_by_profile_id_loader": PhonesByProfileIdLoader,
-    "primary_address_for_profile_loader": PrimaryAddressForProfileLoader,
-    "primary_email_for_profile_loader": PrimaryEmailForProfileLoader,
-    "primary_phone_for_profile_loader": PrimaryPhoneForProfileLoader,
+    "addresses_by_profile_id_loader": addresses_by_profile_id_loader,
+    "emails_by_profile_id_loader": emails_by_profile_id_loader,
+    "phones_by_profile_id_loader": phones_by_profile_id_loader,
+    "primary_address_for_profile_loader": primary_address_for_profile_loader,
+    "primary_email_for_profile_loader": primary_email_for_profile_loader,
+    "primary_phone_for_profile_loader": primary_phone_for_profile_loader,
 }
 
 
@@ -69,9 +70,8 @@ class GQLDataLoaders:
         context = info.context
 
         if not self.cached_loaders:
-            for loader_name, loader_class in _LOADERS.items():
-                setattr(context, loader_name, loader_class())
-
+            for loader_name, loader_function in _LOADERS.items():
+                setattr(context, loader_name, SyncDataLoader(loader_function))
             self.cached_loaders = True
 
         return next(root, info, **kwargs)
@@ -79,7 +79,7 @@ class GQLDataLoaders:
 
 def _parler_field_resolver(attname, instance, info, language=None):
     if language:
-        return instance.safe_translation_getter(attname, language_code=language)
+        return instance.safe_translation_getter(attname, language_code=language.value)
 
     return getattr(instance, attname)
 
@@ -151,7 +151,7 @@ class DjangoParlerObjectType(DjangoObjectType):
         interfaces=(),
         convert_choices_to_enum=True,
         _meta=None,
-        **options
+        **options,
     ):
         assert issubclass(model, TranslatableModel), (
             'You need to pass a valid Django Parler Model in {}.Meta, received "{}".'
@@ -176,5 +176,5 @@ class DjangoParlerObjectType(DjangoObjectType):
             interfaces=interfaces,
             convert_choices_to_enum=convert_choices_to_enum,
             _meta=_meta,
-            **options
+            **options,
         )

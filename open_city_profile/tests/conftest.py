@@ -10,7 +10,8 @@ from django.test import RequestFactory
 from graphene.test import Client as GrapheneClient
 from graphene_django.settings import graphene_settings
 from graphene_django.views import instantiate_middleware
-from graphql import build_client_schema, introspection_query
+from graphql import build_client_schema, get_introspection_query
+from graphql_sync_dataloaders import DeferredExecutionContext
 from helusers.authz import UserAuthorization
 
 from open_city_profile.schema import schema
@@ -33,7 +34,7 @@ class GraphQLClient(GrapheneClient):
         auth_token_payload=None,
         service=_not_provided,
         context=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Custom execute method which adds all of the middlewares defined in the
@@ -70,7 +71,7 @@ class GraphQLClient(GrapheneClient):
             *args,
             context=context,
             middleware=list(instantiate_middleware(graphene_settings.MIDDLEWARE)),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -128,6 +129,11 @@ def keycloak_setup(settings):
 
 
 @pytest.fixture
+def execution_context_class():
+    return DeferredExecutionContext
+
+
+@pytest.fixture
 def user():
     return UserFactory()
 
@@ -178,8 +184,11 @@ def superuser_gql_client():
 
 
 @pytest.fixture
-def gql_schema(anon_user_gql_client):
-    introspection = anon_user_gql_client.execute(introspection_query)
+def gql_schema(anon_user_gql_client, execution_context_class):
+    introspection = anon_user_gql_client.execute(
+        get_introspection_query(descriptions=False),
+        execution_context_class=execution_context_class,
+    )
     return build_client_schema(introspection["data"])
 
 

@@ -1,10 +1,10 @@
 import pytest
-from graphql_relay import to_global_id
 
 from open_city_profile.tests import to_graphql_name, to_graphql_object
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
+from ..helpers import to_global_id
 from .factories import AddressFactory, EmailFactory, PhoneFactory
 
 

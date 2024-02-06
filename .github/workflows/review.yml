@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build
         uses: andersinno/kolga-build-action@v2
 
@@ -35,7 +35,7 @@ jobs:
     needs: build
     name: Review
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: andersinno/kolga-setup-action@v2
 
       - name: Review-Services

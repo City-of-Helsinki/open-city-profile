@@ -257,6 +257,7 @@ def test_staff_user_can_sort_profiles(user_gql_client, group, service):
         }
     }
     executed = user_gql_client.execute(query, service=service)
+    assert "errors" not in executed
     assert executed["data"] == expected_data
 
 
@@ -321,6 +322,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
         }
     }
     executed = user_gql_client.execute(query, service=service)
+    assert "errors" not in executed
     assert executed["data"] == expected_data
 
     query = t.substitute(order_by=f"-{order_by}")

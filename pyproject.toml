@@ -1,2 +1,20 @@
 [tool.black]
-extend-exclude = 'snapshots'
+line-length = 88 # Black's default value
+target-version = ["py311"]
+extend-exclude = "snapshots"
+
+[tool.isort]
+profile = "black"
+py_version = 311
+atomic = true
+order_by_type = false
+extend_skip_glob = ["*migrations*", ".venv*", "venv" ,"snapshots"]
+known_first_party = [
+    "audit_log",
+    "open_city_profile",
+    "profiles",
+    "sanitizers",
+    "services",
+    "users",
+    "utils"
+]

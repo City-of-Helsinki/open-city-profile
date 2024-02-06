@@ -128,9 +128,9 @@ def setup_services_and_mocks(
         for tunnistamo_service in tunnistamo_services:
             scope = tunnistamo_service.gdpr_query_scope
             api_audience = scope[: scope.rfind(".")]
-            tunnistamo_api_tokens[
-                api_audience
-            ] = f"{tunnistamo_service.name}-{TUNNISTAMO_API_TOKEN_MARKER}"
+            tunnistamo_api_tokens[api_audience] = (
+                f"{tunnistamo_service.name}-{TUNNISTAMO_API_TOKEN_MARKER}"
+            )
 
         requests_mock.get(
             settings.TUNNISTAMO_API_TOKENS_URL,

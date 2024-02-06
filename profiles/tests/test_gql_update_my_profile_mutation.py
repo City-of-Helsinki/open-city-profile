@@ -1,7 +1,6 @@
 from string import Template
 
 import pytest
-from graphql_relay.node.node import to_global_id
 
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Address, Email, Phone, Profile
@@ -9,6 +8,7 @@ from profiles.tests.profile_input_validation import ExistingProfileInputValidati
 from services.tests.factories import ServiceConnectionFactory
 from utils import keycloak
 
+from ..helpers import to_global_id
 from .factories import (
     AddressFactory,
     EmailFactory,
@@ -1061,7 +1061,7 @@ def test_can_not_remove_address_of_another_profile(user_gql_client):
 
 
 def test_change_primary_contact_details(
-    user_gql_client, email_data, phone_data, address_data
+    user_gql_client, email_data, phone_data, address_data, execution_context_class
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     PhoneFactory(profile=profile, primary=True)
@@ -1159,7 +1159,10 @@ def test_change_primary_contact_details(
         address_type=address_data["address_type"],
         primary="true",
     )
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(
+        mutation, execution_context_class=execution_context_class
+    )
+    assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
 
 
