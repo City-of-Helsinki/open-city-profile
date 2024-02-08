@@ -1142,12 +1142,19 @@ class CreateOrUpdateUserProfileMutationBase:
         email_address = primary_email_input["email"]
         verified = primary_email_input.get("verified", False)
 
-        email, email_created = profile.emails.get_or_create(
-            email=email_address,
-            defaults={"email_type": EmailType.NONE, "verified": verified},
-        )
-
-        profile.emails.exclude(pk=email.pk).filter(primary=True).update(primary=False)
+        email = profile.emails.filter(email=email_address).first()
+        if email:
+            profile.emails.exclude(pk=email.pk).filter(primary=True).update(
+                primary=False
+            )
+        else:
+            profile.emails.filter(primary=True).update(primary=False)
+            email = profile.emails.create(
+                email=email_address,
+                email_type=EmailType.NONE,
+                primary=True,
+                verified=verified,
+            )
 
         if not email.primary or email.verified is not verified:
             email.primary = True
