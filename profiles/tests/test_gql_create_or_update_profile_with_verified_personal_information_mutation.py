@@ -47,6 +47,7 @@ def execute_mutation(input_data, gql_client):
 def execute_successful_mutation(input_data, gql_client):
     executed = execute_mutation(input_data, gql_client)
 
+    assert "errors" not in executed
     global_profile_id = executed["data"]["prof"]["profile"]["id"]
     profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
@@ -337,6 +338,40 @@ def test_existing_primary_email_remains_when_trying_to_set_the_same_email_as_a_p
     assert email.email == old_email.email
     assert email.primary is True
     assert email.email_type == old_email.email_type
+
+
+def test_change_primary_email_when_there_duplicate_emails_for_an_existing_profile(
+    user_gql_client,
+):
+    """When a user has updated their email e.g. using updateMyProfile mutation, there's
+    no check for duplicate emails. Primary email update coming e.g. keycloak shouldn't fail
+    if there's duplicate emails. Instead, using the first matching email should be enough.
+    """
+    original_email = EmailFactory(verified=False, primary=True)
+    EmailFactory(
+        email=original_email.email,
+        profile=original_email.profile,
+        verified=False,
+        primary=False,
+    )
+    user_id = original_email.profile.user.uuid
+
+    input_data = primary_email_input_data(user_id, email=original_email.email)
+    input_data["profile"]["primaryEmail"]["verified"] = True
+    profile = execute_successful_mutation(input_data, user_gql_client)
+
+    assert profile.emails.count() == 2
+    assert profile.emails.filter(email=original_email.email).count() == 2
+
+    email = profile.emails.get(primary=True)
+    assert email.email == original_email.email
+    assert email.email_type == EmailType.NONE
+    assert email.verified is True
+
+    email = profile.emails.get(primary=False)
+    assert email.email == original_email.email
+    assert email.email_type == EmailType.NONE
+    assert email.verified is False
 
 
 @pytest.mark.parametrize(

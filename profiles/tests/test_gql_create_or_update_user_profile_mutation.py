@@ -47,6 +47,7 @@ def execute_mutation(input_data, gql_client):
 def execute_successful_mutation(input_data, gql_client):
     executed = execute_mutation(input_data, gql_client)
 
+    assert "errors" not in executed
     global_profile_id = executed["data"]["prof"]["profile"]["id"]
     profile_id = uuid.UUID(from_global_id(global_profile_id)[1])
 
