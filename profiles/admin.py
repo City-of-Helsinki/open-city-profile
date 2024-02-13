@@ -91,8 +91,9 @@ class AddressAdminInline(admin.StackedInline):
 
 class VerifiedPersonalInformationAdminInline(admin.StackedInline):
     model = VerifiedPersonalInformation
-    exclude = ("_national_identification_number_data",)
+    exclude = ("_national_identification_number_data", "national_identification_number")
     readonly_fields = (
+        "get_national_identification_number",
         "get_permanent_address",
         "get_temporary_address",
         "get_permanent_foreign_address",
@@ -107,6 +108,10 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    @admin.display(description="National identification number", boolean=True)
+    def get_national_identification_number(self, obj):
+        return bool(obj.national_identification_number)
 
     @admin.display(description="Permanent address")
     def get_permanent_address(self, obj):
