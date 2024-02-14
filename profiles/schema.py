@@ -1260,7 +1260,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        profile_updated.send(sender=profile.__class__, instance=profile)
+            profile_updated.send(sender=profile.__class__, instance=profile)
 
         return UpdateMyProfileMutation(profile=profile)
 
@@ -1336,7 +1336,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             if sensitive_data:
                 update_sensitivedata(profile, sensitive_data)
 
-        profile_updated.send(sender=profile.__class__, instance=profile)
+            profile_updated.send(sender=profile.__class__, instance=profile)
 
         return UpdateProfileMutation(profile=profile)
 
@@ -1369,9 +1369,9 @@ class ClaimProfileMutation(relay.ClientIDMutation):
                 profile_to_claim.save()
                 profile_to_claim.claim_tokens.all().delete()
 
-            profile_updated.send(
-                sender=profile_to_claim.__class__, instance=profile_to_claim
-            )
+                profile_updated.send(
+                    sender=profile_to_claim.__class__, instance=profile_to_claim
+                )
 
             return ClaimProfileMutation(profile=profile_to_claim)
 
