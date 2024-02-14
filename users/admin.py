@@ -55,6 +55,7 @@ class UserAdmin(DjangoUserAdmin):
         fields = super().get_readonly_fields(request, obj)
         return list(fields) + ["uuid", "get_profile_uuid_link"]
 
+    @admin.display(description=_("Profile"), ordering="profile__id")
     def get_profile_uuid_link(self, obj):
         profile_id = obj.profile.id
         profile_url = reverse("admin:profiles_profile_change", args=(profile_id,))
@@ -63,9 +64,7 @@ class UserAdmin(DjangoUserAdmin):
             '<a href="{}" title="{}">{}</a>', profile_url, hint, profile_id
         )
 
-    get_profile_uuid_link.short_description = _("Profile")
-    get_profile_uuid_link.admin_order_field = "profile__id"
-
+    @admin.display(description=_("First name"))
     def get_first_name(self, obj):
         return (
             obj.first_name
@@ -73,13 +72,10 @@ class UserAdmin(DjangoUserAdmin):
             or obj.profile.verified_personal_information.first_name
         )
 
-    get_first_name.short_description = _("First name")
-
+    @admin.display(description=_("Last name"))
     def get_last_name(self, obj):
         return (
             obj.last_name
             or obj.profile.last_name
             or obj.profile.verified_personal_information.last_name
         )
-
-    get_last_name.short_description = _("Last name")
