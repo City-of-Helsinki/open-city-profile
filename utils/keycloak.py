@@ -33,6 +33,7 @@ class KeycloakAdminClient:
 
         self._session = requests.Session()
         self._auth = None
+        self._timeout = 10
 
     def _handle_request_common_errors(self, requester):
         try:
@@ -52,7 +53,7 @@ class KeycloakAdminClient:
         well_known_url = f"{self._server_url}/realms/{self._realm_name}/.well-known/openid-configuration"
 
         result = self._handle_request_common_errors(
-            lambda: self._session.get(well_known_url)
+            lambda: self._session.get(well_known_url, timeout=self._timeout)
         )
 
         if not result.ok:
@@ -73,7 +74,9 @@ class KeycloakAdminClient:
             }
 
             result = self._handle_request_common_errors(
-                lambda: self._session.post(token_endpoint_url, data=credentials_request)
+                lambda: self._session.post(
+                    token_endpoint_url, data=credentials_request, timeout=self._timeout
+                )
             )
 
             if not result.ok:
@@ -118,7 +121,7 @@ class KeycloakAdminClient:
         url = self._single_user_url(user_id)
 
         response = self._handle_user_request(
-            lambda auth: self._session.get(url, auth=auth)
+            lambda auth: self._session.get(url, auth=auth, timeout=self._timeout)
         )
 
         return response.json()
@@ -127,13 +130,17 @@ class KeycloakAdminClient:
         url = self._single_user_url(user_id)
 
         self._handle_user_request(
-            lambda auth: self._session.put(url, auth=auth, json=update_data)
+            lambda auth: self._session.put(
+                url, auth=auth, json=update_data, timeout=self._timeout
+            )
         )
 
     def delete_user(self, user_id):
         url = self._single_user_url(user_id)
 
-        self._handle_user_request(lambda auth: self._session.delete(url, auth=auth))
+        self._handle_user_request(
+            lambda auth: self._session.delete(url, auth=auth, timeout=self._timeout)
+        )
 
     def send_verify_email(self, user_id):
         url = self._single_user_url(user_id)
@@ -141,6 +148,9 @@ class KeycloakAdminClient:
 
         return self._handle_user_request(
             lambda auth: self._session.put(
-                url, auth=auth, params={"client_id": self._client_id}
+                url,
+                auth=auth,
+                timeout=self._timeout,
+                params={"client_id": self._client_id},
             )
         )
