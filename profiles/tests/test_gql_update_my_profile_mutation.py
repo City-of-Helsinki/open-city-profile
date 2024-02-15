@@ -589,11 +589,14 @@ def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
     assert executed["data"] == expected_data
 
 
-def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
+def test_when_keycloak_returns_conflict_on_update_changes_are_reverted(
     user_gql_client, keycloak_setup, mocker
 ):
+    """Correct error code is produced and local changes are reverted."""
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    email = profile.emails.first()
+    primary_email = profile.get_primary_email()
+    original_email = primary_email.email
+    new_email = f"new-{primary_email.email}"
 
     mocker.patch.object(
         keycloak.KeycloakAdminClient,
@@ -601,7 +604,7 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
         return_value={
             "firstName": profile.first_name,
             "lastName": profile.last_name,
-            "email": "old@email.example",
+            "email": primary_email.email,
         },
     )
 
@@ -612,13 +615,14 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
     )
 
     email_updates = [
-        {"id": to_global_id("EmailNode", email.id), "email": "new@email.example"}
+        {"id": to_global_id("EmailNode", primary_email.id), "email": new_email}
     ]
     executed = user_gql_client.execute(
         EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
     )
 
     assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
+    assert profile.get_primary_email().email == original_email
 
 
 PHONES_MUTATION = """

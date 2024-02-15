@@ -272,11 +272,14 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
     assert executed["data"] == expected_data
 
 
-def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_produced(
+def test_when_keycloak_returns_conflict_on_update_changes_are_reverted(
     user_gql_client, service, keycloak_setup, mocker
 ):
+    """Correct error code is produced and local changes are reverted."""
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
-    email = profile.emails.first()
+    primary_email = profile.get_primary_email()
+    original_email = primary_email.email
+    new_email = f"new-{primary_email.email}"
 
     setup_profile_and_staff_user_to_service(profile, user_gql_client.user, service)
 
@@ -286,7 +289,7 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
         return_value={
             "firstName": profile.first_name,
             "lastName": profile.last_name,
-            "email": "old@email.example",
+            "email": primary_email.email,
         },
     )
 
@@ -301,8 +304,8 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
             "id": to_global_id("ProfileNode", profile.id),
             "updateEmails": [
                 {
-                    "id": to_global_id("EmailNode", email.id),
-                    "email": "new@email.example",
+                    "id": to_global_id("EmailNode", primary_email.id),
+                    "email": new_email,
                 }
             ],
         }
@@ -312,6 +315,7 @@ def test_when_keycloak_returns_conflict_on_update_then_correct_error_code_is_pro
     )
 
     assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
+    assert profile.get_primary_email().email == original_email
 
 
 class TestProfileInputValidation(ExistingProfileInputValidationBase):
