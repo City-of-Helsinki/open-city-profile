@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from guardian.admin import GuardedModelAdmin
 from parler.admin import TranslatableAdmin
 
+from .enums import ServiceIdp
 from .models import AllowedDataField, Service, ServiceClientId, ServiceConnection
 
 
@@ -17,7 +18,7 @@ class ServiceClientIdInline(admin.StackedInline):
 
 class AllowedDataFieldsFilter(admin.SimpleListFilter):
     title = _("allowed data fields")
-    parameter_name = "empty"
+    parameter_name = "allowed_data_fields"
 
     def lookups(self, request, model_admin):
         names = (
@@ -38,6 +39,24 @@ class AllowedDataFieldsFilter(admin.SimpleListFilter):
         return queryset
 
 
+class IdpFilter(admin.SimpleListFilter):
+    title = _("IDP")
+    parameter_name = "idp"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("empty", _("Empty")),
+        ] + [(value, label) for value, label in ServiceIdp.choices()]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == "empty":
+            return queryset.filter(idp__isnull=True)
+        elif value:
+            return queryset.filter(idp__contains=[self.value()])
+        return queryset
+
+
 @admin.register(Service)
 class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
     list_display = (
@@ -47,7 +66,7 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
         "idp",
         "_gdpr",
     )
-    list_filter = (AllowedDataFieldsFilter, "idp")
+    list_filter = (AllowedDataFieldsFilter, IdpFilter)
     search_fields = (
         "name",
         "translations__title",
