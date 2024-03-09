@@ -28,6 +28,8 @@ def test_staff_user_can_create_a_profile(
                 input: {
                     serviceType: GODCHILDREN_OF_CULTURE,
                     profile: {
+                        language: FINNISH,
+                        contactMethod: EMAIL,
                         firstName: "${first_name}",
                         lastName: "${last_name}",
 ${email_input}
@@ -42,6 +44,8 @@ ${email_input}
                 }
             ) {
                 profile {
+                    language,
+                    contactMethod,
                     firstName
                     lastName
                     phones {
@@ -97,6 +101,8 @@ ${email_input}
     expected_data = {
         "createProfile": {
             "profile": {
+                "language": "FINNISH",
+                "contactMethod": "EMAIL",
                 "firstName": "John",
                 "lastName": "Doe",
                 "phones": {

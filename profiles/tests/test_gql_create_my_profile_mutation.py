@@ -19,6 +19,8 @@ def test_normal_user_can_create_profile(
                 createMyProfile(
                     input: {
                         profile: {
+                            language: FINNISH,
+                            contactMethod: EMAIL,
                             nickname: "${nickname}",
                             addEmails: [
                                 {emailType: ${email_type}, email:"${email}", primary: ${primary}}
@@ -30,6 +32,8 @@ def test_normal_user_can_create_profile(
                     }
                 ) {
                     profile {
+                        language,
+                        contactMethod,
                         nickname,
                         emails {
                             edges {
@@ -53,6 +57,8 @@ def test_normal_user_can_create_profile(
     expected_data = {
         "createMyProfile": {
             "profile": {
+                "language": "FINNISH",
+                "contactMethod": "EMAIL",
                 "nickname": profile_data["nickname"],
                 "emails": {
                     "edges": [
@@ -79,6 +85,7 @@ def test_normal_user_can_create_profile(
         ssn=ssn,
     )
     executed = user_gql_client.execute(mutation)
+    assert "errors" not in executed
     assert executed["data"] == expected_data
 
 

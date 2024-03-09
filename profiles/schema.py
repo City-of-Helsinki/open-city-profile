@@ -175,6 +175,12 @@ def update_profile(profile, profile_data):
 
     profile_had_primary_email = bool(profile.get_primary_email_value())
 
+    if language := profile_data.pop("language", None):
+        profile.language = language.value
+
+    if contact_method := profile_data.pop("contact_method", None):
+        profile.contact_method = contact_method.value
+
     for field, value in profile_data.items():
         setattr(profile, field, value)
     profile.save()

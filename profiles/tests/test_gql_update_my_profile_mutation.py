@@ -9,6 +9,7 @@ from services.tests.factories import ServiceConnectionFactory
 from utils import keycloak
 
 from ..helpers import to_global_id
+from ..schema import ContactMethod, Language
 from .factories import (
     AddressFactory,
     EmailFactory,
@@ -153,6 +154,80 @@ def test_update_profile_without_email(user_gql_client, profile_data):
     mutation = t.substitute(nickname=profile_data["nickname"])
     executed = user_gql_client.execute(mutation)
     assert executed["data"] == expected_data
+
+
+@pytest.mark.parametrize("lang", Language, ids=repr)
+def test_update_profile_language(user_gql_client, lang):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                           language: ${language}
+                        }
+                    }
+                ) {
+                    profile {
+                        language
+                    }
+                }
+            }
+        """
+    )
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "language": lang.name,
+            }
+        }
+    }
+    mutation = t.substitute(language=lang.name)
+
+    executed = user_gql_client.execute(mutation)
+
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+    profile.refresh_from_db()
+    assert profile.language == lang.value
+
+
+@pytest.mark.parametrize("contact_method", ContactMethod, ids=repr)
+def test_update_profile_contact_method(user_gql_client, contact_method):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                           contactMethod: ${contact_method}
+                        }
+                    }
+                ) {
+                    profile {
+                        contactMethod
+                    }
+                }
+            }
+        """
+    )
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "contactMethod": contact_method.name,
+            }
+        }
+    }
+    mutation = t.substitute(contact_method=contact_method.name)
+
+    executed = user_gql_client.execute(mutation)
+
+    assert "errors" not in executed
+    assert dict(executed["data"]) == expected_data
+    profile.refresh_from_db()
+    assert profile.contact_method == contact_method.value
 
 
 def test_add_email(user_gql_client, email_data):
