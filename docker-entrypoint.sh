@@ -23,7 +23,7 @@ if [[ "$APPLY_MIGRATIONS" = "1" ]] && [[ "$SEED_DEVELOPMENT_DATA" = "1" ]]; then
     ./manage.py seed_development_data
 fi
 
-if [[ "$APPLY_MIGRATIONS" = "1" ]] && [[ "$SET_ALLOWED_DATA_FIELDS" = "1" ]]; then
+if [[ "$SET_ALLOWED_DATA_FIELDS" = "1" ]]; then
     echo "Set allowed data fields..."
     ./manage.py set_allowed_data_fields < open_city_profile/configuration/allowed_data_fields.json
 fi
