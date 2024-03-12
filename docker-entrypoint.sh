@@ -23,6 +23,11 @@ if [[ "$APPLY_MIGRATIONS" = "1" ]] && [[ "$SEED_DEVELOPMENT_DATA" = "1" ]]; then
     ./manage.py seed_development_data
 fi
 
+if [[ "$SET_ALLOWED_DATA_FIELDS" = "1" ]]; then
+    echo "Set allowed data fields..."
+    ./manage.py set_allowed_data_fields < open_city_profile/configuration/allowed_data_fields.json
+fi
+
 # Create superuser
 if [[ "$CREATE_SUPERUSER" = "1" ]]; then
     ./manage.py add_admin_user -u admin -p admin -e admin@example.com

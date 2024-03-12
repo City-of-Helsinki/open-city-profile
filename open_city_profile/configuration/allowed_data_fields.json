@@ -1,0 +1,54 @@
+[
+    {
+        "field_name": "name",
+        "translations": [
+            {"code": "en", "label": "Name"},
+            {"code": "fi", "label": "Nimi"},
+            {"code": "sv", "label": "Namn"}
+        ]
+    },
+    {
+        "field_name": "personalidentitycode",
+        "translations": [
+            {"code": "en", "label": "Personal identity code"},
+            {"code": "fi", "label": "Henkilötunnus"},
+            {"code": "sv", "label": "Personbeteckning"}
+        ],
+        "aliases": ["Personal_identity_code", "ssn"]
+    },
+    {
+        "field_name": "address",
+        "translations": [
+            {"code": "en", "label": "Addresses"},
+            {"code": "fi", "label": "Osoitteet"},
+            {"code": "sv", "label": "Adresser"}
+        ],
+        "aliases": ["addresses"]
+    },
+    {
+        "field_name": "municipalityofresidence",
+        "translations": [
+            {"code": "en", "label": "Municipality of residence"},
+            {"code": "fi", "label": "Kotikunta"},
+            {"code": "sv", "label": "Hemkommun"}
+        ],
+        "aliases": ["homemunicipality", "Municipality_of_residence"]
+    },
+    {
+        "field_name": "phone",
+        "translations": [
+            {"code": "en", "label": "Phone numbers"},
+            {"code": "fi", "label": "Puhelinnumerot"},
+            {"code": "sv", "label": "Telefonnummer"}
+        ],
+        "aliases": ["phones"]
+    },
+    {
+        "field_name": "email",
+        "translations": [
+            {"code": "en", "label": "Emails"},
+            {"code": "fi", "label": "Sähköpostiosoitteet"},
+            {"code": "sv", "label": "E-postadresser"}
+        ]
+    }
+]
