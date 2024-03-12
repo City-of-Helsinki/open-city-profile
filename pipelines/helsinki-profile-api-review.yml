@@ -38,7 +38,6 @@ resources:
     # Azure DevOps repository
     - repository: helsinki-profile-api
       type: git
-      ref: refs/heads/ansible_automation_update
       # Azure DevOps project/repository
       name: helsinki-profile-api-ops/helsinki-profile-api
 
@@ -56,4 +55,3 @@ extends:
     #   DEBUG: 1
     ## Used tool version
     # pythonVersion: 3.11
-
