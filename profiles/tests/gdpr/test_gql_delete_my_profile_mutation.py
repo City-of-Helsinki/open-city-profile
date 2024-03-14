@@ -11,7 +11,11 @@ from open_city_profile.consts import (
 from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
-from profiles.tests.factories import ProfileFactory, ProfileWithPrimaryEmailFactory
+from profiles.tests.factories import (
+    ProfileFactory,
+    ProfileWithPrimaryEmailFactory,
+    VerifiedPersonalInformationFactory,
+)
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 from users.models import User
@@ -546,3 +550,24 @@ def test_api_tokens_missing(user_gql_client, service_1, mocker):
     executed = user_gql_client.execute(DELETE_MY_PROFILE_MUTATION)
 
     assert_match_error_code(executed, MISSING_GDPR_API_TOKEN_ERROR)
+
+
+@pytest.mark.parametrize(
+    "loa,errors",
+    [
+        ("low", True),
+        ("substantial", False),
+        ("high", False),
+    ],
+)
+def test_delete_with_verified_personal_information(
+    user_gql_client, gdpr_api_tokens, loa, errors
+):
+    """Deletion is allowed when GDPR URL is set, and service returns a successful status."""
+    profile = ProfileFactory(user=user_gql_client.user)
+    VerifiedPersonalInformationFactory(profile=profile)
+
+    executed = user_gql_client.execute(
+        DELETE_MY_PROFILE_MUTATION, auth_token_payload={"loa": loa}
+    )
+    assert bool(executed.get("errors")) == errors
