@@ -2,7 +2,6 @@ import json
 from string import Template
 
 import pytest
-from django.utils.translation import gettext as _
 
 from open_city_profile.consts import MISSING_GDPR_API_TOKEN_ERROR
 from open_city_profile.oidc import TunnistamoTokenExchange
@@ -128,6 +127,7 @@ def download_verified_personal_information_with_loa(loa, user_gql_client, servic
     )
 
     full_dump = json.loads(executed["data"]["downloadMyProfile"])
+
     profile_dump = next(
         child for child in full_dump["children"] if child["key"] == "PROFILE"
     )
@@ -154,16 +154,18 @@ def test_verified_personal_information_is_included_in_the_downloaded_profile_whe
 
 @pytest.mark.parametrize("loa", [None, "foo", "low"])
 def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not_high_enough(
-    loa, user_gql_client, profile_service
+    loa, user_gql_client, profile_service, service
 ):
-    vpi_dump = download_verified_personal_information_with_loa(
-        loa, user_gql_client, profile_service
-    )
-
-    assert vpi_dump == {
-        "key": "VERIFIEDPERSONALINFORMATION",
-        "error": _("No permission to read verified personal information."),
+    VerifiedPersonalInformationFactory(profile__user=user_gql_client.user)
+    token_payload = {
+        "loa": loa,
     }
+    executed = user_gql_client.execute(
+        DOWNLOAD_MY_PROFILE_MUTATION, service=service, auth_token_payload=token_payload
+    )
+    assert executed["data"]["downloadMyProfile"] is None
+    assert len(executed["errors"]) == 1
+    assert executed["errors"][0]["extensions"]["code"] == "PERMISSION_DENIED_ERROR"
 
 
 def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):

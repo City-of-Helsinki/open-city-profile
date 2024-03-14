@@ -13,6 +13,7 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     DATA_CONFLICT_ERROR,
     GENERAL_ERROR,
+    INSUFFICIENT_LOA_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
     JWT_AUTHENTICATION_ERROR,
     MISSING_GDPR_API_TOKEN_ERROR,
@@ -33,6 +34,7 @@ from open_city_profile.exceptions import (
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     DataConflictError,
+    InsufficientLoaError,
     InvalidEmailFormatError,
     MissingGDPRApiTokenError,
     ProfileAlreadyExistsForUserError,
@@ -71,6 +73,7 @@ error_codes_profile = {
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
     ServiceConnectionDoesNotExist: SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
     ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
+    InsufficientLoaError: INSUFFICIENT_LOA_ERROR,
 }
 
 sentry_ignored_errors = (

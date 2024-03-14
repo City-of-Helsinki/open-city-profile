@@ -69,3 +69,7 @@ class TokenExpiredError(ProfileGraphQLError):
 
 class TokenExchangeError(Exception):
     """OAuth/OIDC token exchange related exception."""
+
+
+class InsufficientLoaError(ProfileGraphQLError):
+    """The requester has insufficient level of authentication to retrieve this data"""

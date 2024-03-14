@@ -29,3 +29,15 @@ def requester_can_view_verified_personal_information(request):
         or request.user_auth.data.get("amr")
         in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
     )
+
+
+def requester_has_sufficient_loa_to_perform_gdpr_request(request):
+    user = request.user
+    profile = user.profile
+    if not profile:
+        return False
+    loa = request.user_auth.data.get("loa")
+    return not hasattr(profile, "verified_personal_information") or loa in [
+        "substantial",
+        "high",
+    ]

@@ -37,6 +37,7 @@ from open_city_profile.decorators import (
 from open_city_profile.exceptions import (
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
+    InsufficientLoaError,
     InvalidEmailFormatError,
     ProfileAlreadyExistsForUserError,
     ProfileDoesNotExistError,
@@ -70,7 +71,10 @@ from .models import (
     VerifiedPersonalInformationPermanentForeignAddress,
     VerifiedPersonalInformationTemporaryAddress,
 )
-from .utils import requester_can_view_verified_personal_information
+from .utils import (
+    requester_can_view_verified_personal_information,
+    requester_has_sufficient_loa_to_perform_gdpr_request,
+)
 
 User = get_user_model()
 
@@ -1487,6 +1491,12 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
                 _("You do not have permission to perform this action.")
             )
 
+        if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
+            raise InsufficientLoaError(
+                _(
+                    "You have insufficient level of authentication to perform this action."
+                )
+            )
         dry_run = input.get("dry_run", False)
 
         results = delete_connected_service_data(
@@ -1549,6 +1559,13 @@ class DeleteMyServiceDataMutation(graphene.Mutation):
         if not info.context.service.has_connection_to_profile(profile):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
+            )
+
+        if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
+            raise InsufficientLoaError(
+                _(
+                    "You have insufficient level of authentication to perform this action."
+                )
             )
 
         service_connections = profile.effective_service_connections_qs().filter(
@@ -1722,6 +1739,13 @@ class Query(graphene.ObjectType):
         if not info.context.service.has_connection_to_profile(profile):
             raise PermissionDenied(
                 _("You do not have permission to perform this action.")
+            )
+
+        if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
+            raise InsufficientLoaError(
+                _(
+                    "You have insufficient level of authentication to perform this action."
+                )
             )
 
         external_data = download_connected_service_data(
