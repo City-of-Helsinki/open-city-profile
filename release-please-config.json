@@ -1,0 +1,11 @@
+{
+  "bootstrap-sha": "c4e795bf528ab92a4cc0d257662a3444e9a00df9",
+  "sequential-calls": true,
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "open-city-profile"
+    }
+  },
+  "plugins": ["sentence-case"]
+}
