@@ -414,7 +414,9 @@ def test_audit_log_delete(live_server, profile_with_related):
             }
         }
     """
-    do_graphql_call_as_user(live_server, user, query=query)
+    do_graphql_call_as_user(
+        live_server, user, query=query, extra_claims={"loa": "substantial"}
+    )
 
     log_entries = list(LogEntry.objects.all())
     # Audit logging the Profile DELETE with a related object causes some READs
