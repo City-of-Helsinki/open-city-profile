@@ -111,9 +111,9 @@ It's possible to report errors to Sentry.
 
 - `SENTRY_DSN`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#dsn[Sentry DSN]. If this is not set, nothing is sent to Sentry.
 - `SENTRY_ENVIRONMENT`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#environment[Sentry environment]. Default is "development".
-- `VERSION`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#release[Sentry release]. See `VERSION` in <<Miscellaneous>>.
+- `COMMIT_HASH`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#release[Sentry release]. See `COMMIT_HASH` in <<Miscellaneous>>. If `COMMIT_HASH` is not set, set module version instead. 
 
 == Miscellaneous
 
-- `VERSION`: Sets a version for the installation. Default is the output of `git describe --always` command, if it succeeds, otherwise `None`.
+- `COMMIT_HASH`: Sets a commit hash of the installation. Default is empty string.
 - `TEMPORARY_PROFILE_READ_ACCESS_TOKEN_VALIDITY_MINUTES`: For how long a temporary profile read access token is valid after creation. Value is in minutes. Default is 48 hours.

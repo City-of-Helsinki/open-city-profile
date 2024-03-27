@@ -6,6 +6,9 @@ import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
+from open_city_profile import __version__
+from datetime import datetime
+
 checkout_dir = environ.Path(__file__) - 2
 assert os.path.exists(checkout_dir("manage.py"))
 
@@ -43,7 +46,7 @@ env = environ.Env(
     DEFAULT_FROM_EMAIL=(str, "no-reply@hel.fi"),
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
-    VERSION=(str, None),
+    OPENSHIFT_BUILD_COMMIT=(str, ""),
     AUDIT_LOG_TO_LOGGER_ENABLED=(bool, False),
     AUDIT_LOG_LOGGER_FILENAME=(str, ""),
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
@@ -72,18 +75,12 @@ env = environ.Env(
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-VERSION = env.str("VERSION")
-if VERSION is None:
-    try:
-        VERSION = subprocess.check_output(
-            ["git", "describe", "--always"], text=True
-        ).strip()
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        VERSION = None
+if env("OPENSHIFT_BUILD_COMMIT"):
+    COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT")
 
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
-    release=VERSION,
+    release=env.str("OPENSHIFT_BUILD_COMMIT", __version__),
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
@@ -390,3 +387,6 @@ KEYCLOAK_CLIENT_ID = env("KEYCLOAK_CLIENT_ID")
 KEYCLOAK_CLIENT_SECRET = env("KEYCLOAK_CLIENT_SECRET")
 KEYCLOAK_GDPR_CLIENT_ID = env("KEYCLOAK_GDPR_CLIENT_ID")
 KEYCLOAK_GDPR_CLIENT_SECRET = env("KEYCLOAK_GDPR_CLIENT_SECRET")
+
+# get build time from a file in docker image
+APP_BUILD_TIME = datetime.fromtimestamp(os.path.getmtime(__file__))

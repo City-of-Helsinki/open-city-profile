@@ -1,3 +1,4 @@
+import json
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -8,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from graphql_sync_dataloaders import DeferredExecutionContext
 
+from open_city_profile import __version__
 from open_city_profile.views import GraphQLView
 
 urlpatterns = [
@@ -48,7 +50,13 @@ def healthz(*args, **kwargs):
 
 
 def readiness(*args, **kwargs):
-    return HttpResponse(status=200)
+    response_json = {
+        "status": "ok",
+        "packageVersion": __version__,
+        "commitHash": settings.COMMIT_HASH.decode("utf-8"),
+        "buildTime": settings.APP_BUILD_TIME.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+    }
+    return HttpResponse(json.dumps(response_json), status=200)
 
 
 urlpatterns += [path("healthz", healthz), path("readiness", readiness)]
