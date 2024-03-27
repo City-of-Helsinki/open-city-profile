@@ -53,7 +53,7 @@ def readiness(*args, **kwargs):
     response_json = {
         "status": "ok",
         "packageVersion": __version__,
-        "commitHash": settings.COMMIT_HASH.decode("utf-8"),
+        "commitHash": settings.COMMIT_HASH,
         "buildTime": settings.APP_BUILD_TIME.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
     }
     return HttpResponse(json.dumps(response_json), status=200)
