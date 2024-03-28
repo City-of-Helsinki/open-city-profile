@@ -75,8 +75,7 @@ env = environ.Env(
 if os.path.exists(env_file):
     env.read_env(env_file)
 
-if env("OPENSHIFT_BUILD_COMMIT"):
-    COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT")
+COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT", "")
 
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
