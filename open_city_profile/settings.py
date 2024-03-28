@@ -75,10 +75,10 @@ if os.path.exists(env_file):
     env.read_env(env_file)
 
 COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT", "")
-
+VERSION = __version__
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN", ""),
-    release=env.str("OPENSHIFT_BUILD_COMMIT", __version__),
+    release=env.str("OPENSHIFT_BUILD_COMMIT", VERSION),
     environment=env.str("SENTRY_ENVIRONMENT", "development"),
     integrations=[DjangoIntegration()],
 )
