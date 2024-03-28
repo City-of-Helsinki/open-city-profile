@@ -57,7 +57,7 @@ def readiness(*args, **kwargs):
         "commitHash": settings.COMMIT_HASH,
         "buildTime": settings.APP_BUILD_TIME.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
     }
-    return HttpResponse(json.dumps(response_json), status=200)
+    return JsonResponse(response_json, status=200)
 
 
 urlpatterns += [path("healthz", healthz), path("readiness", readiness)]
