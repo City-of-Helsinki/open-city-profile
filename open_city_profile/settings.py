@@ -1,5 +1,4 @@
 import os
-import subprocess
 from sys import stdout
 
 import environ
