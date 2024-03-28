@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from sys import stdout
 
 import environ
@@ -6,7 +7,6 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from open_city_profile import __version__
-from datetime import datetime
 
 checkout_dir = environ.Path(__file__) - 2
 assert os.path.exists(checkout_dir("manage.py"))
