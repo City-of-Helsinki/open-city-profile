@@ -1,5 +1,7 @@
+import pytest
 from guardian.shortcuts import assign_perm
 
+from open_city_profile import settings
 from open_city_profile.tests.asserts import assert_match_error_code
 from services.models import Service
 
@@ -97,3 +99,47 @@ def test_requires_view_service_permission(user_gql_client):
 
     assert executed["data"] == {"services": None}
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+
+
+@pytest.mark.parametrize("language", dict(settings.LANGUAGES).keys())
+def test_query_service_terms_of_use_url(user_gql_client, language):
+    terms_of_use_url = f"https://example.com/terms-of-use/{language}/"
+    service = ServiceFactory()
+    service.set_current_language(language)
+    service.terms_of_use_url = terms_of_use_url
+    service.save()
+    service.set_current_language("fr")
+
+    assign_perm("services.view_service", user_gql_client.user)
+    query = (
+        """
+        query {
+            services {
+                edges {
+                    node {
+                        name
+                        termsOfUseUrl(language: %s)
+                    }
+                }
+            }
+        }
+    """
+        % language.upper()
+    )
+
+    executed = user_gql_client.execute(query, service=None)
+
+    assert executed["data"] == {
+        "services": {
+            "edges": [
+                {
+                    "node": {
+                        "name": service.name,
+                        "termsOfUseUrl": terms_of_use_url,
+                    }
+                }
+            ]
+        }
+    }
+
+    assert "errors" not in executed
