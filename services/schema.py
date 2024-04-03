@@ -78,6 +78,8 @@ class ServiceNode(DjangoParlerObjectType):
             "gdpr_url",
             "gdpr_query_scope",
             "gdpr_delete_scope",
+            "privacy_policy_url",
+            "terms_of_use_url",
         )
         filter_fields = []
         interfaces = (relay.Node,)

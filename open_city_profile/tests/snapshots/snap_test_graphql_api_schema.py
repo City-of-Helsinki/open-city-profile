@@ -50,6 +50,8 @@ type ServiceNode implements Node {
   isPureKeycloak: Boolean!
   title(language: TranslationLanguage): String
   description(language: TranslationLanguage): String
+  privacyPolicyUrl(language: TranslationLanguage): String
+  termsOfUseUrl(language: TranslationLanguage): String
 }
 
 interface Node {
