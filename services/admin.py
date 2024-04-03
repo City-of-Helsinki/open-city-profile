@@ -104,7 +104,17 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = [
-            (_("Translatable texts"), {"fields": ("title", "description")}),
+            (
+                _("Translatable texts"),
+                {
+                    "fields": (
+                        "title",
+                        "description",
+                        "privacy_policy_url",
+                        "terms_of_use_url",
+                    )
+                },
+            ),
             (_("Common options"), {"fields": ("name", "allowed_data_fields")}),
         ]
         if obj is None or not obj.is_profile_service:
