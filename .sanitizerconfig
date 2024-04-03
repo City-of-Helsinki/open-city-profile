@@ -183,6 +183,8 @@ strategy:
     language_code: null
     master_id: null
     title: null
+    privacy_policy_url: null
+    terms_of_use_url: null
   services_serviceclientid:
     client_id: null
     id: null

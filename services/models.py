@@ -63,6 +63,8 @@ class Service(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(max_length=64),
         description=models.TextField(max_length=500, blank=True),
+        privacy_policy_url=models.URLField(blank=True, null=True),
+        terms_of_use_url=models.URLField(blank=True, null=True),
     )
     allowed_data_fields = models.ManyToManyField(AllowedDataField)
     created_at = models.DateTimeField(auto_now_add=True)
