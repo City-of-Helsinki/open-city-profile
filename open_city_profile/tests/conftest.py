@@ -120,6 +120,11 @@ def email_setup(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 
+@pytest.fixture(autouse=True)
+def enable_instrospection_query(settings):
+    settings.ENABLE_GRAPHQL_INTROSPECTION = True
+
+
 @pytest.fixture
 def keycloak_setup(settings):
     settings.KEYCLOAK_BASE_URL = "https://localhost/keycloak"

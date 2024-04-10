@@ -103,6 +103,7 @@ Common environment variable that is required in either case:
 == Feature flags
 
 - `ENABLE_GRAPHIQL`: Enables GraphiQL testing user interface. If `DEBUG` is `True`, this setting has no effect and GraphiQL is always enabled. Default is `False`.
+- `ENABLE_GRAPHQL_INTROSPECTION`: Enables GraphQL introspection queries. If `DEBUG` is `True`, this setting has no effect and introspection queries are always enabled. Default is `False`.
 - `USE_X_FORWARDED_FOR`: Affects the way how a requester's IP address is figured out. If set to `True`, the `X-Forwarded-For` HTTP header is used as one option. Default is `False`.
 
 == Sentry
@@ -111,7 +112,7 @@ It's possible to report errors to Sentry.
 
 - `SENTRY_DSN`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#dsn[Sentry DSN]. If this is not set, nothing is sent to Sentry.
 - `SENTRY_ENVIRONMENT`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#environment[Sentry environment]. Default is "development".
-- `COMMIT_HASH`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#release[Sentry release]. See `COMMIT_HASH` in <<Miscellaneous>>. If `COMMIT_HASH` is not set, set module version instead. 
+- `COMMIT_HASH`: Sets the https://docs.sentry.io/platforms/python/configuration/options/#release[Sentry release]. See `COMMIT_HASH` in <<Miscellaneous>>. If `COMMIT_HASH` is not set, set module version instead.
 
 == Miscellaneous
 
