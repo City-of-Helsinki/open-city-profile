@@ -41,6 +41,7 @@ Prerequisites:
      * `CREATE_SUPERUSER`, creates a superuser with credentials `admin`:`admin` (admin@example.com)
      * `APPLY_MIGRATIONS`, applies migrations on startup
      * `ENABLE_GRAPHIQL`, enables GraphiQL interface for `/graphql/`
+     * `ENABLE_GRAPHQL_INTROSPECTION`, enables GraphQL introspection queries
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
      * `OIDC_CLIENT_ID`, Tunnistamo client id for enabling GDPR API authorization code flows

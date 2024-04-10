@@ -51,6 +51,7 @@ env = environ.Env(
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
     OPEN_CITY_PROFILE_LOG_LEVEL=(str, None),
     ENABLE_GRAPHIQL=(bool, False),
+    ENABLE_GRAPHQL_INTROSPECTION=(bool, False),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
     CSRF_COOKIE_PATH=(str, ""),
@@ -155,8 +156,10 @@ USE_TZ = True
 
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 
-# Set to True to enable GraphiQL interface, this will overriden to True if DEBUG=True
+# Set to True to enable GraphiQL interface, enabled automatically if DEBUG=True
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
+# Enable GraphQL introspection queries, enabled automatically if DEBUG=True
+ENABLE_GRAPHQL_INTROSPECTION = env("ENABLE_GRAPHQL_INTROSPECTION")
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
