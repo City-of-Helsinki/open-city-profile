@@ -74,7 +74,11 @@ query {
 
 
 def do_graphql_call(
-    live_server, request_auth=None, query=_QUERY, extra_request_args=None
+    live_server,
+    request_auth=None,
+    query=_QUERY,
+    extra_request_args=None,
+    expected_status=200,
 ):
     if extra_request_args is None:
         extra_request_args = {}
@@ -96,7 +100,7 @@ def do_graphql_call(
         response = requests.post(url, json=payload, **request_args)
 
     assert (
-        response.status_code == 200
+        response.status_code == expected_status
     ), f"Status: {response.status_code}. Body:\n{response.text}"
 
     body = response.json()
@@ -113,6 +117,7 @@ def do_graphql_call_as_user(
     extra_claims=None,
     query=_QUERY,
     extra_request_args=None,
+    expected_status=200,
 ):
     if extra_request_args is None:
         extra_request_args = {}
@@ -138,4 +143,5 @@ def do_graphql_call_as_user(
         BearerTokenAuth(extra_claims=claims),
         query=query,
         extra_request_args=extra_request_args,
+        expected_status=expected_status,
     )

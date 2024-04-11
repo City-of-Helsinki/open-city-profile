@@ -2,7 +2,7 @@ import graphene_validator.errors
 import sentry_sdk
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
-from graphene.validation import DisableIntrospection
+from graphene.validation import depth_limit_validator, DisableIntrospection
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql import ExecutionResult, parse, validate
 from helusers.oidc import AuthenticationError
@@ -94,29 +94,36 @@ def _get_error_code(exception):
 
 class GraphQLView(BaseGraphQLView):
 
-    def _run_custom_validator(self, query):
+    def _run_custom_validators(self, query):
         result = None
+
+        validation_rules = [
+            depth_limit_validator(max_depth=settings.GRAPHQL_QUERY_DEPTH_LIMIT)
+        ]
+
         if not settings.ENABLE_GRAPHQL_INTROSPECTION and not settings.DEBUG:
-            try:
-                document = parse(query)
-            except Exception:
-                # Execution will also fail in super().execute_graphql_request()
-                # when parsing the query so no need to do anything here.
-                pass
-            else:
-                validation_errors = validate(
-                    schema=self.schema.graphql_schema,
-                    document_ast=document,
-                    rules=(DisableIntrospection,),
-                )
-                if validation_errors:
-                    result = ExecutionResult(data=None, errors=validation_errors)
+            validation_rules.append(DisableIntrospection)
+
+        try:
+            document = parse(query)
+        except Exception:
+            # Execution will also fail in super().execute_graphql_request()
+            # when parsing the query so no need to do anything here.
+            pass
+        else:
+            validation_errors = validate(
+                schema=self.schema.graphql_schema,
+                document_ast=document,
+                rules=validation_rules,
+            )
+            if validation_errors:
+                result = ExecutionResult(data=None, errors=validation_errors)
 
         return result
 
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send some of them to Sentry"""
-        result = self._run_custom_validator(query)
+        result = self._run_custom_validators(query)
 
         if not result:
             result = super().execute_graphql_request(

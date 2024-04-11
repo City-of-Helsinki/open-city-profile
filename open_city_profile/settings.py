@@ -52,6 +52,7 @@ env = environ.Env(
     OPEN_CITY_PROFILE_LOG_LEVEL=(str, None),
     ENABLE_GRAPHIQL=(bool, False),
     ENABLE_GRAPHQL_INTROSPECTION=(bool, False),
+    GRAPHQL_QUERY_DEPTH_LIMIT=(int, 12),
     FORCE_SCRIPT_NAME=(str, ""),
     CSRF_COOKIE_NAME=(str, ""),
     CSRF_COOKIE_PATH=(str, ""),
@@ -160,6 +161,7 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 # Enable GraphQL introspection queries, enabled automatically if DEBUG=True
 ENABLE_GRAPHQL_INTROSPECTION = env("ENABLE_GRAPHQL_INTROSPECTION")
+GRAPHQL_QUERY_DEPTH_LIMIT = env("GRAPHQL_QUERY_DEPTH_LIMIT")
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
