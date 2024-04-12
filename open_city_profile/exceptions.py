@@ -8,10 +8,6 @@ class ProfileGraphQLError(GraphQLError):
 # Open city profile
 
 
-class APINotImplementedError(ProfileGraphQLError):
-    """The functionality is not yet implemented"""
-
-
 class ProfileAlreadyExistsForUserError(ProfileGraphQLError):
     """Profile already exists for the user"""
 
