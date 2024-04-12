@@ -8,7 +8,6 @@ from graphql import ExecutionResult, parse, validate
 from helusers.oidc import AuthenticationError
 
 from open_city_profile.consts import (
-    API_NOT_IMPLEMENTED_ERROR,
     CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
@@ -30,7 +29,6 @@ from open_city_profile.consts import (
     VALIDATION_ERROR,
 )
 from open_city_profile.exceptions import (
-    APINotImplementedError,
     ConnectedServiceDataQueryFailedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
@@ -54,7 +52,6 @@ error_codes_shared = {
     ObjectDoesNotExist: OBJECT_DOES_NOT_EXIST_ERROR,
     TokenExpiredError: TOKEN_EXPIRED_ERROR,
     PermissionDenied: PERMISSION_DENIED_ERROR,
-    APINotImplementedError: API_NOT_IMPLEMENTED_ERROR,
     ValidationError: VALIDATION_ERROR,
     graphene_validator.errors.ValidationGraphQLError: VALIDATION_ERROR,
     InvalidEmailFormatError: INVALID_EMAIL_FORMAT_ERROR,
