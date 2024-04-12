@@ -12,6 +12,10 @@ class APINotImplementedError(ProfileGraphQLError):
     """The functionality is not yet implemented"""
 
 
+class ProfileAlreadyExistsForUserError(ProfileGraphQLError):
+    """Profile already exists for the user"""
+
+
 class ConnectedServiceDataQueryFailedError(GraphQLError):
     """Querying data from a connected service failed."""
 

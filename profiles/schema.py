@@ -35,10 +35,10 @@ from open_city_profile.decorators import (
     staff_required,
 )
 from open_city_profile.exceptions import (
-    APINotImplementedError,
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     InvalidEmailFormatError,
+    ProfileAlreadyExistsForUserError,
     ProfileDoesNotExistError,
     ProfileMustHavePrimaryEmailError,
     ServiceConnectionDoesNotExist,
@@ -1360,14 +1360,13 @@ class ClaimProfileMutation(relay.ClientIDMutation):
 
         profile_to_claim = get_claimable_profile(token=input["token"])
         if Profile.objects.filter(user=info.context.user).exists():
-            # Logged in user has a profile
-            # TODO: Add implementation (OM-385/HP-2368)
-            raise APINotImplementedError(
-                "Claiming a profile with existing profile not yet implemented"
+            # Logged-in user has a profile
+            raise ProfileAlreadyExistsForUserError(
+                "User already has a profile. Claiming is not allowed."
             )
         else:
             with transaction.atomic():
-                # Logged in user has no profile, let's use claimed profile
+                # Logged-in user has no profile, let's use claimed profile
                 update_profile(profile_to_claim, input["profile"])
                 profile_to_claim.user = info.context.user
                 profile_to_claim.save()
@@ -1861,7 +1860,7 @@ class Mutation(graphene.ObjectType):
         "an error.\n\n"
         "Possible error codes:\n\n"
         "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
-        "* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently authenticated user already has a profile."
+        "* `PROFILE_ALREADY_EXISTS_FOR_USER_ERROR`: Returned if the currently authenticated user already has a profile."
     )
     create_my_profile_temporary_read_access_token = CreateMyProfileTemporaryReadAccessTokenMutation.Field(
         description="Creates and returns an access token for the profile which is linked to the currently "
