@@ -3,7 +3,10 @@ from string import Template
 
 from django.utils import timezone
 
-from open_city_profile.consts import API_NOT_IMPLEMENTED_ERROR, TOKEN_EXPIRED_ERROR
+from open_city_profile.consts import (
+    PROFILE_ALREADY_EXISTS_FOR_USER_ERROR,
+    TOKEN_EXPIRED_ERROR,
+)
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.models import Profile
 
@@ -270,7 +273,10 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_clie
     executed = user_gql_client.execute(query)
 
     assert "errors" in executed
-    assert executed["errors"][0]["extensions"]["code"] == API_NOT_IMPLEMENTED_ERROR
+    assert (
+        executed["errors"][0]["extensions"]["code"]
+        == PROFILE_ALREADY_EXISTS_FOR_USER_ERROR
+    )
 
 
 def test_anon_user_can_not_claim_claimable_profile(anon_user_gql_client):
