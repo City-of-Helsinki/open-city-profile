@@ -596,7 +596,7 @@ class ProfileNode(RestrictedProfileNode):
         ):
             return self.sensitivedata
         else:
-            # TODO: We should return PermissionDenied as a partial error here.
+            # TODO: Raise PermissionDenied error (HP-2370)
             return None
 
     def resolve_verified_personal_information(self: Profile, info, **kwargs):
@@ -1362,8 +1362,7 @@ class ClaimProfileMutation(relay.ClientIDMutation):
         profile_to_claim = get_claimable_profile(token=input["token"])
         if Profile.objects.filter(user=info.context.user).exists():
             # Logged in user has a profile
-            # TODO: Case with existing profile waiting for final spec, ticket:
-            #       https://helsinkisolutionoffice.atlassian.net/browse/OM-385
+            # TODO: Add implementation (OM-385/HP-2368)
             raise APINotImplementedError(
                 "Claiming a profile with existing profile not yet implemented"
             )
@@ -1597,7 +1596,7 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
 
 
 class Query(graphene.ObjectType):
-    # TODO: Add the complete list of error codes
+    # TODO: Add missing error codes in descriptions (HP-2369)
     profile = graphene.Field(
         ProfileNode,
         id=graphene.Argument(graphene.ID, required=True),
@@ -1607,15 +1606,12 @@ class Query(graphene.ObjectType):
         ),
         description="Get profile by profile ID.\n\nRequires `staff` credentials for the requester's service."
         "The profile must have an active connection to the requester's service, otherwise "
-        "it will not be returned.\n\nPossible error codes:\n\n* `TODO`",
+        "it will not be returned.",
     )
-    # TODO: Add the complete list of error codes
     my_profile = graphene.Field(
         ProfileNode,
-        description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.\n\n"
-        "Possible error codes:\n\n* `TODO`",
+        description="Get the profile belonging to the currently authenticated user.\n\nRequires authentication.",
     )
-    # TODO: Add the complete list of error codes
     download_my_profile = graphene.JSONString(
         authorization_code=graphene.String(
             required=True,
@@ -1635,7 +1631,6 @@ class Query(graphene.ObjectType):
         "Querying data from a connected service was not possible or failed.\n"
         "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing a connected service.",
     )
-    # TODO: Add the complete list of error codes
     profiles = DjangoFilterConnectionField(
         ProfileNode,
         service_type=graphene.Argument(
@@ -1645,15 +1640,13 @@ class Query(graphene.ObjectType):
         description="Search for profiles. The results are filtered based on the given parameters. The results are "
         "paged using Relay.\n\nRequires `staff` credentials for the requester's service."
         "The profiles must have an active connection to the requester's service, otherwise "
-        "they will not be returned.\n\nPossible error codes:\n\n* `TODO`",
+        "they will not be returned.",
     )
-    # TODO: Add the complete list of error codes
     claimable_profile = graphene.Field(
         ProfileNode,
         token=graphene.Argument(graphene.UUID, required=True),
         description="Get a profile by the given `token` so that it may be linked to the currently authenticated user. "
-        "The profile must not already have a user account linked to it.\n\nRequires authentication.\n\n"
-        "Possible error codes:\n\n* `TODO`",
+        "The profile must not already have a user account linked to it.\n\nRequires authentication.\n\n",
     )
 
     profile_with_access_token = graphene.Field(
@@ -1719,7 +1712,6 @@ class Query(graphene.ObjectType):
 
     @login_required
     def resolve_claimable_profile(self, info, **kwargs):
-        # TODO: Complete error handling for this OM-297
         return get_claimable_profile(token=kwargs["token"])
 
     @login_and_service_required
@@ -1791,11 +1783,11 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
-    # TODO: Add the complete list of error codes
+    # TODO: Add missing error codes in descriptions (HP-2369)
     create_my_profile = CreateMyProfileMutation.Field(
         description="Creates a new profile based on the given data. The new profile is linked to the currently "
         "authenticated user.\n\nOne or several of the following is possible to add:\n\n* Email\n"
-        "* Address\n* Phone\n\nRequires authentication.\n\nPossible error codes:\n\n* `TODO`"
+        "* Address\n* Phone\n\nRequires authentication."
     )
     create_profile = CreateProfileMutation.Field()
 
@@ -1826,7 +1818,6 @@ class Mutation(graphene.ObjectType):
     )
     # fmt: on
 
-    # TODO: Add the complete list of error codes
     update_my_profile = UpdateMyProfileMutation.Field(
         description="Updates the profile which is linked to the currently authenticated user based on the given data."
         "\n\nOne or several of the following is possible to add, modify or remove:\n\n* Email\n* Address"
@@ -1845,7 +1836,6 @@ class Mutation(graphene.ObjectType):
         "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
         "* `DATA_CONFLICT_ERROR`: Could not update with the provided data because it would cause a conflict."
     )
-    # TODO: Add the complete list of error codes
     delete_my_profile = DeleteMyProfileMutation.Field(
         description="Deletes the data of the profile which is linked to the currently authenticated user.\n\n"
         "Requires authentication.\n\nPossible error codes:\n\n"
@@ -1856,7 +1846,6 @@ class Mutation(graphene.ObjectType):
         "connected services.\n"
         "* `CONNECTED_SERVICE_DELETION_FAILED_ERROR`: The profile deletion failed for one or more connected services."
     )
-    # TODO: Add the complete list of error codes
     delete_my_service_data = DeleteMyServiceDataMutation.Field(
         description="Deletes the data of the profile which is linked to the currently authenticated user from one "
         "connected service.\n\n"
@@ -1866,7 +1855,6 @@ class Mutation(graphene.ObjectType):
         "* `MISSING_GDPR_API_TOKEN_ERROR`: No API token available for accessing the service.\n"
         "* `SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR`: The user is not connected to the service."
     )
-    # TODO: Add the complete list of error codes
     claim_profile = ClaimProfileMutation.Field(
         description="Fetches a profile which has no linked user account yet by the given token and links the profile "
         "to the currently authenticated user's account.\n\n**NOTE:** This functionality is not implemented "
@@ -1876,7 +1864,6 @@ class Mutation(graphene.ObjectType):
         "* `PROFILE_MUST_HAVE_PRIMARY_EMAIL`: If trying to get rid of the profile's primary email.\n"
         "* `API_NOT_IMPLEMENTED_ERROR`: Returned if the currently authenticated user already has a profile."
     )
-
     create_my_profile_temporary_read_access_token = CreateMyProfileTemporaryReadAccessTokenMutation.Field(
         description="Creates and returns an access token for the profile which is linked to the currently "
         "authenticated user. The access token gives read access for this profile for any user, including anonymous, "
