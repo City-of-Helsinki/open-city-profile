@@ -596,7 +596,6 @@ class ProfileNode(RestrictedProfileNode):
         ):
             return self.sensitivedata
         else:
-            # TODO: Raise PermissionDenied error (HP-2370)
             return None
 
     def resolve_verified_personal_information(self: Profile, info, **kwargs):
