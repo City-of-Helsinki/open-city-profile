@@ -160,7 +160,7 @@ This repository contains `requirements*.in` and corresponding `requirements*.txt
 This project uses
 [`black`](https://github.com/ambv/black),
 [`flake8`](https://gitlab.com/pycqa/flake8) and
-[`isort`](https://github.com/timothycrosley/isort)
+[`isort`](https://github.com/pycqa/isort)
 for code formatting and quality checking. Project follows the basic
 black config, without any modifications.
 
