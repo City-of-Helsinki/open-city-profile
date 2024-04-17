@@ -30,8 +30,8 @@ from .validators import (
 
 class Profile(UUIDModel, SerializableMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
-    first_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
-    last_name = NullToEmptyCharField(max_length=255, blank=True, db_index=True)
+    first_name = NullToEmptyCharField(max_length=150, blank=True, db_index=True)
+    last_name = NullToEmptyCharField(max_length=150, blank=True, db_index=True)
     nickname = NullToEmptyCharField(max_length=32, blank=True, db_index=True)
     language = models.CharField(
         max_length=2,
