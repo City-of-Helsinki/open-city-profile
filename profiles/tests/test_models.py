@@ -414,7 +414,7 @@ class ValidationTestBase:
 class TestProfileValidation(ValidationTestBase):
     @pytest.mark.parametrize(
         "field_name,max_length",
-        [("first_name", 255), ("last_name", 255), ("nickname", 32)],
+        [("first_name", 150), ("last_name", 150), ("nickname", 32)],
     )
     def test_string_field_max_length(self, field_name, max_length, profile):
         self.execute_string_field_max_length_validation_test(
