@@ -571,3 +571,5 @@ def test_delete_with_verified_personal_information(
         DELETE_MY_PROFILE_MUTATION, auth_token_payload={"loa": loa}
     )
     assert bool(executed.get("errors")) == errors
+    if errors:
+        assert executed["errors"][0]["extensions"]["code"] == "INSUFFICIENT_LOA_ERROR"
