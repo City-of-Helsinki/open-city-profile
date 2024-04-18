@@ -156,7 +156,9 @@ def test_verified_personal_information_is_included_in_the_downloaded_profile_whe
 def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not_high_enough(
     loa, user_gql_client, profile_service, service
 ):
-    VerifiedPersonalInformationFactory(profile__user=user_gql_client.user)
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    VerifiedPersonalInformationFactory(profile=profile)
     token_payload = {
         "loa": loa,
     }
@@ -165,7 +167,7 @@ def test_verified_personal_information_is_replaced_with_an_error_when_loa_is_not
     )
     assert executed["data"]["downloadMyProfile"] is None
     assert len(executed["errors"]) == 1
-    assert executed["errors"][0]["extensions"]["code"] == "PERMISSION_DENIED_ERROR"
+    assert executed["errors"][0]["extensions"]["code"] == "INSUFFICIENT_LOA_ERROR"
 
 
 def test_downloading_non_existent_profile_doesnt_return_errors(user_gql_client):
