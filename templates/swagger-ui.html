@@ -6,19 +6,11 @@
     <title>{{ title }}</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" integrity="sha512-3ZF6q2IwJ/o3zbm5kBJX1RtjPFxnFcTBH+pa/jtnvvhygsYFcEqX+T9guR01rI8gozi4fPU95W+SZES6ew28qA==" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="{% static 'open-city-profile/swagger/swagger-ui-4.15.5.css' %}" integrity="sha512-3ZF6q2IwJ/o3zbm5kBJX1RtjPFxnFcTBH+pa/jtnvvhygsYFcEqX+T9guR01rI8gozi4fPU95W+SZES6ew28qA==" crossorigin="anonymous">
   </head>
   <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js" integrity="sha512-bqxUYoYPf4DzvJH9o51SnEYzjylQLBD4Zua6CFq/uB71a7yxjEC7YPxHPreZqJEmbrR2litKgWGf6BIkhTna2A==" crossorigin="anonymous"></script>
-    <script>
-      window.onload = () => {
-        window.ui = SwaggerUIBundle({
-          url: "{% static openapi_url %}",
-          dom_id: '#swagger-ui',
-          supportedSubmitMethods: [],
-        });
-      };
-    </script>
+    <script src="{% static 'open-city-profile/swagger/swagger-ui-bundle-4.15.5.js' %}" integrity="sha512-bqxUYoYPf4DzvJH9o51SnEYzjylQLBD4Zua6CFq/uB71a7yxjEC7YPxHPreZqJEmbrR2litKgWGf6BIkhTna2A==" crossorigin="anonymous"></script>
+    <script data-url="{% static openapi_url %}" src="{% static 'open-city-profile/swagger/init.js' %}" integrity="sha512-y6jdRtorlMY3c+9lExUAjldz/49IkbGmQnjZbXTTYCaKZDni6t9uAO5hX/Ps7H1DqzN+1kOr9Y8pVFKO1Vtg1A==" crossorigin="anonymous"></script>
   </body>
 </html>
