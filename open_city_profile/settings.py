@@ -72,6 +72,11 @@ env = environ.Env(
     KEYCLOAK_GDPR_CLIENT_ID=(str, ""),
     KEYCLOAK_GDPR_CLIENT_SECRET=(str, ""),
     VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST=(list, []),
+    CSP_CONNECT_SRC=(str, None),
+    CSP_IMG_SRC=(str, None),
+    CSP_STYLE_SRC=(str, None),
+    CSP_SCRIPT_SRC=(str, None),
+    CSP_REPORT_URI=(str, None),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -194,6 +199,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -393,3 +399,9 @@ KEYCLOAK_GDPR_CLIENT_SECRET = env("KEYCLOAK_GDPR_CLIENT_SECRET")
 
 # get build time from a file in docker image
 APP_BUILD_TIME = datetime.fromtimestamp(os.path.getmtime(__file__))
+
+CSP_CONNECT_SRC = env.str("CSP_CONNECT_SRC")
+CSP_IMG_SRC = env.str("CSP_IMG_SRC")
+CSP_STYLE_SRC = env.str("CSP_STYLE_SRC")
+CSP_SCRIPT_SRC = env.str("CSP_SCRIPT_SRC")
+CSP_REPORT_URI = env.str("CSP_REPORT_URI")
