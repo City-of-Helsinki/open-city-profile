@@ -35,6 +35,7 @@ django==4.2.9
     #   -r requirements.in
     #   django-admin-sortable
     #   django-cors-headers
+    #   django-csp
     #   django-enumfields2
     #   django-filter
     #   django-guardian
@@ -45,6 +46,8 @@ django==4.2.9
 django-admin-sortable==2.3
     # via -r requirements.in
 django-cors-headers==4.3.1
+    # via -r requirements.in
+django-csp==3.8
     # via -r requirements.in
 django-enumfields2==3.0.2
     # via -r requirements.in

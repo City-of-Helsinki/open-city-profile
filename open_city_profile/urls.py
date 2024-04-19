@@ -1,3 +1,4 @@
+from csp.decorators import csp_exempt
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -15,10 +16,12 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path(
         "graphql/",
-        csrf_exempt(
-            GraphQLView.as_view(
-                graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG,
-                execution_context_class=DeferredExecutionContext,
+        csp_exempt(
+            csrf_exempt(
+                GraphQLView.as_view(
+                    graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG,
+                    execution_context_class=DeferredExecutionContext,
+                )
             )
         ),
     ),
