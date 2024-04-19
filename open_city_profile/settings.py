@@ -176,7 +176,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "open_city_profile.apps.OpenCityProfileStaticFilesConfig",
     "django.contrib.gis",
     "django_filters",
     "parler",
