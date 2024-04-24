@@ -76,6 +76,7 @@ env = environ.Env(
     CSP_IMG_SRC=(str, None),
     CSP_STYLE_SRC=(str, None),
     CSP_SCRIPT_SRC=(str, None),
+    CSP_REPORT_ONLY=(bool, False),
     CSP_REPORT_URI=(str, None),
 )
 if os.path.exists(env_file):
@@ -404,4 +405,5 @@ CSP_CONNECT_SRC = env.str("CSP_CONNECT_SRC")
 CSP_IMG_SRC = env.str("CSP_IMG_SRC")
 CSP_STYLE_SRC = env.str("CSP_STYLE_SRC")
 CSP_SCRIPT_SRC = env.str("CSP_SCRIPT_SRC")
+CSP_REPORT_ONLY = env.bool("CSP_REPORT_ONLY")
 CSP_REPORT_URI = env.str("CSP_REPORT_URI")
