@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.14.0...open-city-profile-v1.15.0) (2024-04-24)
+
+
+### Features
+
+* Prevent GDPR features with insufficient loa ([51069d3](https://github.com/City-of-Helsinki/open-city-profile/commit/51069d33a5829686c5c82c47ae91503374bdddee))
+
 ## [1.14.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.13.1...open-city-profile-v1.14.0) (2024-04-19)
 
 
