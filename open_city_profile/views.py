@@ -79,6 +79,7 @@ error_codes_profile = {
 sentry_ignored_errors = (
     ObjectDoesNotExist,
     PermissionDenied,
+    InsufficientLoaError,
     Profile.sensitivedata.RelatedObjectDoesNotExist,
 )
 
