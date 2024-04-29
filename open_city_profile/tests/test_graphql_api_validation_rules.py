@@ -66,3 +66,25 @@ def test_graphql_query_depth_can_be_limited(
         assert data is None
         error = errors[0]["message"]
         assert "exceeds maximum operation depth" in error
+
+
+@pytest.mark.parametrize(
+    "enabled", [pytest.param(True, id="enabled"), pytest.param(False, id="disabled")]
+)
+def test_graphql_query_suggestions_can_be_disabled(live_server, settings, enabled):
+    error_string = "Did you mean 'sdl'?"
+    query = """
+    query {
+        _service {
+            sd
+        }
+    }"""
+    settings.ENABLE_GRAPHQL_INTROSPECTION = enabled
+
+    data, errors = do_graphql_call(live_server, query=query, expected_status=400)
+
+    error = errors[0]["message"]
+    if enabled:
+        assert error_string in error
+    else:
+        assert error_string not in error

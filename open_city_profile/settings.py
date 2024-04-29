@@ -7,6 +7,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from open_city_profile import __version__
+from open_city_profile.utils import enable_graphql_query_suggestion
 
 checkout_dir = environ.Path(__file__) - 2
 assert os.path.exists(checkout_dir("manage.py"))
@@ -167,6 +168,10 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
 # Enable GraphQL introspection queries, enabled automatically if DEBUG=True
 ENABLE_GRAPHQL_INTROSPECTION = env("ENABLE_GRAPHQL_INTROSPECTION")
+
+if not ENABLE_GRAPHQL_INTROSPECTION:
+    enable_graphql_query_suggestion(False)
+
 GRAPHQL_QUERY_DEPTH_LIMIT = env("GRAPHQL_QUERY_DEPTH_LIMIT")
 
 INSTALLED_APPS = [
