@@ -2,7 +2,11 @@ import pytest
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.tests.factories import ServiceConnectionFactory
+from services.tests.factories import (
+    AllowedDataFieldFactory,
+    ServiceConnectionFactory,
+    ServiceFactory,
+)
 
 from .conftest import VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES
 from .factories import (
@@ -16,7 +20,7 @@ from .factories import (
 )
 
 
-def test_normal_user_can_query_emails(user_gql_client):
+def test_normal_user_can_query_emails(user_gql_client, service):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     email = profile.emails.first()
 
@@ -50,11 +54,14 @@ def test_normal_user_can_query_emails(user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="email"))
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_phones(user_gql_client):
+def test_normal_user_can_query_phones(user_gql_client, service):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile)
 
@@ -88,11 +95,14 @@ def test_normal_user_can_query_phones(user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="phone"))
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_addresses(user_gql_client):
+def test_normal_user_can_query_addresses(user_gql_client, service):
     profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
     address = AddressFactory(profile=profile)
 
@@ -126,12 +136,15 @@ def test_normal_user_can_query_addresses(user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="address"))
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
 
 
 def test_normal_user_can_query_primary_contact_details(
-    user_gql_client, execution_context_class
+    user_gql_client, execution_context_class, service
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile, primary=True)
@@ -181,8 +194,15 @@ def test_normal_user_can_query_primary_contact_details(
             },
         }
     }
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="phone"),
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="address"),
+    )
+    ServiceConnectionFactory(profile=profile, service=service)
+
     executed = user_gql_client.execute(
-        query, execution_context_class=execution_context_class
+        query, execution_context_class=execution_context_class, service=service
     )
     assert dict(executed["data"]) == expected_data
 
@@ -218,31 +238,56 @@ class TestProfileWithVerifiedPersonalInformation:
         }
     """
 
-    @staticmethod
-    def _execute_query(gql_client, loa="substantial"):
+    @pytest.fixture(autouse=True)
+    def setup_data(self, db, user_gql_client):
+        self.user = user_gql_client.user
+        self.client = user_gql_client
+        self.service = ServiceFactory(is_profile_service=True)
+        self.profile = ProfileFactory(user=user_gql_client.user)
+        ServiceConnectionFactory(profile=self.profile, service=self.service)
+        self._add_allowed_data_fields_to_service(self.service)
+
+    def _create_allowed_data_fields(self):
+        self.allowed_name = AllowedDataFieldFactory(field_name="name")
+        self.allowed_address = AllowedDataFieldFactory(field_name="address")
+        self.allowed_personal_identity_code = AllowedDataFieldFactory(
+            field_name="personalidentitycode"
+        )
+
+    def _add_allowed_data_fields_to_service(self, service):
+        if not getattr(self, "allowed_name", None):
+            self._create_allowed_data_fields()
+
+        service.allowed_data_fields.add(
+            self.allowed_name,
+            self.allowed_address,
+            self.allowed_personal_identity_code,
+        )
+
+    def _execute_query(self, loa="substantial", service=None):
         token_payload = {
             "loa": loa,
         }
 
-        return gql_client.execute(
+        kwargs = {"service": self.service}
+        if service:
+            kwargs["service"] = service
+
+        return self.client.execute(
             TestProfileWithVerifiedPersonalInformation.QUERY,
             auth_token_payload=token_payload,
+            **kwargs,
         )
 
-    def test_when_verified_personal_infomation_does_not_exist_returns_null(
-        self, user_gql_client
-    ):
-        ProfileFactory(user=user_gql_client.user)
-
-        executed = self._execute_query(user_gql_client)
+    def test_when_verified_personal_information_does_not_exist_returns_null(self):
+        executed = self._execute_query()
 
         assert "errors" not in executed
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
-    def test_normal_user_can_query_verified_personal_information(self, user_gql_client):
-        profile = ProfileFactory(user=user_gql_client.user)
+    def test_normal_user_can_query_verified_personal_information(self):
         verified_personal_information = VerifiedPersonalInformationFactory(
-            profile=profile
+            profile=self.profile
         )
 
         permanent_address = verified_personal_information.permanent_address
@@ -279,20 +324,17 @@ class TestProfileWithVerifiedPersonalInformation:
             }
         }
 
-        executed = self._execute_query(user_gql_client)
+        executed = self._execute_query()
 
         assert executed["data"] == expected_data
 
     @pytest.mark.parametrize(
         "address_type", VERIFIED_PERSONAL_INFORMATION_ADDRESS_TYPES
     )
-    def test_when_address_does_not_exist_returns_null(
-        self, address_type, user_gql_client
-    ):
-        profile = ProfileFactory(user=user_gql_client.user)
-        VerifiedPersonalInformationFactory(profile=profile, **{address_type: None})
+    def test_when_address_does_not_exist_returns_null(self, address_type):
+        VerifiedPersonalInformationFactory(profile=self.profile, **{address_type: None})
 
-        executed = self._execute_query(user_gql_client)
+        executed = self._execute_query()
 
         assert "errors" not in executed
 
@@ -305,11 +347,10 @@ class TestProfileWithVerifiedPersonalInformation:
                 assert isinstance(received_address, dict)
 
     @pytest.mark.parametrize("loa", ["substantial", "high"])
-    def test_high_enough_level_of_assurance_gains_access(self, loa, user_gql_client):
-        profile = ProfileFactory(user=user_gql_client.user)
-        VerifiedPersonalInformationFactory(profile=profile)
+    def test_high_enough_level_of_assurance_gains_access(self, loa):
+        VerifiedPersonalInformationFactory(profile=self.profile)
 
-        executed = self._execute_query(user_gql_client, loa)
+        executed = self._execute_query(loa)
 
         assert not hasattr(executed, "errors")
         assert isinstance(
@@ -317,26 +358,24 @@ class TestProfileWithVerifiedPersonalInformation:
         )
 
     @pytest.mark.parametrize("loa", [None, "low", "unknown"])
-    def test_too_low_level_of_assurance_denies_access(self, loa, user_gql_client):
-        profile = ProfileFactory(user=user_gql_client.user)
-        VerifiedPersonalInformationFactory(profile=profile)
+    def test_too_low_level_of_assurance_denies_access(self, loa):
+        VerifiedPersonalInformationFactory(profile=self.profile)
 
-        executed = self._execute_query(user_gql_client, loa)
+        executed = self._execute_query(loa)
 
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
 
         assert executed["data"]["myProfile"]["verifiedPersonalInformation"] is None
 
     @pytest.mark.parametrize("with_serviceconnection", (True, False))
-    def test_service_connection_required(
-        self, user_gql_client, service, with_serviceconnection
-    ):
-        profile = ProfileFactory(user=user_gql_client.user)
-        VerifiedPersonalInformationFactory(profile=profile)
+    def test_service_connection_required(self, with_serviceconnection):
+        service = ServiceFactory()
+        self._add_allowed_data_fields_to_service(service)
+        VerifiedPersonalInformationFactory(profile=self.profile)
         if with_serviceconnection:
-            ServiceConnectionFactory(profile=profile, service=service)
+            ServiceConnectionFactory(profile=self.profile, service=service)
 
-        executed = user_gql_client.execute(
+        executed = self.client.execute(
             TestProfileWithVerifiedPersonalInformation.QUERY,
             auth_token_payload={"loa": "substantial"},
             service=service,
@@ -372,6 +411,7 @@ def test_querying_non_existent_profile_doesnt_return_errors(user_gql_client, ser
 def test_normal_user_can_query_their_own_profile(
     user_gql_client, service, with_service, with_serviceconnection
 ):
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
     profile = ProfileFactory(user=user_gql_client.user)
     if with_serviceconnection:
         ServiceConnectionFactory(profile=profile, service=service)
@@ -399,8 +439,15 @@ def test_normal_user_can_query_their_own_profile(
         assert executed["data"]["myProfile"] is None
 
 
-def test_normal_user_can_query_their_own_profiles_sensitivedata(user_gql_client):
+def test_normal_user_can_query_their_own_profiles_sensitivedata(
+    user_gql_client, service
+):
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="name"),
+        AllowedDataFieldFactory(field_name="personalidentitycode"),
+    )
     profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
     sensitive_data = SensitiveDataFactory(profile=profile)
 
     query = """
@@ -419,5 +466,113 @@ def test_normal_user_can_query_their_own_profiles_sensitivedata(user_gql_client)
             "sensitivedata": {"ssn": sensitive_data.ssn},
         }
     }
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
+
+
+def test_my_profile_results_error_if_querying_fields_not_allowed(
+    user_gql_client, service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["myProfile"] is None
+
+
+def test_my_profile_results_error_if_querying_fields_not_allowed_and_shows_allowed(
+    user_gql_client, service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["myProfile"]["firstName"] == profile.first_name
+    assert executed["data"]["myProfile"]["lastName"] == profile.last_name
+    assert executed["data"]["myProfile"]["sensitivedata"] is None
+
+
+def test_my_profile_checks_allowed_data_fields_for_single_query(
+    user_gql_client, service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["myProfile"]["firstName"] == profile.first_name
+    assert executed["data"]["myProfile"]["lastName"] == profile.last_name
+    assert executed["data"]["myProfile"]["sensitivedata"] is None
+
+
+def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
+    user_gql_client, service
+):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            _service {
+                __typename
+            }
+            myProfile {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+            services {
+                edges {
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    """
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["myProfile"]["firstName"] == profile.first_name
+    assert executed["data"]["myProfile"]["lastName"] == profile.last_name
+    assert executed["data"]["myProfile"]["sensitivedata"] is None
+    assert executed["data"]["services"] is None

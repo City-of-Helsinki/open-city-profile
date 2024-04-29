@@ -8,7 +8,7 @@ from guardian.shortcuts import assign_perm
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.enums import AddressType, EmailType, PhoneType
-from services.tests.factories import ServiceConnectionFactory
+from services.tests.factories import AllowedDataFieldFactory, ServiceConnectionFactory
 
 from .factories import (
     AddressFactory,
@@ -41,6 +41,7 @@ def test_normal_user_can_not_query_profiles(user_gql_client, service):
 
 def test_admin_user_can_query_profiles(superuser_gql_client, profile, service):
     ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     query = """
         {
@@ -73,6 +74,47 @@ def test_admin_user_can_query_profiles(superuser_gql_client, profile, service):
     assert executed["data"] == expected_data
 
 
+def test_admin_user_cant_query_fields_that_are_not_allowed(
+    superuser_gql_client, profile, service
+):
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        firstName
+                        lastName
+                        nickname
+                        emails { edges { node { email } } }
+                    }
+                }
+            }
+        }
+    """
+
+    expected_data = {
+        "profiles": {
+            "edges": [
+                {
+                    "node": {
+                        "firstName": profile.first_name,
+                        "lastName": profile.last_name,
+                        "nickname": profile.nickname,
+                        "emails": None,
+                    }
+                }
+            ]
+        }
+    }
+    executed = superuser_gql_client.execute(query, service=service)
+    assert executed["data"] == expected_data
+    assert "errors" in executed
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+
+
 def test_staff_user_with_group_access_can_query_profiles(
     user_gql_client, profile, group, service
 ):
@@ -80,6 +122,7 @@ def test_staff_user_with_group_access_can_query_profiles(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     # serviceType is included in query just to ensure that it has NO affect
     query = """
@@ -154,6 +197,7 @@ def test_staff_user_can_filter_profiles_by_a_field(
     profile_1, profile_2 = ProfileFactory.create_batch(2)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -189,6 +233,7 @@ def test_staff_user_filter_profiles_by_verified_personal_information_permissions
 
     vpi = VerifiedPersonalInformationFactory()
     ServiceConnectionFactory(profile=vpi.profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     user = user_gql_client.user
     user.groups.add(group)
@@ -235,6 +280,7 @@ def test_staff_user_can_sort_profiles(user_gql_client, group, service):
     )
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -298,6 +344,7 @@ def test_staff_user_can_sort_profiles_by_custom_fields(
     EmailFactory(profile=profile_2, email="bryan.tester@example.com", primary=True)
     ServiceConnectionFactory(profile=profile_1, service=service)
     ServiceConnectionFactory(profile=profile_2, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -658,6 +705,7 @@ def test_staff_user_can_paginate_profiles(
     ):
         ServiceConnectionFactory(profile=profile, service=service)
 
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
@@ -699,12 +747,15 @@ def test_staff_user_with_group_access_can_query_only_profiles_he_has_access_to(
 
     entitled_profile = ProfileFactory()
     entitled_service = service_factory()
+    adf_name = AllowedDataFieldFactory(field_name="name")
     ServiceConnectionFactory(profile=entitled_profile, service=entitled_service)
     assign_perm("can_view_profiles", group, entitled_service)
+    entitled_service.allowed_data_fields.add(adf_name)
 
     unentitled_profile = ProfileFactory()
     unentitled_service = service_factory()
     ServiceConnectionFactory(profile=unentitled_profile, service=unentitled_service)
+    unentitled_service.allowed_data_fields.add(adf_name)
 
     query = """
         {

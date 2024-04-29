@@ -6,6 +6,7 @@ from open_city_profile.tests.graphql_test_helpers import (
     do_graphql_call,
     do_graphql_call_as_user,
 )
+from services.tests.factories import AllowedDataFieldFactory
 
 
 def test_presenting_a_valid_access_token_grants_access(profile, live_server):
@@ -28,6 +29,7 @@ def test_jwt_claims_are_usable_in_field_resolvers(
     service_connection_factory(
         profile=profile_with_verified_personal_information, service=service
     )
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     user_uuid = profile_with_verified_personal_information.user.uuid
     claims = {"sub": str(user_uuid), "loa": loa, "azp": service_client_id.client_id}
@@ -55,6 +57,7 @@ def test_determine_service_from_the_azp_claim(
     user = profile.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     claims = {"sub": str(user.uuid), "azp": service_client_id.client_id}
     query = """

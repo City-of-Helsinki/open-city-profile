@@ -41,7 +41,7 @@ def execute_mutation(input_data, gql_client):
         }
     """
 
-    return gql_client.execute(query, variables={"input": input_data}, service=None)
+    return gql_client.execute(query, variables={"input": input_data})
 
 
 def execute_successful_mutation(input_data, gql_client):

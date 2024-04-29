@@ -152,7 +152,17 @@ def test_staff_user_can_update_a_profile(
             }
         }
     }
-    executed = user_gql_client.execute(query, service=service)
+    executed = user_gql_client.execute(
+        query,
+        service=service,
+        allowed_data_fields=[
+            "name",
+            "email",
+            "phone",
+            "personalidentitycode",
+            "address",
+        ],
+    )
     if with_serviceconnection:
         assert executed["data"] == expected_data
 
@@ -207,6 +217,7 @@ def test_can_not_change_primary_email_to_non_primary(user_gql_client, service):
                 "updateEmails": email_updates,
             }
         },
+        allowed_data_fields=["email"],
     )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
@@ -227,6 +238,7 @@ def test_can_not_delete_primary_email(user_gql_client, service):
                 "removeEmails": email_deletes,
             }
         },
+        allowed_data_fields=["email"],
     )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
@@ -267,7 +279,10 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client, service)
     }
 
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, service=service, variables=variables
+        EMAILS_MUTATION,
+        service=service,
+        variables=variables,
+        allowed_data_fields=["email"],
     )
     assert executed["data"] == expected_data
 
@@ -311,7 +326,10 @@ def test_when_keycloak_returns_conflict_on_update_changes_are_reverted(
         }
     }
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, service=service, variables=variables
+        EMAILS_MUTATION,
+        service=service,
+        variables=variables,
+        allowed_data_fields=["email"],
     )
 
     assert_match_error_code(executed, "DATA_CONFLICT_ERROR")
@@ -333,7 +351,10 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
         variables = {"profileInput": profile_input}
 
         return user_gql_client.execute(
-            EMAILS_MUTATION, service=service, variables=variables
+            EMAILS_MUTATION,
+            service=service,
+            variables=variables,
+            allowed_data_fields=["email"],
         )
 
 

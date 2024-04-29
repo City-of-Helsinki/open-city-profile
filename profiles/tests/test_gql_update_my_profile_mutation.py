@@ -100,7 +100,9 @@ def test_update_profile(
         email_type=email_data["email_type"],
         primary=str(email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation, service=service)
+    executed = user_gql_client.execute(
+        mutation, service=service, allowed_data_fields=["name", "email"]
+    )
     if with_serviceconnection:
         assert executed["data"] == expected_data
 
@@ -152,7 +154,7 @@ def test_update_profile_without_email(user_gql_client, profile_data):
     }
 
     mutation = t.substitute(nickname=profile_data["nickname"])
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(mutation, allowed_data_fields=["name", "email"])
     assert executed["data"] == expected_data
 
 
@@ -299,7 +301,7 @@ def test_add_email(user_gql_client, email_data):
         email_type=email_data["email_type"],
         primary=str(not email_data["primary"]).lower(),
     )
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(mutation, allowed_data_fields=["email"])
     assert dict(executed["data"]) == expected_data
 
 
@@ -358,7 +360,9 @@ def test_update_email(
     ]
 
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"updateEmails": email_updates}},
+        allowed_data_fields=["email"],
     )
 
     if succeeds:
@@ -399,7 +403,9 @@ def test_can_not_update_email_of_another_profile(user_gql_client):
         }
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"updateEmails": email_updates}},
+        allowed_data_fields=["email"],
     )
 
     assert executed["data"]["updateMyProfile"] is None
@@ -445,7 +451,9 @@ def test_change_primary_email_to_another_one(user_gql_client):
         {"id": to_global_id(type="EmailNode", id=email.id), "primary": True}
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"updateEmails": email_updates}},
+        allowed_data_fields=["email"],
     )
     assert dict(executed["data"]) == expected_data
 
@@ -458,7 +466,9 @@ def test_can_not_change_primary_email_to_non_primary(user_gql_client):
         {"id": to_global_id(type="EmailNode", id=email.id), "primary": False}
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"updateEmails": email_updates}},
+        allowed_data_fields=["email"],
     )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
@@ -469,7 +479,9 @@ def test_can_not_delete_primary_email(user_gql_client):
 
     email_deletes = [to_global_id(type="EmailNode", id=email.id)]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"removeEmails": email_deletes}},
+        allowed_data_fields=["email"],
     )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
@@ -502,6 +514,7 @@ def test_can_replace_a_primary_email_with_a_newly_created_one(
                 "updateEmails": email_updates,
             }
         },
+        allowed_data_fields=["email"],
     )
 
     new_primary_email = Email.objects.get(email=email_data["email"])
@@ -571,7 +584,9 @@ def test_changing_an_email_address_marks_it_unverified(user_gql_client):
         {"id": to_global_id("EmailNode", email.id), "email": new_email_value}
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"updateEmails": email_updates}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"updateEmails": email_updates}},
+        allowed_data_fields=["email"],
     )
     assert dict(executed["data"]) == expected_data
 
@@ -599,7 +614,9 @@ def test_remove_email(global_id_type, global_id_id, succeeds, user_gql_client):
         to_global_id(type=global_id_type, id=global_id_id),
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"removeEmails": email_deletes}},
+        allowed_data_fields=["email"],
     )
 
     if succeeds:
@@ -659,7 +676,9 @@ def test_remove_all_emails_if_they_are_not_primary(user_gql_client):
         to_global_id(type="EmailNode", id=email2.id),
     ]
     executed = user_gql_client.execute(
-        EMAILS_MUTATION, variables={"profileInput": {"removeEmails": email_deletes}}
+        EMAILS_MUTATION,
+        variables={"profileInput": {"removeEmails": email_deletes}},
+        allowed_data_fields=["email"],
     )
     assert executed["data"] == expected_data
 
@@ -740,6 +759,7 @@ def test_add_phone(user_gql_client, phone_data):
                 ]
             }
         },
+        allowed_data_fields=["phone"],
     )
 
     phone = profile.phones.get()
@@ -800,6 +820,7 @@ def test_update_phone(
                 ]
             }
         },
+        allowed_data_fields=["phone"],
     )
 
     if succeeds:
@@ -844,6 +865,7 @@ def test_can_not_update_phone_of_another_profile(user_gql_client):
                 ]
             }
         },
+        allowed_data_fields=["phone"],
     )
 
     assert executed["data"]["updateMyProfile"] is None
@@ -876,6 +898,7 @@ def test_remove_phone(global_id_type, global_id_id, succeeds, user_gql_client):
                 "removePhones": [to_global_id(type=global_id_type, id=global_id_id)]
             }
         },
+        allowed_data_fields=["phone"],
     )
 
     if succeeds:
@@ -911,7 +934,9 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
 
     def execute_query(self, user_gql_client, profile_input):
         return user_gql_client.execute(
-            PHONES_MUTATION, variables={"profileInput": profile_input}
+            PHONES_MUTATION,
+            variables={"profileInput": profile_input},
+            allowed_data_fields=["phone"],
         )
 
 
@@ -961,6 +986,7 @@ def test_add_address(user_gql_client, address_data):
                 ]
             }
         },
+        allowed_data_fields=["address"],
     )
 
     address = profile.addresses.get()
@@ -1027,6 +1053,7 @@ def test_update_address(
                 ]
             }
         },
+        allowed_data_fields=["address"],
     )
 
     if succeeds:
@@ -1108,6 +1135,7 @@ def test_remove_address(global_id_type, global_id_id, succeeds, user_gql_client)
                 "removeAddresses": [to_global_id(type=global_id_type, id=global_id_id)]
             }
         },
+        allowed_data_fields=["address"],
     )
 
     if succeeds:
@@ -1239,7 +1267,9 @@ def test_change_primary_contact_details(
         primary="true",
     )
     executed = user_gql_client.execute(
-        mutation, execution_context_class=execution_context_class
+        mutation,
+        execution_context_class=execution_context_class,
+        allowed_data_fields=["email", "phone", "address"],
     )
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
@@ -1285,5 +1315,48 @@ def test_update_sensitive_data(user_gql_client):
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(
+        query, allowed_data_fields=["name", "personalidentitycode"]
+    )
+    assert dict(executed["data"]) == expected_data
+
+
+def test_update_profile_does_not_reveal_fields_not_allowed(user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(user=user_gql_client.user)
+    SensitiveDataFactory(profile=profile, ssn="010199-1234")
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: "${nickname}"
+                        }
+                    }
+                ) {
+                    profile {
+                        nickname
+                        sensitivedata {
+                            ssn
+                        }
+                    }
+                }
+            }
+        """
+    )
+
+    data = {"nickname": "Larry"}
+
+    query = t.substitute(**data)
+
+    expected_data = {
+        "updateMyProfile": {
+            "profile": {
+                "nickname": data["nickname"],
+                "sensitivedata": None,
+            }
+        }
+    }
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
     assert dict(executed["data"]) == expected_data

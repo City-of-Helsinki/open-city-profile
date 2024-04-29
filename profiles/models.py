@@ -8,7 +8,7 @@ from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
 
-from services.models import ServiceConnection
+from services.models import Service, ServiceConnection
 from users.models import User
 from utils.fields import (
     NullToEmptyCharField,
@@ -28,7 +28,47 @@ from .validators import (
 )
 
 
-class Profile(UUIDModel, SerializableMixin):
+class AllowedDataFieldsMixin:
+    """
+    Mixin class for checking allowed data fields per service.
+
+    `allowed_data_fields_map` is a dictionary where the key is the `field_name` of the allowed data field
+    `allowed_data_fields.json` and the value is an iterable of django model's field names that the `field_name`
+    describes. For example, if the `field_name` is `name`, the value could be `("first_name", "last_name")`.
+    e.g:
+    allowed_data_fields_map = {
+        "name": ("first_name", "last_name", "nickname"),
+        "personalidentitycode": ("national_identification_number",),
+        "address": ("address", "postal_code", "city", "country_code")
+    }
+
+    `always_allow_fields`: Since connections are not defined in `allowed_data_fields.json` they should be
+    defined here. If the field is connection and the node does not inherit this mixin the data will be available
+    to all services.
+    """
+
+    allowed_data_fields_map = {}
+    always_allow_fields = ["id", "service_connections"]
+    check_allowed_data_fields = True
+
+    @classmethod
+    def is_field_allowed_for_service(cls, field_name: str, service: Service):
+        if not service:
+            raise ValueError("No service identified")
+
+        if field_name in cls.always_allow_fields:
+            return True
+
+        allowed_data_fields = service.allowed_data_fields.values_list(
+            "field_name", flat=True
+        )
+        return any(
+            field_name in cls.allowed_data_fields_map.get(allowed_data_field, [])
+            for allowed_data_field in allowed_data_fields
+        )
+
+
+class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
     user = models.OneToOneField(User, on_delete=models.PROTECT, null=True, blank=True)
     first_name = NullToEmptyCharField(max_length=150, blank=True, db_index=True)
     last_name = NullToEmptyCharField(max_length=150, blank=True, db_index=True)
@@ -62,6 +102,24 @@ class Profile(UUIDModel, SerializableMixin):
         {"name": "service_connections"},
     )
     audit_log = True
+
+    # AllowedDataField configs
+    allowed_data_fields_map = {
+        "name": (
+            "first_name",
+            "last_name",
+            "nickname",
+        ),
+        "email": ("emails", "primary_email"),
+        "phone": ("phones", "primary_phone"),
+        "address": ("addresses", "primary_address"),
+        "personalidentitycode": ("sensitivedata",),
+    }
+    always_allow_fields = AllowedDataFieldsMixin.always_allow_fields + [
+        "verified_personal_information",
+        "language",
+        "contact_method",
+    ]
 
     def resolve_profile(self):
         return self
@@ -178,7 +236,7 @@ def get_national_identification_number_hash_key():
     return settings.SALT_NATIONAL_IDENTIFICATION_NUMBER
 
 
-class VerifiedPersonalInformation(SerializableMixin):
+class VerifiedPersonalInformation(SerializableMixin, AllowedDataFieldsMixin):
     profile = models.OneToOneField(
         Profile, on_delete=models.CASCADE, related_name="verified_personal_information"
     )
@@ -236,6 +294,18 @@ class VerifiedPersonalInformation(SerializableMixin):
         {"name": "permanent_foreign_address"},
     )
     audit_log = True
+
+    allowed_data_fields_map = {
+        "name": ("first_name", "last_name", "given_name"),
+        "personalidentitycode": ("national_identification_number",),
+        "address": (
+            "municipality_of_residence",
+            "municipality_of_residence_number",
+            "permanent_address",
+            "temporary_address",
+            "permanent_foreign_address",
+        ),
+    }
 
     class Meta:
         permissions = [

@@ -26,7 +26,9 @@ class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBas
         profile = ProfileFactory()
         token = TemporaryReadAccessTokenFactory(profile=profile)
 
-        executed = anon_user_gql_client.execute(self.query(token.token))
+        executed = anon_user_gql_client.execute(
+            self.query(token.token), allowed_data_fields=["name"]
+        )
 
         assert "errors" not in executed
         actual_profile = executed["data"]["profileWithAccessToken"]

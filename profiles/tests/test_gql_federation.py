@@ -149,7 +149,10 @@ def test_owner_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service if with_service else None
+        ENTITY_QUERY,
+        variables=variables,
+        service=service if with_service else None,
+        allowed_data_fields=["name"] if with_service else None,
     )
 
     if with_service and with_serviceconnection:
@@ -208,7 +211,7 @@ def test_staff_user_can_resolve_profile_entity(
         "_entities": [{"id": profile._global_id, "firstName": profile.first_name}]
     }
     executed = user_gql_client.execute(
-        ENTITY_QUERY, variables=variables, service=service
+        ENTITY_QUERY, variables=variables, service=service, allowed_data_fields=["name"]
     )
 
     if with_serviceconnection:
