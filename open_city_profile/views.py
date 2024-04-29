@@ -13,6 +13,7 @@ from open_city_profile.consts import (
     CONNECTED_SERVICE_DELETION_FAILED_ERROR,
     CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
     DATA_CONFLICT_ERROR,
+    FIELD_NOT_ALLOWED_ERROR,
     GENERAL_ERROR,
     INSUFFICIENT_LOA_ERROR,
     INVALID_EMAIL_FORMAT_ERROR,
@@ -35,6 +36,7 @@ from open_city_profile.exceptions import (
     ConnectedServiceDeletionFailedError,
     ConnectedServiceDeletionNotAllowedError,
     DataConflictError,
+    FieldNotAllowedError,
     InsufficientLoaError,
     InvalidEmailFormatError,
     MissingGDPRApiTokenError,
@@ -75,6 +77,7 @@ error_codes_profile = {
     ServiceConnectionDoesNotExist: SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
     ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
     InsufficientLoaError: INSUFFICIENT_LOA_ERROR,
+    FieldNotAllowedError: FIELD_NOT_ALLOWED_ERROR,
 }
 
 sentry_ignored_errors = (
@@ -176,5 +179,10 @@ class GraphQLView(BaseGraphQLView):
 
                 if "code" not in formatted_error["extensions"]:
                     formatted_error["extensions"]["code"] = error_code
+
+                    if error_code == FIELD_NOT_ALLOWED_ERROR:
+                        formatted_error["extensions"]["field_name"] = getattr(
+                            error.original_error, "field_name", ""
+                        )
 
         return formatted_error
