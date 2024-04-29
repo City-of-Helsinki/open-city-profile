@@ -73,3 +73,17 @@ class TokenExchangeError(Exception):
 
 class InsufficientLoaError(ProfileGraphQLError):
     """The requester has insufficient level of authentication to retrieve this data"""
+
+
+class FieldNotAllowedError(ProfileGraphQLError):
+    """The field is not allowed for the service.
+
+    Field does not exist in the service's allowed data fields (Service.allowed_data_fields).
+    """
+
+    field_name: str = None
+
+    def __init__(self, *args, field_name=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.field_name = field_name
