@@ -9,6 +9,7 @@ class OpenCityProfileConfig(AppConfig):
 
     def ready(self) -> None:
         import open_city_profile.checks  # noqa: F401
+        import open_city_profile.signals  # noqa: F401
 
 
 class OpenCityProfileAdminConfig(AdminConfig):
