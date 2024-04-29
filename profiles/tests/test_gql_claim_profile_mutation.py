@@ -61,7 +61,7 @@ def test_user_can_claim_claimable_profile_without_existing_profile(
             }
         }
     }
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
 
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data
@@ -98,6 +98,42 @@ CLAIM_PROFILE_MUTATION = """
 """
 
 
+def test_user_cant_get_fields_not_allowed_when_claiming_a_profile(user_gql_client):
+    profile = ProfileWithPrimaryEmailFactory(user=None)
+    claim_token = ClaimTokenFactory(profile=profile)
+
+    t = Template(
+        """
+        mutation {
+            claimProfile(
+                input: {
+                    token: "${claimToken}",
+                    profile: {
+                        firstName: "Joe",
+                        nickname: "Joey"
+                    }
+                }
+            ) {
+                profile {
+                    id
+                    firstName
+                    lastName
+                    nickname
+                    sensitivedata {
+                        ssn
+                    }
+                }
+            }
+        }
+        """
+    )
+    query = t.substitute(claimToken=claim_token.token)
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
+
+    assert "errors" in executed
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+
+
 def test_can_not_change_primary_email_to_non_primary(user_gql_client):
     profile = ProfileFactory(user=None)
     email = EmailFactory(profile=profile, primary=True)
@@ -112,7 +148,9 @@ def test_can_not_change_primary_email_to_non_primary(user_gql_client):
         },
     }
 
-    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+    executed = user_gql_client.execute(
+        CLAIM_PROFILE_MUTATION, variables=variables, allowed_data_fields=["email"]
+    )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
 
@@ -128,6 +166,7 @@ def test_can_not_delete_primary_email(user_gql_client):
             "token": str(claim_token.token),
             "profileInput": {"removeEmails": email_deletes},
         },
+        allowed_data_fields=["email"],
     )
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
@@ -172,6 +211,7 @@ def test_changing_an_email_address_marks_it_unverified(
         CLAIM_PROFILE_MUTATION,
         variables=variables,
         execution_context_class=execution_context_class,
+        allowed_data_fields=["email"],
     )
     assert "errors" not in executed
     assert executed["data"] == expected_data
@@ -189,7 +229,9 @@ class TestProfileInputValidation(ExistingProfileInputValidationBase):
             "profileInput": profile_input,
         }
 
-        return user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+        return user_gql_client.execute(
+            CLAIM_PROFILE_MUTATION, variables=variables, allowed_data_fields=["email"]
+        )
 
 
 def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):
@@ -223,7 +265,7 @@ def test_user_cannot_claim_claimable_profile_if_token_expired(user_gql_client):
         """
     )
     query = t.substitute(claimToken=expired_claim_token.token)
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
 
     assert "errors" in executed
     assert executed["errors"][0]["extensions"]["code"] == TOKEN_EXPIRED_ERROR
@@ -237,7 +279,9 @@ def test_using_non_existing_token_produces_an_object_does_not_exist_error(
     variables = {
         "token": non_existing_token,
     }
-    executed = user_gql_client.execute(CLAIM_PROFILE_MUTATION, variables=variables)
+    executed = user_gql_client.execute(
+        CLAIM_PROFILE_MUTATION, variables=variables, allowed_data_fields=["email"]
+    )
 
     assert_match_error_code(executed, "OBJECT_DOES_NOT_EXIST_ERROR")
 
@@ -270,7 +314,7 @@ def test_user_cannot_claim_claimable_profile_with_existing_profile(user_gql_clie
         """
     )
     query = t.substitute(claimToken=claim_token.token)
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
 
     assert "errors" in executed
     assert (

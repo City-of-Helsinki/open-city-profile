@@ -35,13 +35,13 @@ def execute_mutation(input_data, gql_client):
                 input: $input,
             ) {
                 profile {
-                    id,
+                    id
                 }
             }
         }
     """
 
-    return gql_client.execute(query, variables={"input": input_data}, service=None)
+    return gql_client.execute(query, variables={"input": input_data})
 
 
 def execute_successful_mutation(input_data, gql_client):

@@ -22,7 +22,8 @@ from open_city_profile.tests.factories import (
     UserFactory,
 )
 from open_city_profile.views import GraphQLView
-from services.tests.factories import ServiceFactory
+from services.models import Service
+from services.tests.factories import AllowedDataFieldFactory, ServiceFactory
 
 _not_provided = object()
 
@@ -34,6 +35,7 @@ class GraphQLClient(GrapheneClient):
         auth_token_payload=None,
         service=_not_provided,
         context=None,
+        allowed_data_fields: list[str] = None,
         **kwargs,
     ):
         """
@@ -63,9 +65,18 @@ class GraphQLClient(GrapheneClient):
             context.service = None
 
         if service is _not_provided:
-            context.service = ServiceFactory(name="profile", is_profile_service=True)
+            service = Service.objects.filter(is_profile_service=True).first()
+            if not service:
+                service = ServiceFactory(name="profile", is_profile_service=True)
+
+            context.service = service
         elif service:
             context.service = service
+        if allowed_data_fields:
+            for field_name in allowed_data_fields:
+                context.service.allowed_data_fields.add(
+                    AllowedDataFieldFactory(field_name=field_name)
+                )
 
         return super().execute(
             *args,

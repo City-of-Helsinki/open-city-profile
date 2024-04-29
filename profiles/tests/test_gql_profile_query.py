@@ -7,7 +7,7 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.consts import OBJECT_DOES_NOT_EXIST_ERROR
 from open_city_profile.tests.asserts import assert_match_error_code
-from services.tests.factories import ServiceConnectionFactory
+from services.tests.factories import AllowedDataFieldFactory, ServiceConnectionFactory
 
 from ..schema import ProfileNode
 from .factories import SensitiveDataFactory
@@ -44,6 +44,7 @@ def test_staff_user_can_query_a_profile_connected_to_service_he_is_admin_of(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     # serviceType is included in query just to ensure that it has NO affect
     t = Template(
@@ -74,6 +75,7 @@ def test_staff_user_cannot_query_a_profile_without_id(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     query = """
         {
@@ -98,6 +100,9 @@ def test_staff_user_cannot_query_a_profile_without_a_connection_to_their_service
 
     other_service = service_factory()
     ServiceConnectionFactory(profile=profile, service=other_service)
+    adf_name = AllowedDataFieldFactory(field_name="name")
+    other_service.allowed_data_fields.add(adf_name)
+    staff_user_service.allowed_data_fields.add(adf_name)
 
     t = Template(
         """
@@ -127,6 +132,9 @@ def test_staff_user_cannot_query_sensitive_data_with_only_profile_permissions(
     user = user_gql_client.user
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="personalidentitycode")
+    )
 
     t = Template(
         """
@@ -158,6 +166,9 @@ def test_staff_user_can_query_sensitive_data_with_given_permissions(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
     assign_perm("can_view_sensitivedata", group, service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="personalidentitycode")
+    )
 
     t = Template(
         """
@@ -188,6 +199,9 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     user.groups.add(group)
     assign_perm("can_view_profiles", group, service)
     assign_perm("can_view_sensitivedata", group, service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="personalidentitycode")
+    )
 
     t = Template(
         """
@@ -229,6 +243,7 @@ def test_staff_user_needs_required_permission_to_access_verified_personal_inform
     ServiceConnectionFactory(
         profile=profile_with_verified_personal_information, service=service
     )
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
     user = user_gql_client.user
     user.groups.add(group)
@@ -273,3 +288,83 @@ def test_staff_user_needs_required_permission_to_access_verified_personal_inform
     else:
         assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
         assert executed["data"] == {"profile": {"verifiedPersonalInformation": None}}
+
+
+def test_profile_checks_allowed_data_fields_for_single_query(
+    user_gql_client, service, profile, group
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            profile(id: "%s") {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+        }
+    """ % relay.Node.to_global_id(
+        ProfileNode._meta.name, profile.id
+    )
+
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["profile"]["firstName"] == profile.first_name
+    assert executed["data"]["profile"]["lastName"] == profile.last_name
+    assert executed["data"]["profile"]["sensitivedata"] is None
+
+
+def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
+    user_gql_client, service, profile, group
+):
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+    assign_perm("can_view_sensitivedata", group, service)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            myProfile {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+            _service {
+                __typename
+            }
+            profile(id: "%s") {
+                firstName
+                lastName
+                sensitivedata {
+                    ssn
+                }
+            }
+            services {
+                edges {
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    """ % relay.Node.to_global_id(
+        ProfileNode._meta.name, profile.id
+    )
+
+    executed = user_gql_client.execute(query, service=service)
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
+    assert executed["data"]["profile"]["firstName"] == profile.first_name
+    assert executed["data"]["profile"]["lastName"] == profile.last_name
+    assert executed["data"]["profile"]["sensitivedata"] is None
+    assert executed["data"]["services"] is None

@@ -61,8 +61,14 @@ QUERY = """
 """
 
 
-def test_addresses_are_ordered_first_by_primary_then_by_id(user_gql_client):
+def test_addresses_are_ordered_first_by_primary_then_by_id(user_gql_client, service):
     profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="address"),
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="phone"),
+    )
     first_address = AddressFactory(profile=profile, primary=False)
     primary_address = AddressFactory(profile=profile, primary=True)
     second_address = AddressFactory(profile=profile, primary=False)
@@ -74,12 +80,18 @@ def test_addresses_are_ordered_first_by_primary_then_by_id(user_gql_client):
         )
     )
 
-    executed = user_gql_client.execute(QUERY)
+    executed = user_gql_client.execute(QUERY, service=service)
     assert executed["data"]["myProfile"]["addresses"]["edges"] == expected_edges
 
 
-def test_emails_are_ordered_first_by_primary_then_by_id(user_gql_client):
+def test_emails_are_ordered_first_by_primary_then_by_id(user_gql_client, service):
     profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="address"),
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="phone"),
+    )
     first_email = EmailFactory(profile=profile, primary=False)
     primary_email = EmailFactory(profile=profile, primary=True)
     second_email = EmailFactory(profile=profile, primary=False)
@@ -91,12 +103,18 @@ def test_emails_are_ordered_first_by_primary_then_by_id(user_gql_client):
         )
     )
 
-    executed = user_gql_client.execute(QUERY)
+    executed = user_gql_client.execute(QUERY, service=service)
     assert executed["data"]["myProfile"]["emails"]["edges"] == expected_edges
 
 
-def test_phones_are_ordered_first_by_primary_then_by_id(user_gql_client):
+def test_phones_are_ordered_first_by_primary_then_by_id(user_gql_client, service):
     profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="address"),
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="phone"),
+    )
     first_phone = PhoneFactory(profile=profile, primary=False)
     primary_phone = PhoneFactory(profile=profile, primary=True)
     second_phone = PhoneFactory(profile=profile, primary=False)
@@ -108,7 +126,7 @@ def test_phones_are_ordered_first_by_primary_then_by_id(user_gql_client):
         )
     )
 
-    executed = user_gql_client.execute(QUERY)
+    executed = user_gql_client.execute(QUERY, service=service)
     assert executed["data"]["myProfile"]["phones"]["edges"] == expected_edges
 
 

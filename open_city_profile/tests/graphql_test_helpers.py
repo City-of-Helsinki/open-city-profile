@@ -6,13 +6,19 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from jose import jwt
 
-from services.tests.factories import ServiceClientIdFactory
+from services.tests.factories import (
+    AllowedDataFieldFactory,
+    ServiceClientIdFactory,
+    ServiceConnectionFactory,
+)
 
 from .conftest import get_unix_timestamp_now
 from .keys import rsa_key
 
 AUDIENCE = getattr(settings, "OIDC_API_TOKEN_AUTH")["AUDIENCE"]
 ISSUER = getattr(settings, "OIDC_API_TOKEN_AUTH")["ISSUER"]
+if isinstance(ISSUER, list):
+    ISSUER = ISSUER[0]
 
 CONFIG_URL = f"{ISSUER}/.well-known/openid-configuration"
 JWKS_URL = f"{ISSUER}/jwks"
@@ -129,6 +135,18 @@ def do_graphql_call_as_user(
         service_client_id = ServiceClientIdFactory(
             service__service_type=None, service__is_profile_service=True
         )
+        if getattr(user, "profile", None):
+            ServiceConnectionFactory(
+                profile=user.profile, service=service_client_id.service
+            )
+            service_client_id.service.allowed_data_fields.add(
+                AllowedDataFieldFactory(field_name="name"),
+                AllowedDataFieldFactory(field_name="address"),
+                AllowedDataFieldFactory(field_name="email"),
+                AllowedDataFieldFactory(field_name="phone"),
+                AllowedDataFieldFactory(field_name="personalidentitycode"),
+            )
+
     elif service:
         service_client_id = service.client_ids.first()
 

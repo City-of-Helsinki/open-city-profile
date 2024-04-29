@@ -33,7 +33,7 @@ def test_can_query_claimable_profile_with_token(user_gql_client):
             "lastName": profile.last_name,
         }
     }
-    executed = user_gql_client.execute(query)
+    executed = user_gql_client.execute(query, allowed_data_fields=["name"])
 
     assert "errors" not in executed
     assert dict(executed["data"]) == expected_data

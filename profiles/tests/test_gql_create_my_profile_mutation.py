@@ -84,7 +84,9 @@ def test_normal_user_can_create_profile(
         primary=str(email_is_primary).lower(),
         ssn=ssn,
     )
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(
+        mutation, allowed_data_fields=["email", "name", "personalidentitycode"]
+    )
     assert "errors" not in executed
     assert executed["data"] == expected_data
 
@@ -115,8 +117,44 @@ def test_normal_user_can_create_profile_with_no_email(user_gql_client, email_dat
 
     expected_data = {"createMyProfile": {"profile": {"emails": {"edges": []}}}}
 
-    executed = user_gql_client.execute(mutation)
+    executed = user_gql_client.execute(mutation, allowed_data_fields=["email"])
     assert executed["data"] == expected_data
+
+
+def test_cant_query_fields_not_allowed_in_create_mutation(user_gql_client, email_data):
+    mutation = """
+            mutation {
+                createMyProfile(
+                    input: {
+                        profile: {}
+                    }
+                ) {
+                    profile {
+                        firstName
+                        emails {
+                            edges {
+                                node {
+                                    email,
+                                    emailType,
+                                    primary,
+                                    verified
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        """
+
+    expected_data = {
+        "profile": {"firstName": user_gql_client.user.first_name, "emails": None}
+    }
+
+    executed = user_gql_client.execute(mutation, allowed_data_fields=["name"])
+
+    assert "errors" in executed
+    assert expected_data == executed["data"]["createMyProfile"]
+    assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
 
 
 class TestProfileInputValidation(ProfileInputValidationBase):

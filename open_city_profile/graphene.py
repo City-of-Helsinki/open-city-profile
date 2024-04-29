@@ -5,12 +5,14 @@ import graphene
 from django.conf import settings
 from django.forms import MultipleChoiceField
 from django_filters import MultipleChoiceFilter
+from graphene.utils.str_converters import to_snake_case
 from graphene_django import DjangoObjectType
 from graphene_django.forms.converter import convert_form_field
 from graphene_django.types import ALL_FIELDS
 from graphql_sync_dataloaders import SyncDataLoader
 from parler.models import TranslatableModel
 
+from open_city_profile.exceptions import FieldNotAllowedError, ServiceNotIdentifiedError
 from profiles.loaders import (
     addresses_by_profile_id_loader,
     emails_by_profile_id_loader,
@@ -178,3 +180,20 @@ class DjangoParlerObjectType(DjangoObjectType):
             _meta=_meta,
             **options,
         )
+
+
+class AllowedDataFieldsMiddleware:
+
+    def resolve(self, next, root, info, **kwargs):
+        if getattr(root, "check_allowed_data_fields", False):
+            field_name = to_snake_case(getattr(info, "field_name", ""))
+
+            if not getattr(info.context, "service", False):
+                raise ServiceNotIdentifiedError("Service not identified")
+
+            if not root.is_field_allowed_for_service(field_name, info.context.service):
+                raise FieldNotAllowedError(
+                    "Field is not allowed for service.", field_name=field_name
+                )
+
+        return next(root, info, **kwargs)

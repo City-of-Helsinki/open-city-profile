@@ -146,7 +146,9 @@ ${email_input}
             }
         }
     }
-    executed = user_gql_client.execute(query, service=service)
+    executed = user_gql_client.execute(
+        query, service=service, allowed_data_fields=["name", "phone", "email"]
+    )
     assert executed["data"] == expected_data
 
 
@@ -229,7 +231,9 @@ def test_staff_user_with_sensitive_data_service_accesss_can_create_a_profile_wit
             "profile": {"firstName": "John", "sensitivedata": {"ssn": "121282-123E"}}
         }
     }
-    executed = user_gql_client.execute(query, service=service)
+    executed = user_gql_client.execute(
+        query, service=service, allowed_data_fields=["name", "personalidentitycode"]
+    )
     assert executed["data"] == expected_data
 
 
@@ -280,6 +284,7 @@ def test_staff_user_cannot_create_a_profile_with_sensitive_data_without_sensitiv
     assert executed["errors"][0]["message"] == _(
         "You do not have permission to perform this action."
     )
+    assert executed["data"]["createProfile"] is None
 
 
 class TestProfileInputValidation(ProfileInputValidationBase):
