@@ -19,7 +19,7 @@ urlpatterns = [
         csp_exempt(
             csrf_exempt(
                 GraphQLView.as_view(
-                    graphiql=settings.ENABLE_GRAPHIQL or settings.DEBUG,
+                    graphiql=settings.ENABLE_GRAPHIQL,
                     execution_context_class=DeferredExecutionContext,
                 )
             )

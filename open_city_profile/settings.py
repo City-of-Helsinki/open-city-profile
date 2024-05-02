@@ -165,9 +165,9 @@ USE_TZ = True
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 
 # Set to True to enable GraphiQL interface, enabled automatically if DEBUG=True
-ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL")
+ENABLE_GRAPHIQL = env("ENABLE_GRAPHIQL") or env("DEBUG")
 # Enable GraphQL introspection queries, enabled automatically if DEBUG=True
-ENABLE_GRAPHQL_INTROSPECTION = env("ENABLE_GRAPHQL_INTROSPECTION")
+ENABLE_GRAPHQL_INTROSPECTION = env("ENABLE_GRAPHQL_INTROSPECTION") or env("DEBUG")
 
 if not ENABLE_GRAPHQL_INTROSPECTION:
     enable_graphql_query_suggestion(False)

@@ -104,7 +104,7 @@ class GraphQLView(BaseGraphQLView):
             depth_limit_validator(max_depth=settings.GRAPHQL_QUERY_DEPTH_LIMIT)
         ]
 
-        if not settings.ENABLE_GRAPHQL_INTROSPECTION and not settings.DEBUG:
+        if not settings.ENABLE_GRAPHQL_INTROSPECTION:
             validation_rules.append(DisableIntrospection)
 
         try:
