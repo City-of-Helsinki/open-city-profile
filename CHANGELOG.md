@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.15.0...open-city-profile-v1.16.0) (2024-05-02)
+
+
+### Features
+
+* Disable query suggestions ([8556826](https://github.com/City-of-Helsinki/open-city-profile/commit/85568265501c2fa7b2e2302bf8fa2594754a872f))
+
+
+### Bug Fixes
+
+* Query suggestions are enabled when debugging ([0e2ad73](https://github.com/City-of-Helsinki/open-city-profile/commit/0e2ad73c7076d0c63f25cfec476a236d53bf4cab))
+
 ## [1.15.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.14.0...open-city-profile-v1.15.0) (2024-04-24)
 
 
