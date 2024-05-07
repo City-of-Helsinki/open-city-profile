@@ -1,3 +1,4 @@
+import logging
 import uuid
 from functools import partial
 
@@ -189,11 +190,24 @@ class AllowedDataFieldsMiddleware:
             field_name = to_snake_case(getattr(info, "field_name", ""))
 
             if not getattr(info.context, "service", False):
-                raise ServiceNotIdentifiedError("Service not identified")
+                if settings.ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION:
+                    raise ServiceNotIdentifiedError("Service not identified")
+
+                logging.warning(
+                    "Allowed data field exception would occur: Service not identified. Field name: %s",
+                    field_name,
+                )
 
             if not root.is_field_allowed_for_service(field_name, info.context.service):
-                raise FieldNotAllowedError(
-                    "Field is not allowed for service.", field_name=field_name
+                if settings.ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION:
+                    raise FieldNotAllowedError(
+                        "Field is not allowed for service.", field_name=field_name
+                    )
+
+                logging.warning(
+                    "Allowed data field exception would occur. Field (%s) is not allowed for service %s.",
+                    field_name,
+                    info.context.service,
                 )
 
         return next(root, info, **kwargs)
