@@ -220,3 +220,8 @@ def unix_timestamp_now():
 @pytest.fixture(params=[None, ""])
 def empty_string_value(request):
     return request.param
+
+
+@pytest.fixture(autouse=True)
+def enable_allowed_data_fields_restriction(settings):
+    settings.ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION = True
