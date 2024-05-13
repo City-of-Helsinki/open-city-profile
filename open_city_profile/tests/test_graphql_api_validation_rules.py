@@ -1,3 +1,5 @@
+from string import Template
+
 import pytest
 from graphql import get_introspection_query
 
@@ -5,6 +7,7 @@ from open_city_profile.tests.graphql_test_helpers import (
     do_graphql_call,
     do_graphql_call_as_user,
 )
+from profiles.tests.factories import ProfileFactory
 
 
 @pytest.mark.parametrize(
@@ -88,3 +91,40 @@ def test_graphql_query_suggestions_can_be_disabled(live_server, settings, enable
         assert error_string in error
     else:
         assert error_string not in error
+
+
+def test_trying_to_insert_nul_chars_errors_invalid_data_format(user_gql_client):
+    ProfileFactory(user=user_gql_client.user)
+
+    t = Template(
+        """
+            mutation {
+                updateMyProfile(
+                    input: {
+                        profile: {
+                            nickname: "${nickname}"
+                        }
+                    }
+                ) {
+                    profile {
+                        nickname,
+                        emails {
+                            edges {
+                                node {
+                                    email
+                                    emailType
+                                    primary
+                                    verified
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        """
+    )
+
+    mutation = t.substitute(nickname="Nickname \x00")
+    executed = user_gql_client.execute(mutation)
+    assert "postgres" not in executed["errors"][0]["message"].lower()
+    assert executed["errors"][0]["message"] == "Invalid data format."

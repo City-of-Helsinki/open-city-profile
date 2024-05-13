@@ -2,6 +2,7 @@ import graphene_validator.errors
 import sentry_sdk
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
+from django.db import DataError
 from graphene.validation import depth_limit_validator, DisableIntrospection
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql import ExecutionResult, parse, validate
@@ -159,6 +160,9 @@ class GraphQLView(BaseGraphQLView):
     @staticmethod
     def format_error(error):
         formatted_error = super(GraphQLView, GraphQLView).format_error(error)
+
+        if isinstance(error.original_error, DataError):
+            formatted_error["message"] = "Invalid data format."
 
         if isinstance(formatted_error, dict):
             try:
