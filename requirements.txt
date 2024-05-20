@@ -57,7 +57,7 @@ django-filter==23.5
     # via -r requirements.in
 django-guardian==2.4.0
     # via -r requirements.in
-django-helusers==0.9.0
+django-helusers==0.12.0
     # via -r requirements.in
 django-parler==2.3
     # via -r requirements.in
