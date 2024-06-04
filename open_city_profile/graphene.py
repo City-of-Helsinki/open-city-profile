@@ -189,7 +189,8 @@ class AllowedDataFieldsMiddleware:
         if getattr(root, "check_allowed_data_fields", False):
             field_name = to_snake_case(getattr(info, "field_name", ""))
 
-            if not getattr(info.context, "service", False):
+            service = getattr(info.context, "service", None)
+            if not service:
                 if settings.ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION:
                     raise ServiceNotIdentifiedError("Service not identified")
 
@@ -198,7 +199,9 @@ class AllowedDataFieldsMiddleware:
                     field_name,
                 )
 
-            if not root.is_field_allowed_for_service(field_name, info.context.service):
+                return next(root, info, **kwargs)
+
+            if not root.is_field_allowed_for_service(field_name, service):
                 if settings.ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION:
                     raise FieldNotAllowedError(
                         "Field is not allowed for service.", field_name=field_name
