@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.17.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.16.0...open-city-profile-v1.17.0) (2024-06-04)
+
+
+### Features
+
+* Add feature flag for checking allowed data fields ([3b18fbc](https://github.com/City-of-Helsinki/open-city-profile/commit/3b18fbceab4d941fe59a1fa0fc94009cdc1c0def))
+* Add FieldNotAllowedError ([e4e901f](https://github.com/City-of-Helsinki/open-city-profile/commit/e4e901f66d56b19055a8b09fc5e92443d2bedd23))
+* Add middleware for checking allowed data fields ([2a10287](https://github.com/City-of-Helsinki/open-city-profile/commit/2a1028764aa514efddf02958e512106f6d7952ee))
+* Override DataError's message in GraphQLView ([803c0ea](https://github.com/City-of-Helsinki/open-city-profile/commit/803c0eade7c4cca8ac6c373b79c08b5b1c243ed6))
+
+
+### Bug Fixes
+
+* Dont check fields in middleware when missing service ([8aeaeac](https://github.com/City-of-Helsinki/open-city-profile/commit/8aeaeacaba1fd5e75c60d0a8562367e590824a71))
+
+
+### Dependencies
+
+* Upgrade dependencies ([4c01383](https://github.com/City-of-Helsinki/open-city-profile/commit/4c01383fa28dc7ecd5119789b9c701bd8d4c9d02))
+
 ## [1.16.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.15.0...open-city-profile-v1.16.0) (2024-05-02)
 
 
