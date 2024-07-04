@@ -1,4 +1,5 @@
 from string import Template
+from unittest.mock import Mock
 
 import pytest
 from graphql import get_introspection_query
@@ -7,6 +8,7 @@ from open_city_profile.tests.graphql_test_helpers import (
     do_graphql_call,
     do_graphql_call_as_user,
 )
+from open_city_profile.views import GraphQLView
 from profiles.tests.factories import ProfileFactory
 
 
@@ -128,3 +130,12 @@ def test_trying_to_insert_nul_chars_errors_invalid_data_format(user_gql_client):
     executed = user_gql_client.execute(mutation)
     assert "postgres" not in executed["errors"][0]["message"].lower()
     assert executed["errors"][0]["message"] == "Invalid data format."
+
+
+def test_format_error_without_original_error_attribute():
+    mock_error = Mock(spec=[])
+    view = GraphQLView()
+
+    formatted_error = view.format_error(mock_error)
+
+    assert formatted_error["extensions"]["code"] == "GENERAL_ERROR"
