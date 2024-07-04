@@ -164,7 +164,8 @@ class GraphQLView(BaseGraphQLView):
     def format_error(error):
         formatted_error = super(GraphQLView, GraphQLView).format_error(error)
 
-        if isinstance(error.original_error, DataError):
+        original_error = getattr(error, "original_error", None)
+        if isinstance(original_error, DataError):
             formatted_error["message"] = "Invalid data format."
 
         if isinstance(formatted_error, dict):
