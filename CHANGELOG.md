@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.17.0...open-city-profile-v1.17.1) (2024-07-05)
+
+
+### Bug Fixes
+
+* Use getattr to access the original_error ([cb22b59](https://github.com/City-of-Helsinki/open-city-profile/commit/cb22b594fd39370f1d180ef650f7ea002b9be524))
+
 ## [1.17.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.16.0...open-city-profile-v1.17.0) (2024-06-04)
 
 
