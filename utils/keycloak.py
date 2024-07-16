@@ -24,6 +24,19 @@ class ConflictError(KeycloakError):
     """A conflict occured in Keycloak."""
 
 
+def _validate_users_response(response):
+    if response.status_code == 404:
+        raise UserNotFoundError("User not found in Keycloak")
+
+    if response.status_code == 409:
+        raise ConflictError("Keycloak reported a conflict")
+
+    if not response.ok:
+        raise CommunicationError(
+            f"Failed communicating with Keycloak (status code {response.status_code})"
+        )
+
+
 class KeycloakAdminClient:
     def __init__(self, server_url, realm_name, client_id, client_secret):
         self._server_url = server_url
@@ -89,8 +102,10 @@ class KeycloakAdminClient:
 
         return self._auth
 
-    def _single_user_url(self, user_id):
-        return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}"
+    def _single_user_url(self, user_id, action: str = ""):
+        if action and not action.startswith("/"):
+            action = f"/{action}"
+        return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}{action}"
 
     def _handle_request_with_auth(self, requester):
         def reauth_requester():
@@ -101,56 +116,47 @@ class KeycloakAdminClient:
 
         return self._handle_request_common_errors(reauth_requester)
 
-    def _handle_user_request(self, requester):
-        response = self._handle_request_with_auth(requester)
+    def request(self, method, url, validator, **kwargs) -> requests.Response:
+        kwargs.setdefault("timeout", self._timeout)
 
-        if response.status_code == 404:
-            raise UserNotFoundError("User not found in Keycloak")
+        response = self._handle_request_with_auth(
+            lambda auth: self._session.request(method, url, auth=auth, **kwargs)
+        )
 
-        if response.status_code == 409:
-            raise ConflictError("Keycloak reported a conflict")
-
-        if not response.ok:
-            raise CommunicationError(
-                f"Failed communicating with Keycloak (status code {response.status_code}"
-            )
+        if validator:
+            validator(response)
 
         return response
 
+    def get(self, url, *args, **kwargs) -> requests.Response:
+        return self.request("GET", url, *args, **kwargs)
+
+    def put(self, url, *args, **kwargs) -> requests.Response:
+        return self.request("PUT", url, *args, **kwargs)
+
+    def delete(self, url, *args, **kwargs) -> requests.Response:
+        return self.request("DELETE", url, *args, **kwargs)
+
     def get_user(self, user_id):
-        url = self._single_user_url(user_id)
-
-        response = self._handle_user_request(
-            lambda auth: self._session.get(url, auth=auth, timeout=self._timeout)
+        response = self.get(
+            self._single_user_url(user_id), validator=_validate_users_response
         )
-
         return response.json()
 
     def update_user(self, user_id, update_data: dict):
-        url = self._single_user_url(user_id)
-
-        self._handle_user_request(
-            lambda auth: self._session.put(
-                url, auth=auth, json=update_data, timeout=self._timeout
-            )
+        self.put(
+            self._single_user_url(user_id),
+            validator=_validate_users_response,
+            json=update_data,
         )
 
     def delete_user(self, user_id):
-        url = self._single_user_url(user_id)
-
-        self._handle_user_request(
-            lambda auth: self._session.delete(url, auth=auth, timeout=self._timeout)
-        )
+        self.delete(self._single_user_url(user_id), validator=_validate_users_response)
 
     def send_verify_email(self, user_id):
-        url = self._single_user_url(user_id)
-        url += "/send-verify-email"
-
-        return self._handle_user_request(
-            lambda auth: self._session.put(
-                url,
-                auth=auth,
-                timeout=self._timeout,
-                params={"client_id": self._client_id},
-            )
+        url = self._single_user_url(user_id, "send-verify-email")
+        return self.put(
+            url,
+            params={"client_id": self._client_id},
+            validator=_validate_users_response,
         )
