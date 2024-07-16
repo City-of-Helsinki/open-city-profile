@@ -2,6 +2,7 @@ import urllib
 
 import pytest
 import requests
+from requests_mock import Mocker
 
 from utils import keycloak
 
@@ -15,7 +16,7 @@ token_endpoint_url = f"{server_url}/token-endpoint"
 access_token = "test-access-token"
 unaccepted_access_token = "unaccepted-access-token"
 
-req_mock = None
+req_mock: Mocker = None
 
 user_id = "test-user-id"
 user_data = {
@@ -41,7 +42,8 @@ def keycloak_client():
     )
 
 
-def build_mock_kwargs(response, json={}):
+def build_mock_kwargs(response, json: dict = None):
+    json = json or {}
     if isinstance(response, int):
         mock_kwargs = {
             "status_code": response,
@@ -367,3 +369,24 @@ def test_renew_access_token_when_old_one_is_not_accepted_with_verify_email_sendi
     keycloak_client.send_verify_email(user_id)
 
     assert success_mock.call_count == 1
+
+
+def test_get_user_federated_identities(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    federated_identities = [
+        {
+            "identityProvider": "provider",
+            "userId": "id",
+            "userName": "username@example.test",
+        },
+    ]
+    req_mock.get(
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}/federated-identity",
+        request_headers={"Authorization": f"Bearer {access_token}"},
+        json=federated_identities,
+    )
+
+    result = keycloak_client.get_user_federated_identities(user_id)
+
+    assert result == federated_identities

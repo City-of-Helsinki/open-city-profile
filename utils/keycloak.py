@@ -160,3 +160,8 @@ class KeycloakAdminClient:
             params={"client_id": self._client_id},
             validator=_validate_users_response,
         )
+
+    def get_user_federated_identities(self, user_id):
+        url = self._single_user_url(user_id, "federated-identity")
+        response = self.get(url, validator=_validate_users_response)
+        return response.json()
