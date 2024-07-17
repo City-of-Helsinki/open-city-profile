@@ -8,6 +8,20 @@ from open_city_profile.exceptions import ServiceNotIdentifiedError
 
 
 def _use_context_tests(*test_funcs):
+    """
+    Decorator for running context tests before the decorated function.
+
+    E.g. to create a decorator that checks that the user is authenticated::
+
+        def _require_authenticated(context):
+            # Check that the user is authenticated
+            ...
+
+        @_use_context_tests(_require_authenticated)
+        def login_required():
+            pass
+    """
+
     def decorator(decorator_function):
         @wraps(decorator_function)
         def wrapper(function):
@@ -61,12 +75,12 @@ def _require_service_permission(permission_name):
 
 
 @_use_context_tests(_require_authenticated)
-def login_required():
+def login_required(*_, **__):
     """Decorator for checking that the user is logged in"""
 
 
 @_use_context_tests(_require_authenticated, _require_service)
-def login_and_service_required():
+def login_and_service_required(*_, **__):
     """Decorator for checking that the user is logged in and service is known"""
 
 
