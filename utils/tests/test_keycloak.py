@@ -390,3 +390,25 @@ def test_get_user_federated_identities(keycloak_client):
     result = keycloak_client.get_user_federated_identities(user_id)
 
     assert result == federated_identities
+
+
+def test_get_user_credentials(keycloak_client):
+    setup_well_known()
+    setup_client_credentials()
+    credentials = [
+        {
+            "id": "uuid",
+            "type": "password",
+            "createdDate": 1721043502463,
+            "credentialData": '{"hashIterations": 27500,"algorithm": "pbkdf2-sha256","additionalParameters": {}}',
+        },
+    ]
+    req_mock.get(
+        f"{server_url}/admin/realms/{realm_name}/users/{user_id}/credentials",
+        request_headers={"Authorization": f"Bearer {access_token}"},
+        json=credentials,
+    )
+
+    result = keycloak_client.get_user_credentials(user_id)
+
+    assert result == credentials
