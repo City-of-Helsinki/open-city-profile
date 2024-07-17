@@ -8,7 +8,7 @@ from open_city_profile.exceptions import (
 )
 from utils import keycloak
 
-_keycloak_admin_client = None
+_keycloak_admin_client: keycloak.KeycloakAdminClient | None = None
 
 
 def _setup_keycloak_client():
@@ -103,3 +103,29 @@ def send_profile_changes_to_keycloak(instance):
             _keycloak_admin_client.send_verify_email(user_id)
         except Exception:
             pass
+
+
+def get_user_identity_providers(user_id) -> set[str]:
+    if not _keycloak_admin_client:
+        return set()
+
+    try:
+        user_data = _keycloak_admin_client.get_user_federated_identities(user_id)
+        return {ip["identityProvider"] for ip in user_data}
+    except keycloak.UserNotFoundError:
+        return set()
+
+
+def get_user_credential_types(user_id) -> set[str]:
+    if not _keycloak_admin_client:
+        return set()
+
+    try:
+        user_data = _keycloak_admin_client.get_user_credentials(user_id)
+        return {cred["type"] for cred in user_data}
+    except keycloak.UserNotFoundError:
+        return set()
+
+
+def get_user_login_methods(user_id) -> set[str]:
+    return get_user_identity_providers(user_id) | get_user_credential_types(user_id)
