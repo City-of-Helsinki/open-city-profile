@@ -56,7 +56,7 @@ from .connected_services import (
     download_connected_service_data,
 )
 from .enums import AddressType, EmailType, PhoneType
-from .keycloak_integration import delete_profile_from_keycloak
+from .keycloak_integration import delete_profile_from_keycloak, get_user_login_methods
 from .models import (
     Address,
     ClaimToken,
@@ -514,6 +514,10 @@ class SensitiveDataFields(graphene.InputObjectType):
 
 
 class RestrictedProfileNode(DjangoObjectType):
+    """
+    Profile node with a restricted set of data. This does not contain any sensitive data.
+    """
+
     class Meta:
         model = Profile
         fields = ("first_name", "last_name", "nickname", "language")
@@ -575,6 +579,11 @@ class ProfileNode(RestrictedProfileNode):
         connection_class = ProfilesConnection
         filterset_class = ProfileFilter
 
+    login_methods = graphene.List(
+        graphene.String,
+        description="List of login methods that the profile has used to authenticate. "
+        "Only visible to the user themselves.",
+    )
     sensitivedata = graphene.Field(
         SensitiveDataNode,
         description="Data that is consider to be sensitive e.g. social security number",
@@ -588,6 +597,25 @@ class ProfileNode(RestrictedProfileNode):
         "Can result into `PERMISSION_DENIED_ERROR` if the requester has no required "
         "privileges to access this information.",
     )
+
+    def resolve_login_methods(self: Profile, info, **kwargs):
+        if info.context.user != self.user:
+            raise PermissionDenied(
+                "No permission to read login methods of another user."
+            )
+
+        amr = {info.context.user_auth.data.get("amr")}
+
+        # For future software archeologists:
+        # This field was added to the API to support the front-end's need to know
+        # which login methods the user has used. It's only needed for profiles
+        # with helsinki-tunnus or Suomi.fi, so for other cases, save a couple
+        # API calls and return an empty list. There's no other reasoning for the
+        # logic here.
+        if amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"}):
+            return get_user_login_methods(self.user.uuid)
+
+        return []
 
     def resolve_service_connections(self: Profile, info, **kwargs):
         return self.effective_service_connections_qs()

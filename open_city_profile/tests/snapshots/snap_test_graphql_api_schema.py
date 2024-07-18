@@ -122,6 +122,7 @@ type ProfileNode implements Node {
   phones(offset: Int, before: String, after: String, first: Int, last: Int): PhoneNodeConnection
   addresses(offset: Int, before: String, after: String, first: Int, last: Int): AddressNodeConnection
   contactMethod: ContactMethod
+  loginMethods: [String]
   sensitivedata: SensitiveDataNode
   serviceConnections(offset: Int, before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
   verifiedPersonalInformation: VerifiedPersonalInformationNode
