@@ -576,3 +576,61 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
     assert executed["data"]["myProfile"]["lastName"] == profile.last_name
     assert executed["data"]["myProfile"]["sensitivedata"] is None
     assert executed["data"]["services"] is None
+
+
+@pytest.mark.parametrize(
+    "amr_claim_value", ["suomi_fi", "helsinki_tunnus", "heltunnistussuomifi"]
+)
+def test_user_can_see_own_login_methods_with_correct_amr_claim(
+    user_gql_client, profile, group, service, monkeypatch, amr_claim_value
+):
+    def mock_return(*_, **__):
+        return {"foo", "bar"}
+
+    monkeypatch.setattr(
+        "profiles.keycloak_integration.get_user_identity_providers", mock_return
+    )
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                loginMethods
+            }
+        }
+    """
+    executed = user_gql_client.execute(
+        query, auth_token_payload={"amr": amr_claim_value}, service=service
+    )
+    assert "errors" not in executed
+    assert set(executed["data"]["myProfile"]["loginMethods"]) == {"foo", "bar"}
+
+
+@pytest.mark.parametrize("amr_claim_value", [None, "helsinkiad"])
+def test_user_cannot_see_own_login_methods_with_other_amr_claims(
+    user_gql_client, profile, group, service, monkeypatch, amr_claim_value
+):
+    def mock_return(*_, **__):
+        return {"this should not show up"}
+
+    monkeypatch.setattr(
+        "profiles.keycloak_integration.get_user_identity_providers", mock_return
+    )
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                loginMethods
+            }
+        }
+    """
+    executed = user_gql_client.execute(
+        query, auth_token_payload={"amr": amr_claim_value}, service=service
+    )
+    assert "errors" not in executed
+    assert executed["data"]["myProfile"]["loginMethods"] == []

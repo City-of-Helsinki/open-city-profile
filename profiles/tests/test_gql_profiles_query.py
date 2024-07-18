@@ -798,3 +798,29 @@ def test_not_specifying_requesters_service_results_in_permission_denied_error(
     """
     executed = user_gql_client.execute(query)
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+
+
+def test_staff_user_can_not_query_login_methods_of_other_users(
+    user_gql_client, group, service
+):
+    profile = ProfileFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    user = user_gql_client.user
+    user.groups.add(group)
+    assign_perm("can_view_profiles", group, service)
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        loginMethods
+                    }
+                }
+            }
+        }
+    """
+
+    executed = user_gql_client.execute(query, service=service)
+    assert "errors" in executed
+    assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")

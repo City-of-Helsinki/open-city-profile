@@ -119,6 +119,7 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
         "verified_personal_information",
         "language",
         "contact_method",
+        "login_methods",
     ]
 
     def resolve_profile(self):
