@@ -41,3 +41,14 @@ def requester_has_sufficient_loa_to_perform_gdpr_request(request):
         "substantial",
         "high",
     ]
+
+
+def force_list(value) -> list:
+    """
+    Ensure that the given value is a list. If the value is None, return an empty list.
+    """
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]

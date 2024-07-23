@@ -72,6 +72,7 @@ from .models import (
     VerifiedPersonalInformationTemporaryAddress,
 )
 from .utils import (
+    force_list,
     requester_can_view_verified_personal_information,
     requester_has_sufficient_loa_to_perform_gdpr_request,
 )
@@ -604,7 +605,7 @@ class ProfileNode(RestrictedProfileNode):
                 "No permission to read login methods of another user."
             )
 
-        amr = {info.context.user_auth.data.get("amr")}
+        amr = set(force_list(info.context.user_auth.data.get("amr")))
 
         # For future software archeologists:
         # This field was added to the API to support the front-end's need to know
