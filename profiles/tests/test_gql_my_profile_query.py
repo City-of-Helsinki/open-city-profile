@@ -585,7 +585,7 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
     user_gql_client, profile, group, service, monkeypatch, amr_claim_value
 ):
     def mock_return(*_, **__):
-        return {"foo", "bar"}
+        return {"suomi_fi", "password"}
 
     monkeypatch.setattr(
         "profiles.keycloak_integration.get_user_identity_providers", mock_return
@@ -605,7 +605,10 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
         query, auth_token_payload={"amr": amr_claim_value}, service=service
     )
     assert "errors" not in executed
-    assert set(executed["data"]["myProfile"]["loginMethods"]) == {"foo", "bar"}
+    assert set(executed["data"]["myProfile"]["loginMethods"]) == {
+        "SUOMI_FI",
+        "PASSWORD",
+    }
 
 
 @pytest.mark.parametrize("amr_claim_value", [None, "helsinkiad"])

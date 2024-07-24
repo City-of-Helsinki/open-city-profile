@@ -55,7 +55,7 @@ from .connected_services import (
     delete_connected_service_data,
     download_connected_service_data,
 )
-from .enums import AddressType, EmailType, PhoneType
+from .enums import AddressType, EmailType, LoginMethodType, PhoneType
 from .keycloak_integration import delete_profile_from_keycloak, get_user_login_methods
 from .models import (
     Address,
@@ -581,7 +581,9 @@ class ProfileNode(RestrictedProfileNode):
         filterset_class = ProfileFilter
 
     login_methods = graphene.List(
-        graphene.String,
+        graphene.Enum.from_enum(
+            LoginMethodType, description=lambda e: e.label if e else ""
+        ),
         description="List of login methods that the profile has used to authenticate. "
         "Only visible to the user themselves.",
     )

@@ -122,7 +122,7 @@ type ProfileNode implements Node {
   phones(offset: Int, before: String, after: String, first: Int, last: Int): PhoneNodeConnection
   addresses(offset: Int, before: String, after: String, first: Int, last: Int): AddressNodeConnection
   contactMethod: ContactMethod
-  loginMethods: [String]
+  loginMethods: [LoginMethodType]
   sensitivedata: SensitiveDataNode
   serviceConnections(offset: Int, before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
   verifiedPersonalInformation: VerifiedPersonalInformationNode
@@ -214,6 +214,12 @@ type AddressNodeEdge {
 enum ContactMethod {
   EMAIL
   SMS
+}
+
+enum LoginMethodType {
+  PASSWORD
+  OTP
+  SUOMI_FI
 }
 
 type SensitiveDataNode implements Node {
