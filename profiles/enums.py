@@ -41,3 +41,14 @@ class AddressType(Enum):
         WORK = _("Work address")
         HOME = _("Home address")
         OTHER = _("Other address")
+
+
+class LoginMethodType(Enum):
+    PASSWORD = "password"
+    OTP = "otp"
+    SUOMI_FI = "suomi_fi"
+
+    class Labels:
+        PASSWORD = _("Password")
+        OTP = _("One-time password")
+        SUOMI_FI = _("Suomi.fi")
