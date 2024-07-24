@@ -615,6 +615,7 @@ class ProfileNode(RestrictedProfileNode):
         # with helsinki-tunnus or Suomi.fi, so for other cases, save a couple
         # API calls and return an empty list. There's no other reasoning for the
         # logic here.
+        # Can remove this after Tunnistamo is no longer in use. Related ticket: HP-2495
         if amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"}):
             return get_user_login_methods(self.user.uuid)
 
