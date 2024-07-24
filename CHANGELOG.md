@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.18.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.17.1...open-city-profile-v1.18.0) (2024-07-24)
+
+
+### Features
+
+* Add enum in login_methods field ([c081f4f](https://github.com/City-of-Helsinki/open-city-profile/commit/c081f4f98ad466b347e81f18ca31c912543248ea))
+* Add login_methods field in ProfileNode ([f36ce8f](https://github.com/City-of-Helsinki/open-city-profile/commit/f36ce8f7c6734ca2cec8b2f431a995d163366153))
+* **keycloak:** Add federated identity in admin client ([b545d8e](https://github.com/City-of-Helsinki/open-city-profile/commit/b545d8ebb2aaca6b69c92b19293a994fa65728d9))
+* **keycloak:** Add get user credentials in admin client ([1054eb7](https://github.com/City-of-Helsinki/open-city-profile/commit/1054eb705499cdd962191620cd34f4f655ba2c86))
+* **keycloak:** Add get_user_login_methods function ([1bb620d](https://github.com/City-of-Helsinki/open-city-profile/commit/1bb620d06ac9789654e29b6a53801a59e9399fd7))
+
+
+### Bug Fixes
+
+* Force amr claim to list ([a69f136](https://github.com/City-of-Helsinki/open-city-profile/commit/a69f1360edc6c495ba4a8a2a42bd6198482e2ed5))
+* Ignore unknown login methods ([9016a41](https://github.com/City-of-Helsinki/open-city-profile/commit/9016a41a5a935d1d8229403672623c78d4262d41))
+
 ## [1.17.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.17.0...open-city-profile-v1.17.1) (2024-07-05)
 
 
