@@ -1,3 +1,4 @@
+import logging
 from itertools import chain
 
 import django.dispatch
@@ -72,10 +73,13 @@ from .models import (
     VerifiedPersonalInformationTemporaryAddress,
 )
 from .utils import (
+    enum_values,
     force_list,
     requester_can_view_verified_personal_information,
     requester_has_sufficient_loa_to_perform_gdpr_request,
 )
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -617,7 +621,17 @@ class ProfileNode(RestrictedProfileNode):
         # logic here.
         # Can remove this after Tunnistamo is no longer in use. Related ticket: HP-2495
         if amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"}):
-            return get_user_login_methods(self.user.uuid)
+            login_methods = get_user_login_methods(self.user.uuid)
+            login_methods_in_enum = {
+                val for val in login_methods if val in enum_values(LoginMethodType)
+            }
+            if unknown_login_methods := login_methods - login_methods_in_enum:
+                logger.warning(
+                    "Found login methods which are not part of the LoginMethodType enum: %s",
+                    unknown_login_methods,
+                )
+
+            return login_methods_in_enum
 
         return []
 

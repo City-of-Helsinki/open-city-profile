@@ -637,3 +637,30 @@ def test_user_cannot_see_own_login_methods_with_other_amr_claims(
     )
     assert "errors" not in executed
     assert executed["data"]["myProfile"]["loginMethods"] == []
+
+
+def test_user_does_not_see_non_enum_login_methods(
+    user_gql_client, profile, group, service, monkeypatch
+):
+    def mock_return(*_, **__):
+        return {"password", "this should not show up"}
+
+    monkeypatch.setattr(
+        "profiles.keycloak_integration.get_user_identity_providers", mock_return
+    )
+
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                loginMethods
+            }
+        }
+    """
+    executed = user_gql_client.execute(
+        query, auth_token_payload={"amr": "helsinki_tunnus"}, service=service
+    )
+    assert "errors" not in executed
+    assert set(executed["data"]["myProfile"]["loginMethods"]) == {"PASSWORD"}

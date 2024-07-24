@@ -1,6 +1,8 @@
+from enum import Enum
+
 import pytest
 
-from profiles.utils import force_list
+from profiles.utils import enum_values, force_list
 
 
 @pytest.mark.parametrize(
@@ -15,3 +17,11 @@ from profiles.utils import force_list
 )
 def test_force_list(input_value, expected):
     assert force_list(input_value) == expected
+
+
+def test_enum_values():
+    class TestEnum(Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    assert enum_values(TestEnum) == ["foo", "bar"]
