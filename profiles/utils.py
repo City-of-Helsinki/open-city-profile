@@ -1,4 +1,10 @@
+import functools
+from enum import Enum
+from typing import Type, TypeVar
+
 from django.conf import settings
+
+_EnumType = TypeVar("_EnumType", bound=Type[Enum])
 
 
 def requester_has_service_permission(request, permission):
@@ -52,3 +58,11 @@ def force_list(value) -> list:
     if isinstance(value, list):
         return value
     return [value]
+
+
+@functools.cache
+def enum_values(enum: _EnumType) -> list:
+    """
+    Return a list of values from the given enum.
+    """
+    return [e.value for e in enum]
