@@ -470,6 +470,41 @@ def test_normal_user_can_query_their_own_profiles_sensitivedata(
     assert dict(executed["data"]) == expected_data
 
 
+def test_my_profile_always_allowed_fields(user_gql_client, service):
+    profile = ProfileFactory(user=user_gql_client.user)
+    ServiceConnectionFactory(profile=profile, service=service)
+
+    query = """
+        {
+            myProfile {
+                __typename
+                id
+                verifiedPersonalInformation {
+                    firstName
+                }
+                serviceConnections {
+                    edges {
+                        node {
+                            service {
+                                id
+                            }
+                        }
+                    }
+                }
+                language
+                contactMethod
+                loginMethods
+            }
+        }
+    """
+
+    executed = user_gql_client.execute(
+        query, service=service, auth_token_payload={"loa": "substantial"}
+    )
+
+    assert "errors" not in executed
+
+
 def test_my_profile_results_error_if_querying_fields_not_allowed(
     user_gql_client, service
 ):
