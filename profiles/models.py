@@ -48,7 +48,7 @@ class AllowedDataFieldsMixin:
     """
 
     allowed_data_fields_map = {}
-    always_allow_fields = ["id", "service_connections"]
+    always_allow_fields = ["__typename", "id", "service_connections"]
     check_allowed_data_fields = True
 
     @classmethod
@@ -120,7 +120,6 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
         "language",
         "contact_method",
         "login_methods",
-        "__typename",
     ]
 
     def resolve_profile(self):
