@@ -480,6 +480,7 @@ def test_my_profile_always_allowed_fields(user_gql_client, service):
                 __typename
                 id
                 verifiedPersonalInformation {
+                    __typename
                     firstName
                 }
                 serviceConnections {
