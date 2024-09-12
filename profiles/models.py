@@ -52,12 +52,13 @@ class AllowedDataFieldsMixin:
     check_allowed_data_fields = True
 
     @classmethod
-    def is_field_allowed_for_service(cls, field_name: str, service: Service):
-        if not service:
-            raise ValueError("No service identified")
-
+    def is_field_allowed_for_service(cls, field_name: str, service: Service = None):
+        # Always allow certain fields, regardless of the service
         if field_name in cls.always_allow_fields:
             return True
+
+        if not service:
+            return False
 
         allowed_data_fields = service.allowed_data_fields.values_list(
             "field_name", flat=True
