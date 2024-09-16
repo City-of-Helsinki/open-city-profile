@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.18.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.0...open-city-profile-v1.18.1) (2024-09-16)
+
+
+### Bug Fixes
+
+* Allow always allowed data fields regardless of service ([1af82bd](https://github.com/City-of-Helsinki/open-city-profile/commit/1af82bd02d513a1fb01ae439b43f3cec3e504cd9))
+* Always allow __typename ([327bbfa](https://github.com/City-of-Helsinki/open-city-profile/commit/327bbfa9325a38aa238bd65925857a5cbb209246))
+* Always allow __typename in all AllowedDataFieldsMixin models ([3e0de6b](https://github.com/City-of-Helsinki/open-city-profile/commit/3e0de6b72dd8f5341f8ec1f147041215c1e3c3ad))
+
 ## [1.18.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.17.1...open-city-profile-v1.18.0) (2024-07-24)
 
 
