@@ -12,17 +12,17 @@ asgiref==3.8.1
     #   django-cors-headers
 asttokens==2.4.1
     # via stack-data
-cachetools==5.3.3
+cachetools==5.5.0
     # via django-helusers
-certifi==2024.2.2
+certifi==2024.8.30
     # via
     #   requests
     #   sentry-sdk
-cffi==1.16.0
+cffi==1.17.1
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-cryptography==42.0.7
+cryptography==43.0.1
     # via python-jose
 database-sanitizer==1.1.0
     # via django-sanitized-dump
@@ -30,7 +30,7 @@ decorator==5.1.1
     # via ipython
 deprecation==2.1.0
     # via django-helusers
-django==4.2.13
+django==4.2.16
     # via
     #   -r requirements.in
     #   django-admin-sortable
@@ -45,7 +45,7 @@ django==4.2.13
     #   graphene-django
 django-admin-sortable==2.3
     # via -r requirements.in
-django-cors-headers==4.3.1
+django-cors-headers==4.4.0
     # via -r requirements.in
 django-csp==3.8
     # via -r requirements.in
@@ -53,11 +53,11 @@ django-enumfields2==3.0.2
     # via -r requirements.in
 django-environ==0.11.2
     # via -r requirements.in
-django-filter==24.2
+django-filter==24.3
     # via -r requirements.in
 django-guardian==2.4.0
     # via -r requirements.in
-django-helusers==0.12.0
+django-helusers==0.13.0
     # via -r requirements.in
 django-parler==2.3
     # via -r requirements.in
@@ -65,20 +65,21 @@ django-sanitized-dump==1.2.2
     # via -r requirements.in
 django-searchable-encrypted-fields==0.2.1
     # via -r requirements.in
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 graphene==3.3
     # via
+    #   graphene-directives
     #   graphene-django
     #   graphene-federation
     #   graphene-validator
-graphene-django==3.2.1
+graphene-django==3.2.2
     # via -r requirements.in
 graphene-federation==3.1.4
     # via -r requirements.in
 graphene-validator @ git+https://github.com/City-of-Helsinki/graphene-validator.git@graphene3
     # via -r requirements.in
-graphql-core==3.2.3
+graphql-core==3.2.4
     # via
     #   graphene
     #   graphene-django
@@ -91,9 +92,9 @@ graphql-relay==3.2.0
     #   graphene-django
 graphql-sync-dataloaders==0.1.1
     # via -r requirements.in
-idna==3.7
+idna==3.10
     # via requests
-ipython==8.24.0
+ipython==8.27.0
     # via -r requirements.in
 iso3166==2.1.1
     # via -r requirements.in
@@ -103,7 +104,7 @@ matplotlib-inline==0.1.7
     # via ipython
 oauthlib==3.2.2
     # via requests-oauthlib
-packaging==24.0
+packaging==24.1
     # via deprecation
 parso==0.8.4
     # via jedi
@@ -111,15 +112,15 @@ pexpect==4.9.0
     # via ipython
 promise==2.3
     # via graphene-django
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.48
     # via ipython
-psycopg==3.1.19
+psycopg==3.2.2
     # via -r requirements.in
-psycopg-c==3.1.19
+psycopg-c==3.2.2
     # via psycopg
 ptyprocess==0.7.0
     # via pexpect
-pure-eval==0.2.2
+pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
@@ -131,19 +132,19 @@ python-jose==3.3.0
     # via
     #   -r requirements.in
     #   django-helusers
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -r requirements.in
     #   database-sanitizer
     #   django-sanitized-dump
-requests==2.32.2
+requests==2.32.3
     # via
     #   -r requirements.in
     #   django-helusers
     #   requests-oauthlib
 requests-oauthlib==2.0.0
     # via -r requirements.in
-sentry-sdk==2.2.1
+sentry-sdk==2.14.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -152,7 +153,7 @@ six==1.16.0
     #   django-sanitized-dump
     #   ecdsa
     #   promise
-sqlparse==0.5.0
+sqlparse==0.5.1
     # via django
 stack-data==0.6.3
     # via ipython
@@ -162,11 +163,11 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   ipython
     #   psycopg
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   requests
     #   sentry-sdk

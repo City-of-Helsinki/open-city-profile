@@ -4,11 +4,11 @@
 #
 #    pip-compile --strip-extras requirements-dev.in
 #
-black==24.4.2
+black==24.8.0
     # via -r requirements-dev.in
-build==1.2.1
+build==1.2.2
     # via pip-tools
-certifi==2024.2.2
+certifi==2024.8.30
     # via
     #   -c requirements.txt
     #   requests
@@ -22,31 +22,29 @@ click==8.1.7
     # via
     #   black
     #   pip-tools
-coverage==7.5.1
-    # via
-    #   coverage
-    #   pytest-cov
+coverage==7.6.1
+    # via pytest-cov
 distlib==0.3.8
     # via virtualenv
-factory-boy==3.3.0
+factory-boy==3.3.1
     # via
     #   -r requirements-dev.in
     #   pytest-factoryboy
-faker==25.2.0
+faker==30.0.0
     # via factory-boy
 fastdiff==0.3.0
     # via snapshottest
-filelock==3.14.0
+filelock==3.16.1
     # via virtualenv
-flake8==7.0.0
+flake8==7.1.1
     # via
     #   -r requirements-dev.in
     #   pep8-naming
 freezegun==1.5.1
     # via -r requirements-dev.in
-identify==2.5.36
+identify==2.6.1
     # via pre-commit
-idna==3.7
+idna==3.10
     # via
     #   -c requirements.txt
     #   requests
@@ -62,9 +60,9 @@ mccabe==0.7.0
     # via flake8
 mypy-extensions==1.0.0
     # via black
-nodeenv==1.8.0
+nodeenv==1.9.1
     # via pre-commit
-packaging==24.0
+packaging==24.1
     # via
     #   -c requirements.txt
     #   black
@@ -77,15 +75,15 @@ pep8-naming==0.14.1
     # via -r requirements-dev.in
 pip-tools==7.4.1
     # via -r requirements-dev.in
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via
     #   black
     #   virtualenv
 pluggy==1.5.0
     # via pytest
-pre-commit==3.7.1
+pre-commit==3.8.0
     # via -r requirements-dev.in
-pycodestyle==2.11.1
+pycodestyle==2.12.1
     # via flake8
 pydocstyle==6.3.0
     # via -r requirements-dev.in
@@ -95,7 +93,7 @@ pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
-pytest==8.2.1
+pytest==8.3.3
     # via
     #   -r requirements-dev.in
     #   pytest-cov
@@ -104,7 +102,7 @@ pytest==8.2.1
     #   pytest-mock
 pytest-cov==5.0.0
     # via -r requirements-dev.in
-pytest-django==4.8.0
+pytest-django==4.9.0
     # via -r requirements-dev.in
 pytest-factoryboy==2.7.0
     # via -r requirements-dev.in
@@ -114,11 +112,11 @@ python-dateutil==2.9.0.post0
     # via
     #   faker
     #   freezegun
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements.txt
     #   pre-commit
-requests==2.32.2
+requests==2.32.3
     # via
     #   -c requirements.txt
     #   requests-mock
@@ -135,21 +133,21 @@ snowballstemmer==2.2.0
     # via pydocstyle
 termcolor==2.4.0
     # via snapshottest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   -c requirements.txt
     #   pytest-factoryboy
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements.txt
     #   requests
-virtualenv==20.26.2
+virtualenv==20.26.5
     # via pre-commit
 wasmer==1.1.0
     # via fastdiff
 wasmer-compiler-cranelift==1.1.0
     # via fastdiff
-wheel==0.43.0
+wheel==0.44.0
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
