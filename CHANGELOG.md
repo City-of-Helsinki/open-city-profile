@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.1...open-city-profile-v1.18.2) (2024-10-08)
+
+
+### Dependencies
+
+* Upgrade dependencies ([b329ce0](https://github.com/City-of-Helsinki/open-city-profile/commit/b329ce0d19ea127d1a4909c4dbb49e6cd41312fa))
+
 ## [1.18.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.0...open-city-profile-v1.18.1) (2024-09-16)
 
 
