@@ -32,6 +32,7 @@ env = environ.Env(
         str,
         "postgres://open_city_profile:open_city_profile@localhost/open_city_profile",
     ),
+    DATABASE_PASSWORD=(str, ""),
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
@@ -135,6 +136,9 @@ if env("CSRF_TRUSTED_ORIGINS"):
 DATABASES = {"default": env.db()}
 # Ensure postgis engine
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
+
+if env("DATABASE_PASSWORD"):
+    DATABASES["default"]["PASSWORD"] = env("DATABASE_PASSWORD")
 
 CACHES = {"default": env.cache()}
 vars().update(env.email_url())  # EMAIL_BACKEND etc.
