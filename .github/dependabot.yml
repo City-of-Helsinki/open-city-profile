@@ -7,6 +7,6 @@ updates:
     commit-message:
       prefix: "deps"
     # Disable version updates and only allow security updates
-    open-pull-requests-limit:
+    open-pull-requests-limit: 0
     reviewers:
       - "City-of-Helsinki/ratkaisutoimiston-backend"
