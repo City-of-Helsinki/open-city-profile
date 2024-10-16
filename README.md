@@ -116,10 +116,6 @@ Create user and database
     sudo -u postgres createuser -P -R -S open_city_profile  # use password `open_city_profile`
     sudo -u postgres createdb -O open_city_profile open_city_profile
 
-Create extensions in the database
-
-    sudo -u postgres psql open_city_profile -c "CREATE EXTENSION postgis;"
-
 Allow user to create test database
 
     sudo -u postgres psql -c "ALTER USER open_city_profile CREATEDB;"

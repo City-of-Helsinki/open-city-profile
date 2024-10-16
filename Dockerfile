@@ -1,5 +1,7 @@
+# Used by Azure Devops to pull from internal registry
+ARG BUILDER_REGISTRY=registry.access.redhat.com
 # ==============================
-FROM python:3.11-slim-bookworm as appbase
+FROM ${BUILDER_REGISTRY}/ubi9/python-311:latest AS appbase
 # ==============================
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -7,28 +9,19 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY tools /tools
-ENV PATH="/tools:${PATH}"
-
+USER root
 RUN groupadd -g 1000 appuser \
     && useradd -u 1000 -g appuser -ms /bin/bash appuser \
     && chown -R appuser:appuser /app
 
 COPY --chown=appuser:appuser requirements*.txt /app/
 
-RUN apt-install.sh \
-    git \
-    curl \
-    build-essential \
-    libpq-dev \
-    gdal-bin \
-    netcat-openbsd \
-    python3-gdal \
-    postgresql-client \
+RUN dnf update -y \
+    && dnf install -y nmap-ncat \
+    && dnf clean all \
     && pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir --no-deps -r /app/requirements.txt \
-    && pip install --no-cache-dir -r /app/requirements-prod.txt \
-    && apt-cleanup.sh build-essential
+    && pip install --no-cache-dir -r /app/requirements-prod.txt
 
 COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
@@ -37,9 +30,8 @@ ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
 FROM appbase as development
 # ==============================
 
-RUN apt-install.sh build-essential \
-    && pip install --no-cache-dir -r /app/requirements-dev.txt \
-    && apt-cleanup.sh build-essential
+RUN pip install --no-cache-dir -r /app/requirements-dev.txt
+
 
 ENV DEV_SERVER=1
 
