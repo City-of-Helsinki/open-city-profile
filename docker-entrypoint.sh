@@ -3,7 +3,8 @@
 set -e
 
 if [ -z "$SKIP_DATABASE_CHECK" -o "$SKIP_DATABASE_CHECK" = "0" ]; then
-    until nc -z -v -w30 "$DATABASE_HOST" 5432
+    # RHEL ncat
+    until ncat --verbose --wait 30 --send-only "$DATABASE_HOST" 5432
     do
       echo "Waiting for postgres database connection..."
       sleep 1
