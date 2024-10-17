@@ -134,8 +134,6 @@ if env("CSRF_TRUSTED_ORIGINS"):
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 DATABASES = {"default": env.db()}
-# Ensure postgis engine
-DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
 if env("DATABASE_PASSWORD"):
     DATABASES["default"]["PASSWORD"] = env("DATABASE_PASSWORD")
@@ -190,7 +188,6 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "open_city_profile.apps.OpenCityProfileStaticFilesConfig",
-    "django.contrib.gis",
     "django_filters",
     "parler",
     "corsheaders",
