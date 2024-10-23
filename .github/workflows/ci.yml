@@ -75,46 +75,22 @@ jobs:
       - name: Check commitlint
         uses: wagoid/commitlint-github-action@0d749a1a91d4770e983a7b8f83d4a3f0e7e0874e  # v5.4.4
 
-  black:
-    name: Coding style - black
+  ruff-lint:
+    name: Ruff lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run black
-        uses: psf/black@stable
+      - uses: chartboost/ruff-action@v1
         with:
-          options: "--check"
+          args: 'check'
+          version: 0.7.1
 
-  flake8:
-    name: Coding style - flake8
+  ruff-format:
+    name: Ruff format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: chartboost/ruff-action@v1
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Install dependencies
-        run: pip install flake8 pep8-naming -c requirements-dev.txt
-      - name: Run flake8
-        uses: liskin/gh-problem-matcher-wrap@v3
-        with:
-          linters: flake8
-          run: flake8
-
-  isort:
-    name: Coding style - isort
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Install dependencies
-        run: pip install isort -c requirements-dev.txt
-      - name: Run isort
-        uses: liskin/gh-problem-matcher-wrap@v3
-        with:
-          linters: isort
-          run: isort -c .
+          args: 'format --check'
+          version: 0.7.1

@@ -1,13 +1,8 @@
 -c requirements.txt
-black
-flake8
 freezegun
 inflection
-isort
-pep8-naming
 pip-tools
 pre-commit
-pydocstyle
 pytest
 pytest-cov
 pytest-django
@@ -16,3 +11,5 @@ requests-mock
 pytest-factoryboy
 factory_boy
 snapshottest
+# Keep this in sync with .pre-commit-config.yaml
+ruff==0.7.1
