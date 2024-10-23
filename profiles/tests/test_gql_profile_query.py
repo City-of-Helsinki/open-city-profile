@@ -310,9 +310,7 @@ def test_profile_checks_allowed_data_fields_for_single_query(
                 }
             }
         }
-    """ % relay.Node.to_global_id(
-        ProfileNode._meta.name, profile.id
-    )
+    """ % relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
 
     executed = user_gql_client.execute(query, service=service)
     assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
@@ -358,9 +356,7 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
                 }
             }
         }
-    """ % relay.Node.to_global_id(
-        ProfileNode._meta.name, profile.id
-    )
+    """ % relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
 
     executed = user_gql_client.execute(query, service=service)
     assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")

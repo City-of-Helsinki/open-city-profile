@@ -75,7 +75,7 @@ class Service(TranslatableModel):
         EnumField(ServiceIdp, max_length=32),
         blank=True,
         null=True,
-        help_text="Identity providers the service supports. Tunnistamo is implied If none selected.",
+        help_text="Identity providers the service supports. Tunnistamo is implied If none selected.",  # noqa: E501
     )
     gdpr_url = models.CharField(
         max_length=2000,
@@ -95,11 +95,11 @@ class Service(TranslatableModel):
     gdpr_audience = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Audience of the GDPR API. Must be filled if the API accepts tokens from Keycloak",
+        help_text="Audience of the GDPR API. Must be filled if the API accepts tokens from Keycloak",  # noqa: E501
     )
     is_profile_service = models.BooleanField(
         default=False,
-        help_text="Identifies the profile service itself. Only one Service can have this property.",
+        help_text="Identifies the profile service itself. Only one Service can have this property.",  # noqa: E501
     )
 
     class Meta:
@@ -195,7 +195,7 @@ class ServiceConnection(SerializableMixin):
         )
 
     serialize_fields = (
-        {"name": "service", "accessor": lambda x: getattr(x, "name")},
+        {"name": "service", "accessor": lambda x: x.name},
         {"name": "created_at", "accessor": lambda x: x.strftime("%Y-%m-%d")},
     )
 

@@ -21,7 +21,7 @@ def fix_primary_emails(apps, schema_editor):
             if profile.emails.count() > 0:
                 primary_email = profile.emails.first()
             else:
-                print(f"Removing profile of {profile.first_name} {profile.last_name}\n")
+                print(f"Removing profile of {profile.first_name} {profile.last_name}\n")  # noqa T201
                 profile.delete()
                 continue
             primary_email.primary = True

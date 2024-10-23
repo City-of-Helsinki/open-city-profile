@@ -102,7 +102,7 @@ def staff_required(required_permission="view"):
         _require_service_permission("can_{}_profiles".format(required_permission))
     )
     def check_permission():
-        f"""Decorator that checks for can_{required_permission}_profiles permission."""
+        """Decorator that checks for can_{required_permission}_profiles permission."""
 
     return check_permission
 
@@ -112,6 +112,6 @@ def permission_required(permission_name):
 
     @_use_context_tests(_require_permission(permission_name))
     def check_permission():
-        f"""Decorator that checks for {permission_name} permission."""
+        """Decorator that checks for {permission_name} permission."""
 
     return check_permission

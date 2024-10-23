@@ -197,7 +197,7 @@ class AllowedDataFieldsMiddleware:
                         )
 
                     logging.warning(
-                        "Allowed data field exception would occur: Field (%s) is not allowed for service %s.",
+                        "Allowed data field exception would occur: Field (%s) is not allowed for service %s.",  # noqa: E501
                         field_name,
                         info.context.service,
                     )
@@ -206,7 +206,7 @@ class AllowedDataFieldsMiddleware:
                         raise ServiceNotIdentifiedError("Service not identified")
 
                     logging.warning(
-                        "Allowed data field exception would occur: Service not identified. Field name: %s",
+                        "Allowed data field exception would occur: Service not identified. Field name: %s",  # noqa: E501
                         field_name,
                     )
 

@@ -184,7 +184,7 @@ def profile_with_related(request):
     ) = request.param
     created = factory()
     if related_name:
-        profile = getattr(created, "profile")
+        profile = created.profile
         related_part = profile
         for field_name in related_name.split("__"):
             related_part = getattr(related_part, field_name)

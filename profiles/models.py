@@ -45,7 +45,7 @@ class AllowedDataFieldsMixin:
     `always_allow_fields`: Since connections are not defined in `allowed_data_fields.json` they should be
     defined here. If the field is connection and the node does not inherit this mixin the data will be available
     to all services.
-    """
+    """  # noqa: E501
 
     allowed_data_fields_map = {}
     always_allow_fields = ["__typename", "id", "service_connections"]
@@ -184,7 +184,7 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
             ]
         }
         And returns dict where key is the customer_id and value is the UUID of created profile object
-        """
+        """  # noqa: E501
         result = {}
         for customer_index, item in enumerate(data):
             try:
@@ -280,7 +280,7 @@ class VerifiedPersonalInformation(SerializableMixin, AllowedDataFieldsMixin):
     municipality_of_residence_number = NullToEmptyEncryptedCharField(
         max_length=3,
         blank=True,
-        help_text="Official municipality of residence in Finland as an official number.",
+        help_text="Official municipality of residence in Finland as an official number.",  # noqa: E501
         validators=[validate_finnish_municipality_of_residence_number],
     )
 
@@ -384,7 +384,7 @@ class VerifiedPersonalInformationPermanentForeignAddress(SerializableMixin):
     additional_address = NullToEmptyEncryptedCharField(
         max_length=100,
         blank=True,
-        help_text="Additional address information, perhaps town, county, state, country etc.",
+        help_text="Additional address information, perhaps town, county, state, country etc.",  # noqa: E501
         validators=[validate_visible_latin_characters_only],
     )
     country_code = NullToEmptyEncryptedCharField(
@@ -445,7 +445,7 @@ class Phone(Contact):
     )
     serialize_fields = (
         {"name": "primary"},
-        {"name": "phone_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "phone_type", "accessor": lambda x: x.name},
         {"name": "phone"},
     )
 
@@ -462,7 +462,7 @@ class Email(Contact):
 
     serialize_fields = (
         {"name": "primary"},
-        {"name": "email_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "email_type", "accessor": lambda x: x.name},
         {"name": "email"},
     )
 
@@ -500,7 +500,7 @@ class Address(Contact):
     )
     serialize_fields = (
         {"name": "primary"},
-        {"name": "address_type", "accessor": lambda x: getattr(x, "name")},
+        {"name": "address_type", "accessor": lambda x: x.name},
         {"name": "address"},
         {"name": "postal_code"},
         {"name": "city"},

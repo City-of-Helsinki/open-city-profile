@@ -9,6 +9,7 @@ from profiles.models import Profile
 from services.models import Service, ServiceConnection
 from users.models import User
 from utils.utils import (
+    SERVICES,
     assign_permissions,
     create_user,
     generate_group_admins,
@@ -16,7 +17,6 @@ from utils.utils import (
     generate_profiles,
     generate_service_connections,
     generate_services,
-    SERVICES,
 )
 
 
@@ -24,7 +24,7 @@ from utils.utils import (
 def test_generate_services(times):
     """Test services are generated and that function can be run multiple times."""
     assert Service.objects.count() == 0
-    for i in range(times):
+    for _i in range(times):
         services = generate_services()
     assert len(services) == len(SERVICES)
     assert Service.objects.count() == len(SERVICES)
@@ -35,7 +35,7 @@ def test_generate_group_for_service(times, service):
     """Test groups for services are generated and that function can be run multiple times."""
     services = [service]
     assert Group.objects.count() == 0
-    for i in range(times):
+    for _i in range(times):
         groups = generate_groups_for_services(services)
     assert len(groups) == len(services)
     assert Group.objects.count() == len(services)
@@ -52,7 +52,7 @@ def test_assign_permissions(times, user, service):
         assert not user.has_perm(permission, service)
         assert permission not in get_group_perms(group, service)
 
-    for i in range(times):
+    for _i in range(times):
         assign_permissions([group])
 
     for permission in available_permissions:

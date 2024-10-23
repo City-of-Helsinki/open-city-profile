@@ -48,7 +48,7 @@ def test_connect_duplicate_service_for_profile(service):
 
 def test_connect_same_service_with_different_profile(service):
     number_of_connections = 2
-    for i in range(number_of_connections):
+    for _i in range(number_of_connections):
         profile = ProfileFactory()
         ServiceConnectionFactory(profile=profile, service=service)
     assert ServiceConnection.objects.count() == number_of_connections

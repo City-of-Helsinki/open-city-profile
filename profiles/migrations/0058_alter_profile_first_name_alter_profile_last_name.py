@@ -14,7 +14,6 @@ def truncate_name_fields(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("profiles", "0057_remove_profile_id_default_value__noop"),
     ]

@@ -66,7 +66,7 @@ def test_get_user_identity_providers_exception(mock_keycloak_admin_client):
     """Test the function when an exception is raised."""
     mock_keycloak_admin_client.get_user_federated_identities.side_effect = Exception
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         get_user_identity_providers("dummy_user_id")
 
 
@@ -102,7 +102,7 @@ def test_get_user_credential_types_user_not_found(mock_keycloak_admin_client):
 def test_get_user_credential_types_exception(mock_keycloak_admin_client):
     mock_keycloak_admin_client.get_user_credentials.side_effect = Exception
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         get_user_credential_types("dummy_user_id")
 
 

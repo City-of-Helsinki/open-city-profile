@@ -1,7 +1,7 @@
 from io import StringIO
 
 import pytest
-from django.core.management import call_command, CommandError
+from django.core.management import CommandError, call_command
 from guardian.shortcuts import assign_perm
 
 from services.models import Service

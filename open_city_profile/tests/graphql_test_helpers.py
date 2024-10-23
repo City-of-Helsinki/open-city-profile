@@ -15,8 +15,8 @@ from services.tests.factories import (
 from .conftest import get_unix_timestamp_now
 from .keys import rsa_key
 
-AUDIENCE = getattr(settings, "OIDC_API_TOKEN_AUTH")["AUDIENCE"]
-ISSUER = getattr(settings, "OIDC_API_TOKEN_AUTH")["ISSUER"]
+AUDIENCE = settings.OIDC_API_TOKEN_AUTH["AUDIENCE"]
+ISSUER = settings.OIDC_API_TOKEN_AUTH["ISSUER"]
 if isinstance(ISSUER, list):
     ISSUER = ISSUER[0]
 

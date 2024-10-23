@@ -44,7 +44,7 @@ def assert_match_error_code_in_result(response, error_code):
     response_data = response["data"]
 
     errors = []
-    for name, value in response_data.items():
+    for _name, value in response_data.items():
         errors.extend(value["result"].get("errors", []))
 
     assert len(errors) > 0
