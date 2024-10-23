@@ -111,8 +111,7 @@ def test_query_service_terms_of_use_url(user_gql_client, language):
     service.set_current_language("fr")
 
     assign_perm("services.view_service", user_gql_client.user)
-    query = (
-        """
+    query = """
         query {
             services {
                 edges {
@@ -123,9 +122,7 @@ def test_query_service_terms_of_use_url(user_gql_client, language):
                 }
             }
         }
-    """
-        % language.upper()
-    )
+    """ % language.upper()
 
     executed = user_gql_client.execute(query, service=None)
 

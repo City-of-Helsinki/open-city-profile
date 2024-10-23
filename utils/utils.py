@@ -36,17 +36,17 @@ SERVICES = [
         "translations": {
             "en": {
                 "title": "Youth service membership",
-                "description": "With youth service membership you get to participate in all activities "
+                "description": "With youth service membership you get to participate in all activities "  # noqa: E501
                 "offered by Helsinki city community centers.",
             },
             "fi": {
                 "title": "Nuorisopalveluiden jäsenkortti",
-                "description": "Nuorisopalveluiden Jäsenkortilla pääset mukaan nuorisotalojen toimintaan. "
+                "description": "Nuorisopalveluiden Jäsenkortilla pääset mukaan nuorisotalojen toimintaan. "  # noqa: E501
                 "Saat etuja kaupungin kulttuuritapahtumissa ja paikoissa.",
             },
             "sv": {
                 "title": "Ungdomstjänstmedlemskap",
-                "description": "Med medlemskap i ungdomstjänsten får du delta i alla aktiviteter som "
+                "description": "Med medlemskap i ungdomstjänsten får du delta i alla aktiviteter som "  # noqa: E501
                 "erbjuds av Helsingfors ungdomscenter.",
             },
         },
@@ -57,17 +57,17 @@ SERVICES = [
         "translations": {
             "en": {
                 "title": "Culture Kids",
-                "description": "Culture kids -service provides free cultural experiences for children "
+                "description": "Culture kids -service provides free cultural experiences for children "  # noqa: E501
                 "born in Helsinki in 2020.",
             },
             "fi": {
                 "title": "Kulttuurin kummilapset",
-                "description": "Kulttuurin kummilapset -palvelu tarjoaa ilmaisia kulttuurielämyksiä "
+                "description": "Kulttuurin kummilapset -palvelu tarjoaa ilmaisia kulttuurielämyksiä "  # noqa: E501
                 "vuodesta 2020 alkaen Helsingissä syntyville lapsille.",
             },
             "sv": {
                 "title": "Kulturens fadderbarn",
-                "description": "Kulturens fadderbarn - tjänsten ger gratis kulturupplevelser för barn "
+                "description": "Kulturens fadderbarn - tjänsten ger gratis kulturupplevelser för barn "  # noqa: E501
                 "födda i Helsingfors 2020.",
             },
         },
@@ -174,7 +174,7 @@ def generate_group_admins(groups=tuple(), faker=None):
 
 def generate_profiles(k=50, faker=None):
     """Create fake profiles and users for development purposes."""
-    for i in range(k):
+    for _i in range(k):
         user = create_user(faker=faker)
         profile = Profile.objects.create(
             user=user,

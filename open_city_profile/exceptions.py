@@ -47,7 +47,7 @@ class ProfileDoesNotExistError(ProfileGraphQLError):
     """Profile does not exist"""
 
 
-class ServiceDoesNotExist(ProfileGraphQLError):
+class ServiceDoesNotExistError(ProfileGraphQLError):
     """Service does not exist"""
 
 
@@ -55,7 +55,7 @@ class ServiceAlreadyExistsError(ProfileGraphQLError):
     """Service already connected for the user"""
 
 
-class ServiceConnectionDoesNotExist(ProfileGraphQLError):
+class ServiceConnectionDoesNotExistError(ProfileGraphQLError):
     """Service connection does not exist"""
 
 
@@ -79,7 +79,7 @@ class FieldNotAllowedError(ProfileGraphQLError):
     """The field is not allowed for the service.
 
     Field does not exist in the service's allowed data fields (Service.allowed_data_fields).
-    """
+    """  # noqa: E501
 
     field_name: str = None
 

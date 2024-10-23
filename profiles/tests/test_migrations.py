@@ -72,27 +72,27 @@ def test_fix_primary_email_migration(execute_migration_test):
 def test_verified_personal_information_searchable_names_migration(
     execute_migration_test,
 ):
-    FIRST_NAME = "First name"
-    LAST_NAME = "Last name"
+    first_name = "First name"
+    last_name = "Last name"
 
     def create_data(apps):
         Profile = apps.get_model(app, "Profile")
         VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
         profile = Profile.objects.create()
         VerifiedPersonalInformation.objects.create(
-            profile=profile, first_name=FIRST_NAME, last_name=LAST_NAME
+            profile=profile, first_name=first_name, last_name=last_name
         )
 
     def verify_migration(apps):
         VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
         vpi = VerifiedPersonalInformation.objects.get(
-            first_name__icontains=FIRST_NAME[:4].lower()
+            first_name__icontains=first_name[:4].lower()
         )
-        assert vpi.first_name == FIRST_NAME
+        assert vpi.first_name == first_name
         vpi = VerifiedPersonalInformation.objects.get(
-            last_name__icontains=LAST_NAME[:4].lower()
+            last_name__icontains=last_name[:4].lower()
         )
-        assert vpi.last_name == LAST_NAME
+        assert vpi.last_name == last_name
 
     execute_migration_test(
         "0034_add_help_texts_to_fields__noop",
@@ -105,22 +105,22 @@ def test_verified_personal_information_searchable_names_migration(
 def test_verified_personal_information_searchable_national_identification_number_migration(
     execute_migration_test,
 ):
-    ID_NUMBER = "010199-1234"
+    id_number = "010199-1234"
 
     def create_data(apps):
         Profile = apps.get_model(app, "Profile")
         VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
         profile = Profile.objects.create()
         VerifiedPersonalInformation.objects.create(
-            profile=profile, national_identification_number=ID_NUMBER
+            profile=profile, national_identification_number=id_number
         )
 
     def verify_migration(apps):
         VerifiedPersonalInformation = apps.get_model(app, "VerifiedPersonalInformation")
         vpi = VerifiedPersonalInformation.objects.get(
-            national_identification_number=ID_NUMBER
+            national_identification_number=id_number
         )
-        assert vpi.national_identification_number == ID_NUMBER
+        assert vpi.national_identification_number == id_number
 
     execute_migration_test(
         "0036_start_using_raw_verifiedpersonalinformation_names",
@@ -131,29 +131,29 @@ def test_verified_personal_information_searchable_national_identification_number
 
 
 def test_phone_number_to_not_null_migration(execute_migration_test):
-    NUM_PROFILES = 2
-    PHONE_NUMBER_LENGTH = 7
+    num_profiles = 2
+    phone_number_length = 7
 
     def create_data(apps):
         Profile = apps.get_model(app, "Profile")
         Phone = apps.get_model(app, "Phone")
 
-        for i in range(NUM_PROFILES):
+        for i in range(num_profiles):
             profile = Profile.objects.create(first_name=str(i))
-            Phone.objects.create(profile=profile, phone=str(i) * PHONE_NUMBER_LENGTH)
+            Phone.objects.create(profile=profile, phone=str(i) * phone_number_length)
             Phone.objects.create(profile=profile, phone=None)
 
     def verify_migration(apps):
         Profile = apps.get_model(app, "Profile")
         Phone = apps.get_model(app, "Phone")
 
-        assert Phone.objects.count() == NUM_PROFILES
+        assert Phone.objects.count() == num_profiles
 
-        for i in range(NUM_PROFILES):
+        for i in range(num_profiles):
             profile = Profile.objects.get(first_name=str(i))
             assert profile.phones.count() == 1
             good_phone = Phone.objects.get(profile=profile)
-            assert good_phone.phone == str(i) * PHONE_NUMBER_LENGTH
+            assert good_phone.phone == str(i) * phone_number_length
 
     execute_migration_test(
         "0047_remove_verifiedpersonalinformation_email",

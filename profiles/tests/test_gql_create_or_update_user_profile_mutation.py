@@ -54,7 +54,9 @@ def execute_successful_mutation(input_data, gql_client):
     return Profile.objects.get(pk=profile_id)
 
 
-def generate_input_data(user_id, overrides={}):
+def generate_input_data(user_id, overrides=None):
+    if overrides is None:
+        overrides = {}
     vpi_data = {
         "firstName": "John VPI",
         "lastName": "Smith VPI",

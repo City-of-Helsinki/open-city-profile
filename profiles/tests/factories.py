@@ -125,7 +125,7 @@ class ProfileWithPrimaryEmailFactory(ProfileFactory):
             return
         number_of_emails = extracted if extracted else 1
         EmailFactory(profile=self, primary=True)
-        for n in range(number_of_emails - 1):
+        for _n in range(number_of_emails - 1):
             EmailFactory(profile=self, primary=False)
 
 

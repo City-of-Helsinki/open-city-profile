@@ -3,7 +3,7 @@ import sentry_sdk
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db import DataError
-from graphene.validation import depth_limit_validator, DisableIntrospection
+from graphene.validation import DisableIntrospection, depth_limit_validator
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql import ExecutionResult, parse, validate
 from helusers.oidc import AuthenticationError
@@ -45,8 +45,8 @@ from open_city_profile.exceptions import (
     ProfileGraphQLError,
     ProfileMustHavePrimaryEmailError,
     ServiceAlreadyExistsError,
-    ServiceConnectionDoesNotExist,
-    ServiceDoesNotExist,
+    ServiceConnectionDoesNotExistError,
+    ServiceDoesNotExistError,
     ServiceNotIdentifiedError,
     TokenExpiredError,
 )
@@ -67,14 +67,14 @@ error_codes_shared = {
 error_codes_profile = {
     ConnectedServiceDataQueryFailedError: CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
-    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
+    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,  # noqa: E501
     ProfileAlreadyExistsForUserError: PROFILE_ALREADY_EXISTS_FOR_USER_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     ProfileMustHavePrimaryEmailError: PROFILE_MUST_HAVE_PRIMARY_EMAIL,
     MissingGDPRApiTokenError: MISSING_GDPR_API_TOKEN_ERROR,
-    ServiceDoesNotExist: SERVICE_DOES_NOT_EXIST_ERROR,
+    ServiceDoesNotExistError: SERVICE_DOES_NOT_EXIST_ERROR,
     ServiceAlreadyExistsError: SERVICE_CONNECTION_ALREADY_EXISTS_ERROR,
-    ServiceConnectionDoesNotExist: SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
+    ServiceConnectionDoesNotExistError: SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
     ServiceNotIdentifiedError: SERVICE_NOT_IDENTIFIED_ERROR,
     InsufficientLoaError: INSUFFICIENT_LOA_ERROR,
     FieldNotAllowedError: FIELD_NOT_ALLOWED_ERROR,
@@ -92,15 +92,14 @@ error_codes = {**error_codes_shared, **error_codes_profile}
 
 def _get_error_code(exception):
     """Get the most specific error code for the exception via superclass"""
-    for exception in exception.mro():
+    for exc in exception.mro():
         try:
-            return error_codes[exception]
+            return error_codes[exc]
         except KeyError:
             continue
 
 
 class GraphQLView(BaseGraphQLView):
-
     def _run_custom_validators(self, query):
         result = None
 

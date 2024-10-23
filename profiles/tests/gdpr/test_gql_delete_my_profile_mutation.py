@@ -56,7 +56,7 @@ def assert_match_error_code_in_results(response, error_code):
     response_data = response["data"]
 
     errors = []
-    for name, value in response_data.items():
+    for _name, value in response_data.items():
         errors.extend(
             [error for result in value["results"] for error in result.get("errors", [])]
         )
@@ -70,7 +70,7 @@ def assert_success_result(response, expected_success=True):
     response_data = response["data"]
 
     success_results = []
-    for name, value in response_data.items():
+    for _name, value in response_data.items():
         if "results" in value:
             success_results.extend(
                 [result.get("success") for result in value["results"]]
