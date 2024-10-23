@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.checks import register, Tags, Warning
-from django.db import connections, DatabaseError
+from django.core.checks import Tags, Warning, register
+from django.db import DatabaseError, connections
 
 
 @register(Tags.database)

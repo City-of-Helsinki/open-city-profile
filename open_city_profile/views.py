@@ -3,7 +3,7 @@ import sentry_sdk
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db import DataError
-from graphene.validation import depth_limit_validator, DisableIntrospection
+from graphene.validation import DisableIntrospection, depth_limit_validator
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql import ExecutionResult, parse, validate
 from helusers.oidc import AuthenticationError
@@ -100,7 +100,6 @@ def _get_error_code(exception):
 
 
 class GraphQLView(BaseGraphQLView):
-
     def _run_custom_validators(self, query):
         result = None
 

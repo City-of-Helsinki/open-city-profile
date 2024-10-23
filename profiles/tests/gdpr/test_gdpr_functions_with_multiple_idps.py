@@ -248,8 +248,8 @@ def assert_correct_api_token_calls(services, request_history):
         ServiceIdp.KEYCLOAK, "api-token", request_history
     )
     if keycloak_services:
-        assert len(keycoak_api_token_requests) == len(
-            keycloak_services
+        assert (
+            len(keycoak_api_token_requests) == len(keycloak_services)
         ), "Keycloak token endpoint should be called once for every service that accepts Keycloak API tokens"
     else:
         assert (
