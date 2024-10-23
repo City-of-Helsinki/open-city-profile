@@ -4,8 +4,6 @@
 #
 #    pip-compile --strip-extras requirements-dev.in
 #
-black==24.8.0
-    # via -r requirements-dev.in
 build==1.2.2
     # via pip-tools
 certifi==2024.8.30
@@ -19,9 +17,7 @@ charset-normalizer==3.3.2
     #   -c requirements.txt
     #   requests
 click==8.1.7
-    # via
-    #   black
-    #   pip-tools
+    # via pip-tools
 coverage==7.6.1
     # via pytest-cov
 distlib==0.3.8
@@ -36,10 +32,6 @@ fastdiff==0.3.0
     # via snapshottest
 filelock==3.16.1
     # via virtualenv
-flake8==7.1.1
-    # via
-    #   -r requirements-dev.in
-    #   pep8-naming
 freezegun==1.5.1
     # via -r requirements-dev.in
 identify==2.6.1
@@ -54,41 +46,22 @@ inflection==0.5.1
     #   pytest-factoryboy
 iniconfig==2.0.0
     # via pytest
-isort==5.13.2
-    # via -r requirements-dev.in
-mccabe==0.7.0
-    # via flake8
-mypy-extensions==1.0.0
-    # via black
 nodeenv==1.9.1
     # via pre-commit
 packaging==24.1
     # via
     #   -c requirements.txt
-    #   black
     #   build
     #   pytest
     #   pytest-factoryboy
-pathspec==0.12.1
-    # via black
-pep8-naming==0.14.1
-    # via -r requirements-dev.in
 pip-tools==7.4.1
     # via -r requirements-dev.in
 platformdirs==4.3.6
-    # via
-    #   black
-    #   virtualenv
+    # via virtualenv
 pluggy==1.5.0
     # via pytest
 pre-commit==3.8.0
     # via -r requirements-dev.in
-pycodestyle==2.12.1
-    # via flake8
-pydocstyle==6.3.0
-    # via -r requirements-dev.in
-pyflakes==3.2.0
-    # via flake8
 pyproject-hooks==1.1.0
     # via
     #   build
@@ -122,6 +95,8 @@ requests==2.32.3
     #   requests-mock
 requests-mock==1.12.1
     # via -r requirements-dev.in
+ruff==0.7.1
+    # via -r requirements-dev.in
 six==1.16.0
     # via
     #   -c requirements.txt
@@ -129,8 +104,6 @@ six==1.16.0
     #   snapshottest
 snapshottest==0.6.0
     # via -r requirements-dev.in
-snowballstemmer==2.2.0
-    # via pydocstyle
 termcolor==2.4.0
     # via snapshottest
 typing-extensions==4.12.2
