@@ -67,7 +67,7 @@ error_codes_shared = {
 error_codes_profile = {
     ConnectedServiceDataQueryFailedError: CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
-    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
+    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,  # noqa: E501
     ProfileAlreadyExistsForUserError: PROFILE_ALREADY_EXISTS_FOR_USER_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     ProfileMustHavePrimaryEmailError: PROFILE_MUST_HAVE_PRIMARY_EMAIL,

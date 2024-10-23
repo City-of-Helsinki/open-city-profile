@@ -75,7 +75,7 @@ class SerializableMixin(models.Model):
             ]}
         ]
     }
-    """
+    """  # noqa: E501
 
     class SerializableManager(models.Manager):
         def serialize(self):

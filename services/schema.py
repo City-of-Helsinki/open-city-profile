@@ -16,8 +16,8 @@ from .models import AllowedDataField, Service, ServiceConnection
 AllowedServiceType = graphene.Enum.from_enum(
     ServiceType,
     description=lambda e: e.label if e else "",
-    deprecation_reason=lambda e: "The whole ServiceType enum is deprecated and shouldn't be used anymore. "
-    "There are different replacements in various places, depending on how this type was used.",
+    deprecation_reason=lambda e: "The whole ServiceType enum is deprecated and shouldn't be used anymore. "  # noqa: E501
+    "There are different replacements in various places, depending on how this type was used.",  # noqa: E501
 )
 
 
@@ -53,13 +53,13 @@ class ServiceNode(DjangoParlerObjectType):
     )
     requires_service_connection = graphene.Boolean(
         required=True,
-        description="Does this service require a service connection to profile in order to receive the profile's data.",
+        description="Does this service require a service connection to profile in order to receive the profile's data.",  # noqa: E501
     )
     serviceconnection_set = DjangoFilterConnectionField(
         ServiceConnectionType,
         required=True,
         deprecation_reason="Always returns an empty result. "
-        "Getting connections for a service is not supported and there is no replacement.",
+        "Getting connections for a service is not supported and there is no replacement.",  # noqa: E501
     )
     is_pure_keycloak = graphene.Boolean(
         required=True,
@@ -97,7 +97,7 @@ class ServiceInput(graphene.InputObjectType):
 
 class ServiceConnectionInput(graphene.InputObjectType):
     service = ServiceInput(
-        description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication."
+        description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication."  # noqa: E501
     )
     enabled = graphene.Boolean()
 
@@ -141,7 +141,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     add_service_connection = AddServiceConnectionMutation.Field(
-        description="Connect the currently authenticated user's profile to the given service.\n\nRequires "
-        "authentication.\n\nPossible error codes:\n\n* `SERVICE_CONNECTION_ALREADY_EXISTS_ERROR`: "
-        "Returned if the currently authenticated user's profile is already connected to the given service."
+        description="Connect the currently authenticated user's profile to the given service.\n\nRequires "  # noqa: E501
+        "authentication.\n\nPossible error codes:\n\n* `SERVICE_CONNECTION_ALREADY_EXISTS_ERROR`: "  # noqa: E501
+        "Returned if the currently authenticated user's profile is already connected to the given service."  # noqa: E501
     )

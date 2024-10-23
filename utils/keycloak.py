@@ -63,7 +63,7 @@ class KeycloakAdminClient:
 
     @cached_property
     def _well_known(self):
-        well_known_url = f"{self._server_url}/realms/{self._realm_name}/.well-known/openid-configuration"
+        well_known_url = f"{self._server_url}/realms/{self._realm_name}/.well-known/openid-configuration"  # noqa: E501
 
         result = self._handle_request_common_errors(
             lambda: self._session.get(well_known_url, timeout=self._timeout)
@@ -105,7 +105,7 @@ class KeycloakAdminClient:
     def _single_user_url(self, user_id, action: str = ""):
         if action and not action.startswith("/"):
             action = f"/{action}"
-        return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}{action}"
+        return f"{self._server_url}/admin/realms/{self._realm_name}/users/{user_id}{action}"  # noqa: E501
 
     def _handle_request_with_auth(self, requester):
         def reauth_requester():
