@@ -327,7 +327,7 @@ if "SECRET_KEY" not in locals():
                 f.close()
         except IOError:
             Exception(
-                "Please create a %s file with random characters to generate your secret key!"
+                "Please create a %s file with random characters to generate your secret key!"  # noqa: E501
                 % secret_file
             )
 

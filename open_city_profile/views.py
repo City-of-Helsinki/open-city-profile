@@ -3,7 +3,7 @@ import sentry_sdk
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db import DataError
-from graphene.validation import depth_limit_validator, DisableIntrospection
+from graphene.validation import DisableIntrospection, depth_limit_validator
 from graphene_django.views import GraphQLView as BaseGraphQLView
 from graphql import ExecutionResult, parse, validate
 from helusers.oidc import AuthenticationError
@@ -67,7 +67,7 @@ error_codes_shared = {
 error_codes_profile = {
     ConnectedServiceDataQueryFailedError: CONNECTED_SERVICE_DATA_QUERY_FAILED_ERROR,
     ConnectedServiceDeletionFailedError: CONNECTED_SERVICE_DELETION_FAILED_ERROR,
-    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,
+    ConnectedServiceDeletionNotAllowedError: CONNECTED_SERVICE_DELETION_NOT_ALLOWED_ERROR,  # noqa: E501
     ProfileAlreadyExistsForUserError: PROFILE_ALREADY_EXISTS_FOR_USER_ERROR,
     ProfileDoesNotExistError: PROFILE_DOES_NOT_EXIST_ERROR,
     ProfileMustHavePrimaryEmailError: PROFILE_MUST_HAVE_PRIMARY_EMAIL,
@@ -100,7 +100,6 @@ def _get_error_code(exception):
 
 
 class GraphQLView(BaseGraphQLView):
-
     def _run_custom_validators(self, query):
         result = None
 

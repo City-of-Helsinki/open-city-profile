@@ -31,7 +31,7 @@ def _check_service_gdpr_query_configuration(service_connections):
                 "GDPR URL or GDPR query scope missing for service %s", service.name
             )
             raise ConnectedServiceDataQueryFailedError(
-                f"Connected service: {service.name} does not have an API for querying data."
+                f"Connected service: {service.name} does not have an API for querying data."  # noqa: E501
             )
 
         if (
@@ -41,7 +41,7 @@ def _check_service_gdpr_query_configuration(service_connections):
         ):
             logger.error("GDPR audience missing for service %s", service.name)
             raise ConnectedServiceDataQueryFailedError(
-                f'Connected service: Keycloak connected service "{service.name}" does not have GDPR audience set'
+                f'Connected service: Keycloak connected service "{service.name}" does not have GDPR audience set'  # noqa: E501
             )
 
 
@@ -117,7 +117,7 @@ def download_connected_service_data(
             logger.debug("GDPR URL: %s", url)
             response = requests.get(url, auth=BearerAuth(api_token), timeout=5)
             logger.debug(
-                "GDPR query response for profile %s to service %s status code: %s, headers: %s, body: %s",
+                "GDPR query response for profile %s to service %s status code: %s, headers: %s, body: %s",  # noqa: E501
                 profile.id,
                 service.name,
                 response.status_code,
@@ -132,7 +132,7 @@ def download_connected_service_data(
                 service_connection_data = {}
         except requests.RequestException as e:
             logger.error(
-                "Invalid GDPR query response for profile %s from service %s. Exception: %s.",
+                "Invalid GDPR query response for profile %s from service %s. Exception: %s.",  # noqa: E501
                 profile.id,
                 service.name,
                 e,
@@ -243,7 +243,7 @@ def _delete_service_data(
             url, auth=BearerAuth(api_token), timeout=5, params=data
         )
         logger.debug(
-            "GDPR delete (dry run: %s) response for profile %s to service %s status code: %s, headers: %s, body: %s",
+            "GDPR delete (dry run: %s) response for profile %s to service %s status code: %s, headers: %s, body: %s",  # noqa: E501
             dry_run,
             service_connection.profile.id,
             service.name,
@@ -253,7 +253,7 @@ def _delete_service_data(
         )
     except requests.RequestException as e:
         logger.error(
-            "GDPR delete request (dry run: %s) failed for profile %s to service %s. Exception: %s.",
+            "GDPR delete request (dry run: %s) failed for profile %s to service %s. Exception: %s.",  # noqa: E501
             dry_run,
             service_connection.profile.id,
             service.name,
@@ -280,7 +280,7 @@ def _delete_service_data(
             errors_from_the_service = response.json().get("errors")
             if _validate_gdpr_api_errors(errors_from_the_service):
                 logger.debug(
-                    "GDPR delete request (dry run: %s) for profile %s to service %s denied with reasons %s",
+                    "GDPR delete request (dry run: %s) for profile %s to service %s denied with reasons %s",  # noqa: E501
                     dry_run,
                     service_connection.profile.id,
                     service.name,
@@ -290,14 +290,14 @@ def _delete_service_data(
                 return result
             else:
                 logger.warning(
-                    "Badly formatted delete response from service %s (profile %s): '%s'",
+                    "Badly formatted delete response from service %s (profile %s): '%s'",  # noqa: E501
                     service.name,
                     service_connection.profile.id,
                     response.text,
                 )
         except JSONDecodeError:
             logger.debug(
-                "Couldn't parse GDPR delete response (status: %s) from service %s as JSON (profile %s). Body '%s'.",
+                "Couldn't parse GDPR delete response (status: %s) from service %s as JSON (profile %s). Body '%s'.",  # noqa: E501
                 response.status_code,
                 service.name,
                 service_connection.profile.id,
@@ -305,7 +305,7 @@ def _delete_service_data(
             )
     else:
         logger.warning(
-            "Unexpected status code %s for GDPR delete request to service %s (profile %s)",
+            "Unexpected status code %s for GDPR delete request to service %s (profile %s)",  # noqa: E501
             response.status_code,
             service.name,
             service_connection.profile.id,
@@ -346,7 +346,7 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens, pr
         if not service.gdpr_delete_scope:
             logger.error("GDPR delete scope missing for service %s", service.name)
             raise ConnectedServiceDeletionNotAllowedError(
-                f"Connected services: {service.name} does not have an API for removing data."
+                f"Connected services: {service.name} does not have an API for removing data."  # noqa: E501
             )
 
         if not service.is_pure_keycloak:
@@ -374,7 +374,7 @@ def _check_service_gdpr_delete_configuration(service_connections, api_tokens, pr
     if failed_services:
         failed_services_string = ", ".join(failed_services)
         raise ConnectedServiceDeletionNotAllowedError(
-            f"Connected services: {failed_services_string} did not allow deleting the profile."
+            f"Connected services: {failed_services_string} did not allow deleting the profile."  # noqa: E501
         )
 
 

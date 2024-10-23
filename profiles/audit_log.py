@@ -188,7 +188,7 @@ def _put_logs_to_logger(log_entries):
                 "origin": "PROFILE-BE",
                 "status": "SUCCESS",
                 "date_time_epoch": int(log_entry.timestamp.timestamp() * 1000),
-                "date_time": f"{log_entry.timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",
+                "date_time": f"{log_entry.timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",  # noqa: E501
                 "actor": actor_dict,
                 "operation": log_entry.operation,
                 "target": target_dict,

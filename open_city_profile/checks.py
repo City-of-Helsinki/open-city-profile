@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.checks import register, Tags, Warning
-from django.db import connections, DatabaseError
+from django.core.checks import Tags, Warning, register
+from django.db import DatabaseError, connections
 
 
 @register(Tags.database)
@@ -29,7 +29,7 @@ def check_obsolete_database_tables(app_configs, **kwargs):
             )
             errors.append(
                 Warning(
-                    f"Possibly obsolete tables exist in the database: {possibly_obsolete_table_names}.",
+                    f"Possibly obsolete tables exist in the database: {possibly_obsolete_table_names}.",  # noqa: E501
                     hint="Perhaps these should be removed.",
                 )
             )

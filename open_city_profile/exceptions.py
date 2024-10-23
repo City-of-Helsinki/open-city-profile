@@ -79,7 +79,7 @@ class FieldNotAllowedError(ProfileGraphQLError):
     """The field is not allowed for the service.
 
     Field does not exist in the service's allowed data fields (Service.allowed_data_fields).
-    """
+    """  # noqa: E501
 
     field_name: str = None
 

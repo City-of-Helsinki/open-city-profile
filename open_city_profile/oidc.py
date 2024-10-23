@@ -9,7 +9,7 @@ from open_city_profile.exceptions import TokenExchangeError
 
 
 class TunnistamoTokenExchange:
-    """Exchanges an authorization code with Tunnistamo into API token for open-city-profile."""
+    """Exchanges an authorization code with Tunnistamo into API token for open-city-profile."""  # noqa: E501
 
     timeout = 5
 
@@ -40,7 +40,7 @@ class TunnistamoTokenExchange:
             )
 
     def fetch_api_tokens(self, authorization_code: str) -> dict:
-        """Exchanges the authorization code into API tokens that can access APIs using Tunnistamo."""
+        """Exchanges the authorization code into API tokens that can access APIs using Tunnistamo."""  # noqa: E501
         oidc_conf = self.get_oidc_config()
         session = OAuth2Session(
             client_id=self.client_id, redirect_uri=self.callback_url
@@ -144,7 +144,7 @@ class KeycloakTokenExchange:
 
     @cached_property
     def oidc_config(self):
-        well_known_url = f"{self.keycloak_base_url}/realms/{self.keycloak_realm}/.well-known/openid-configuration"
+        well_known_url = f"{self.keycloak_base_url}/realms/{self.keycloak_realm}/.well-known/openid-configuration"  # noqa: E501
 
         return self.get(well_known_url).json()
 

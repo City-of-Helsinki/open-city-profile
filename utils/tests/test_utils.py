@@ -9,6 +9,7 @@ from profiles.models import Profile
 from services.models import Service, ServiceConnection
 from users.models import User
 from utils.utils import (
+    SERVICES,
     assign_permissions,
     create_user,
     generate_group_admins,
@@ -16,7 +17,6 @@ from utils.utils import (
     generate_profiles,
     generate_service_connections,
     generate_services,
-    SERVICES,
 )
 
 
