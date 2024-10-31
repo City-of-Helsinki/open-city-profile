@@ -157,17 +157,14 @@ This repository contains `requirements*.in` and corresponding `requirements*.txt
 
 ## Code format
 
-This project uses
-[`black`](https://github.com/ambv/black),
-[`flake8`](https://gitlab.com/pycqa/flake8) and
-[`isort`](https://github.com/pycqa/isort)
-for code formatting and quality checking. Project follows the basic
-black config, without any modifications.
+This project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and quality checking.
 
-Basic `black` commands:
+Basic `ruff` commands:
 
-* To let `black` do its magic: `black .`
-* To see which files `black` would change: `black --check .`
+* lint: `ruff check`
+* apply safe lint fixes: `ruff check --fix`
+* check formatting: `ruff format --check`
+* format: `ruff format`
 
 [`pre-commit`](https://pre-commit.com/) can be used to install and
 run all the formatting tools as git hooks automatically before a
