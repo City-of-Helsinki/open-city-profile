@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.2...open-city-profile-v1.19.0) (2024-11-07)
+
+
+### Features
+
+* **db-con:** Use database password if present in env ([78bceaa](https://github.com/City-of-Helsinki/open-city-profile/commit/78bceaad8c12522818807df374d0937af860e8f5))
+* **db-con:** Use database password if present in env ([aa84492](https://github.com/City-of-Helsinki/open-city-profile/commit/aa844920e1a43c5a9f654c49ad5a59df520551fc))
+
 ## [1.18.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.1...open-city-profile-v1.18.2) (2024-10-08)
 
 
