@@ -1,93 +1,17 @@
-name: Continuous integration
+name: CI
 
 on:
   push:
-    branches: [develop, master]
+    branches: [main]
   pull_request:
 
-env:
-  DEFAULT_PYTHON: 3.11
-  SECRET_KEY: topsecret123
-  FIELD_ENCRYPTION_KEYS: f164ec6bd6fbc4aef5647abc15199da0f9badcc1d2127bde2087ae0d794a9a0b
-
 jobs:
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:13
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        env:
-          POSTGRES_USER: open_city_profile
-          POSTGRES_PASSWORD: open_city_profile
-          POSTGRES_DB: open_city_profile
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-
-      - name: Cache pip packages
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-pip-modules
-        with:
-          path: ~/.pip-cache
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/requirements-dev.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Install Python dependencies
-        run: |
-          pip install -r requirements.txt -r requirements-dev.txt codecov
-      - name: Run tests
-        run: pytest -ra -vv --doctest-modules --cov=.
-        env:
-          DATABASE_URL: postgres://open_city_profile:open_city_profile@localhost:5432/open_city_profile
-
-      - name: Coverage
-        run: codecov
-
-      - name: Database sanitizer config
-        run: ./manage.py check_sanitizerconfig
-
-  commitlint:
-    name: Commitlint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check commitlint
-        uses: wagoid/commitlint-github-action@0d749a1a91d4770e983a7b8f83d4a3f0e7e0874e  # v5.4.4
-
-  ruff-lint:
-    name: Ruff lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: chartboost/ruff-action@v1
-        with:
-          args: 'check'
-          version: 0.7.1
-
-  ruff-format:
-    name: Ruff format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: chartboost/ruff-action@v1
-        with:
-          args: 'format --check'
-          version: 0.7.1
+  common:
+    uses: City-of-Helsinki/.github/.github/workflows/ci-django-api.yml@main
+    secrets: inherit
+    with:
+      python-version: 3.11
+      postgres-major-version: 13
+      extra-commands: |
+        echo "Database sanitizer config"
+        python manage.py check_sanitizerconfig
