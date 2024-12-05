@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -z "$SKIP_DATABASE_CHECK" -o "$SKIP_DATABASE_CHECK" = "0" ]; then
+if [ -z "$SKIP_DATABASE_CHECK" ] || [ "$SKIP_DATABASE_CHECK" = "0" ]; then
     until nc --verbose --wait 30 -z "$DATABASE_HOST" 5432
     do
       echo "Waiting for postgres database connection..."
@@ -35,7 +35,7 @@ if [[ "$CREATE_SUPERUSER" = "1" ]]; then
 fi
 
 # Start server
-if [[ ! -z "$@" ]]; then
+if [[ -n "$*" ]]; then
     "$@"
 elif [[ "$DEV_SERVER" = "1" ]]; then
     python ./manage.py runserver 0.0.0.0:8080
