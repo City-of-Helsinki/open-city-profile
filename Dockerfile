@@ -27,11 +27,10 @@ COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
 
 # ==============================
-FROM appbase as development
+FROM appbase AS development
 # ==============================
 
 RUN pip install --no-cache-dir -r /app/requirements-dev.txt
-
 
 ENV DEV_SERVER=1
 
@@ -41,15 +40,16 @@ USER appuser
 EXPOSE 8080/tcp
 
 # ==============================
-FROM appbase as staticbuilder
+FROM appbase AS staticbuilder
 # ==============================
 
 ENV VAR_ROOT /app
 COPY --chown=appuser:appuser . /app
 RUN python manage.py collectstatic --noinput
+#RUN SECRET_KEY="only-used-for-collectstatic" python manage.py collectstatic --noinput
 
 # ==============================
-FROM appbase as production
+FROM appbase AS production
 # ==============================
 
 COPY --from=staticbuilder --chown=appuser:appuser /app/static /app/static
