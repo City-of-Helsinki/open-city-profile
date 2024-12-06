@@ -30,7 +30,7 @@ decorator==5.1.1
     # via ipython
 deprecation==2.1.0
     # via django-helusers
-django==4.2.16
+django==4.2.17
     # via
     #   -r requirements.in
     #   django-admin-sortable
@@ -65,11 +65,12 @@ django-sanitized-dump==1.2.2
     # via -r requirements.in
 django-searchable-encrypted-fields==0.2.1
     # via -r requirements.in
+ecdsa==0.19.0
+    # via python-jose
 executing==2.1.0
     # via stack-data
 graphene==3.3
     # via
-    #   graphene-directives
     #   graphene-django
     #   graphene-federation
     #   graphene-validator
@@ -122,6 +123,10 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
+pyasn1==0.6.1
+    # via
+    #   python-jose
+    #   rsa
 pycparser==2.22
     # via cffi
 pycryptodome==3.20.0
@@ -144,6 +149,8 @@ requests==2.32.3
     #   requests-oauthlib
 requests-oauthlib==2.0.0
     # via -r requirements.in
+rsa==4.9
+    # via python-jose
 sentry-sdk==2.14.0
     # via -r requirements.in
 six==1.16.0
@@ -173,8 +180,3 @@ urllib3==2.2.3
     #   sentry-sdk
 wcwidth==0.2.13
     # via prompt-toolkit
-
-# The following packages are considered to be unsafe in a requirements file:
-# ecdsa
-# pyasn1
-# rsa
