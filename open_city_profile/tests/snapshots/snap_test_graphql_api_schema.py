@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_graphql_schema_matches_the_reference 1'] = '''type Query {
@@ -122,7 +123,8 @@ type ProfileNode implements Node {
   phones(offset: Int, before: String, after: String, first: Int, last: Int): PhoneNodeConnection
   addresses(offset: Int, before: String, after: String, first: Int, last: Int): AddressNodeConnection
   contactMethod: ContactMethod
-  loginMethods: [LoginMethodType]
+  loginMethods: [LoginMethodType] @deprecated(reason: "This field is deprecated, use availableLoginMethods.")
+  availableLoginMethods: [LoginMethodNode]
   sensitivedata: SensitiveDataNode
   serviceConnections(offset: Int, before: String, after: String, first: Int, last: Int): ServiceConnectionTypeConnection
   verifiedPersonalInformation: VerifiedPersonalInformationNode
@@ -220,6 +222,12 @@ enum LoginMethodType {
   PASSWORD
   OTP
   SUOMI_FI
+}
+
+type LoginMethodNode {
+  method: LoginMethodType!
+  createdAt: DateTime
+  userLabel: String
 }
 
 type SensitiveDataNode implements Node {

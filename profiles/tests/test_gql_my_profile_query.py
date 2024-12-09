@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 from open_city_profile.tests import to_graphql_name
@@ -620,11 +622,21 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
 def test_user_can_see_own_login_methods_with_correct_amr_claim(
     user_gql_client, profile, group, service, monkeypatch, amr_claim_value
 ):
-    def mock_return(*_, **__):
-        return {"suomi_fi", "password"}
-
     monkeypatch.setattr(
-        "profiles.keycloak_integration.get_user_identity_providers", mock_return
+        "profiles.keycloak_integration.get_user_credential_types",
+        lambda _: [
+            {
+                "created_at": datetime.datetime(
+                    2024, 12, 5, 11, 54, 21, 491000, tzinfo=datetime.UTC
+                ),
+                "method": "password",
+                "user_label": None,
+            },
+        ],
+    )
+    monkeypatch.setattr(
+        "profiles.keycloak_integration.get_user_identity_providers",
+        lambda _: [{"method": "suomi_fi"}],
     )
 
     profile = ProfileFactory(user=user_gql_client.user)
@@ -634,6 +646,11 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
         {
             myProfile {
                 loginMethods
+                availableLoginMethods {
+                    method
+                    createdAt
+                    userLabel
+                }
             }
         }
     """
@@ -641,10 +658,22 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
         query, auth_token_payload={"amr": amr_claim_value}, service=service
     )
     assert "errors" not in executed
-    assert set(executed["data"]["myProfile"]["loginMethods"]) == {
+    assert executed["data"]["myProfile"]["loginMethods"] == [
         "SUOMI_FI",
         "PASSWORD",
-    }
+    ]
+    assert executed["data"]["myProfile"]["availableLoginMethods"] == [
+        {
+            "createdAt": None,
+            "method": "SUOMI_FI",
+            "userLabel": None,
+        },
+        {
+            "createdAt": "2024-12-05T11:54:21.491000+00:00",
+            "method": "PASSWORD",
+            "userLabel": None,
+        },
+    ]
 
 
 @pytest.mark.parametrize("amr_claim_value", [None, "helsinkiad"])
@@ -652,7 +681,7 @@ def test_user_cannot_see_own_login_methods_with_other_amr_claims(
     user_gql_client, profile, group, service, monkeypatch, amr_claim_value
 ):
     def mock_return(*_, **__):
-        return {"this should not show up"}
+        raise Exception("This should not be called")
 
     monkeypatch.setattr(
         "profiles.keycloak_integration.get_user_identity_providers", mock_return
@@ -665,6 +694,9 @@ def test_user_cannot_see_own_login_methods_with_other_amr_claims(
         {
             myProfile {
                 loginMethods
+                availableLoginMethods {
+                    method
+                }
             }
         }
     """
@@ -673,13 +705,14 @@ def test_user_cannot_see_own_login_methods_with_other_amr_claims(
     )
     assert "errors" not in executed
     assert executed["data"]["myProfile"]["loginMethods"] == []
+    assert executed["data"]["myProfile"]["availableLoginMethods"] == []
 
 
 def test_user_does_not_see_non_enum_login_methods(
     user_gql_client, profile, group, service, monkeypatch
 ):
     def mock_return(*_, **__):
-        return {"password", "this should not show up"}
+        return [{"method": "password"}, {"method": "this should not show up"}]
 
     monkeypatch.setattr(
         "profiles.keycloak_integration.get_user_identity_providers", mock_return
@@ -692,6 +725,9 @@ def test_user_does_not_see_non_enum_login_methods(
         {
             myProfile {
                 loginMethods
+                availableLoginMethods {
+                    method
+                }
             }
         }
     """
@@ -699,4 +735,7 @@ def test_user_does_not_see_non_enum_login_methods(
         query, auth_token_payload={"amr": "helsinki_tunnus"}, service=service
     )
     assert "errors" not in executed
-    assert set(executed["data"]["myProfile"]["loginMethods"]) == {"PASSWORD"}
+    assert executed["data"]["myProfile"]["loginMethods"] == ["PASSWORD"]
+    assert executed["data"]["myProfile"]["availableLoginMethods"] == [
+        {"method": "PASSWORD"}
+    ]

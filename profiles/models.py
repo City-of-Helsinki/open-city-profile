@@ -121,6 +121,7 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
         "language",
         "contact_method",
         "login_methods",
+        "available_login_methods",
     ]
 
     def resolve_profile(self):
