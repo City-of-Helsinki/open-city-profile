@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 from itertools import chain
 
 import django.dispatch
@@ -57,7 +58,10 @@ from .connected_services import (
     download_connected_service_data,
 )
 from .enums import AddressType, EmailType, LoginMethodType, PhoneType
-from .keycloak_integration import delete_profile_from_keycloak, get_user_login_methods
+from .keycloak_integration import (
+    delete_profile_from_keycloak,
+    get_user_login_methods,
+)
 from .models import (
     Address,
     ClaimToken,
@@ -92,7 +96,9 @@ AllowedPhoneType = graphene.Enum.from_enum(
 AllowedAddressType = graphene.Enum.from_enum(
     AddressType, description=lambda e: e.label if e else ""
 )
-
+LoginMethodTypeEnum = graphene.Enum.from_enum(
+    LoginMethodType, description=lambda e: e.label if e else ""
+)
 
 """Provides the updated Profile instance as a keyword argument called `instance`."""
 profile_updated = django.dispatch.Signal()
@@ -438,6 +444,16 @@ class AddressNode(ContactNode):
             )
 
 
+class LoginMethodNode(graphene.ObjectType):
+    method = LoginMethodTypeEnum(required=True, description="The login method used.")
+    created_at = graphene.DateTime(
+        description="Time when the login method was created or edited."
+    )
+    user_label = graphene.String(
+        description="User-friendly label for the login method."
+    )
+
+
 class VerifiedPersonalInformationAddressNode(graphene.ObjectType):
     street_address = graphene.String(
         required=True, description="Street address with possible house number etc."
@@ -585,9 +601,13 @@ class ProfileNode(RestrictedProfileNode):
         filterset_class = ProfileFilter
 
     login_methods = graphene.List(
-        graphene.Enum.from_enum(
-            LoginMethodType, description=lambda e: e.label if e else ""
-        ),
+        LoginMethodTypeEnum,
+        description="List of login methods that the profile has used to authenticate. "
+        "Only visible to the user themselves.",
+        deprecation_reason="This field is deprecated, use availableLoginMethods.",
+    )
+    available_login_methods = graphene.List(
+        LoginMethodNode,
         description="List of login methods that the profile has used to authenticate. "
         "Only visible to the user themselves.",
     )
@@ -605,6 +625,42 @@ class ProfileNode(RestrictedProfileNode):
         "privileges to access this information.",
     )
 
+    @staticmethod
+    def _has_correct_amr_claim(amr: set):
+        """
+        For future software archeologists:
+        This field was added to the API to support the front-end's need to know
+        which login methods the user has used. It's only needed for profiles
+        with helsinki-tunnus or Suomi.fi, so for other cases, save a couple
+        API calls and return an empty list. There's no other reasoning for the
+        logic here.
+        Can remove this after Tunnistamo is no longer in use. Related ticket: HP-2495
+        """
+        return amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"})
+
+    @staticmethod
+    def _get_login_methods(user_uuid, *, extended=False) -> Iterable:
+        login_methods = get_user_login_methods(user_uuid)
+
+        login_methods_in_enum = [
+            val
+            for val in login_methods
+            if val["method"] in enum_values(LoginMethodType)
+        ]
+
+        if unknown_login_methods := set([val["method"] for val in login_methods]) - set(
+            val["method"] for val in login_methods_in_enum
+        ):
+            logger.warning(
+                "Found login methods which are not part of the LoginMethodType enum: %s",  # noqa: E501
+                unknown_login_methods,
+            )
+
+        if extended:
+            return login_methods_in_enum
+        else:
+            return [val["method"] for val in login_methods_in_enum]
+
     def resolve_login_methods(self: Profile, info, **kwargs):
         if info.context.user != self.user:
             raise PermissionDenied(
@@ -613,26 +669,20 @@ class ProfileNode(RestrictedProfileNode):
 
         amr = set(force_list(info.context.user_auth.data.get("amr")))
 
-        # For future software archeologists:
-        # This field was added to the API to support the front-end's need to know
-        # which login methods the user has used. It's only needed for profiles
-        # with helsinki-tunnus or Suomi.fi, so for other cases, save a couple
-        # API calls and return an empty list. There's no other reasoning for the
-        # logic here.
-        # Can remove this after Tunnistamo is no longer in use. Related ticket: HP-2495
-        if amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"}):
-            login_methods = get_user_login_methods(self.user.uuid)
-            login_methods_in_enum = {
-                val for val in login_methods if val in enum_values(LoginMethodType)
-            }
-            if unknown_login_methods := login_methods - login_methods_in_enum:
-                logger.warning(
-                    "Found login methods which are not part of the LoginMethodType enum: %s",  # noqa: E501
-                    unknown_login_methods,
-                )
+        if ProfileNode._has_correct_amr_claim(amr):
+            return ProfileNode._get_login_methods(self.user.uuid, extended=False)
+        return []
 
-            return login_methods_in_enum
+    def resolve_available_login_methods(self: Profile, info, **kwargs):
+        if info.context.user != self.user:
+            raise PermissionDenied(
+                "No permission to read login methods of another user."
+            )
 
+        amr = set(force_list(info.context.user_auth.data.get("amr")))
+
+        if ProfileNode._has_correct_amr_claim(amr):
+            return ProfileNode._get_login_methods(self.user.uuid, extended=True)
         return []
 
     def resolve_service_connections(self: Profile, info, **kwargs):

@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
@@ -105,27 +107,40 @@ def send_profile_changes_to_keycloak(instance):
             pass
 
 
-def get_user_identity_providers(user_id) -> set[str]:
+def get_user_identity_providers(user_id) -> list[dict]:
     if not _keycloak_admin_client:
-        return set()
+        return []
 
     try:
         user_data = _keycloak_admin_client.get_user_federated_identities(user_id)
-        return {ip["identityProvider"] for ip in user_data}
+        return [{"method": user_data["identityProvider"]} for user_data in user_data]
     except keycloak.UserNotFoundError:
-        return set()
+        return []
 
 
-def get_user_credential_types(user_id) -> set[str]:
+def get_user_credential_types(user_id) -> list[dict]:
     if not _keycloak_admin_client:
-        return set()
+        return []
 
     try:
         user_data = _keycloak_admin_client.get_user_credentials(user_id)
-        return {cred["type"] for cred in user_data}
+        credentials = []
+        for c in user_data:
+            created_at = (
+                datetime.datetime.fromtimestamp(c["createdDate"] / 1000, datetime.UTC)
+                if c.get("createdDate")
+                else None
+            )
+            credential = {
+                "method": c["type"],
+                "created_at": created_at,
+                "user_label": c.get("userLabel"),
+            }
+            credentials.append(credential)
+        return credentials
     except keycloak.UserNotFoundError:
-        return set()
+        return []
 
 
-def get_user_login_methods(user_id) -> set[str]:
-    return get_user_identity_providers(user_id) | get_user_credential_types(user_id)
+def get_user_login_methods(user_id) -> list[dict]:
+    return get_user_identity_providers(user_id) + get_user_credential_types(user_id)
