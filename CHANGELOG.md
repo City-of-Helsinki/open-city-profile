@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.20.0...open-city-profile-v1.20.1) (2024-12-12)
+
+
+### Bug Fixes
+
+* Remove unsafe packages from requirements ([6479ad4](https://github.com/City-of-Helsinki/open-city-profile/commit/6479ad436b280c19500806fcdd0ee1d122c4e75e))
+
 ## [1.20.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.19.0...open-city-profile-v1.20.0) (2024-12-12)
 
 
