@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.20.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.19.0...open-city-profile-v1.20.0) (2024-12-12)
+
+
+### Features
+
+* Add ProfileNode.availableLoginMethods ([2f04126](https://github.com/City-of-Helsinki/open-city-profile/commit/2f041267a31e764023687c67214b634abe343050))
+
+
+### Dependencies
+
+* Bump django from 4.2.16 to 4.2.17 ([81d25d7](https://github.com/City-of-Helsinki/open-city-profile/commit/81d25d7ff989f206ea340b2ef4e7a3925ca2c337))
+
 ## [1.19.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.18.2...open-city-profile-v1.19.0) (2024-11-07)
 
 
