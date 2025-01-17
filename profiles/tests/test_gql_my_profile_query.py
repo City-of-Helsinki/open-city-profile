@@ -631,6 +631,7 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
                 ),
                 "method": "password",
                 "user_label": None,
+                "credential_id": "93793c36-dd30-44c7-96b9-920c3b921f7c",
             },
         ],
     )
@@ -650,6 +651,7 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
                     method
                     createdAt
                     userLabel
+                    credentialId
                 }
             }
         }
@@ -667,11 +669,13 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
             "createdAt": None,
             "method": "SUOMI_FI",
             "userLabel": None,
+            "credentialId": None,
         },
         {
             "createdAt": "2024-12-05T11:54:21.491000+00:00",
             "method": "PASSWORD",
             "userLabel": None,
+            "credentialId": "93793c36-dd30-44c7-96b9-920c3b921f7c",
         },
     ]
 

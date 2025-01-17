@@ -132,6 +132,7 @@ def get_user_credential_types(user_id) -> list[dict]:
                 else None
             )
             credential = {
+                "credential_id": c["id"],
                 "method": c["type"],
                 "created_at": created_at,
                 "user_label": c.get("userLabel"),
