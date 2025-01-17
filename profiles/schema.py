@@ -452,6 +452,9 @@ class LoginMethodNode(graphene.ObjectType):
     user_label = graphene.String(
         description="User-friendly label for the login method."
     )
+    credential_id = graphene.String(
+        description="Identifier for a credential type login method."
+    )
 
 
 class VerifiedPersonalInformationAddressNode(graphene.ObjectType):

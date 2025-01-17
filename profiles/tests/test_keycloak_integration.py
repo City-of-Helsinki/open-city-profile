@@ -117,6 +117,7 @@ def test_get_user_credential_types_no_client(monkeypatch):
             [PASSWORD_METHOD],
             [
                 {
+                    "credential_id": PASSWORD_METHOD["id"],
                     "created_at": datetime.datetime(
                         2024, 12, 5, 11, 54, 21, 491000, tzinfo=datetime.UTC
                     ),
@@ -129,6 +130,7 @@ def test_get_user_credential_types_no_client(monkeypatch):
             [PASSWORD_METHOD, OTP_METHOD],
             [
                 {
+                    "credential_id": PASSWORD_METHOD["id"],
                     "created_at": datetime.datetime(
                         2024, 12, 5, 11, 54, 21, 491000, tzinfo=datetime.UTC
                     ),
@@ -136,6 +138,7 @@ def test_get_user_credential_types_no_client(monkeypatch):
                     "user_label": None,
                 },
                 {
+                    "credential_id": OTP_METHOD["id"],
                     "created_at": datetime.datetime(
                         2024, 5, 28, 10, 14, 12, 633000, tzinfo=datetime.UTC
                     ),

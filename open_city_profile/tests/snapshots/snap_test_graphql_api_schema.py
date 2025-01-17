@@ -228,6 +228,7 @@ type LoginMethodNode {
   method: LoginMethodType!
   createdAt: DateTime
   userLabel: String
+  credentialId: String
 }
 
 type SensitiveDataNode implements Node {
