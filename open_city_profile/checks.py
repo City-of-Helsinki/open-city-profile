@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.checks import Tags, Warning, register
+from django.core.checks import Error, Tags, Warning, register
 from django.db import DatabaseError, connections
 
 
@@ -60,4 +60,21 @@ def check_obsolete_contentypes(app_configs, **kwargs):
             )
         )
 
+    return errors
+
+
+@register(Tags.security)
+def python_jose_uses_correct_backend(app_configs, **kwargs):
+    """python-jose will use its cryptography backend if it can import it."""
+    errors = []
+
+    try:
+        import jose.backends.cryptography_backend  # noqa: F401
+    except ImportError:
+        errors.append(
+            Error(
+                "python-jose is not using cryptography backend",
+                hint="Check installed packages.",
+            )
+        )
     return errors
