@@ -20,7 +20,7 @@ RUN dnf update -y \
     && dnf install -y nmap-ncat \
     && dnf clean all \
     && pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir --no-deps -r /app/requirements.txt \
+    && pip install --no-cache-dir -r /app/requirements.txt \
     && pip install --no-cache-dir -r /app/requirements-prod.txt
 
 COPY --chown=appuser:appuser docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
