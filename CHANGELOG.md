@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.21.0...open-city-profile-v1.21.1) (2025-02-19)
+
+
+### Dependencies
+
+* Bump cryptography from 43.0.1 to 44.0.1 ([0f23596](https://github.com/City-of-Helsinki/open-city-profile/commit/0f235967993345a698823285409b8faa147d4b98))
+
 ## [1.21.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.20.1...open-city-profile-v1.21.0) (2025-01-23)
 
 
