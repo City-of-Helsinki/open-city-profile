@@ -5,9 +5,9 @@ from open_city_profile.consts import (
     SERVICE_CONNECTION_DOES_NOT_EXIST_ERROR,
     SERVICE_GDPR_API_UNKNOWN_ERROR,
 )
-from open_city_profile.oidc import TunnistamoTokenExchange
 from open_city_profile.tests.asserts import assert_match_error_code
 from profiles.tests.factories import ProfileFactory
+from profiles.tests.gdpr.utils import patch_keycloak_token_exchange
 from services.models import ServiceConnection
 from services.tests.factories import ServiceConnectionFactory
 
@@ -54,21 +54,12 @@ def assert_match_error_code_in_result(response, error_code):
 
 @pytest.mark.parametrize("dry_run", [True, False])
 def test_user_can_delete_data_from_a_service(
-    user_gql_client,
-    service_1,
-    service_2,
-    gdpr_api_tokens,
-    mocker,
-    requests_mock,
-    dry_run,
+    user_gql_client, service_1, service_2, mocker, requests_mock, dry_run
 ):
-    mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
-    )
+    patch_keycloak_token_exchange(mocker)
     profile = ProfileFactory(user=user_gql_client.user)
     service_connection_1 = ServiceConnectionFactory(profile=profile, service=service_1)
     service_connection_2 = ServiceConnectionFactory(profile=profile, service=service_2)
-
     service_1_mocker = requests_mock.delete(
         service_connection_1.get_gdpr_url(), status_code=204
     )
@@ -79,12 +70,12 @@ def test_user_can_delete_data_from_a_service(
         "serviceName": service_1.name,
         "dryRun": dry_run,
     }
+
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
     )
 
     assert "errors" not in executed
-
     if dry_run:
         assert service_1_mocker.call_count == 1
         assert service_2_mocker.call_count == 0
@@ -104,22 +95,15 @@ def test_user_can_delete_data_from_a_service(
     [None, {"errors": [{"code": "ERROR_CODE", "message": {"en": "Error"}}]}],
 )
 def test_error_is_returned_when_service_returns_errors(
-    user_gql_client,
-    service_1,
-    gdpr_api_tokens,
-    mocker,
-    requests_mock,
-    errors_from_service,
+    user_gql_client, service_1, mocker, requests_mock, errors_from_service
 ):
-    mocker.patch.object(
-        TunnistamoTokenExchange, "fetch_api_tokens", return_value=gdpr_api_tokens
-    )
+    patch_keycloak_token_exchange(mocker)
     profile = ProfileFactory(user=user_gql_client.user)
     service_connection = ServiceConnectionFactory(profile=profile, service=service_1)
-
     service_1_mocker = requests_mock.delete(
         service_connection.get_gdpr_url(), status_code=403, json=errors_from_service
     )
+
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables={"serviceName": service_1.name}
     )
@@ -130,7 +114,6 @@ def test_error_is_returned_when_service_returns_errors(
         assert_match_error_code_in_result(
             executed, errors_from_service["errors"][0]["code"]
         )
-
     assert service_1_mocker.call_count == 1
     assert ServiceConnection.objects.count() == 1
     assert ServiceConnection.objects.first().service == service_1
@@ -141,11 +124,11 @@ def test_error_when_trying_to_delete_data_from_a_service_the_user_is_not_connect
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
-
     variables = {
         "serviceName": service_2.name,
         "dryRun": False,
     }
+
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
     )
@@ -158,11 +141,11 @@ def test_error_when_trying_to_delete_data_from_an_unknown_service(
 ):
     profile = ProfileFactory(user=user_gql_client.user)
     ServiceConnectionFactory(profile=profile, service=service_1)
-
     variables = {
         "serviceName": "unknown_service",
         "dryRun": False,
     }
+
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
     )
@@ -174,6 +157,7 @@ def test_error_when_using_service_delete_with_non_existent_profile(user_gql_clie
     variables = {
         "serviceName": "n/a",
     }
+
     executed = user_gql_client.execute(
         DELETE_MY_SERVICE_DATA_MUTATION, variables=variables
     )

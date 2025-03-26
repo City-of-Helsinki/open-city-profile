@@ -152,6 +152,7 @@ def test_normal_user_can_query_own_services_gdpr_api_scopes(
         service_type=ServiceType.BERTH,
         gdpr_query_scope=query_scope,
         gdpr_delete_scope=delete_scope,
+        gdpr_audience="gdpr_audience",
     )
     profile = ProfileFactory(user=user_gql_client.user)
 
