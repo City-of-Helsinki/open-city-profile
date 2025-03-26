@@ -21,6 +21,7 @@ from profiles.models import (
     VerifiedPersonalInformationTemporaryAddress,
 )
 from services.tests.factories import ServiceConnectionFactory
+from utils.keycloak import KeycloakAdminClient
 
 from ..helpers import to_global_id
 from .factories import (
@@ -429,7 +430,8 @@ def test_audit_log_update(live_server, profile_with_related, cap_audit_log):
     assert_common_fields(audit_logs, profile, "UPDATE", actor_role="OWNER")
 
 
-def test_audit_log_delete(live_server, profile_with_related, cap_audit_log):
+def test_audit_log_delete(live_server, profile_with_related, cap_audit_log, mocker):
+    mocker.patch.object(KeycloakAdminClient, "delete_user", return_value=None)
     profile = profile_with_related.profile
     user = profile.user
 

@@ -1559,13 +1559,6 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
     class Input:
         authorization_code = graphene.String(
             required=True,
-            description=(
-                "OAuth/OIDC authorization code from Tunnistamo. When obtaining the code, it is required to use "  # noqa: E501
-                "service and operation specific GDPR API scopes."
-            ),
-        )
-        authorization_code_keycloak = graphene.String(
-            required=False,
             description="OAuth/OIDC authorization code from Keycloak",
         )
         dry_run = graphene.Boolean(
@@ -1601,7 +1594,6 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         results = delete_connected_service_data(
             profile,
             input["authorization_code"],
-            input.get("authorization_code_keycloak"),
             dry_run=dry_run,
         )
         _raise_exception_on_error(info, results)
@@ -1618,13 +1610,6 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
 class DeleteMyServiceDataMutationInput(graphene.InputObjectType):
     authorization_code = graphene.String(
         required=True,
-        description=(
-            "OAuth/OIDC authorization code from Tunnistamo. When obtaining the code, it is required to use "  # noqa: E501
-            "service and operation specific GDPR API scopes."
-        ),
-    )
-    authorization_code_keycloak = graphene.String(
-        required=False,
         description="OAuth/OIDC authorization code from Keycloak",
     )
     service_name = graphene.String(
@@ -1679,7 +1664,6 @@ class DeleteMyServiceDataMutation(graphene.Mutation):
         results = delete_connected_service_data(
             profile,
             input["authorization_code"],
-            input.get("authorization_code_keycloak"),
             service_connections=service_connections,
             dry_run=input.get("dry_run", False),
         )
@@ -1731,14 +1715,7 @@ class Query(graphene.ObjectType):
     download_my_profile = graphene.JSONString(
         authorization_code=graphene.String(
             required=True,
-            description=(
-                "OAuth/OIDC authorization code from Tunnistamo. When obtaining the code, it is required to use "  # noqa: E501
-                "service and operation specific GDPR API scopes."
-            ),
-        ),
-        authorization_code_keycloak=graphene.String(
-            required=False,
-            description="OAuth/OIDC authorization code from Keycloak",
+            description="OAuth/OIDC authorization code from Keycloak.",
         ),
         description="Get the user information stored in the profile and its connected services as "  # noqa: E501
         "machine readable JSON.\n\nRequires authentication.\n\n"
@@ -1852,7 +1829,6 @@ class Query(graphene.ObjectType):
         external_data = download_connected_service_data(
             profile,
             kwargs["authorization_code"],
-            kwargs.get("authorization_code_keycloak"),
         )
 
         serialized_profile = profile.serialize()
