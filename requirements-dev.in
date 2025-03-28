@@ -1,4 +1,5 @@
 -c requirements.txt
+factory_boy
 freezegun
 inflection
 pip-tools
@@ -9,7 +10,6 @@ pytest-django
 pytest-mock
 requests-mock
 pytest-factoryboy
-factory_boy
 snapshottest
 # Keep this in sync with .pre-commit-config.yaml
 ruff==0.7.1

@@ -1,3 +1,2 @@
 -c requirements.txt
 uwsgi<3
-factory_boy
