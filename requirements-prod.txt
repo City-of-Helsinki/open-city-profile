@@ -4,15 +4,5 @@
 #
 #    pip-compile --strip-extras requirements-prod.in
 #
-factory-boy==3.3.0
-    # via -r requirements-prod.in
-faker==22.6.0
-    # via factory-boy
-python-dateutil==2.8.2
-    # via faker
-six==1.16.0
-    # via
-    #   -c requirements.txt
-    #   python-dateutil
 uwsgi==2.0.23
     # via -r requirements-prod.in

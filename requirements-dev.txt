@@ -22,11 +22,11 @@ coverage==7.6.1
     # via pytest-cov
 distlib==0.3.8
     # via virtualenv
-factory-boy==3.3.1
+factory-boy==3.3.3
     # via
     #   -r requirements-dev.in
     #   pytest-factoryboy
-faker==30.0.0
+faker==37.1.0
     # via factory-boy
 fastdiff==0.3.0
     # via snapshottest
@@ -82,9 +82,7 @@ pytest-factoryboy==2.7.0
 pytest-mock==3.14.0
     # via -r requirements-dev.in
 python-dateutil==2.9.0.post0
-    # via
-    #   faker
-    #   freezegun
+    # via freezegun
 pyyaml==6.0.2
     # via
     #   -c requirements.txt
@@ -110,6 +108,8 @@ typing-extensions==4.12.2
     # via
     #   -c requirements.txt
     #   pytest-factoryboy
+tzdata==2025.2
+    # via faker
 urllib3==2.2.3
     # via
     #   -c requirements.txt
