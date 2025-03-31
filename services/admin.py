@@ -94,6 +94,8 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
 
     @admin.display(boolean=True)
     def _gdpr(self, obj):
+        if obj.is_profile_service:
+            return True
         return (
             bool(obj.gdpr_url)
             and bool(obj.gdpr_query_scope)
