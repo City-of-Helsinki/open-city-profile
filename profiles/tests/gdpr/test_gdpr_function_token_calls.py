@@ -7,7 +7,6 @@ from profiles.connected_services import (
     download_connected_service_data,
 )
 from profiles.tests.factories import ProfileFactory
-from services.enums import ServiceIdp
 from services.tests.factories import ServiceConnectionFactory
 
 AUTHORIZATION_CODE = "keycloak_auth_code"
@@ -62,13 +61,12 @@ def setup_services_and_mocks(
     # Services
     services = []
     service_connections = {}
-    for idx, idp_value in enumerate(request.param):
+    for idx in range(request.param):
         service = service_factory(
             name=f"service{idx}",
             gdpr_url=f"https://service{idx}.example.com/gdpr/",
             gdpr_query_scope="gdprquery",
             gdpr_delete_scope="gdprdelete",
-            idp=idp_value,
             gdpr_audience=f"service{idx}-api",
         )
 
@@ -170,59 +168,14 @@ def assert_correct_gdpr_api_calls(services, service_connections, request_history
 
 
 service_sets = [
-    pytest.param([], id="No services"),
-    pytest.param([None], id="One service: IDP not set"),
-    pytest.param([[ServiceIdp.TUNNISTAMO]], id="One service: Tunnistamo"),
-    pytest.param([[ServiceIdp.KEYCLOAK]], id="One service: Keycloak"),
-    pytest.param(
-        [[ServiceIdp.TUNNISTAMO, ServiceIdp.KEYCLOAK]],
-        id="One service: Tunnistamo/Keycloak",
-    ),
-    pytest.param([None, None], id="Two services: IDP not set * 2"),
-    pytest.param(
-        [None, [ServiceIdp.TUNNISTAMO]], id="Two services: IDP not set, Tunnistamo"
-    ),
-    pytest.param(
-        [None, [ServiceIdp.KEYCLOAK]], id="Two services: IDP not set, Keycloak"
-    ),
-    pytest.param(
-        [[ServiceIdp.TUNNISTAMO], [ServiceIdp.KEYCLOAK]],
-        id="Two services: Tunnistamo, Keycloak",
-    ),
-    pytest.param(
-        [[ServiceIdp.TUNNISTAMO], [ServiceIdp.TUNNISTAMO]],
-        id="Two services: Tunnistamo * 2",
-    ),
-    pytest.param(
-        [[ServiceIdp.KEYCLOAK], [ServiceIdp.KEYCLOAK]], id="Two services: Keycloak * 2"
-    ),
-    pytest.param(
-        [
-            [ServiceIdp.TUNNISTAMO, ServiceIdp.KEYCLOAK],
-            [ServiceIdp.TUNNISTAMO],
-        ],
-        id="Two services: Tunnistamo/Keycloak, Tunnistamo",
-    ),
-    pytest.param(
-        [
-            [ServiceIdp.TUNNISTAMO, ServiceIdp.KEYCLOAK],
-            [ServiceIdp.KEYCLOAK],
-        ],
-        id="Two services: Tunnistamo/Keycloak, Keycloak",
-    ),
-    pytest.param(
-        [
-            [ServiceIdp.TUNNISTAMO, ServiceIdp.KEYCLOAK],
-            [ServiceIdp.TUNNISTAMO, ServiceIdp.KEYCLOAK],
-        ],
-        id="Two services: Tunnistamo/Keycloak * 2",
-    ),
+    pytest.param(0, id="No services"),
+    pytest.param(1, id="One service"),
+    pytest.param(2, id="Two services"),
 ]
 
 
 @pytest.mark.parametrize("setup_services_and_mocks", service_sets, indirect=True)
 def test_download_connected_service_data(requests_mock, setup_services_and_mocks):
-    """Keycloak is the only supported authentication service, so idp will always be Keycloak."""
     profile = setup_services_and_mocks["profile"]
     services = setup_services_and_mocks["services"]
     service_connections = setup_services_and_mocks["service_connections"]
@@ -241,16 +194,10 @@ def test_download_connected_service_data(requests_mock, setup_services_and_mocks
 
 @pytest.mark.parametrize("setup_services_and_mocks", service_sets, indirect=True)
 def test_delete_connected_service_data(requests_mock, setup_services_and_mocks):
-    """Keycloak is the only supported authentication service, so idp will always be Keycloak."""
     profile = setup_services_and_mocks["profile"]
     services = setup_services_and_mocks["services"]
     service_connections = setup_services_and_mocks["service_connections"]
 
-    # Test delete functionality only with dry_run as True so that the request counts
-    # are the same regardless of IDP. (If the dry_run is False the
-    # delete_connected_service_data would make GDPR API calls twice with dry_run as
-    # True and with dry_run as False. In that case Keycloak API token would be fetched
-    # twice but Tunnistamo tokens only once)
     delete_connected_service_data(profile, AUTHORIZATION_CODE, dry_run=True)
 
     request_history = requests_mock.request_history
