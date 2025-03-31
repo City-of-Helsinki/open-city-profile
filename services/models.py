@@ -165,10 +165,6 @@ class Service(TranslatableModel):
 
         return gdpr_url
 
-    @property
-    def is_pure_keycloak(self):
-        return bool(self.idp and {ServiceIdp.KEYCLOAK} == set(self.idp))
-
 
 class ServiceClientId(models.Model):
     service = models.ForeignKey(
