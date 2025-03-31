@@ -88,7 +88,6 @@ The following settings are required when there are services that are connected t
 - `TOKEN_AUTH_AUTHSERVER_URL`: The authentication server. Needs to point to the correct Tunnistamo instance.
 - `OIDC_CLIENT_ID`: Client id to use in the authorization code flow
 - `OIDC_CLIENT_SECRET`: Client secret to use in the authorization code flow
-- `TUNNISTAMO_API_TOKENS_URL`: Tunnistamo URL from which the backend will fetch API tokens for GDPR API use
 
 Required environment variables when there are services that are connected only to Keycloak:
 
