@@ -94,12 +94,11 @@ class ServiceAdmin(TranslatableAdmin, GuardedModelAdmin):
 
     @admin.display(boolean=True)
     def _gdpr(self, obj):
-        keycloak_ok = bool(obj.gdpr_audience) if obj.is_pure_keycloak else True
         return (
             bool(obj.gdpr_url)
             and bool(obj.gdpr_query_scope)
             and bool(obj.gdpr_delete_scope)
-            and keycloak_ok
+            and bool(obj.gdpr_audience)
         )
 
     def get_fieldsets(self, request, obj=None):
