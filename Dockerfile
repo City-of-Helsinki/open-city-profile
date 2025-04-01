@@ -1,7 +1,5 @@
-# Used by Azure Devops to pull from internal registry
-ARG BUILDER_REGISTRY=registry.access.redhat.com
 # ==============================
-FROM ${BUILDER_REGISTRY}/ubi9/python-311:latest AS appbase
+FROM registry.access.redhat.com/ubi9/python-311 AS appbase
 # ==============================
 
 ENV PYTHONDONTWRITEBYTECODE 1
