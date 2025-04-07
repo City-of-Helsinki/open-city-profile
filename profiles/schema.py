@@ -78,7 +78,6 @@ from .models import (
 )
 from .utils import (
     enum_values,
-    force_list,
     requester_can_view_verified_personal_information,
     requester_has_sufficient_loa_to_perform_gdpr_request,
 )
@@ -629,19 +628,6 @@ class ProfileNode(RestrictedProfileNode):
     )
 
     @staticmethod
-    def _has_correct_amr_claim(amr: set):
-        """
-        For future software archeologists:
-        This field was added to the API to support the front-end's need to know
-        which login methods the user has used. It's only needed for profiles
-        with helsinki-tunnus or Suomi.fi, so for other cases, save a couple
-        API calls and return an empty list. There's no other reasoning for the
-        logic here.
-        Can remove this after Tunnistamo is no longer in use. Related ticket: HP-2495
-        """
-        return amr.intersection({"helsinki_tunnus", "heltunnistussuomifi", "suomi_fi"})
-
-    @staticmethod
     def _get_login_methods(user_uuid, *, extended=False) -> Iterable:
         login_methods = get_user_login_methods(user_uuid)
 
@@ -670,11 +656,7 @@ class ProfileNode(RestrictedProfileNode):
                 "No permission to read login methods of another user."
             )
 
-        amr = set(force_list(info.context.user_auth.data.get("amr")))
-
-        if ProfileNode._has_correct_amr_claim(amr):
-            return ProfileNode._get_login_methods(self.user.uuid, extended=False)
-        return []
+        return ProfileNode._get_login_methods(self.user.uuid, extended=False)
 
     def resolve_available_login_methods(self: Profile, info, **kwargs):
         if info.context.user != self.user:
@@ -682,11 +664,7 @@ class ProfileNode(RestrictedProfileNode):
                 "No permission to read login methods of another user."
             )
 
-        amr = set(force_list(info.context.user_auth.data.get("amr")))
-
-        if ProfileNode._has_correct_amr_claim(amr):
-            return ProfileNode._get_login_methods(self.user.uuid, extended=True)
-        return []
+        return ProfileNode._get_login_methods(self.user.uuid, extended=True)
 
     def resolve_service_connections(self: Profile, info, **kwargs):
         return self.effective_service_connections_qs()
