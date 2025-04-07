@@ -36,7 +36,7 @@ Prerequisites:
    * Use `docker-compose.env.yaml.example` as a base, it does not need any changes
      for getting the project running.
    * Change `DEBUG` and the rest of the Django settings if needed.
-     * `TOKEN_AUTH_*`, settings for [tunnistamo](https://github.com/City-of-Helsinki/tunnistamo) authentication service
+     * `TOKEN_AUTH_*`, settings for authentication service
    * Set entrypoint/startup variables according to taste.
      * `CREATE_SUPERUSER`, creates a superuser with credentials `admin`:`admin` (admin@example.com)
      * `APPLY_MIGRATIONS`, applies migrations on startup
@@ -44,8 +44,12 @@ Prerequisites:
      * `ENABLE_GRAPHQL_INTROSPECTION`, enables GraphQL introspection queries
      * `SEED_DEVELOPMENT_DATA`, flush data and recreate the environment with
         fake development data (requires `APPLY_MIGRATIONS`)
-     * `OIDC_CLIENT_ID`, Tunnistamo client id for enabling GDPR API authorization code flows
-     * `OIDC_CLIENT_SECRET`, Tunnistamo client secret for enabling GDPR API authorization code flows
+     * `KEYCLOAK_BASE_URL`, the base URL of the Keycloak server, including any configured context path.
+     * `KEYCLOAK_REALM`, the name of the [Keycloak realm](https://www.keycloak.org/docs/latest/server_admin/#the-master-realm) to use.
+     * `KEYCLOAK_CLIENT_ID`, authentication to the Keycloak instance happens [using a service account](https://www.keycloak.org/docs/latest/server_development/#authenticate-with-a-service-account). This is the client id.
+     * `KEYCLOAK_CLIENT_SECRET`, ...and this is the client secret.
+     * `KEYCLOAK_GDPR_CLIENT_ID`, client id to use in the authorization code flow for GDPR calls.
+     * `KEYCLOAK_GDPR_CLIENT_SECRET`, client secret to use in the authorization code flow for GDPR calls.
      * `GDPR_AUTH_CALLBACK_URL`, GDPR auth callback URL should be the same which is used by the UI for
        fetching OAuth/OIDC authorization token for using the GDPR API
 
@@ -207,5 +211,5 @@ See [docs/database_dump.adoc](docs/database_dump.adoc).
 ## Dependent services
 
 For a complete service the following additional components are also required:
-* [tunnistamo](https://github.com/City-of-Helsinki/tunnistamo) is used as the authentication service
+* [Keycloak](https://www.keycloak.org/) is used as the authentication service
 * [open-city-profile-ui](https://github.com/City-of-Helsinki/open-city-profile-ui/) provides UI
