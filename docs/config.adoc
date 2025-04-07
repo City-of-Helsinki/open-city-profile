@@ -81,13 +81,7 @@ https://pypi.org/project/django-searchable-encrypted-fields[Django-searchable-en
 
 == GDPR API
 
-GDPR API functionality needs to communicate with an authentication server. The implementation can use https://github.com/City-of-Helsinki/tunnistamo[Tunnistamo] and/or Keycloak depending on the connected services.
-
-The following settings are required when there are services that are connected to Tunnistamo:
-
-- `TOKEN_AUTH_AUTHSERVER_URL`: The authentication server. Needs to point to the correct Tunnistamo instance.
-- `OIDC_CLIENT_ID`: Client id to use in the authorization code flow
-- `OIDC_CLIENT_SECRET`: Client secret to use in the authorization code flow
+GDPR API functionality needs to communicate with a Keycloak authentication server.
 
 Required environment variables when there are services that are connected only to Keycloak:
 
