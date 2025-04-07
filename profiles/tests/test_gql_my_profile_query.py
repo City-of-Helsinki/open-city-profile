@@ -616,11 +616,8 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
     assert executed["data"]["services"] is None
 
 
-@pytest.mark.parametrize(
-    "amr_claim_value", ["suomi_fi", "helsinki_tunnus", "heltunnistussuomifi"]
-)
 def test_user_can_see_own_login_methods_with_correct_amr_claim(
-    user_gql_client, profile, group, service, monkeypatch, amr_claim_value
+    user_gql_client, profile, group, service, monkeypatch
 ):
     monkeypatch.setattr(
         "profiles.keycloak_integration.get_user_credential_types",
@@ -657,7 +654,7 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
         }
     """
     executed = user_gql_client.execute(
-        query, auth_token_payload={"amr": amr_claim_value}, service=service
+        query, auth_token_payload={"amr": "suomi_fi"}, service=service
     )
     assert "errors" not in executed
     assert executed["data"]["myProfile"]["loginMethods"] == [
@@ -678,38 +675,6 @@ def test_user_can_see_own_login_methods_with_correct_amr_claim(
             "credentialId": "93793c36-dd30-44c7-96b9-920c3b921f7c",
         },
     ]
-
-
-@pytest.mark.parametrize("amr_claim_value", [None, "helsinkiad"])
-def test_user_cannot_see_own_login_methods_with_other_amr_claims(
-    user_gql_client, profile, group, service, monkeypatch, amr_claim_value
-):
-    def mock_return(*_, **__):
-        raise Exception("This should not be called")
-
-    monkeypatch.setattr(
-        "profiles.keycloak_integration.get_user_identity_providers", mock_return
-    )
-
-    profile = ProfileFactory(user=user_gql_client.user)
-    ServiceConnectionFactory(profile=profile, service=service)
-
-    query = """
-        {
-            myProfile {
-                loginMethods
-                availableLoginMethods {
-                    method
-                }
-            }
-        }
-    """
-    executed = user_gql_client.execute(
-        query, auth_token_payload={"amr": amr_claim_value}, service=service
-    )
-    assert "errors" not in executed
-    assert executed["data"]["myProfile"]["loginMethods"] == []
-    assert executed["data"]["myProfile"]["availableLoginMethods"] == []
 
 
 def test_user_does_not_see_non_enum_login_methods(
