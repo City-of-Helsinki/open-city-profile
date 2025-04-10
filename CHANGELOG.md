@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.0.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.21.1...open-city-profile-v2.0.0) (2025-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** remove tunnistamo support from the api
+
+### Features
+
+* **admin:** Gdpr audience required for an ok ([98df9ca](https://github.com/City-of-Helsinki/open-city-profile/commit/98df9ca105c9af59e8c0b72fca3c9f2e1e2c5524))
+* **admin:** Profile service itself is always ok for gdpr ([f8d9077](https://github.com/City-of-Helsinki/open-city-profile/commit/f8d90778af9125829acf2ba23d49e63b9ee09dd8))
+* **api:** Remove tunnistamo support from the api ([98e60cf](https://github.com/City-of-Helsinki/open-city-profile/commit/98e60cff21b5e4c58f7f0c0359a0cb6997000a95))
+* Remove amr-claim check from loging methods query ([7b46dee](https://github.com/City-of-Helsinki/open-city-profile/commit/7b46dee7e8e3ad3abd0a02d78c2e0e38c54d1c31))
+* Remove field Service.idp ([0031fd9](https://github.com/City-of-Helsinki/open-city-profile/commit/0031fd9233dbb988edf447d353df71dc49c18385))
+* Remove TunnistamoTokenExchange ([3a3e94c](https://github.com/City-of-Helsinki/open-city-profile/commit/3a3e94c05a97caf80e8c6d1eef2cc751d28a1156))
+* Remove unused property Service.is_pure_keycloak ([26890f4](https://github.com/City-of-Helsinki/open-city-profile/commit/26890f483c8af7d5afa52f31392dd7585c6037b0))
+
+
+### Dependencies
+
+* Bump Django to latest patch version ([c8bceae](https://github.com/City-of-Helsinki/open-city-profile/commit/c8bceaea7a885c138143796012824f9100e1c757))
+* Bump ruff ([3f97802](https://github.com/City-of-Helsinki/open-city-profile/commit/3f97802973e5b82435a397fef85dc03cb0678f4f))
+* Remove factory_boy from production requirements ([1c2b9e8](https://github.com/City-of-Helsinki/open-city-profile/commit/1c2b9e8414200fdb0c64055c7f76c9317f5462d1))
+
+
+### Documentation
+
+* Remove tunnistamo from documentation ([e97a06b](https://github.com/City-of-Helsinki/open-city-profile/commit/e97a06bfa83c42ef435c6ab7a889e0bc9f8c0dc0))
+
 ## [1.21.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.21.0...open-city-profile-v1.21.1) (2025-02-19)
 
 
