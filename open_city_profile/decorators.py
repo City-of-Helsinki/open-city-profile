@@ -48,7 +48,7 @@ def _require_authenticated(context):
 
 
 def _require_service(context):
-    if not context.service:
+    if not getattr(context, "service", None):
         raise ServiceNotIdentifiedError("No service identified")
 
 
