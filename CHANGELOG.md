@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.0...open-city-profile-v2.0.1) (2025-05-08)
+
+
+### Bug Fixes
+
+* Robustify _require_service check ([291e1c7](https://github.com/City-of-Helsinki/open-city-profile/commit/291e1c700104a9d0545d060d1752b06ee2ad859f))
+
 ## [2.0.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v1.21.1...open-city-profile-v2.0.0) (2025-04-10)
 
 
