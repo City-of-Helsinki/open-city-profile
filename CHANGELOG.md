@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.2...open-city-profile-v2.0.3) (2025-05-13)
+
+
+### Dependencies
+
+* Bump python-jose ([ca78091](https://github.com/City-of-Helsinki/open-city-profile/commit/ca7809170cb3d1d7512a4a4563f86892762988e0))
+
 ## [2.0.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.1...open-city-profile-v2.0.2) (2025-05-12)
 
 
