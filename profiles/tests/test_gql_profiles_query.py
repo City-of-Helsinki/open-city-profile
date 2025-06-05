@@ -221,10 +221,29 @@ def test_staff_user_can_filter_profiles_by_a_field(
     assert executed["data"] == expected_data
 
 
-@pytest.mark.parametrize("amr_claim_value", [None, 0, "authmethod1", "foo"])
-@pytest.mark.parametrize("has_needed_permission", [True, False])
+@pytest.mark.parametrize(
+    "amr_claim_value,has_needed_amr",
+    [
+        pytest.param(["authmethod1"], True, id="single_correct"),
+        pytest.param(["foo", "authmethod2"], True, id="multiple_correct"),
+        pytest.param(["foo"], False, id="wrong_amr"),
+        pytest.param(None, False, id="no_amr"),
+        pytest.param([""], False, id="empty_string"),
+        pytest.param([], False, id="empty_list"),
+    ],
+)
+@pytest.mark.parametrize(
+    "has_needed_permission",
+    [pytest.param(True, id="has_permission"), pytest.param(True, id="no_permission")],
+)
 def test_staff_user_filter_profiles_by_verified_personal_information_permissions(
-    has_needed_permission, amr_claim_value, settings, user_gql_client, group, service
+    has_needed_permission,
+    amr_claim_value,
+    has_needed_amr,
+    settings,
+    user_gql_client,
+    group,
+    service,
 ):
     settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST = [
         "authmethod1",
@@ -264,10 +283,7 @@ def test_staff_user_filter_profiles_by_verified_personal_information_permissions
     )
 
     assert "errors" not in executed
-    if (
-        has_needed_permission
-        and amr_claim_value in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
-    ):
+    if has_needed_permission and has_needed_amr:
         assert executed["data"] == expected_data_with_permission
     else:
         assert executed["data"] == expected_data_no_permission
