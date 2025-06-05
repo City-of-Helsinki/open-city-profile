@@ -224,11 +224,25 @@ def test_staff_receives_null_sensitive_data_if_it_does_not_exist(
     assert executed["data"] == expected_data
 
 
-@pytest.mark.parametrize("amr_claim_value", [None, 0, "authmethod1", "foo"])
-@pytest.mark.parametrize("has_needed_permission", [True, False])
+@pytest.mark.parametrize(
+    "amr_claim_value,has_needed_amr",
+    [
+        pytest.param(["authmethod1"], True, id="single_correct"),
+        pytest.param(["foo", "authmethod2"], True, id="multiple_correct"),
+        pytest.param(["foo"], False, id="wrong_amr"),
+        pytest.param(None, False, id="no_amr"),
+        pytest.param([""], False, id="empty_string"),
+        pytest.param([], False, id="empty_list"),
+    ],
+)
+@pytest.mark.parametrize(
+    "has_needed_permission",
+    [pytest.param(True, id="has_permission"), pytest.param(True, id="no_permission")],
+)
 def test_staff_user_needs_required_permission_to_access_verified_personal_information(
     has_needed_permission,
     amr_claim_value,
+    has_needed_amr,
     settings,
     user_gql_client,
     profile_with_verified_personal_information,
@@ -273,10 +287,7 @@ def test_staff_user_needs_required_permission_to_access_verified_personal_inform
         query, auth_token_payload=token_payload, service=service
     )
 
-    if (
-        has_needed_permission
-        and amr_claim_value in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
-    ):
+    if has_needed_permission and has_needed_amr:
         assert "errors" not in executed
         assert executed["data"] == {
             "profile": {

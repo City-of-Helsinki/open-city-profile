@@ -28,12 +28,13 @@ def requester_has_service_permission(request, permission):
 
 
 def requester_can_view_verified_personal_information(request):
+    amr = set(request.user_auth.data.get("amr") or [])
+
     return requester_has_service_permission(
         request, "can_view_verified_personal_information"
     ) and (
         not settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
-        or request.user_auth.data.get("amr")
-        in settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST
+        or amr.intersection(set(settings.VERIFIED_PERSONAL_INFORMATION_ACCESS_AMR_LIST))
     )
 
 
