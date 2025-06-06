@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.3...open-city-profile-v2.0.4) (2025-06-06)
+
+
+### Bug Fixes
+
+* Amr claim is a list ([869180f](https://github.com/City-of-Helsinki/open-city-profile/commit/869180f4f733b7fd0808fa6f62138a32c8cffdc8))
+
 ## [2.0.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.2...open-city-profile-v2.0.3) (2025-05-13)
 
 
