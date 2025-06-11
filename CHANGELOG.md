@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.4...open-city-profile-v2.1.0) (2025-06-11)
+
+
+### Features
+
+* Increase uWSGI buffer size ([53fc776](https://github.com/City-of-Helsinki/open-city-profile/commit/53fc776ef9cd7b8a9b06e767e02cfe1fe3b4c101))
+
+
+### Dependencies
+
+* Bump django from 4.2.21 to 4.2.22 ([91a472b](https://github.com/City-of-Helsinki/open-city-profile/commit/91a472be3b0163a57d1d09cee4b3b547d5bbfbc5))
+
 ## [2.0.4](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.0.3...open-city-profile-v2.0.4) (2025-06-06)
 
 
