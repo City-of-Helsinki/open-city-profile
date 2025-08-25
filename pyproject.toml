@@ -30,3 +30,8 @@ doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL", "ALLOW
 [tool.coverage.run]
 branch = true
 omit = ["*migrations*", "*site-packages*", "*venv*", "*tests*"]
+
+[tool.pip-tools.compile]
+generate-hashes = true
+strip-extras = true
+allow-unsafe = true

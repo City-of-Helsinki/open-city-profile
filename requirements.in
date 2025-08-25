@@ -13,7 +13,7 @@ django-searchable-encrypted-fields
 graphene-django
 graphene-federation
 graphql-sync-dataloaders
-git+https://github.com/City-of-Helsinki/graphene-validator.git@graphene3
+graphene-validator@https://github.com/City-of-Helsinki/graphene-validator/archive/refs/heads/graphene3.zip
 ipython
 iso3166
 psycopg[c]
