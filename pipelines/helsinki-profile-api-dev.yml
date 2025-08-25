@@ -49,4 +49,4 @@ extends:
     # configMap: # pod environment variables
     #   DEBUG: 1
     ## Used tool version
-    # pythonVersion: 3.11
+    # pythonVersion: 3.12

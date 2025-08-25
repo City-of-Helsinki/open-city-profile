@@ -10,7 +10,7 @@ jobs:
     uses: City-of-Helsinki/.github/.github/workflows/ci-django-api.yml@main
     secrets: inherit
     with:
-      python-version: 3.11
+      python-version: 3.12
       postgres-major-version: 13
       extra-commands: |
         echo "Database sanitizer config"
