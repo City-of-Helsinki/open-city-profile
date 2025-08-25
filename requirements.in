@@ -22,3 +22,4 @@ pyyaml
 requests
 requests-oauthlib
 sentry-sdk
+uwsgi<3
