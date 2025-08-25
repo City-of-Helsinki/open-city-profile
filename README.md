@@ -101,7 +101,7 @@ Prerequisites:
 Prerequisites:
 * PostgreSQL 13
 * PostGIS 3.2
-* Python 3.11
+* Python 3.12
 
 
 ### Installing Python requirements
