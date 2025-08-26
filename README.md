@@ -32,8 +32,8 @@ Prerequisites:
 * Docker engine: 18.06.0+
 * Docker compose 1.22.0+
 
-1. Create a `docker-compose.env.yaml` file in the project folder:
-   * Use `docker-compose.env.yaml.example` as a base, it does not need any changes
+1. Create a `compose.env` file in the project folder:
+   * Use `compose.env.example` as a base, it does not need any changes
      for getting the project running.
    * Change `DEBUG` and the rest of the Django settings if needed.
      * `TOKEN_AUTH_*`, settings for authentication service

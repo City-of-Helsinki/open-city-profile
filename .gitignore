@@ -81,4 +81,5 @@ venv/
 .venv*/
 .pytest_cache/
 docker-compose.env.yaml
+compose.env
 .vscode/settings.json
