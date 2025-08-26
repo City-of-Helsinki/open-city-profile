@@ -28,7 +28,7 @@ pr:
     - '.github/'
     - 'pipelines/helsinki-profile-api-release.yml'
     - 'pipelines/helsinki-profile-api-dev.yml'
-    - 'docker-compose*'
+    - 'compose*'
 
 # By default, use self-hosted agents
 pool: Default

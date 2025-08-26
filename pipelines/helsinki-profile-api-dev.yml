@@ -12,7 +12,7 @@ trigger:
     - '.github/'
     - 'pipelines/helsinki-profile-api-release.yml'
     - 'pipelines/helsinki-profile-api-review.yml'
-    - 'docker-compose*'
+    - 'compose*'
 
 # Pull request (PR) triggers cause a pipeline to run whenever a pull request is
 # opened with one of the specified target branches, or when updates are made to

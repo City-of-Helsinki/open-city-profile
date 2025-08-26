@@ -17,7 +17,7 @@ services:
             context: .
             target: development
         env_file:
-            - docker-compose.env.yaml
+            - compose.env
         environment:
             DATABASE_URL: postgres://open_city_profile:open_city_profile@profile-db/open_city_profile
             DATABASE_HOST: "profile-db"
