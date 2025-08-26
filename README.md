@@ -53,7 +53,7 @@ Prerequisites:
      * `GDPR_AUTH_CALLBACK_URL`, GDPR auth callback URL should be the same which is used by the UI for
        fetching OAuth/OIDC authorization token for using the GDPR API
 
-2. Run `docker-compose up`
+2. Run `docker compose up`
     * The project is now running at [localhost:8080](http://localhost:8080)
 
 **Optional steps**
@@ -144,7 +144,7 @@ This repository contains `requirements*.in` and corresponding `requirements*.txt
 3. Update `.txt` file for the changed requirements file:
     * `pip-compile requirements.in`
     * `pip-compile requirements-dev.in`
-    * **Note:** the `requirements*.txt` files added to version control are meant to be used in the containerized environment where the service is run. Because [Python package dependencies are environment dependent](https://github.com/jazzband/pip-tools/#cross-environment-usage-of-requirementsinrequirementstxt-and-pip-compile) they need to be generated within a similar environment. This can be done by running the `pip-compile` command within Docker, for example like this: `docker-compose exec django pip-compile requirements.in` ([the container needs to be running](#development-with-docker) beforehand).
+    * **Note:** the `requirements*.txt` files added to version control are meant to be used in the containerized environment where the service is run. Because [Python package dependencies are environment dependent](https://github.com/jazzband/pip-tools/#cross-environment-usage-of-requirementsinrequirementstxt-and-pip-compile) they need to be generated within a similar environment. This can be done by running the `pip-compile` command within Docker, for example like this: `docker compose exec django pip-compile requirements.in` ([the container needs to be running](#development-with-docker) beforehand).
 
 4. If you want to update dependencies to their newest versions, run:
     * `pip-compile --upgrade requirements.in`
@@ -183,8 +183,8 @@ checks new commit messages for the correct format.
 
 The tests require a Postgres database to which to connect to. Here's one way to run the tests:
 
-* Bring the service up with `docker-compose up`. This also brings up the required Postgres server.
-* Run tests within the Django container: `docker-compose exec django pytest`.
+* Bring the service up with `docker compose up`. This also brings up the required Postgres server.
+* Run tests within the Django container: `docker compose exec django pytest`.
 
 
 ## Issue tracking
