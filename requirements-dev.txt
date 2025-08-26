@@ -392,14 +392,13 @@ six==1.17.0 \
     # via
     #   -c requirements.txt
     #   python-dateutil
-    #   snapshottest
-snapshottest==0.6.0 \
-    --hash=sha256:9b177cffe0870c589df8ddbee0a770149c5474b251955bdbde58b7f32a4ec429 \
-    --hash=sha256:bbcaf81d92d8e330042e5c928e13d9f035e99e91b314fe55fda949c2f17b653c
+snapshottest==1.0.0a1 \
+    --hash=sha256:6ef848ee4d6621baff79df6a36bb1da4d7eddf5013dc6b9ca9c361bc42c605b9 \
+    --hash=sha256:fff0e1da3825c32d001018777c3b56d1eae1c850fc5b3418618da3d7f2cd152f
     # via -r requirements-dev.in
-termcolor==2.4.0 \
-    --hash=sha256:9297c0df9c99445c2412e832e882a7884038a25617c60cea2ad69488d4040d63 \
-    --hash=sha256:aab9e56047c8ac41ed798fa36d892a37aca6b3e9159f3e0c24bc64a9b3ac7b7a
+termcolor==3.1.0 \
+    --hash=sha256:591dd26b5c2ce03b9e43f391264626557873ce1d379019786f99b0c2bee140aa \
+    --hash=sha256:6a6dd7fbee581909eeec6a756cff1d7f7c376063b14e4a298dc4980309e55970
     # via snapshottest
 typing-extensions==4.12.2 \
     --hash=sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d \
