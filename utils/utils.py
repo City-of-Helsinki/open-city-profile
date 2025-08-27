@@ -156,7 +156,6 @@ def create_user(username="", faker=None):
         date_joined=make_aware(
             faker.date_time_between(start_date="-10y", end_date="now"),
             get_current_timezone(),
-            is_dst=False,
         ),
     )
 
