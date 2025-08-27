@@ -1,4 +1,4 @@
-Django~=4.2.24
+Django~=5.2.6
 django-admin-sortable
 django-cors-headers
 django-csp
