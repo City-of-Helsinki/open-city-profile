@@ -99,8 +99,8 @@ Prerequisites:
 ## Development without Docker
 
 Prerequisites:
-* PostgreSQL 13
-* PostGIS 3.2
+* PostgreSQL 17
+* PostGIS 3.5
 * Python 3.12
 
 
