@@ -128,11 +128,15 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
         return self
 
     def get_primary_email(self):
-        return Email.objects.get(profile=self, primary=True)
+        if self.pk is not None:
+            return Email.objects.get(profile=self, primary=True)
+        else:
+            return None
 
     def get_primary_email_value(self):
         try:
-            return self.get_primary_email().email
+            email = self.get_primary_email()
+            return email.email if email else None
         except Email.DoesNotExist:
             return None
 

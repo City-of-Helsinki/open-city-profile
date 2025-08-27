@@ -159,7 +159,6 @@ LANGUAGES = (("fi", "Finnish"), ("en", "English"), ("sv", "Swedish"))
 LANGUAGE_CODE = "fi"
 TIME_ZONE = "Europe/Helsinki"
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
