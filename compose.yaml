@@ -1,6 +1,6 @@
 services:
     postgres:
-        image: postgres:13-alpine
+        image: postgres:17-alpine
         restart: on-failure
         environment:
             POSTGRES_USER: open_city_profile
