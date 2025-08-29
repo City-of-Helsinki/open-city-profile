@@ -31,6 +31,7 @@ COPY requirements-dev.txt .
 RUN pip install --no-cache-dir -r /app/requirements-dev.txt
 
 ENV DEV_SERVER=1
+ENV PIP_TOOLS_CACHE_DIR="/tmp/pip-tools-cache"
 
 COPY --chown=appuser:root . .
 
