@@ -216,7 +216,11 @@ def _commit_audit_logs():
     client_id = _get_current_client_id()
     ip_address = _get_original_client_ip()
 
-    profiles = [log_data["profile"] for log_data in audit_loggables.values()]
+    profiles = [
+        log_data["profile"]
+        for log_data in audit_loggables.values()
+        if log_data["profile"].pk is not None
+    ]
     for ids in User.objects.filter(profile__in=profiles).values("uuid", "profile__id"):
         audit_loggables[ids["profile__id"]]["user_uuid"] = ids["uuid"]
 
