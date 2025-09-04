@@ -1,6 +1,5 @@
 [tool.ruff]
 target-version = "py312"
-extend-exclude = ["snapshots"]
 
 [tool.ruff.lint]
 select = [

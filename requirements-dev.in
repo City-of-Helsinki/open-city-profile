@@ -10,6 +10,6 @@ pytest-django
 pytest-mock
 requests-mock
 pytest-factoryboy
-snapshottest
+syrupy
 # Keep this in sync with .pre-commit-config.yaml
 ruff==0.12.11

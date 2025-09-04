@@ -7,6 +7,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: open_city_profile/tests/__snapshots__/
       - id: end-of-file-fixer
         exclude: open_city_profile/static/open-city-profile/swagger/
       - id: check-yaml
