@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.2.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.1.1...open-city-profile-v2.2.0) (2025-09-10)
+
+
+### Features
+
+* Update Python to 3.12 ([8df633b](https://github.com/City-of-Helsinki/open-city-profile/commit/8df633b4a0cb441feaa53938bda6f2bdf4094b4b))
+
+
+### Dependencies
+
+* Bump django from 4.2.23 to 4.2.24 ([8d18d13](https://github.com/City-of-Helsinki/open-city-profile/commit/8d18d13604005ddd1b2c6f0eba455ba1be7b2707))
+* Move uwsgi to main requirements ([ad4fa63](https://github.com/City-of-Helsinki/open-city-profile/commit/ad4fa63aafd08e7e4dcc528de2afc005cfeabb35))
+* Update snapshottest to pre-release version for Python 3.12 ([11eb908](https://github.com/City-of-Helsinki/open-city-profile/commit/11eb908be2e656da93e5896db05a7964fc080a8e))
+
+
+### Documentation
+
+* Update docker compose commands ([f685ee0](https://github.com/City-of-Helsinki/open-city-profile/commit/f685ee080fee8219b563665b6b2875544bfa981d))
+
 ## [2.1.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.1.0...open-city-profile-v2.1.1) (2025-06-12)
 
 
