@@ -1,10 +1,10 @@
 import functools
 from enum import Enum
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from django.conf import settings
 
-_EnumType = TypeVar("_EnumType", bound=Type[Enum])
+_EnumType = TypeVar("_EnumType", bound=type[Enum])
 
 
 def requester_has_service_permission(request, permission):

@@ -50,7 +50,7 @@ def sanitize_city(value):
 
 
 def sanitize_encrypted_municipality_number(value):
-    return as_encrypted_hex_string("{:03}".format(randint(1, 999)))
+    return as_encrypted_hex_string(f"{randint(1, 999):03}")
 
 
 def sanitize_encrypted_first_name(value):

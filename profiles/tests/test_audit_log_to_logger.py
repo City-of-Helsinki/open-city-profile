@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from string import Template
-from typing import Any, List, Optional
+from typing import Any
 
 import pytest
 from guardian.shortcuts import assign_perm
@@ -111,10 +111,10 @@ def assert_common_fields(
 @dataclass
 class ProfileWithRelated:
     profile: Profile
-    related_part: Optional[Any]
-    related_name: Optional[str]
-    profile_part_name: Optional[str]
-    additional_profile_part_names: List[str]
+    related_part: Any | None
+    related_name: str | None
+    profile_part_name: str | None
+    additional_profile_part_names: list[str]
 
     @property
     def all_profile_part_names(self):

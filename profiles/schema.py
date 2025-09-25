@@ -637,9 +637,9 @@ class ProfileNode(RestrictedProfileNode):
             if val["method"] in enum_values(LoginMethodType)
         ]
 
-        if unknown_login_methods := set([val["method"] for val in login_methods]) - set(
+        if unknown_login_methods := {val["method"] for val in login_methods} - {
             val["method"] for val in login_methods_in_enum
-        ):
+        }:
             logger.warning(
                 "Found login methods which are not part of the LoginMethodType enum: %s",  # noqa: E501
                 unknown_login_methods,

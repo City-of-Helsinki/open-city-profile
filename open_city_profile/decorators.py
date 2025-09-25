@@ -99,7 +99,7 @@ def staff_required(required_permission="view"):
         )
 
     @_use_context_tests(
-        _require_service_permission("can_{}_profiles".format(required_permission))
+        _require_service_permission(f"can_{required_permission}_profiles")
     )
     def check_permission():
         """Decorator that checks for can_{required_permission}_profiles permission."""

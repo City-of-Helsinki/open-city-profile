@@ -1,7 +1,6 @@
 import logging
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import List
 
 import requests
 
@@ -133,7 +132,7 @@ class DeleteGdprDataErrorMessage:
 @dataclass
 class DeleteGdprDataError:
     code: str
-    message: List[DeleteGdprDataErrorMessage]
+    message: list[DeleteGdprDataErrorMessage]
 
 
 @dataclass
@@ -141,7 +140,7 @@ class DeleteGdprDataResult:
     service: Service
     dry_run: bool
     success: bool
-    errors: List[DeleteGdprDataError]
+    errors: list[DeleteGdprDataError]
 
 
 def _validate_gdpr_api_errors(errors):
@@ -166,7 +165,7 @@ def _validate_gdpr_api_errors(errors):
     return True
 
 
-def _convert_gdpr_api_errors(errors) -> List[DeleteGdprDataError]:
+def _convert_gdpr_api_errors(errors) -> list[DeleteGdprDataError]:
     """Converts errors from the GDPR API to a list of DeleteGdprDataErrors"""
     converted_errors = []
     for error in errors:
