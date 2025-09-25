@@ -1,12 +1,12 @@
 import uuid
 from collections import defaultdict
-from typing import Callable, List
+from collections.abc import Callable
 
 from profiles.models import Address, Email, Phone
 
 
 def loader_for_profile(model) -> Callable:
-    def batch_load_fn(profile_ids: List[uuid.UUID]) -> List[List[model]]:
+    def batch_load_fn(profile_ids: list[uuid.UUID]) -> list[list[model]]:
         items_by_profile_ids = defaultdict(list)
         for item in model.objects.filter(profile_id__in=profile_ids).iterator():
             items_by_profile_ids[item.profile_id].append(item)
@@ -17,7 +17,7 @@ def loader_for_profile(model) -> Callable:
 
 
 def loader_for_profile_primary(model) -> Callable:
-    def batch_load_fn(profile_ids: List[uuid.UUID]) -> List[model]:
+    def batch_load_fn(profile_ids: list[uuid.UUID]) -> list[model]:
         items_by_profile_ids = {}
         for item in model.objects.filter(
             profile_id__in=profile_ids, primary=True

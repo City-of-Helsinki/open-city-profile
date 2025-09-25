@@ -59,11 +59,11 @@ class KeycloakTokenExchange:
         return self.access_token
 
     def fetch_api_token(self, target_aud, permission):
-        headers = {"Authorization": "Bearer {}".format(self.access_token)}
+        headers = {"Authorization": f"Bearer {self.access_token}"}
         data = {
             "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
             "audience": target_aud,
-            "permission": "#{}".format(permission),
+            "permission": f"#{permission}",
         }
         response = requests.post(
             self.oidc_config["token_endpoint"],

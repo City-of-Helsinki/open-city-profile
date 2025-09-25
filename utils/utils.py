@@ -164,7 +164,7 @@ def generate_group_admins(groups=tuple(), faker=None):
     """Creates fake development group admins for development purposes."""
 
     def create_user_and_add_to_group(group=None):
-        user = create_user(username="{}_user".format(group.name.lower()), faker=faker)
+        user = create_user(username=f"{group.name.lower()}_user", faker=faker)
         user.groups.add(group)
         return user
 

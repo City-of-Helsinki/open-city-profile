@@ -161,9 +161,9 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
 
     def __str__(self):
         if self.user:
-            return "{} {} ({})".format(self.first_name, self.last_name, self.user.uuid)
+            return f"{self.first_name} {self.last_name} ({self.user.uuid})"
         elif self.first_name and self.last_name:
-            return "{} {}".format(self.first_name, self.last_name)
+            return f"{self.first_name} {self.last_name}"
         else:
             return str(self.id)
 

@@ -9,4 +9,4 @@ def to_graphql_name(s):
 
 
 def to_graphql_object(dic):
-    return dict([(to_graphql_name(k), v) for k, v in dic.items()])
+    return {to_graphql_name(k): v for k, v in dic.items()}
