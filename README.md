@@ -100,7 +100,6 @@ Prerequisites:
 
 Prerequisites:
 * PostgreSQL 17
-* PostGIS 3.5
 * Python 3.12
 
 
