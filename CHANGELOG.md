@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.3.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.2.0...open-city-profile-v2.3.0) (2025-10-02)
+
+
+### Features
+
+* Add pyupgrade to pre-commit ([ef6f3da](https://github.com/City-of-Helsinki/open-city-profile/commit/ef6f3da2327a5126bc2d7cbee3979e378bf21ee0))
+* Bump django 5.2 ([e232b63](https://github.com/City-of-Helsinki/open-city-profile/commit/e232b63a5d8eadfe287dd87ab2e7b3863490d37f))
+
+
+### Dependencies
+
+* Bump development requirements ([ff2c9b4](https://github.com/City-of-Helsinki/open-city-profile/commit/ff2c9b479276d7787bdebf16ccb7aaa57c117649))
+* Bump django from 5.2.6 to 5.2.7 ([bc20bef](https://github.com/City-of-Helsinki/open-city-profile/commit/bc20bef7c1a0a432683f51ee838a06cb7ceb2524))
+* Bump ruff ([141e330](https://github.com/City-of-Helsinki/open-city-profile/commit/141e33016225ff282b3ab9d439041b97d669bcbf))
+
+
+### Documentation
+
+* Remove postgis from README ([f6533ab](https://github.com/City-of-Helsinki/open-city-profile/commit/f6533ab3dce9fcb9a74f5a3c4fc4d935ea01fca2))
+
 ## [2.2.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.1.1...open-city-profile-v2.2.0) (2025-09-10)
 
 
