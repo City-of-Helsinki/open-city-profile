@@ -4,7 +4,9 @@ from sys import stdout
 
 import environ
 import sentry_sdk
+from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.types import SamplingContext
 
 from open_city_profile import __version__
 from open_city_profile.utils import enable_graphql_query_suggestion
@@ -36,6 +38,10 @@ env = environ.Env(
     CACHE_URL=(str, "locmemcache://"),
     EMAIL_URL=(str, "consolemail://"),
     SENTRY_DSN=(str, ""),
+    SENTRY_ENVIRONMENT=(str, "local"),
+    SENTRY_PROFILE_SESSION_SAMPLE_RATE=(float, None),
+    SENTRY_RELEASE=(str, None),
+    SENTRY_TRACES_SAMPLE_RATE=(float, None),
     TOKEN_AUTH_ACCEPTED_AUDIENCE=(list, []),
     TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
@@ -84,12 +90,35 @@ if os.path.exists(env_file):
 
 COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT", "")
 VERSION = __version__
-sentry_sdk.init(
-    dsn=env.str("SENTRY_DSN", ""),
-    release=env.str("OPENSHIFT_BUILD_COMMIT", VERSION),
-    environment=env.str("SENTRY_ENVIRONMENT", "development"),
-    integrations=[DjangoIntegration()],
-)
+
+SENTRY_TRACES_SAMPLE_RATE = env("SENTRY_TRACES_SAMPLE_RATE")
+
+
+def sentry_traces_sampler(sampling_context: SamplingContext) -> float:
+    # Respect parent sampling decision if one exists. Recommended by Sentry.
+    if (parent_sampled := sampling_context.get("parent_sampled")) is not None:
+        return float(parent_sampled)
+
+    # Exclude health check endpoints from tracing
+    path = sampling_context.get("wsgi_environ", {}).get("PATH_INFO", "")
+    if path.rstrip("/") in ["/healthz", "/readiness"]:
+        return 0
+
+    # Use configured sample rate for all other requests
+    return SENTRY_TRACES_SAMPLE_RATE or 0
+
+
+if env("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=env("SENTRY_DSN"),
+        environment=env("SENTRY_ENVIRONMENT"),
+        release=env("SENTRY_RELEASE"),
+        integrations=[DjangoIntegration()],
+        traces_sampler=sentry_traces_sampler,
+        profile_session_sample_rate=env("SENTRY_PROFILE_SESSION_SAMPLE_RATE"),
+        profile_lifecycle="trace",
+    )
+
 
 sentry_sdk.integrations.logging.ignore_logger("graphql.execution.utils")
 
@@ -238,6 +267,11 @@ TEMPLATES = [
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "baggage",
+    "sentry-trace",
+)
 
 # Authentication
 
