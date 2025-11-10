@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.4.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.3.0...open-city-profile-v2.4.0) (2025-11-10)
+
+
+### Features
+
+* **sentry:** Update sentry configuration ([0bd087e](https://github.com/City-of-Helsinki/open-city-profile/commit/0bd087ee9c68e66fb626ff8a1c82425d96d89705))
+
+
+### Dependencies
+
+* Bump django from 5.2.7 to 5.2.8 ([59937ac](https://github.com/City-of-Helsinki/open-city-profile/commit/59937ac77077f67541ebbfdb38ec65f242d01a9f))
+* Bump pip from 25.2 to 25.3 ([8f1e8ab](https://github.com/City-of-Helsinki/open-city-profile/commit/8f1e8ab9d8f90cd67c453af0ce09b85092787655))
+* Bump sentry-sdk from 2.35.1 to 2.41.0 ([dc1605a](https://github.com/City-of-Helsinki/open-city-profile/commit/dc1605acfef65d5eb04547c1567ce1cd78896096))
+
 ## [2.3.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.2.0...open-city-profile-v2.3.0) (2025-10-02)
 
 
