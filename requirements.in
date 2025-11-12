@@ -7,13 +7,14 @@ django-environ
 django-filter
 django-guardian
 django-helusers
+django-logger-extra
 django-parler
 django-sanitized-dump
 django-searchable-encrypted-fields
 graphene-django
 graphene-federation
-graphql-sync-dataloaders
 graphene-validator@https://github.com/City-of-Helsinki/graphene-validator/archive/refs/heads/graphene3.zip
+graphql-sync-dataloaders
 ipython
 iso3166
 psycopg[c]
