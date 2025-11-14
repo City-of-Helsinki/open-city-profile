@@ -227,6 +227,7 @@ INSTALLED_APPS = [
     "adminsortable",
     "open_city_profile.apps.OpenCityProfileConfig",
     "sanitized_dump",
+    "logger_extra",
 ]
 
 MIDDLEWARE = [
@@ -234,6 +235,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "logger_extra.middleware.XRequestIdMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -381,16 +383,23 @@ _loggers.update(
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "context": {
+            "()": "logger_extra.filter.LoggerContextFilter",
+        }
+    },
     "formatters": {
-        "simple": {
-            "format": "%(name)s %(asctime)s.%(msecs)03dZ %(levelname)s %(message)s",
-            "()": "open_city_profile.logging.UtcFormatter",
-            "datefmt": "%Y-%m-%dT%H:%M:%S",
+        "json": {
+            "()": "logger_extra.formatter.JSONFormatter",
         },
     },
     "handlers": {
         "audit": _audit_log_handler,
-        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["context"],
+        },
     },
     "loggers": _loggers,
 }

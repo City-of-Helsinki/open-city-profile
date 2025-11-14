@@ -237,6 +237,7 @@ django==5.2.8 \
     #   django-filter
     #   django-guardian
     #   django-helusers
+    #   django-logger-extra
     #   django-parler
     #   django-searchable-encrypted-fields
     #   graphene-django
@@ -271,6 +272,10 @@ django-guardian==3.0.7 \
 django-helusers==0.13.3 \
     --hash=sha256:26b396edcfd247886171e185fe5f56a1d9ae2937edfa342f1cf2977371cb4974 \
     --hash=sha256:2b5e29f1440eabb380c1e9484953d91f159003f79fd5b4bf4f2df9061eb79b53
+    # via -r requirements.in
+django-logger-extra==1.0.0 \
+    --hash=sha256:4ab52de7fa4863c60f42e7c809911c342650b0556eb48989d0b98b23efc4bfc1 \
+    --hash=sha256:665396ed30959e258c93bfb3aad84b4f3a6072cd9fad703d76f2960d63b25201
     # via -r requirements.in
 django-parler==2.3 \
     --hash=sha256:2c8f5012ceb5e49af93b16ea3fe4d0c83d70b91b2d0f470c05d7d742b6f3083d \
