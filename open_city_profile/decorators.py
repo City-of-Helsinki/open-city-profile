@@ -93,9 +93,7 @@ def staff_required(required_permission="view"):
 
     if required_permission not in ("view", "manage"):
         raise ValueError(
-            "Invalid required_permission given as argument: '{}'".format(
-                required_permission
-            )
+            f"Invalid required_permission given as argument: '{required_permission}'"
         )
 
     @_use_context_tests(

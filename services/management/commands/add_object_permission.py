@@ -12,8 +12,6 @@ class Command(ObjectPermissionCommand):
         assign_perm(permission, group, service)
         self.stdout.write(
             self.style.SUCCESS(
-                "Permission {} added for {} on service {}".format(
-                    permission, group, service.name
-                )
+                f"Permission {permission} added for {group} on service {service.name}"
             )
         )

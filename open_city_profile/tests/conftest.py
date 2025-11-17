@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import factory.random
 import pytest
@@ -209,7 +209,7 @@ def gql_schema(anon_user_gql_client, execution_context_class):
 
 
 def get_unix_timestamp_now():
-    return int(datetime.now(tz=timezone.utc).timestamp())
+    return int(datetime.now(tz=UTC).timestamp())
 
 
 @pytest.fixture

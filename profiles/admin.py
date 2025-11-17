@@ -115,26 +115,26 @@ class VerifiedPersonalInformationAdminInline(admin.StackedInline):
 
     @admin.display(description="Permanent address")
     def get_permanent_address(self, obj):
-        return "{}, {} {}\n".format(
-            obj.permanent_address.street_address,
-            obj.permanent_address.postal_code,
-            obj.permanent_address.post_office,
+        return (
+            f"{obj.permanent_address.street_address}, "
+            f"{obj.permanent_address.postal_code} "
+            f"{obj.permanent_address.post_office}\n"
         )
 
     @admin.display(description="Temporary address")
     def get_temporary_address(self, obj):
-        return "{}, {} {}\n".format(
-            obj.temporary_address.street_address,
-            obj.temporary_address.postal_code,
-            obj.temporary_address.post_office,
+        return (
+            f"{obj.temporary_address.street_address}, "
+            f"{obj.temporary_address.postal_code} "
+            f"{obj.temporary_address.post_office}\n"
         )
 
     @admin.display(description="Permanent foreign address")
     def get_permanent_foreign_address(self, obj):
-        return "{}, {}, {}\n".format(
-            obj.permanent_foreign_address.street_address,
-            obj.permanent_foreign_address.additional_address,
-            obj.permanent_foreign_address.country_code,
+        return (
+            f"{obj.permanent_foreign_address.street_address}, "
+            f"{obj.permanent_foreign_address.additional_address}, "
+            f"{obj.permanent_foreign_address.country_code}\n"
         )
 
 

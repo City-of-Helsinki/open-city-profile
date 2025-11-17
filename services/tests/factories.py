@@ -11,7 +11,7 @@ from services.models import (
 
 class ServiceFactory(factory.django.DjangoModelFactory):
     service_type = None
-    name = factory.Sequence(lambda n: "service %d" % n)
+    name = factory.Sequence(lambda n: f"service {n:d}")
 
     @factory.lazy_attribute
     def title(self):
@@ -49,8 +49,8 @@ class ServiceConnectionFactory(factory.django.DjangoModelFactory):
 
 
 class AllowedDataFieldFactory(factory.django.DjangoModelFactory):
-    field_name = factory.Sequence(lambda n: "name %d" % n)
-    label = factory.Sequence(lambda n: "Label %d" % n)
+    field_name = factory.Sequence(lambda n: f"name {n:d}")
+    label = factory.Sequence(lambda n: f"Label {n:d}")
 
     @factory.post_generation
     def final_order(self, create, extracted, **kwargs):

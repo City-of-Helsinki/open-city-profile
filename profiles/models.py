@@ -231,9 +231,7 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
                         item["customer_id"], customer_index
                     )
                     if "customer_id" in item
-                    else "Could not import unknown customer, index: {}".format(
-                        customer_index
-                    )
+                    else f"Could not import unknown customer, index: {customer_index}"
                 )
                 raise Exception(msg) from err
         return result

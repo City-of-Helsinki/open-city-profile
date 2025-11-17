@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from string import Template
 from typing import Any
 
@@ -62,7 +62,7 @@ def assert_common_fields(
     actor_role="SYSTEM",
     target_profile_part="base profile",
 ):
-    now_dt = datetime.now(tz=timezone.utc)
+    now_dt = datetime.now(tz=UTC)
     leeway = timedelta(milliseconds=200)
 
     if isinstance(log_entry, list):
