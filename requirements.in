@@ -8,6 +8,7 @@ django-filter
 django-guardian
 django-helusers
 django-logger-extra
+django-resilient-logger
 django-parler
 django-sanitized-dump
 django-searchable-encrypted-fields
