@@ -22,6 +22,7 @@ certifi==2025.8.3 \
     --hash=sha256:e564105f78ded564e3ae7c923924435e1daa7463faeab5bb932bc53ffae63407 \
     --hash=sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5
     # via
+    #   elastic-transport
     #   requests
     #   sentry-sdk
 cffi==1.17.1 \
@@ -247,6 +248,7 @@ django==5.2.8 \
     #   django-helusers
     #   django-logger-extra
     #   django-parler
+    #   django-resilient-logger
     #   django-searchable-encrypted-fields
     #   graphene-django
     #   social-auth-app-django
@@ -290,6 +292,10 @@ django-parler==2.3 \
     --hash=sha256:2c8f5012ceb5e49af93b16ea3fe4d0c83d70b91b2d0f470c05d7d742b6f3083d \
     --hash=sha256:8f6c8061e4b5690f1ee2d8e5760940ef06bf78a5bfa033d11178377559c749cf
     # via -r requirements.in
+django-resilient-logger==1.1.0 \
+    --hash=sha256:e2769c041f2db046118ebbf1d85b22191984dd8916ee338f1b000f26d46e87ac \
+    --hash=sha256:e9e08f4f214575f7be8a89c3cf54b91852a8230f0feb51ec25a66e356ca0dd8e
+    # via -r requirements.in
 django-sanitized-dump==1.2.2 \
     --hash=sha256:77da860ca62f16869ad947f4da1d4823bac11ba4fcbb38cdcac69fd93e0f5a26 \
     --hash=sha256:abb087a29b981de97d21bbac05c64f1f59ea0a69f479dde638994276499b4fd1
@@ -301,6 +307,14 @@ ecdsa==0.19.1 \
     --hash=sha256:30638e27cf77b7e15c4c4cc1973720149e1033827cfd00661ca5c8cc0cdb24c3 \
     --hash=sha256:478cba7b62555866fcb3bb3fe985e06decbdb68ef55713c4e5ab98c57d508e61
     # via python-jose
+elastic-transport==8.17.1 \
+    --hash=sha256:192718f498f1d10c5e9aa8b9cf32aed405e469a7f0e9d6a8923431dbb2c59fb8 \
+    --hash=sha256:5edef32ac864dca8e2f0a613ef63491ee8d6b8cfb52881fa7313ba9290cac6d2
+    # via elasticsearch
+elasticsearch==8.19.2 \
+    --hash=sha256:622efa6a3e662db45285f16ab57bf198ea73ac9e137e7ed8b1d1d1e47638959d \
+    --hash=sha256:c16ba20c4c76cf6952e836dae7f4e724e00ba7bf31b94b79472b873683accdd4
+    # via django-resilient-logger
 executing==2.2.0 \
     --hash=sha256:11387150cad388d62750327a53d3339fad4888b39a6fe233c3afbb54ecffd3aa \
     --hash=sha256:5d108c028108fe2551d1a7b2e8b713341e2cb4fc0aa7dcf966fa4327a5226755
@@ -474,7 +488,9 @@ pyjwt==2.10.1 \
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
-    # via graphene
+    # via
+    #   elasticsearch
+    #   graphene
 python-jose==3.5.0 \
     --hash=sha256:abd1202f23d34dfad2c3d28cb8617b90acf34132c7afd60abd0b0b7d3cb55771 \
     --hash=sha256:fb4eaa44dbeb1c26dcc69e4bd7ec54a1cb8dd64d3b4d81ef08d90ff453f2b01b
@@ -604,12 +620,14 @@ typing-extensions==4.15.0 \
     --hash=sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466 \
     --hash=sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548
     # via
+    #   elasticsearch
     #   graphene
     #   psycopg
 urllib3==2.5.0 \
     --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
     # via
+    #   elastic-transport
     #   requests
     #   sentry-sdk
 uwsgi==2.0.30 \
