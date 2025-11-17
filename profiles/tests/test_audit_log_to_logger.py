@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from string import Template
 from typing import Any
 
@@ -78,7 +78,7 @@ def assert_common_fields(
     actor_role="SYSTEM",
     target_profile_part="base profile",
 ):
-    now_dt = datetime.now(tz=timezone.utc)
+    now_dt = datetime.now(tz=UTC)
     now_ms_timestamp = int(now_dt.timestamp() * 1000)
     leeway_ms = 200
 
@@ -97,7 +97,7 @@ def assert_common_fields(
 
     log_dt = datetime.strptime(
         audit_event["date_time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
     assert_almost_equal(log_dt, now_dt, timedelta(milliseconds=leeway_ms))
 
     expected_target = {

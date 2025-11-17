@@ -2,7 +2,7 @@ import json
 import logging
 import threading
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -123,7 +123,7 @@ def log(action, instance):
         profile_loggables["profile"] = profile
         data_action = (action, _profile_part(instance))
         if data_action not in profile_loggables["parts"]:
-            profile_loggables["parts"][data_action] = datetime.now(tz=timezone.utc)
+            profile_loggables["parts"][data_action] = datetime.now(tz=UTC)
 
 
 def _create_log_entries(current_user, service, client_id, ip_address, audit_loggables):

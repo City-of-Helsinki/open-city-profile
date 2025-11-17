@@ -311,9 +311,9 @@ def test_profile_checks_allowed_data_fields_for_single_query(
     ServiceConnectionFactory(profile=profile, service=service)
     service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
-    query = """
+    query = Template("""
         {
-            profile(id: "%s") {
+            profile(id: "${profile_id}") {
                 firstName
                 lastName
                 sensitivedata {
@@ -321,7 +321,9 @@ def test_profile_checks_allowed_data_fields_for_single_query(
                 }
             }
         }
-    """ % relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
+    """).substitute(
+        profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
+    )
 
     executed = user_gql_client.execute(query, service=service)
     assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")
@@ -340,7 +342,7 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
     ServiceConnectionFactory(profile=profile, service=service)
     service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
 
-    query = """
+    query = Template("""
         {
             myProfile {
                 firstName
@@ -352,7 +354,7 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
             _service {
                 __typename
             }
-            profile(id: "%s") {
+            profile(id: "${profile_id}") {
                 firstName
                 lastName
                 sensitivedata {
@@ -367,7 +369,9 @@ def test_my_profile_checks_allowed_data_fields_for_multiple_queries(
                 }
             }
         }
-    """ % relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
+    """).substitute(
+        profile_id=relay.Node.to_global_id(ProfileNode._meta.name, profile.id)
+    )
 
     executed = user_gql_client.execute(query, service=service)
     assert_match_error_code(executed, "FIELD_NOT_ALLOWED_ERROR")

@@ -12,8 +12,6 @@ class Command(ObjectPermissionCommand):
         remove_perm(permission, group, service)
         self.stdout.write(
             self.style.SUCCESS(
-                "Permission {} removed for {} on service {}".format(
-                    permission, group, service.name
-                )
+                f"Permission {permission} removed for {group} on service {service.name}"
             )
         )

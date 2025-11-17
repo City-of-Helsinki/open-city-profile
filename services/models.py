@@ -155,9 +155,7 @@ class ServiceConnection(SerializableMixin):
         ordering = ["id"]
 
     def __str__(self):
-        return "{} {} - {}".format(
-            self.profile.first_name, self.profile.last_name, self.service
-        )
+        return f"{self.profile.first_name} {self.profile.last_name} - {self.service}"
 
     serialize_fields = (
         {"name": "service", "accessor": lambda x: x.name},

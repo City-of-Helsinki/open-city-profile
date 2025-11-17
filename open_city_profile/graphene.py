@@ -157,8 +157,9 @@ class DjangoParlerObjectType(DjangoObjectType):
         **options,
     ):
         assert issubclass(model, TranslatableModel), (
-            'You need to pass a valid Django Parler Model in {}.Meta, received "{}".'
-        ).format(cls.__name__, model)
+            f"You need to pass a valid Django Parler Model in {cls.__name__}.Meta, "
+            f'received "{model}".'
+        )
 
         # Notice: only_fields and exclude_fields are deprecated and are not used here
         cls._add_parler_fields_to_type(model, fields, exclude)

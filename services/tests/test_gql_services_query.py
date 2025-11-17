@@ -1,3 +1,5 @@
+from string import Template
+
 import pytest
 from guardian.shortcuts import assign_perm
 
@@ -111,18 +113,18 @@ def test_query_service_terms_of_use_url(user_gql_client, language):
     service.set_current_language("fr")
 
     assign_perm("services.view_service", user_gql_client.user)
-    query = """
+    query = Template("""
         query {
             services {
                 edges {
                     node {
                         name
-                        termsOfUseUrl(language: %s)
+                        termsOfUseUrl(language: ${language})
                     }
                 }
             }
         }
-    """ % language.upper()
+    """).substitute(language=language.upper())
 
     executed = user_gql_client.execute(query, service=None)
 

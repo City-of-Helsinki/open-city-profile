@@ -1,10 +1,7 @@
 import functools
 from enum import Enum
-from typing import TypeVar
 
 from django.conf import settings
-
-_EnumType = TypeVar("_EnumType", bound=type[Enum])
 
 
 def requester_has_service_permission(request, permission):
@@ -51,7 +48,7 @@ def requester_has_sufficient_loa_to_perform_gdpr_request(request):
 
 
 @functools.cache
-def enum_values(enum: _EnumType) -> list:
+def enum_values[EnumType: Enum](enum: EnumType) -> list:
     """
     Return a list of values from the given enum.
     """
