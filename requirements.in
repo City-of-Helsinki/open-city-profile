@@ -23,4 +23,5 @@ pyyaml
 requests
 requests-oauthlib
 sentry-sdk
+social-auth-app-django
 uwsgi<3

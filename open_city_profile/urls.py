@@ -13,6 +13,7 @@ from open_city_profile import __version__
 from open_city_profile.views import GraphQLView
 
 urlpatterns = [
+    path("pysocial/", include("social_django.urls", namespace="social")),
     path("admin/", admin.site.urls),
     path(
         "graphql/",

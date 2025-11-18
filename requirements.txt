@@ -212,7 +212,9 @@ cryptography==45.0.6 \
     --hash=sha256:f4028f29a9f38a2025abedb2e409973709c660d44319c61762202206ed577c42 \
     --hash=sha256:f68f833a9d445cc49f01097d95c83a850795921b3f7cc6488731e69bde3288da \
     --hash=sha256:fc022c1fa5acff6def2fc6d7819bbbd31ccddfe67d075331a65d9cfb28a20983
-    # via python-jose
+    # via
+    #   pyjwt
+    #   python-jose
 database-sanitizer==1.1.0 \
     --hash=sha256:14d93f6eefcb08a4a96d5a075ba6e5a5e3e3ac2b8c57374114b6be889b5ea97a \
     --hash=sha256:f717ed4e9f64b193f580d0d744c96ec2f95c0e853b69b5bccdb85e5807e9bbca
@@ -221,6 +223,12 @@ decorator==5.2.1 \
     --hash=sha256:65f266143752f734b0a7cc83c46f4618af75b8c5911b00ccb61d0ac9b6da0360 \
     --hash=sha256:d316bb415a2d9e2d2b3abcc4084c6502fc09240e292cd76a76afc106a1c8e04a
     # via ipython
+defusedxml==0.7.1 \
+    --hash=sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69 \
+    --hash=sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61
+    # via
+    #   python3-openid
+    #   social-auth-core
 deprecation==2.1.0 \
     --hash=sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff \
     --hash=sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a
@@ -241,6 +249,7 @@ django==5.2.8 \
     #   django-parler
     #   django-searchable-encrypted-fields
     #   graphene-django
+    #   social-auth-app-django
 django-admin-sortable==2.3 \
     --hash=sha256:03f0372b176aea71f1e55f8e0967ba0e0a46b050f4d036d97e3b35d83ba83d90 \
     --hash=sha256:3c7a77342a47cdabd272c031769f619c0f69e884f18983763ece92e4bef431ad
@@ -360,7 +369,9 @@ matplotlib-inline==0.1.7 \
 oauthlib==3.3.1 \
     --hash=sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9 \
     --hash=sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1
-    # via requests-oauthlib
+    # via
+    #   requests-oauthlib
+    #   social-auth-core
 packaging==25.0 \
     --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484 \
     --hash=sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f
@@ -454,6 +465,12 @@ pygments==2.19.2 \
     # via
     #   ipython
     #   ipython-pygments-lexers
+pyjwt==2.10.1 \
+    --hash=sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953 \
+    --hash=sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb
+    # via
+    #   pyjwt
+    #   social-auth-core
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
@@ -464,6 +481,10 @@ python-jose==3.5.0 \
     # via
     #   -r requirements.in
     #   django-helusers
+python3-openid==3.2.0 \
+    --hash=sha256:33fbf6928f401e0b790151ed2b5290b02545e8775f982485205a066f874aaeaf \
+    --hash=sha256:6626f771e0417486701e0b4daff762e7212e820ca5b29fcc0d05f6f8736dfa6b
+    # via social-auth-core
 pyyaml==6.0.2 \
     --hash=sha256:01179a4a8559ab5de078078f37e5c1a30d76bb88519906844fd7bdea1b7729ff \
     --hash=sha256:0833f8694549e586547b576dcfaba4a6b55b9e96098b36cdc7ebefe667dfed48 \
@@ -529,10 +550,13 @@ requests==2.32.5 \
     #   -r requirements.in
     #   django-helusers
     #   requests-oauthlib
+    #   social-auth-core
 requests-oauthlib==2.0.0 \
     --hash=sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36 \
     --hash=sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   social-auth-core
 rsa==4.9.1 \
     --hash=sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762 \
     --hash=sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75
@@ -550,6 +574,14 @@ six==1.17.0 \
     #   ecdsa
     #   promise
     #   python-dateutil
+social-auth-app-django==5.6.0 \
+    --hash=sha256:43ca88cc5cd9161710896165ced58b3155e8aafaaff847e859879194770f138d \
+    --hash=sha256:c695501fcbf6fe87f68f5a79e379abe853662f5129e7ec6cb758a75d5b28c888
+    # via -r requirements.in
+social-auth-core==4.8.1 \
+    --hash=sha256:6186576eb4e9f25c789d0ce19b942cc668a3a714a246f9e688c0fb93f65bf111 \
+    --hash=sha256:9fe54f7c7d566465ae34b165bfe1c0d3ba8fa1f7042dc17df5e7dcef8675f3a0
+    # via social-auth-app-django
 sqlparse==0.5.3 \
     --hash=sha256:09f67787f56a0b16ecdbde1bfc7f5d9c3371ca683cfeaa8e6ff60b4807ec9272 \
     --hash=sha256:cf2196ed3418f3ba5de6af7e82c694a9fbdbfecccdfc72e281548517081f16ca
