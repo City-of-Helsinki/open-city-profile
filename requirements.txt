@@ -269,9 +269,9 @@ django-guardian==3.0.7 \
     --hash=sha256:9aa1c2130082016b6dcbf3f731f990d9b70135eb958c7dfb5d4cdfd854013230 \
     --hash=sha256:ff8cdc3e2685aa6d3829e7c4e9b8f60c135d6e4c405e5039b9b6602c80e224ee
     # via -r requirements.in
-django-helusers==0.13.3 \
-    --hash=sha256:26b396edcfd247886171e185fe5f56a1d9ae2937edfa342f1cf2977371cb4974 \
-    --hash=sha256:2b5e29f1440eabb380c1e9484953d91f159003f79fd5b4bf4f2df9061eb79b53
+django-helusers==0.14.4 \
+    --hash=sha256:796df564ee447741649b9047fe9839c15f2b0dae7c98ff22b0b8f889c621a269 \
+    --hash=sha256:7c1b4a49dd44c975f1f0eecfa83e4fca7d3596ca56556b9f193744a594e4b629
     # via -r requirements.in
 django-logger-extra==1.0.0 \
     --hash=sha256:4ab52de7fa4863c60f42e7c809911c342650b0556eb48989d0b98b23efc4bfc1 \
