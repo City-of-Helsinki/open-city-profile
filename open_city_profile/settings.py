@@ -5,6 +5,7 @@ from sys import stdout
 import environ
 import sentry_sdk
 from corsheaders.defaults import default_headers
+from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_SOCIAL_AUTH_PIPELINE
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.types import SamplingContext
 
@@ -84,6 +85,12 @@ env = environ.Env(
     CSP_SCRIPT_SRC=(str, None),
     CSP_REPORT_ONLY=(bool, False),
     CSP_REPORT_URI=(str, None),
+    HELUSERS_PASSWORD_LOGIN_DISABLED=(bool, False),
+    LOGIN_REDIRECT_URL=(str, "/admin/"),
+    LOGOUT_REDIRECT_URL=(str, "/admin/"),
+    SOCIAL_AUTH_TUNNISTAMO_KEY=(str, None),
+    SOCIAL_AUTH_TUNNISTAMO_SECRET=(str, None),
+    SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT=(str, None),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -206,6 +213,7 @@ ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION = env("ENABLE_ALLOWED_DATA_FIELDS_RESTRIC
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
+    "social_django",
     "open_city_profile.apps.OpenCityProfileAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -289,6 +297,7 @@ OIDC_API_TOKEN_AUTH = {
 }
 
 AUTHENTICATION_BACKENDS = [
+    "helusers.tunnistamo_oidc.TunnistamoOIDCAuth",
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 ]
@@ -296,7 +305,14 @@ AUTHENTICATION_BACKENDS = [
 ANONYMOUS_USER_NAME = None
 
 HELUSERS_BACK_CHANNEL_LOGOUT_ENABLED = True
-
+HELUSERS_PASSWORD_LOGIN_DISABLED = env("HELUSERS_PASSWORD_LOGIN_DISABLED")
+LOGIN_REDIRECT_URL = env("LOGIN_REDIRECT_URL")
+LOGOUT_REDIRECT_URL = env("LOGOUT_REDIRECT_URL")
+SESSION_SERIALIZER = "helusers.sessions.TunnistamoOIDCSerializer"
+SOCIAL_AUTH_PIPELINE = HELUSERS_SOCIAL_AUTH_PIPELINE
+SOCIAL_AUTH_TUNNISTAMO_KEY = env("SOCIAL_AUTH_TUNNISTAMO_KEY")
+SOCIAL_AUTH_TUNNISTAMO_SECRET = env("SOCIAL_AUTH_TUNNISTAMO_SECRET")
+SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = env("SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT")
 # Profiles related settings
 
 CONTACT_METHODS = (("email", "Email"), ("sms", "SMS"))
