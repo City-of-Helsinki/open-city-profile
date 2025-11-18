@@ -200,6 +200,40 @@ strategy:
     proj4text: null
     srid: null
     srtext: null
+  social_auth_association:
+    assoc_type: null
+    handle: null
+    id: null
+    issued: null
+    lifetime: null
+    secret: null
+    server_url: null
+  social_auth_code:
+    code: null
+    email: null
+    id: null
+    timestamp: null
+    verified: null
+  social_auth_nonce:
+    id: null
+    salt: null
+    server_url: null
+    timestamp: null
+  social_auth_partial:
+    backend: null
+    data: null
+    id: null
+    next_step: null
+    timestamp: null
+    token: null
+  social_auth_usersocialauth:
+    created: null
+    extra_data: null
+    id: null
+    modified: null
+    provider: null
+    uid: null
+    user_id: null
   users_user:
     date_joined: null
     department_name: null
@@ -210,6 +244,7 @@ strategy:
     is_staff: null
     is_superuser: null
     is_system_user: null
+    last_api_use: null
     last_login: null
     last_name: "profile.last_name"
     password: null
