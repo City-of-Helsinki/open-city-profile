@@ -53,7 +53,6 @@ env = environ.Env(
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     OPENSHIFT_BUILD_COMMIT=(str, ""),
     AUDIT_LOG_TO_LOGGER_ENABLED=(bool, False),
-    AUDIT_LOG_LOGGER_FILENAME=(str, ""),
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
     OPEN_CITY_PROFILE_LOG_LEVEL=(str, None),
     ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION=(bool, False),
@@ -347,35 +346,8 @@ GRAPHENE = {
 }
 
 AUDIT_LOG_TO_LOGGER_ENABLED = env.bool("AUDIT_LOG_TO_LOGGER_ENABLED")
-AUDIT_LOG_LOGGER_FILENAME = env("AUDIT_LOG_LOGGER_FILENAME")
 AUDIT_LOG_TO_DB_ENABLED = env.bool("AUDIT_LOG_TO_DB_ENABLED")
 
-if AUDIT_LOG_LOGGER_FILENAME:
-    if "X" in AUDIT_LOG_LOGGER_FILENAME:
-        import random
-        import re
-        import string
-
-        system_random = random.SystemRandom()
-        char_pool = string.ascii_lowercase + string.digits
-        AUDIT_LOG_LOGGER_FILENAME = re.sub(
-            "X", lambda x: system_random.choice(char_pool), AUDIT_LOG_LOGGER_FILENAME
-        )
-
-    _audit_log_handler = {
-        "level": "INFO",
-        "class": "logging.handlers.RotatingFileHandler",
-        "filename": AUDIT_LOG_LOGGER_FILENAME,
-        "maxBytes": 100_000_000,
-        "backupCount": 1,
-        "delay": True,
-    }
-else:
-    _audit_log_handler = {
-        "level": "INFO",
-        "class": "logging.StreamHandler",
-        "stream": stdout,
-    }
 
 _log_level = env("OPEN_CITY_PROFILE_LOG_LEVEL")
 if not _log_level:
@@ -410,7 +382,11 @@ LOGGING = {
         },
     },
     "handlers": {
-        "audit": _audit_log_handler,
+        "audit": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "stream": stdout,
+        },
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",

@@ -70,7 +70,6 @@ Profile data access produces audit events. Audit events may be output to multipl
 Output as JSON using the https://docs.python.org/3/library/logging.html[Python logging module].
 
 - `AUDIT_LOG_TO_LOGGER_ENABLED`: enable audit logging to logger by setting to `True`. Default is `False`.
-- `AUDIT_LOG_LOGGER_FILENAME`: by default logger output is sent to `stdout`. It's possible to send the output to a file instead, by giving a filename with this setting. The filename may be randomized by including capital "X" characters in it. The "X"s get replaced by random characters.
 
 == Database encryption
 
