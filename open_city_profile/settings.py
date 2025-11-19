@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from sys import stdout
 
 import environ
 import sentry_sdk
@@ -52,7 +51,6 @@ env = environ.Env(
     FIELD_ENCRYPTION_KEYS=(list, []),
     SALT_NATIONAL_IDENTIFICATION_NUMBER=(str, None),
     OPENSHIFT_BUILD_COMMIT=(str, ""),
-    AUDIT_LOG_TO_LOGGER_ENABLED=(bool, False),
     AUDIT_LOG_TO_DB_ENABLED=(bool, False),
     OPEN_CITY_PROFILE_LOG_LEVEL=(str, None),
     ENABLE_ALLOWED_DATA_FIELDS_RESTRICTION=(bool, False),
@@ -345,28 +343,12 @@ GRAPHENE = {
     ],
 }
 
-AUDIT_LOG_TO_LOGGER_ENABLED = env.bool("AUDIT_LOG_TO_LOGGER_ENABLED")
 AUDIT_LOG_TO_DB_ENABLED = env.bool("AUDIT_LOG_TO_DB_ENABLED")
 
 
 _log_level = env("OPEN_CITY_PROFILE_LOG_LEVEL")
 if not _log_level:
     _log_level = "DEBUG" if DEBUG else "INFO"
-
-_loggers = {
-    "audit": {"handlers": ["audit"], "level": "INFO", "propagate": True},
-}
-_loggers.update(
-    (app_name, {"handlers": ["console"], "level": _log_level, "propagate": True})
-    for app_name in (
-        "audit_log",
-        "open_city_profile",
-        "profiles",
-        "services",
-        "users",
-        "utils",
-    )
-)
 
 LOGGING = {
     "version": 1,
@@ -382,18 +364,23 @@ LOGGING = {
         },
     },
     "handlers": {
-        "audit": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "stream": stdout,
-        },
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",
             "filters": ["context"],
         },
     },
-    "loggers": _loggers,
+    "loggers": {
+        app_name: {"handlers": ["console"], "level": _log_level, "propagate": True}
+        for app_name in (
+            "audit_log",
+            "open_city_profile",
+            "profiles",
+            "services",
+            "users",
+            "utils",
+        )
+    },
 }
 
 GDPR_AUTH_CALLBACK_URL = env("GDPR_AUTH_CALLBACK_URL")

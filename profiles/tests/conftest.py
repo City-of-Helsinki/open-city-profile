@@ -81,7 +81,6 @@ def profile_service():
 
 @pytest.fixture(autouse=True)
 def disable_audit_log(settings):
-    settings.AUDIT_LOG_TO_LOGGER_ENABLED = False
     settings.AUDIT_LOG_TO_DB_ENABLED = False
 
 

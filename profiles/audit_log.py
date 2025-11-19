@@ -1,5 +1,3 @@
-import json
-import logging
 import threading
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -63,7 +61,7 @@ class AuditLogMiddleware:
 
 
 def _get_profile_and_loggables(instance):
-    if not (settings.AUDIT_LOG_TO_LOGGER_ENABLED or settings.AUDIT_LOG_TO_DB_ENABLED):
+    if not settings.AUDIT_LOG_TO_DB_ENABLED:
         return
 
     audit_loggables = getattr(_get_current_request(), "_audit_loggables", None)
@@ -157,47 +155,6 @@ def _create_log_entries(current_user, service, client_id, ip_address, audit_logg
     return log_entries
 
 
-def _put_logs_to_logger(log_entries):
-    logger = logging.getLogger("audit")
-
-    for log_entry in log_entries:
-        actor_dict = {
-            k: v
-            for k, v in [
-                ("service_name", log_entry.service_name),
-                ("client_id", log_entry.client_id),
-                ("ip_address", log_entry.ip_address),
-                ("user_id", str(log_entry.actor_user_id or "")),
-                ("role", log_entry.actor_role),
-            ]
-            if v
-        }
-
-        target_dict = {
-            k: v
-            for k, v in [
-                ("id", str(log_entry.target_profile_id or "")),
-                ("user_id", str(log_entry.target_user_id or "")),
-                ("type", log_entry.target_type),
-            ]
-            if v
-        }
-
-        message = {
-            "audit_event": {
-                "origin": "PROFILE-BE",
-                "status": "SUCCESS",
-                "date_time_epoch": int(log_entry.timestamp.timestamp() * 1000),
-                "date_time": f"{log_entry.timestamp.replace(tzinfo=None).isoformat(sep='T', timespec='milliseconds')}Z",  # noqa: E501
-                "actor": actor_dict,
-                "operation": log_entry.operation,
-                "target": target_dict,
-            }
-        }
-
-        logger.info(json.dumps(message))
-
-
 def _put_logs_to_db(log_entries):
     LogEntry.objects.bulk_create(log_entries)
 
@@ -227,9 +184,6 @@ def _commit_audit_logs():
     log_entries = _create_log_entries(
         current_user, service, client_id, ip_address, audit_loggables
     )
-
-    if settings.AUDIT_LOG_TO_LOGGER_ENABLED:
-        _put_logs_to_logger(log_entries)
 
     if settings.AUDIT_LOG_TO_DB_ENABLED:
         _put_logs_to_db(log_entries)

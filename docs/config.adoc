@@ -65,12 +65,6 @@ Profile data access produces audit events. Audit events may be output to multipl
 
 - `AUDIT_LOG_TO_DB_ENABLED`: enable audit logging to database by setting to `True`. Default is `False`.
 
-=== Python logger output
-
-Output as JSON using the https://docs.python.org/3/library/logging.html[Python logging module].
-
-- `AUDIT_LOG_TO_LOGGER_ENABLED`: enable audit logging to logger by setting to `True`. Default is `False`.
-
 == Database encryption
 
 https://pypi.org/project/django-searchable-encrypted-fields[Django-searchable-encrypted-fields] library is used to encrypt some data in the database. Read that library's documentation to learn what needs to be considered when handling these encryption keys and other values.
