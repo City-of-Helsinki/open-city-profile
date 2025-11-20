@@ -11,5 +11,3 @@ pytest-mock
 requests-mock
 pytest-factoryboy
 syrupy
-# Keep this in sync with .pre-commit-config.yaml
-ruff==0.13.1
