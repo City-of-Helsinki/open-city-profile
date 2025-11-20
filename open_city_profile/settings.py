@@ -298,14 +298,17 @@ OIDC_API_TOKEN_AUTH = {
 
 AUTHENTICATION_BACKENDS = [
     "helusers.tunnistamo_oidc.TunnistamoOIDCAuth",
-    "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 ]
+
+HELUSERS_PASSWORD_LOGIN_DISABLED = env("HELUSERS_PASSWORD_LOGIN_DISABLED")
+
+if not HELUSERS_PASSWORD_LOGIN_DISABLED:
+    AUTHENTICATION_BACKENDS.append("django.contrib.auth.backends.ModelBackend")
 
 ANONYMOUS_USER_NAME = None
 
 HELUSERS_BACK_CHANNEL_LOGOUT_ENABLED = True
-HELUSERS_PASSWORD_LOGIN_DISABLED = env("HELUSERS_PASSWORD_LOGIN_DISABLED")
 LOGIN_REDIRECT_URL = env("LOGIN_REDIRECT_URL")
 LOGOUT_REDIRECT_URL = env("LOGOUT_REDIRECT_URL")
 SESSION_SERIALIZER = "helusers.sessions.TunnistamoOIDCSerializer"
