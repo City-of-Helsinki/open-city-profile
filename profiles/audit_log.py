@@ -1,12 +1,14 @@
+import logging
 import threading
 from collections import defaultdict
-from datetime import UTC, datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.text import camel_case_to_spaces
-
-from audit_log.models import LogEntry
+from resilient_logger.sources.resilient_log_source import (
+    ResilientLogSource,
+    StructuredResilientLogEntryData,
+)
 
 User = get_user_model()
 
@@ -50,11 +52,12 @@ class AuditLogMiddleware:
 
     def __call__(self, request):
         _thread_locals.request = request
-        request._audit_loggables = defaultdict(lambda: {"parts": dict()})
+        request._audit_loggables = defaultdict(lambda: {"parts": set()})
 
         response = self.get_response(request)
 
-        _commit_audit_logs()
+        if settings.AUDIT_LOG_TO_DB_ENABLED:
+            _commit_audit_logs()
         _thread_locals.__dict__.clear()
 
         return response
@@ -121,42 +124,43 @@ def log(action, instance):
         profile_loggables["profile"] = profile
         data_action = (action, _profile_part(instance))
         if data_action not in profile_loggables["parts"]:
-            profile_loggables["parts"][data_action] = datetime.now(tz=UTC)
+            profile_loggables["parts"].add(data_action)
 
 
 def _create_log_entries(current_user, service, client_id, ip_address, audit_loggables):
-    log_entries = []
-
+    entries = []
     service_name = service.name if service else ""
     client_id = client_id if client_id else ""
     ip_address = ip_address if ip_address else ""
     actor_user_id = getattr(current_user, "uuid", None)
+    status = "SUCCESS"
 
     for profile_id, data in audit_loggables.items():
         target_user_uuid = data.get("user_uuid")
         actor_role = _resolve_role(current_user, target_user_uuid)
 
-        for (action, profile_part), timestamp in data["parts"].items():
-            log_entries.append(
-                LogEntry(
-                    timestamp=timestamp,
-                    service_name=service_name,
-                    client_id=client_id,
-                    ip_address=ip_address,
-                    actor_user_id=actor_user_id,
-                    actor_role=actor_role,
-                    target_user_id=target_user_uuid,
-                    target_profile_id=profile_id,
-                    target_type=profile_part,
-                    operation=action,
-                )
+        for action, profile_part in data["parts"]:
+            entry = StructuredResilientLogEntryData(
+                level=logging.NOTSET,
+                message=status,
+                actor={
+                    "user_id": str(actor_user_id) if actor_user_id else None,
+                    "role": actor_role,
+                    "ip_address": ip_address,
+                    "client_id": client_id,
+                    "service": service_name,
+                },
+                operation=action,
+                target={
+                    "user_id": str(target_user_uuid),
+                    "profile_id": str(profile_id),
+                    "type": profile_part,
+                },
+                extra={"status": status},
             )
+            entries.append(entry)
 
-    return log_entries
-
-
-def _put_logs_to_db(log_entries):
-    LogEntry.objects.bulk_create(log_entries)
+    ResilientLogSource.bulk_create_structured(entries)
 
 
 def _commit_audit_logs():
@@ -181,9 +185,4 @@ def _commit_audit_logs():
     for ids in User.objects.filter(profile__in=profiles).values("uuid", "profile__id"):
         audit_loggables[ids["profile__id"]]["user_uuid"] = ids["uuid"]
 
-    log_entries = _create_log_entries(
-        current_user, service, client_id, ip_address, audit_loggables
-    )
-
-    if settings.AUDIT_LOG_TO_DB_ENABLED:
-        _put_logs_to_db(log_entries)
+    _create_log_entries(current_user, service, client_id, ip_address, audit_loggables)
