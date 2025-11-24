@@ -88,6 +88,12 @@ env = environ.Env(
     SOCIAL_AUTH_TUNNISTAMO_KEY=(str, None),
     SOCIAL_AUTH_TUNNISTAMO_SECRET=(str, None),
     SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT=(str, None),
+    # Resilient logger config
+    AUDIT_LOG_ENV=(str, ""),
+    AUDIT_LOG_ES_URL=(str, ""),
+    AUDIT_LOG_ES_INDEX=(str, ""),
+    AUDIT_LOG_ES_USERNAME=(str, ""),
+    AUDIT_LOG_ES_PASSWORD=(str, ""),
 )
 if os.path.exists(env_file):
     env.read_env(env_file)
@@ -233,6 +239,7 @@ INSTALLED_APPS = [
     "open_city_profile.apps.OpenCityProfileConfig",
     "sanitized_dump",
     "logger_extra",
+    "resilient_logger",
 ]
 
 MIDDLEWARE = [
@@ -344,6 +351,30 @@ GRAPHENE = {
 }
 
 AUDIT_LOG_TO_DB_ENABLED = env.bool("AUDIT_LOG_TO_DB_ENABLED")
+
+RESILIENT_LOGGER = {
+    "origin": "helsinki-profile-api",
+    "environment": env("AUDIT_LOG_ENV"),
+    "sources": [
+        {
+            "class": "resilient_logger.sources.ResilientLogSource",
+        }
+    ],
+    "targets": [
+        {
+            "class": "resilient_logger.targets.ElasticsearchLogTarget",
+            "es_url": env("AUDIT_LOG_ES_URL"),
+            "es_username": env("AUDIT_LOG_ES_USERNAME"),
+            "es_password": env("AUDIT_LOG_ES_PASSWORD"),
+            "es_index": env("AUDIT_LOG_ES_INDEX"),
+            "required": True,
+        }
+    ],
+    "batch_limit": 5000,
+    "chunk_size": 500,
+    "submit_unsent_entries": True,
+    "clear_sent_entries": True,
+}
 
 
 _log_level = env("OPEN_CITY_PROFILE_LOG_LEVEL")

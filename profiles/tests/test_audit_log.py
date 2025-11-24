@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from string import Template
@@ -5,8 +6,9 @@ from typing import Any
 
 import pytest
 from guardian.shortcuts import assign_perm
+from resilient_logger.models import ResilientLogEntry
+from resilient_logger.sources import ResilientLogSource
 
-from audit_log.models import LogEntry
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_almost_equal
 from open_city_profile.tests.graphql_test_helpers import (
@@ -38,12 +40,14 @@ def enable_audit_log(settings):
     settings.AUDIT_LOG_TO_DB_ENABLED = True
 
 
-def partition_logs_by_target_type(log_entries, target_type):
+def partition_logs_by_target_type(
+    log_entries: Iterable[ResilientLogEntry], target_type
+) -> tuple[list[ResilientLogEntry], list[ResilientLogEntry]]:
     matches = []
     rest = []
 
     for log_entry in log_entries:
-        if log_entry.target_type == target_type:
+        if log_entry.context["target"]["type"] == target_type:
             matches.append(log_entry)
         else:
             rest.append(log_entry)
@@ -51,12 +55,12 @@ def partition_logs_by_target_type(log_entries, target_type):
     return matches, rest
 
 
-def discard_audit_logs(log_entries, operation):
-    return list(filter(lambda e: e.operation != operation, log_entries))
+def discard_audit_logs(log_entries: Iterable[ResilientLogEntry], operation):
+    return list(filter(lambda e: e.context["operation"] != operation, log_entries))
 
 
 def assert_common_fields(
-    log_entry,
+    log_entry: ResilientLogEntry | list[ResilientLogEntry],
     target_profile,
     operation,
     actor_role="SYSTEM",
@@ -69,14 +73,16 @@ def assert_common_fields(
         assert len(log_entry) == 1
         log_entry = log_entry[0]
 
-    assert log_entry.operation == operation
-    assert log_entry.actor_role == actor_role
+    assert log_entry.message == "SUCCESS"
+    assert log_entry.context["status"] == "SUCCESS"
+    assert log_entry.context["operation"] == operation
+    assert log_entry.context["actor"]["role"] == actor_role
 
-    assert_almost_equal(log_entry.timestamp, now_dt, leeway)
+    assert_almost_equal(log_entry.created_at, now_dt, leeway)
 
-    assert log_entry.target_profile_id == target_profile.pk
-    assert log_entry.target_type == target_profile_part
-    assert log_entry.target_user_id == target_profile.user.uuid
+    assert log_entry.context["target"]["profile_id"] == str(target_profile.pk)
+    assert log_entry.context["target"]["type"] == target_profile_part
+    assert log_entry.context["target"]["user_id"] == str(target_profile.user.uuid)
 
 
 @dataclass
@@ -226,11 +232,12 @@ MY_PROFILE_QUERY = """
 def test_audit_log_read(live_server, profile_with_related):
     profile = profile_with_related.profile
     user = profile.user
+
     do_graphql_call_as_user(
         live_server, user, extra_claims={"loa": "substantial"}, query=MY_PROFILE_QUERY
     )
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
 
     for profile_part_name in profile_with_related.all_profile_part_names:
         related_log_entries, log_entries = partition_logs_by_target_type(
@@ -378,7 +385,7 @@ def test_audit_log_update(live_server, profile_with_related):
 
     do_graphql_call_as_user(live_server, user, query=query)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     # Audit logging the Profile UPDATE with a related object causes some READs
     # for the involved models.
     # This is unnecessary, but it's a feature of the current implementation.
@@ -414,11 +421,12 @@ def test_audit_log_delete(live_server, profile_with_related):
             }
         }
     """
+
     do_graphql_call_as_user(
         live_server, user, query=query, extra_claims={"loa": "substantial"}
     )
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     # Audit logging the Profile DELETE with a related object causes some READs
     # for the involved models.
     # This is unnecessary, but it's a feature of the current implementation.
@@ -455,9 +463,10 @@ def test_audit_log_create(live_server, user):
             }
         }
     """
+
     do_graphql_call_as_user(live_server, user, query=query)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     profile = Profile.objects.get()
     assert_common_fields(log_entries, profile, "CREATE", actor_role="OWNER")
 
@@ -466,11 +475,13 @@ def test_actor_is_resolved_in_graphql_call(live_server, profile, service_client_
     service = service_client_id.service
     ServiceConnectionFactory(profile=profile, service=service)
     user = profile.user
+
     do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
-    log_entries = list(LogEntry.objects.all())
+
+    log_entries = list(ResilientLogEntry.objects.all())
     assert_common_fields(log_entries, profile, "READ", actor_role="OWNER")
     log_entry = log_entries[0]
-    assert log_entry.actor_user_id == user.uuid
+    assert log_entry.context["actor"]["user_id"] == str(user.uuid)
 
 
 def test_system_user_actor_is_resolved_in_graphql_call(live_server, system_user):
@@ -495,7 +506,7 @@ def test_system_user_actor_is_resolved_in_graphql_call(live_server, system_user)
 
     do_graphql_call_as_user(live_server, system_user, service=None, query=query)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     profile = Profile.objects.get()
     assert_common_fields(log_entries, profile, "CREATE", actor_role="SYSTEM")
 
@@ -515,23 +526,24 @@ def test_anonymous_user_actor_is_resolved_in_graphql_call(live_server, profile):
 
     do_graphql_call(live_server, query=query)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     assert_common_fields(log_entries, profile, "READ", actor_role="ANONYMOUS")
     log_entry = log_entries[0]
-    assert log_entry.actor_user_id is None
+    assert log_entry.context["actor"]["user_id"] is None
 
 
 def test_service_is_resolved_in_graphql_call(live_server, profile, service_client_id):
     user = profile.user
     service = service_client_id.service
     ServiceConnectionFactory(profile=profile, service=service)
+
     do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     assert_common_fields(log_entries, profile, "READ", actor_role="OWNER")
     log_entry = log_entries[0]
-    assert log_entry.service_name == service.name
-    assert log_entry.client_id == service_client_id.client_id
+    assert log_entry.context["actor"]["service"] == service.name
+    assert log_entry.context["actor"]["client_id"] == service_client_id.client_id
 
 
 def test_actor_service(live_server, user, group, service_client_id):
@@ -556,11 +568,41 @@ def test_actor_service(live_server, user, group, service_client_id):
 
     do_graphql_call_as_user(live_server, user, service=service, query=query)
 
-    log_entries = list(LogEntry.objects.all())
+    log_entries = list(ResilientLogEntry.objects.all())
     assert_common_fields(log_entries, profile, "READ", actor_role="ADMIN")
     log_entry = log_entries[0]
-    assert log_entry.service_name == service.name
-    assert log_entry.client_id == service_client_id.client_id
+    assert log_entry.context["actor"]["service"] == service.name
+    assert log_entry.context["actor"]["client_id"] == service_client_id.client_id
+
+
+def test_audit_logger_origin(live_server, profile, service_client_id):
+    service = service_client_id.service
+    ServiceConnectionFactory(profile=profile, service=service)
+    user = profile.user
+
+    do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
+
+    log_entries = list(ResilientLogEntry.objects.all())
+    assert len(log_entries) == 1
+    log_entry = log_entries[0]
+    document = ResilientLogSource(log_entry).get_document()
+    assert document["audit_event"]["origin"] == "helsinki-profile-api"
+
+
+def test_audit_logger_env(live_server, profile, service_client_id, settings):
+    environment = "unit-testing"
+    settings.RESILIENT_LOGGER["environment"] = environment
+    service = service_client_id.service
+    ServiceConnectionFactory(profile=profile, service=service)
+    user = profile.user
+
+    do_graphql_call_as_user(live_server, user, service=service, query=MY_PROFILE_QUERY)
+
+    log_entries = list(ResilientLogEntry.objects.all())
+    assert len(log_entries) == 1
+    log_entry = log_entries[0]
+    document = ResilientLogSource(log_entry).get_document()
+    assert document["audit_event"]["environment"] == environment
 
 
 class TestIPAddressLogging:
@@ -575,10 +617,10 @@ class TestIPAddressLogging:
             live_server, user, query=MY_PROFILE_QUERY, extra_request_args=request_args
         )
 
-        log_entries = list(LogEntry.objects.all())
+        log_entries = list(ResilientLogEntry.objects.all())
         assert len(log_entries) == 1
         log_entry = log_entries[0]
-        assert log_entry.ip_address == expected_ip
+        assert log_entry.context["actor"]["ip_address"] == expected_ip
 
     @pytest.mark.parametrize(
         "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
