@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.5.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.4.0...open-city-profile-v2.5.0) (2025-11-24)
+
+
+### Features
+
+* Change logging format to json ([b2bc936](https://github.com/City-of-Helsinki/open-city-profile/commit/b2bc93634ce91c0fa43a71ab9dd98d28f8ba5961))
+* Support AD login in admin ([d9f3f94](https://github.com/City-of-Helsinki/open-city-profile/commit/d9f3f9463c32bdfd20e5667877a7c88f56aa302e))
+
+
+### Bug Fixes
+
+* Include ModelBackend conditionally to AUTHENTICATION_BACKENDS ([4d69c02](https://github.com/City-of-Helsinki/open-city-profile/commit/4d69c02cfe92ac0a5c80cca8a7b34d24e193d1c0))
+* Wrong extend in admin_index.html ([e50fb51](https://github.com/City-of-Helsinki/open-city-profile/commit/e50fb51fe04c8d6f228f9b1451093201c288ec6d))
+
+
+### Dependencies
+
+* Bump pip-tools ([ad95a88](https://github.com/City-of-Helsinki/open-city-profile/commit/ad95a88ef3b48d959935da78a245e75ce850eda4))
+* Update django-helusers to 0.14.4 and add last_api_use migration ([5db1a9e](https://github.com/City-of-Helsinki/open-city-profile/commit/5db1a9e4f79bc4f93e8bba09b77eb99bf2433dd8))
+
 ## [2.4.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.3.0...open-city-profile-v2.4.0) (2025-11-10)
 
 
