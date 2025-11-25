@@ -153,6 +153,13 @@ strategy:
     postal_code: "profile.encrypted_postal_code"
     street_address: "profile.encrypted_street_address"
     verified_personal_information_id: null
+  resilient_logger_resilientlogentry:
+    is_sent: null
+    id: null
+    message: null
+    context: null
+    level: null
+    created_at: null
   services_alloweddatafield:
     field_name: null
     id: null
