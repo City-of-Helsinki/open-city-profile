@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.5.0...open-city-profile-v2.5.1) (2025-11-25)
+
+
+### Reverts
+
+* "fix: include ModelBackend conditionally to..." ([ccf6b27](https://github.com/City-of-Helsinki/open-city-profile/commit/ccf6b27012265cbc9adac0106e9b9e022133d710))
+
 ## [2.5.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.4.0...open-city-profile-v2.5.0) (2025-11-24)
 
 
