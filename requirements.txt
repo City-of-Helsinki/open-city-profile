@@ -292,9 +292,9 @@ django-parler==2.3 \
     --hash=sha256:2c8f5012ceb5e49af93b16ea3fe4d0c83d70b91b2d0f470c05d7d742b6f3083d \
     --hash=sha256:8f6c8061e4b5690f1ee2d8e5760940ef06bf78a5bfa033d11178377559c749cf
     # via -r requirements.in
-django-resilient-logger==1.1.0 \
-    --hash=sha256:e2769c041f2db046118ebbf1d85b22191984dd8916ee338f1b000f26d46e87ac \
-    --hash=sha256:e9e08f4f214575f7be8a89c3cf54b91852a8230f0feb51ec25a66e356ca0dd8e
+django-resilient-logger==1.1.1 \
+    --hash=sha256:3e007683d8d1e2fb1c87f81e843ce5cfbaaa9b2202428b2ba30444a69519549a \
+    --hash=sha256:7d68fc14f3c67158653e08c3007875682b031c70ab43998b30be3f451bac07bd
     # via -r requirements.in
 django-sanitized-dump==1.2.2 \
     --hash=sha256:77da860ca62f16869ad947f4da1d4823bac11ba4fcbb38cdcac69fd93e0f5a26 \
