@@ -35,6 +35,9 @@ def _get_original_client_ip():
         if not client_ip:
             client_ip = request.META.get("REMOTE_ADDR")
 
+        if client_ip:
+            # Strip port from ip address if present
+            client_ip = client_ip.split(":")[0]
     return client_ip
 
 

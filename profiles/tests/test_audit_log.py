@@ -623,7 +623,12 @@ class TestIPAddressLogging:
         assert log_entry.context["actor"]["ip_address"] == expected_ip
 
     @pytest.mark.parametrize(
-        "header", ["12.23.34.45", "12.23.34.45,1.1.1.1", "12.23.34.45, 1.1.1.1"]
+        "header",
+        [
+            "12.23.34.45:1234",
+            "12.23.34.45:1234,1.1.1.1:9000",
+            "12.23.34.45:1234, 1.1.1.1:9000",
+        ],
     )
     def test_requester_ip_address_is_extracted_from_x_forwarded_for_header(
         self, header, live_server, profile
