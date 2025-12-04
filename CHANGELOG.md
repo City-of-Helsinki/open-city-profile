@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.6.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.5.1...open-city-profile-v2.6.0) (2025-12-04)
+
+
+### Features
+
+* Add django-resilient-logger model to sanitizer config ([bce97ae](https://github.com/City-of-Helsinki/open-city-profile/commit/bce97aed57ad4db386a8bab67dae650acd354bcf))
+* Remove using file as output for audit logs ([7d40f9f](https://github.com/City-of-Helsinki/open-city-profile/commit/7d40f9f5f5758a66376c16146ca948ad32fa6c0b))
+* Remove using stdout as output for audit logs ([a41ceb3](https://github.com/City-of-Helsinki/open-city-profile/commit/a41ceb34dfb31e167631a25e73efbec74532981a))
+* Use django-resilient-logger for audit logging ([11ec909](https://github.com/City-of-Helsinki/open-city-profile/commit/11ec9094c4ad6292d91b45b1e45ca9559c37326b))
+
+
+### Bug Fixes
+
+* Strip port from audit log ip address ([eb4b14b](https://github.com/City-of-Helsinki/open-city-profile/commit/eb4b14b0ac666dfbac18796541c0ac3a0652dbad))
+
+
+### Dependencies
+
+* Add django-resilient-logger ([58233b3](https://github.com/City-of-Helsinki/open-city-profile/commit/58233b3849bae9e977b54a019e269f3aa7d6707d))
+* Bump django from 5.2.8 to 5.2.9 ([014d4aa](https://github.com/City-of-Helsinki/open-city-profile/commit/014d4aa396d470f3c3f765bdbc96b019ee6c2523))
+* Bump django-resilient-logger ([1ba0eca](https://github.com/City-of-Helsinki/open-city-profile/commit/1ba0eca7c2021616d263c0ea512a15e7eb6a6569))
+* Remove ruff from requirements ([3ff7571](https://github.com/City-of-Helsinki/open-city-profile/commit/3ff75719257844c8dc903ea0f9e728156439a897))
+
 ## [2.5.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.5.0...open-city-profile-v2.5.1) (2025-11-25)
 
 
