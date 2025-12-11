@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.0...open-city-profile-v2.6.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* Bump urllib3 ([1f53380](https://github.com/City-of-Helsinki/open-city-profile/commit/1f53380756ad9c84009c18ce25a95e16d1472cb1))
+
 ## [2.6.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.5.1...open-city-profile-v2.6.0) (2025-12-04)
 
 
