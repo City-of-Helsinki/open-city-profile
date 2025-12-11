@@ -648,3 +648,25 @@ class TestIPAddressLogging:
         self, live_server, profile
     ):
         self.execute_ip_address_test(live_server, profile, "127.0.0.1")
+
+    @pytest.mark.parametrize(
+        "client_ip, expected_ip",
+        [
+            # IPv4 cases
+            ("12.23.34.45", "12.23.34.45"),
+            ("12.23.34.45:1234", "12.23.34.45"),
+            # IPv6 cases
+            ("2001:db8::1", "2001:db8::1"),
+            ("[2001:db8::1]", "2001:db8::1"),
+            ("[2001:db8::1]:1234", "2001:db8::1"),
+            ("2001:db8:0:0:0:0:0:1", "2001:db8:0:0:0:0:0:1"),
+            ("[2001:db8:0:0:0:0:0:1]", "2001:db8:0:0:0:0:0:1"),
+            ("[2001:db8:0:0:0:0:0:1]:1234", "2001:db8:0:0:0:0:0:1"),
+            # IPv4-mapped IPv6 cases
+            ("::ffff:192.0.2.1", "::ffff:192.0.2.1"),
+            ("[::ffff:192.0.2.1]:1234", "::ffff:192.0.2.1"),
+        ],
+    )
+    def test_client_ip_parsing(self, client_ip, expected_ip, live_server, profile):
+        request_args = {"headers": {"X-Forwarded-For": client_ip}}
+        self.execute_ip_address_test(live_server, profile, expected_ip, request_args)
