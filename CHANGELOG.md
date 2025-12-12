@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.1...open-city-profile-v2.6.2) (2025-12-12)
+
+
+### Bug Fixes
+
+* **auditlog:** Fix IPv6 client address extraction ([2d2dde8](https://github.com/City-of-Helsinki/open-city-profile/commit/2d2dde8cb7a6d9eff5d71b92bdb65ad74840844c))
+
 ## [2.6.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.0...open-city-profile-v2.6.1) (2025-12-11)
 
 
