@@ -407,6 +407,7 @@ LOGGING = {
             "audit_log",
             "open_city_profile",
             "profiles",
+            "resilient_logger",
             "services",
             "users",
             "utils",
