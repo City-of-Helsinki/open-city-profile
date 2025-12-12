@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.2...open-city-profile-v2.7.0) (2025-12-12)
+
+
+### Features
+
+* Add logger for resielient_logger ([8e50f7d](https://github.com/City-of-Helsinki/open-city-profile/commit/8e50f7d71048363dcd3be86efd5553fa99d4c5ed))
+
 ## [2.6.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.1...open-city-profile-v2.6.2) (2025-12-12)
 
 
