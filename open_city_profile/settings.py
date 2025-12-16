@@ -42,6 +42,7 @@ env = environ.Env(
     SENTRY_PROFILE_SESSION_SAMPLE_RATE=(float, None),
     SENTRY_RELEASE=(str, None),
     SENTRY_TRACES_SAMPLE_RATE=(float, None),
+    SENTRY_TRACES_IGNORE_PATHS=(list, ["/healthz", "/readiness"]),
     TOKEN_AUTH_ACCEPTED_AUDIENCE=(list, []),
     TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE=(bool, False),
@@ -102,6 +103,7 @@ COMMIT_HASH = env.str("OPENSHIFT_BUILD_COMMIT", "")
 VERSION = __version__
 
 SENTRY_TRACES_SAMPLE_RATE = env("SENTRY_TRACES_SAMPLE_RATE")
+SENTRY_TRACES_IGNORE_PATHS = env("SENTRY_TRACES_IGNORE_PATHS")
 
 
 def sentry_traces_sampler(sampling_context: SamplingContext) -> float:
@@ -111,7 +113,7 @@ def sentry_traces_sampler(sampling_context: SamplingContext) -> float:
 
     # Exclude health check endpoints from tracing
     path = sampling_context.get("wsgi_environ", {}).get("PATH_INFO", "")
-    if path.rstrip("/") in ["/healthz", "/readiness"]:
+    if path.rstrip("/") in SENTRY_TRACES_IGNORE_PATHS:
         return 0
 
     # Use configured sample rate for all other requests
