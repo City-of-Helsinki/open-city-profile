@@ -26,7 +26,10 @@ RUN mkdir -p /usr/src/python-uwsgi-common && \
     cp /usr/src/python-uwsgi-common/uwsgi-base.ini /app/ && \
     uwsgi --build-plugin /usr/src/python-uwsgi-common && \
     rm -rf /usr/src/${UWSGI_COMMON_REF}.tar.gz && \
-    rm -rf /usr/src/python-uwsgi-common
+    rm -rf /usr/src/python-uwsgi-common && \
+    uwsgi --build-plugin https://github.com/City-of-Helsinki/uwsgi-sentry && \
+    mkdir -p /usr/local/lib/uwsgi/plugins && \
+    mv sentry_plugin.so /usr/local/lib/uwsgi/plugins
 
 COPY docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
