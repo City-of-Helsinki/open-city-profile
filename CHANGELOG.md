@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.7.0...open-city-profile-v2.8.0) (2025-12-27)
+
+
+### Features
+
+* Allow dynamic Sentry trace ignore paths ([669c9f9](https://github.com/City-of-Helsinki/open-city-profile/commit/669c9f9f4d1db7ce40c2f276ee42d9a897892e83))
+* Allow Sentry logging for uWSGI ([cf68e91](https://github.com/City-of-Helsinki/open-city-profile/commit/cf68e910493a0c78d08e001c35a47bbcffecf101))
+
 ## [2.7.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.2...open-city-profile-v2.7.0) (2025-12-12)
 
 
