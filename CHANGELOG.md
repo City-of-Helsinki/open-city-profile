@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.8.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.7.0...open-city-profile-v2.8.0) (2026-01-14)
+
+
+### Features
+
+* Allow dynamic Sentry trace ignore paths ([669c9f9](https://github.com/City-of-Helsinki/open-city-profile/commit/669c9f9f4d1db7ce40c2f276ee42d9a897892e83))
+* Allow Sentry logging for uWSGI ([cf68e91](https://github.com/City-of-Helsinki/open-city-profile/commit/cf68e910493a0c78d08e001c35a47bbcffecf101))
+
+
+### Dependencies
+
+* Bump filelock from 3.19.1 to 3.20.1 ([37168d5](https://github.com/City-of-Helsinki/open-city-profile/commit/37168d5f0a79b8fa261cf915f18a9b96232b98ee))
+* Bump filelock from 3.20.1 to 3.20.3 ([837c131](https://github.com/City-of-Helsinki/open-city-profile/commit/837c1312cd7f38f55840ace382512010734b9b14))
+* Bump urllib3 ([630136d](https://github.com/City-of-Helsinki/open-city-profile/commit/630136d1f02507395fbcfab097a83d12fd3846d7))
+* Bump virtualenv from 20.34.0 to 20.36.1 ([461fe54](https://github.com/City-of-Helsinki/open-city-profile/commit/461fe540c93933b6aecc2c365beb4dd8dffbba6c))
+
 ## [2.7.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.6.2...open-city-profile-v2.7.0) (2025-12-12)
 
 
