@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.8.0...open-city-profile-v2.9.0) (2026-01-19)
+
+
+### Features
+
+* Add rotate keys management command ([b8d575a](https://github.com/City-of-Helsinki/open-city-profile/commit/b8d575ac3ac47f7dff7fe011b9f9bb41b88add0b))
+
 ## [2.8.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.7.0...open-city-profile-v2.8.0) (2026-01-14)
 
 
