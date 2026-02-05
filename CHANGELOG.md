@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.9.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.1...open-city-profile-v2.9.2) (2026-02-05)
+
+
+### Dependencies
+
+* Bump django from 5.2.9 to 5.2.11 ([8e38b8b](https://github.com/City-of-Helsinki/open-city-profile/commit/8e38b8b0081fab359605f8bd86460a10459bb9d8))
+* Bump pip from 25.3 to 26.0 ([407d335](https://github.com/City-of-Helsinki/open-city-profile/commit/407d335ed3096976767f19bfba11ee3e719fef33))
+
 ## [2.9.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.0...open-city-profile-v2.9.1) (2026-01-28)
 
 
