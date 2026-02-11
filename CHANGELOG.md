@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.2...open-city-profile-v2.9.3) (2026-02-11)
+
+
+### Dependencies
+
+* Bump cryptography from 45.0.6 to 46.0.5 ([202a53e](https://github.com/City-of-Helsinki/open-city-profile/commit/202a53e267e89b5c654d0b04b47628a895da51fc))
+
 ## [2.9.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.1...open-city-profile-v2.9.2) (2026-02-05)
 
 
