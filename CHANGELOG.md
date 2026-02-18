@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.10.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.3...open-city-profile-v2.10.0) (2026-02-18)
+
+
+### Features
+
+* Remove old LogEntry model ([5910da0](https://github.com/City-of-Helsinki/open-city-profile/commit/5910da003ff64107e9cf456de902f825304f28f5))
+
+
+### Dependencies
+
+* Bump sqlparse from 0.5.3 to 0.5.4 ([69720f4](https://github.com/City-of-Helsinki/open-city-profile/commit/69720f4cff7a7c60e28965355bd5b1caa2ab0b52))
+
 ## [2.9.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.9.2...open-city-profile-v2.9.3) (2026-02-11)
 
 
