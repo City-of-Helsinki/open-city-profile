@@ -304,7 +304,7 @@ OIDC_API_TOKEN_AUTH = {
 
 AUTHENTICATION_BACKENDS = [
     "helusers.tunnistamo_oidc.TunnistamoOIDCAuth",
-    "django.contrib.auth.backends.ModelBackend",
+    "helusers.auth.HelusersModelBackend",
     "guardian.backends.ObjectPermissionBackend",
 ]
 
