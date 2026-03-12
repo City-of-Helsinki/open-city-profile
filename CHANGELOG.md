@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.10.1...open-city-profile-v2.11.0) (2026-03-12)
+
+
+### Features
+
+* Disable password login ([2a27737](https://github.com/City-of-Helsinki/open-city-profile/commit/2a2773711390d442e0202dac141fff6ffdf4ea9b))
+
 ## [2.10.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.10.0...open-city-profile-v2.10.1) (2026-03-10)
 
 
