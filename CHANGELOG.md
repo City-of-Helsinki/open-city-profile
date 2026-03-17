@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.11.0...open-city-profile-v2.11.1) (2026-03-17)
+
+
+### Dependencies
+
+* Bump pyjwt from 2.10.1 to 2.12.0 ([ffc8325](https://github.com/City-of-Helsinki/open-city-profile/commit/ffc832586acf3d3c6ec394db58969c95d5186236))
+
 ## [2.11.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.10.1...open-city-profile-v2.11.0) (2026-03-12)
 
 
