@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.11.1...open-city-profile-v2.11.2) (2026-03-18)
+
+
+### Dependencies
+
+* Bump pyasn1 from 0.6.2 to 0.6.3 ([051591f](https://github.com/City-of-Helsinki/open-city-profile/commit/051591f0b031086f85444c881415f8468ae4b171))
+
 ## [2.11.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.11.0...open-city-profile-v2.11.1) (2026-03-17)
 
 

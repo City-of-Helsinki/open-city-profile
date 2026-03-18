@@ -1,7 +1,7 @@
 [project]
 name = "open-city-profile"
 requires-python = ">=3.12, <3.13"
-version = "2.11.1"
+version = "2.11.2"
 
 [tool.ruff]
 target-version = "py312"
