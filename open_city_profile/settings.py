@@ -242,6 +242,7 @@ INSTALLED_APPS = [
     "sanitized_dump",
     "logger_extra",
     "resilient_logger",
+    "helsinki_health_endpoints",
 ]
 
 MIDDLEWARE = [

@@ -274,6 +274,7 @@ django==5.2.12 \
     #   django-enumfields2
     #   django-filter
     #   django-guardian
+    #   django-helsinki-health-endpoints
     #   django-helusers
     #   django-logger-extra
     #   django-parler
@@ -308,6 +309,10 @@ django-filter==25.1 \
 django-guardian==3.0.7 \
     --hash=sha256:9aa1c2130082016b6dcbf3f731f990d9b70135eb958c7dfb5d4cdfd854013230 \
     --hash=sha256:ff8cdc3e2685aa6d3829e7c4e9b8f60c135d6e4c405e5039b9b6602c80e224ee
+    # via -r requirements.in
+django-helsinki-health-endpoints==1.0.0 \
+    --hash=sha256:75670113e99bfd1fc23e317a3a22cff563140f495655c2a5f6ab219389dafd52 \
+    --hash=sha256:eebf1baa6917d7b0e11123aec191df773883102ec1653025a86d7037dba389e2
     # via -r requirements.in
 django-helusers==1.0.0 \
     --hash=sha256:0e33e238347a4088927675574a7dad179ee1f9d9e958daecfa4862ad6f63f79c \
