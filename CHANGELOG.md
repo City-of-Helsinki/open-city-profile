@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.12.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.11.2...open-city-profile-v2.12.0) (2026-03-31)
+
+
+### Features
+
+* Use django-helsinki-health-endpoints ([af38014](https://github.com/City-of-Helsinki/open-city-profile/commit/af380140eb29bbcbf6ff37ca7788608e360c0eea))
+
+
+### Bug Fixes
+
+* Add missing SENTRY_RELEASE setting ([e4862d9](https://github.com/City-of-Helsinki/open-city-profile/commit/e4862d9ad07d2a8775a2524d1d3956da2f7d0c38))
+
+
+### Dependencies
+
+* Bump cryptography from 46.0.5 to 46.0.6 ([15ebabb](https://github.com/City-of-Helsinki/open-city-profile/commit/15ebabb8d873ade2a346b50610f622e76e4178c5))
+* Bump ecdsa from 0.19.1 to 0.19.2 ([ff654c0](https://github.com/City-of-Helsinki/open-city-profile/commit/ff654c0ea5aeba99b4e39d3cef1a014ed241950b))
+* Bump pygments to address an issue in package ([f7e25e7](https://github.com/City-of-Helsinki/open-city-profile/commit/f7e25e71d7dd38d6f1cf1659cb16433cbf684334))
+* Bump requests from 2.32.5 to 2.33.0 ([6fab7d2](https://github.com/City-of-Helsinki/open-city-profile/commit/6fab7d270803966792656a115f4c890f66d69028))
+
 ## [2.11.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.11.1...open-city-profile-v2.11.2) (2026-03-18)
 
 
