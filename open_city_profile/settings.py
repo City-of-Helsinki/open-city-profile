@@ -6,7 +6,7 @@ import sentry_sdk
 from corsheaders.defaults import default_headers
 from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_SOCIAL_AUTH_PIPELINE
 from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.types import SamplingContext
+from sentry_sdk.types import Event, Hint, SamplingContext
 
 from open_city_profile import __version__
 from open_city_profile.utils import enable_graphql_query_suggestion
@@ -107,6 +107,34 @@ SENTRY_TRACES_IGNORE_PATHS = env("SENTRY_TRACES_IGNORE_PATHS")
 SENTRY_RELEASE = env("SENTRY_RELEASE")
 
 
+def sentry_before_send(event: Event, hint: Hint) -> Event | None:
+    """
+    Filter out uninformative errors from being sent to Sentry.
+
+    Some Graphene errors are generic Exceptions with unhelpful messages.
+    This function filters them out to reduce noise in Sentry.
+
+    NOTE: The `ignore_errors` option is actually deprecated,
+    nevertheless it's included in the init configuration.
+    See https://github.com/getsentry/sentry-python/issues/149
+
+    Args:
+        event: The event that is being sent to Sentry.
+        hint: A dictionary containing additional information about the event.
+
+    Returns:
+        The event if it should be sent to Sentry, or None if it should be ignored.
+    """
+    from helusers.oidc import AuthenticationError
+
+    ignored_error_classes = (AuthenticationError,)
+    if "exc_info" in hint:
+        exc_type, exc_value, traceback = hint["exc_info"]
+        if isinstance(exc_value, ignored_error_classes):
+            return None
+    return event
+
+
 def sentry_traces_sampler(sampling_context: SamplingContext) -> float:
     # Respect parent sampling decision if one exists. Recommended by Sentry.
     if (parent_sampled := sampling_context.get("parent_sampled")) is not None:
@@ -130,6 +158,7 @@ if env("SENTRY_DSN"):
         traces_sampler=sentry_traces_sampler,
         profile_session_sample_rate=env("SENTRY_PROFILE_SESSION_SAMPLE_RATE"),
         profile_lifecycle="trace",
+        before_send=sentry_before_send,
     )
 
 
