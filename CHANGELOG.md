@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.12.2...open-city-profile-v2.13.0) (2026-05-20)
+
+
+### Features
+
+* Make sentry ignore AuthenticationError ([648ce84](https://github.com/City-of-Helsinki/open-city-profile/commit/648ce845768c0f228cfec87018691cef30bf8cae))
+
 ## [2.12.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.12.1...open-city-profile-v2.12.2) (2026-05-11)
 
 
