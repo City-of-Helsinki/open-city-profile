@@ -1,4 +1,4 @@
--c requirements.txt
+-r requirements.txt
 factory_boy
 freezegun
 inflection
