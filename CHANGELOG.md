@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.13.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.0...open-city-profile-v2.13.1) (2026-06-03)
+
+
+### Dependencies
+
+* Bump idna from 3.10 to 3.15 ([83a1144](https://github.com/City-of-Helsinki/open-city-profile/commit/83a11447f1f717c3afcced73883445e43848da81))
+* Bump pytest from 8.4.2 to 9.0.3 ([51e983f](https://github.com/City-of-Helsinki/open-city-profile/commit/51e983f585189f0b2837cd8315d65dfef919b475))
+* Bump urllib3 from 2.6.3 to 2.7.0 ([9938a56](https://github.com/City-of-Helsinki/open-city-profile/commit/9938a561c5940b0cfc87affc81676cc7431d8a31))
+
 ## [2.13.0](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.12.2...open-city-profile-v2.13.0) (2026-05-20)
 
 
