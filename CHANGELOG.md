@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.13.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.1...open-city-profile-v2.13.2) (2026-07-02)
+
+
+### Dependencies
+
+* Bump cryptography from 46.0.7 to 48.0.1 ([c00a478](https://github.com/City-of-Helsinki/open-city-profile/commit/c00a478419e0670b5ac1d174713a67cc44ac5cf0))
+* Bump pyjwt from 2.12.0 to 2.13.0 ([eb8c546](https://github.com/City-of-Helsinki/open-city-profile/commit/eb8c5461939325241d7741be4b91f7ba7c0ef445))
+
 ## [2.13.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.0...open-city-profile-v2.13.1) (2026-06-03)
 
 
