@@ -3,6 +3,7 @@ from datetime import datetime
 
 import environ
 import sentry_sdk
+import sentry_sdk.scrubber
 from corsheaders.defaults import default_headers
 from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_SOCIAL_AUTH_PIPELINE
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -149,6 +150,15 @@ def sentry_traces_sampler(sampling_context: SamplingContext) -> float:
     return SENTRY_TRACES_SAMPLE_RATE or 0
 
 
+SENTRY_EVENT_SCRUBBER = sentry_sdk.scrubber.EventScrubber(
+    send_default_pii=False,
+    pii_denylist=[
+        *sentry_sdk.scrubber.DEFAULT_PII_DENYLIST,
+        "verified_personal_information_input",
+    ],
+    recursive=True,
+)
+
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
@@ -156,6 +166,7 @@ if env("SENTRY_DSN"):
         release=SENTRY_RELEASE,
         integrations=[DjangoIntegration()],
         traces_sampler=sentry_traces_sampler,
+        event_scrubber=SENTRY_EVENT_SCRUBBER,
         profile_session_sample_rate=env("SENTRY_PROFILE_SESSION_SAMPLE_RATE"),
         profile_lifecycle="trace",
         before_send=sentry_before_send,
