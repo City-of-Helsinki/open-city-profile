@@ -3,6 +3,7 @@ from datetime import datetime
 
 import environ
 import sentry_sdk
+import sentry_sdk.integrations.logging
 import sentry_sdk.scrubber
 from corsheaders.defaults import default_headers
 from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_SOCIAL_AUTH_PIPELINE
