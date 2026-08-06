@@ -21,6 +21,10 @@ repos:
         args: [ "--fix" ]
       # Run the formatter.
       - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.2
+    hooks:
+      - id: uv-lock
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.23.0
     hooks:
