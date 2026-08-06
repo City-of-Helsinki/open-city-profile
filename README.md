@@ -105,8 +105,12 @@ Prerequisites:
 
 ### Installing Python requirements
 
-* Run `pip install -r requirements.txt`
-* Run `pip install -r requirements-dev.txt` (development requirements)
+* Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) `>=0.9.17`
+* Run `uv sync` (installs production and development requirements)
+  * Add `--group prod` if you also need `uwsgi`/`uwsgitop` (not required for local development)
+
+`uv >=0.9.17` is required because the project uses the ISO 8601 duration
+`exclude-newer = "P3D"` configuration in `pyproject.toml`.
 
 
 ### Database
@@ -125,37 +129,46 @@ Allow user to create test database
 
 ### Daily running
 
-* Create `.env` file: `touch .env`
-* Set the `DEBUG` environment variable to `1`.
-* Run `python manage.py migrate`
-* Run `python manage.py createsuperuser`
-* Run `python manage.py runserver 0:8000`
+* Create a `.env` file in the project root with at least the following:
+
+      DEBUG=1
+      FIELD_ENCRYPTION_KEYS=<generate-a-local-key>
+
+  * `FIELD_ENCRYPTION_KEYS` is **required**: it is used to encrypt/decrypt data in the
+    database, and commands such as `migrate` fail without it. The value above is only
+    meant for local development, see
+    [docs/config.adoc](docs/config.adoc) for details and
+    [`django-searchable-encrypted-fields`](https://gitlab.com/guywillett/django-searchable-encrypted-fields#generating-encryption-keys)
+    for how to generate keys.
+  * See `compose.env.example` and [docs/config.adoc](docs/config.adoc) for the other
+    available settings.
+* Run `uv run manage.py migrate`
+* Run `uv run manage.py createsuperuser`
+* Run `uv run manage.py runserver 0:8000`
 
 The project is now running at [localhost:8000](http://localhost:8000)
 
 
 ## Keeping Python requirements up to date
 
-This repository contains `requirements*.in` and corresponding `requirements*.txt` files for requirements handling. The `requirements*.txt` files are generated from the `requirements*.in` files with `pip-compile`.
+This repository uses [`uv`](https://docs.astral.sh/uv/) with `pyproject.toml` and `uv.lock` for dependency management.
 
-1. Add new packages to `requirements.in` or `requirements-dev.in`
+1. Add new packages:
+    * Production dependencies: `uv add <package>`
+    * Development dependencies: `uv add --group dev <package>`
+    * Production-only dependencies (e.g. `uwsgi`): `uv add --group prod <package>`
 
-3. Update `.txt` file for the changed requirements file:
-    * `pip-compile requirements.in`
-    * `pip-compile requirements-dev.in`
-    * **Note:** the `requirements*.txt` files added to version control are meant to be used in the containerized environment where the service is run. Because [Python package dependencies are environment dependent](https://github.com/jazzband/pip-tools/#cross-environment-usage-of-requirementsinrequirementstxt-and-pip-compile) they need to be generated within a similar environment. This can be done by running the `pip-compile` command within Docker, for example like this: `docker compose exec django pip-compile requirements.in` ([the container needs to be running](#development-with-docker) beforehand).
+2. If you want to update dependencies to their newest versions, run:
+    * `uv lock --upgrade`
 
-4. If you want to update dependencies to their newest versions, run:
-    * `pip-compile --upgrade requirements.in`
-
-5. To install Python requirements run:
-    * `pip-sync requirements.txt`
+3. To install Python requirements according to the lockfile, run:
+    * `uv sync --locked`
 
 **Note:** when updating dependencies, read the [dependency update checklist](docs/dependency-update.adoc) if there's anything you need to pay attention to.
 
 ## Code format
 
-This project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and quality checking.
+This project uses [Ruff](https://docs.astral.sh/ruff/) for code formatting and quality checking. It is run automatically via [`pre-commit`](https://pre-commit.com/), see below. If you want to use `ruff` outside of the pre-commit hooks, install it separately, for example with `uv tool install ruff` or `pip install ruff`.
 
 Basic `ruff` commands:
 
