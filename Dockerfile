@@ -30,13 +30,14 @@ RUN dnf update -y \
 ADD https://github.com/City-of-Helsinki/python-uwsgi-common/archive/${UWSGI_COMMON_REF}.tar.gz /usr/src/
 RUN mkdir -p /usr/src/python-uwsgi-common && \
     tar --strip-components=1 -xzf /usr/src/${UWSGI_COMMON_REF}.tar.gz -C /usr/src/python-uwsgi-common && \
-    cp /usr/src/python-uwsgi-common/uwsgi-base.ini /app/ && \
+    mkdir -p /usr/local/etc && \
+    cp /usr/src/python-uwsgi-common/uwsgi-base.ini /usr/local/etc/ && \
     uwsgi --build-plugin /usr/src/python-uwsgi-common && \
     rm -rf /usr/src/${UWSGI_COMMON_REF}.tar.gz && \
     rm -rf /usr/src/python-uwsgi-common && \
     uwsgi --build-plugin https://github.com/City-of-Helsinki/uwsgi-sentry && \
     mkdir -p /usr/local/lib/uwsgi/plugins && \
-    mv sentry_plugin.so /usr/local/lib/uwsgi/plugins
+    mv escape_json_plugin.so sentry_plugin.so /usr/local/lib/uwsgi/plugins
 
 COPY docker-entrypoint.sh /entrypoint/docker-entrypoint.sh
 ENTRYPOINT ["/entrypoint/docker-entrypoint.sh"]
