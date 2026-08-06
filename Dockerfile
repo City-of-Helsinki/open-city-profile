@@ -19,7 +19,7 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/app-root \
     UV_PYTHON_DOWNLOADS=never
 ENV PATH="/opt/app-root/bin:$PATH"
 
-COPY pyproject.toml uv.lock .
+COPY pyproject.toml uv.lock ./
 
 RUN dnf update -y \
     && dnf install -y nmap-ncat \
@@ -53,6 +53,11 @@ RUN groupadd -g 1000 appuser \
 RUN uv sync --locked --group prod
 
 ENV DEV_SERVER=1
+
+# Static/media roots default to /var/{static,media} in this image layout. Create them
+# up front so the compose volumes mounted there inherit appuser ownership.
+RUN mkdir -p /var/static /var/media \
+    && chown -R appuser:root /var/static /var/media
 
 COPY --chown=appuser:root . .
 

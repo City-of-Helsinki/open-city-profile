@@ -23,6 +23,7 @@ services:
             DATABASE_HOST: "profile-db"
         volumes:
             - .:/app
+            - django-static-volume:/var/static
             - django-media-volume:/var/media/
         ports:
             - "8080:8080"
@@ -33,6 +34,7 @@ services:
 volumes:
         pgdata:
             driver: local
+        django-static-volume:
         django-media-volume:
 
 networks:
