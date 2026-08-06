@@ -28,6 +28,12 @@ if [[ "$SET_ALLOWED_DATA_FIELDS" = "1" ]]; then
     ./manage.py set_allowed_data_fields < open_city_profile/configuration/allowed_data_fields.json
 fi
 
+# Collect static files
+if [[ "$COLLECT_STATIC" = "1" ]]; then
+    echo "Collecting static files..."
+    ./manage.py collectstatic --noinput
+fi
+
 # Create superuser
 if [[ "$CREATE_SUPERUSER" = "1" ]]; then
     ./manage.py add_admin_user -u admin -p admin -e admin@example.com
