@@ -16,8 +16,10 @@ from .models import AllowedDataField, Service, ServiceConnection
 AllowedServiceType = graphene.Enum.from_enum(
     ServiceType,
     description=lambda e: e.label if e else "",
-    deprecation_reason=lambda e: "The whole ServiceType enum is deprecated and shouldn't be used anymore. "  # noqa: E501
-    "There are different replacements in various places, depending on how this type was used.",  # noqa: E501
+    deprecation_reason=lambda e: (
+        "The whole ServiceType enum is deprecated and shouldn't be used anymore. "
+        "There are different replacements in various places, depending on how this type was used."  # noqa: E501
+    ),
 )
 
 

@@ -56,8 +56,9 @@ def generate_data_fields(allowed_data_fields_spec):
             try:
                 new_field_spec = next(
                     filter(
-                        lambda spec: obsolete_field.field_name
-                        in spec.get("aliases", []),
+                        lambda spec: (
+                            obsolete_field.field_name in spec.get("aliases", [])
+                        ),
                         allowed_data_fields_spec,
                     )
                 )
