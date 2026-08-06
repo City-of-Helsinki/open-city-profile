@@ -14,19 +14,17 @@ repos:
       - id: check-toml
       - id: check-added-large-files
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.5
+    rev: v0.16.1
     hooks:
-      # Run the linter.
       - id: ruff-check
         args: [ "--fix" ]
-      # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.12.2
     hooks:
       - id: uv-lock
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.23.0
+    rev: v9.26.0
     hooks:
       - id: commitlint
         stages: [commit-msg, manual]
