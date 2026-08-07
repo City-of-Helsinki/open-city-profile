@@ -81,7 +81,7 @@ class FieldNotAllowedError(ProfileGraphQLError):
     Field does not exist in the service's allowed data fields (Service.allowed_data_fields).
     """  # noqa: E501
 
-    field_name: str = None
+    field_name: str | None = None
 
     def __init__(self, *args, field_name=None, **kwargs):
         super().__init__(*args, **kwargs)

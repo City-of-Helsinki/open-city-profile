@@ -117,6 +117,9 @@ def test_user_can_not_download_profile_without_service_connection(
 
     executed = user_gql_client.execute(DOWNLOAD_MY_PROFILE_MUTATION, service=service_1)
     assert_match_error_code(executed, "PERMISSION_DENIED_ERROR")
+    assert executed["errors"][0]["message"] == (
+        "You do not have permission to perform this action."
+    )
     assert executed["data"]["downloadMyProfile"] is None
 
 

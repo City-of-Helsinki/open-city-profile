@@ -68,6 +68,7 @@ class TestTemporaryProfileReadAccessToken(TemporaryProfileReadAccessTokenTestBas
         assert (
             executed["errors"][0]["extensions"]["code"] == PROFILE_DOES_NOT_EXIST_ERROR
         )
+        assert executed["errors"][0]["message"] == "Profile does not exist"
 
     def test_using_an_expired_token_reports_token_expired_error(
         self, anon_user_gql_client

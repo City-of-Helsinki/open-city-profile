@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.models import F, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import override
+from django.utils.translation import gettext_lazy, override
 from django_filters import (
     BooleanFilter,
     CharFilter,
@@ -86,6 +86,16 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+PERMISSION_DENIED_MESSAGE = gettext_lazy(
+    "You do not have permission to perform this action."
+)
+PROFILE_DOES_NOT_EXIST_MESSAGE = gettext_lazy("Profile does not exist")
+
+OBSOLETE_SERVICE_TYPE_DESCRIPTION = (
+    "**OBSOLETE**: doesn't do anything. "
+    "Requester's service is determined by authentication."
+)
+
 AllowedEmailType = graphene.Enum.from_enum(
     EmailType, description=lambda e: e.label if e else ""
 )
@@ -141,8 +151,8 @@ def _update_nested(node, profile, data, field_callback):
     model = node._meta.model
 
     for update_input in filter(None, data):
-        id = update_input.pop("id")
-        item = _safely_get_item_by_global_id(node, id, profile)
+        item_id = update_input.pop("id")
+        item = _safely_get_item_by_global_id(node, item_id, profile)
 
         for field, value in update_input.items():
             if field_callback:
@@ -438,9 +448,7 @@ class AddressNode(ContactNode):
         ):
             return address
         else:
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
 
 class LoginMethodNode(graphene.ObjectType):
@@ -709,9 +717,7 @@ class ProfileNode(RestrictedProfileNode):
         ):
             return profile
         else:
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
 
 class TemporaryReadAccessTokenNode(DjangoObjectType):
@@ -957,7 +963,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",  # noqa: E501
+            description=OBSOLETE_SERVICE_TYPE_DESCRIPTION,
         )
         profile = CreateProfileInput(required=True)
 
@@ -974,9 +980,7 @@ class CreateProfileMutation(relay.ClientIDMutation):
         if sensitivedata and not info.context.user.has_perm(
             "can_manage_sensitivedata", service
         ):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         validate(cls, root, info, **input)
 
@@ -1332,9 +1336,7 @@ class UpdateMyProfileMutation(relay.ClientIDMutation):
             profile = Profile.objects.get(user=info.context.user)
 
             if not info.context.service.has_connection_to_profile(profile):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+                raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
             validate(cls, root, info, **input)
 
@@ -1383,7 +1385,7 @@ class UpdateProfileMutation(relay.ClientIDMutation):
     class Input:
         service_type = graphene.Argument(
             AllowedServiceType,
-            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",  # noqa: E501
+            description=OBSOLETE_SERVICE_TYPE_DESCRIPTION,
         )
         profile = UpdateProfileInput(required=True)
 
@@ -1400,18 +1402,14 @@ class UpdateProfileMutation(relay.ClientIDMutation):
             )
 
             if not service.has_connection_to_profile(profile):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+                raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
             sensitive_data = profile_data.get("sensitivedata", None)
 
             if sensitive_data and not info.context.user.has_perm(
                 "can_manage_sensitivedata", service
             ):
-                raise PermissionDenied(
-                    _("You do not have permission to perform this action.")
-                )
+                raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
             validate(cls, root, info, **input)
 
@@ -1554,12 +1552,10 @@ class DeleteMyProfileMutation(relay.ClientIDMutation):
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
-            raise ProfileDoesNotExistError("Profile does not exist")
+            raise ProfileDoesNotExistError(PROFILE_DOES_NOT_EXIST_MESSAGE) from None
 
         if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
             raise InsufficientLoaError(
@@ -1616,12 +1612,10 @@ class DeleteMyServiceDataMutation(graphene.Mutation):
         try:
             profile = Profile.objects.get(user=info.context.user)
         except Profile.DoesNotExist:
-            raise ProfileDoesNotExistError("Profile does not exist")
+            raise ProfileDoesNotExistError(PROFILE_DOES_NOT_EXIST_MESSAGE) from None
 
         if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
             raise InsufficientLoaError(
@@ -1658,9 +1652,7 @@ class CreateMyProfileTemporaryReadAccessTokenMutation(relay.ClientIDMutation):
         profile = Profile.objects.get(user=info.context.user)
 
         if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         TemporaryReadAccessToken.objects.filter(
             profile=profile, created_at__gt=timezone.now() - F("validity_duration")
@@ -1680,7 +1672,7 @@ class Query(graphene.ObjectType):
         id=graphene.Argument(graphene.ID, required=True),
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",  # noqa: E501
+            description=OBSOLETE_SERVICE_TYPE_DESCRIPTION,
         ),
         description="Get profile by profile ID.\n\nRequires `staff` credentials for the requester's service."  # noqa: E501
         "The profile must have an active connection to the requester's service, otherwise "  # noqa: E501
@@ -1706,7 +1698,7 @@ class Query(graphene.ObjectType):
         ProfileNode,
         service_type=graphene.Argument(
             AllowedServiceType,
-            description="**OBSOLETE**: doesn't do anything. Requester's service is determined by authentication.",  # noqa: E501
+            description=OBSOLETE_SERVICE_TYPE_DESCRIPTION,
         ),
         description="Search for profiles. The results are filtered based on the given parameters. The results are "  # noqa: E501
         "paged using Relay.\n\nRequires `staff` credentials for the requester's service."  # noqa: E501
@@ -1770,9 +1762,7 @@ class Query(graphene.ObjectType):
             return None
 
         if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         return profile
 
@@ -1793,9 +1783,7 @@ class Query(graphene.ObjectType):
             return None
 
         if not info.context.service.has_connection_to_profile(profile):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
         if not requester_has_sufficient_loa_to_perform_gdpr_request(info.context):
             raise InsufficientLoaError(
@@ -1834,7 +1822,7 @@ class Query(graphene.ObjectType):
         try:
             token = TemporaryReadAccessToken.objects.get(token=kwargs["token"])
         except TemporaryReadAccessToken.DoesNotExist:
-            raise ProfileDoesNotExistError("Profile does not exist")
+            raise ProfileDoesNotExistError(PROFILE_DOES_NOT_EXIST_MESSAGE) from None
 
         if token.expires_at() < timezone.now():
             raise TokenExpiredError("The access token has expired")
@@ -1852,13 +1840,13 @@ class Query(graphene.ObjectType):
                 profile=profile, service=service
             )
         except Profile.DoesNotExist:
-            raise ProfileDoesNotExistError("Profile not found")
+            raise ProfileDoesNotExistError("Profile not found") from None
         except Service.DoesNotExist:
-            raise ServiceDoesNotExistError("Service not found")
+            raise ServiceDoesNotExistError("Service not found") from None
         except ServiceConnection.DoesNotExist:
             raise ServiceConnectionDoesNotExistError(
                 "Service connection does not exist"
-            )
+            ) from None
 
 
 class Mutation(graphene.ObjectType):

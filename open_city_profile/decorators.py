@@ -6,6 +6,8 @@ from graphql.type import GraphQLResolveInfo
 
 from open_city_profile.exceptions import ServiceNotIdentifiedError
 
+PERMISSION_DENIED_MESSAGE = _("You do not have permission to perform this action.")
+
 
 def _use_context_tests(*test_funcs):
     """
@@ -44,7 +46,7 @@ def _use_context_tests(*test_funcs):
 
 def _require_authenticated(context):
     if not context.user.is_authenticated:
-        raise PermissionDenied(_("You do not have permission to perform this action."))
+        raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
 
 def _require_service(context):
@@ -55,9 +57,7 @@ def _require_service(context):
 def _require_permission(permission_name):
     def permission_checker(context):
         if not context.user.has_perm(permission_name):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
     return permission_checker
 
@@ -67,9 +67,7 @@ def _require_service_permission(permission_name):
         _require_service(context)
 
         if not context.user.has_perm(permission_name, context.service):
-            raise PermissionDenied(
-                _("You do not have permission to perform this action.")
-            )
+            raise PermissionDenied(PERMISSION_DENIED_MESSAGE)
 
     return permission_checker
 

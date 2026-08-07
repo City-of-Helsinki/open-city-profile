@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import path
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 
 from profiles.models import (
     Address,
@@ -177,6 +178,7 @@ class ExtendedProfileAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     @method_decorator(superuser_required, name="dispatch")
+    @method_decorator(require_http_methods(["GET", "POST"]))
     def upload_json(self, request):
         try:
             if request.method == "POST":
