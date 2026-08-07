@@ -165,3 +165,4 @@ def test_error_when_using_service_delete_with_non_existent_profile(user_gql_clie
     expected_data = {"deleteMyServiceData": None}
     assert executed["data"] == expected_data
     assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)
+    assert executed["errors"][0]["message"] == "Profile does not exist"

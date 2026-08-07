@@ -109,7 +109,7 @@ def generate_services():
 
 
 @transaction.atomic
-def generate_groups_for_services(services=tuple()):
+def generate_groups_for_services(services=()):
     """Create groups for given services unless they already exist."""
     groups = []
     for service in services:
@@ -118,7 +118,7 @@ def generate_groups_for_services(services=tuple()):
     return groups
 
 
-def assign_permissions(groups=tuple()):
+def assign_permissions(groups=()):
     """Assigns all service permissions for a group for development purposes.
 
     Assumes that a Service exists with the same group name.
@@ -160,7 +160,7 @@ def create_user(username="", faker=None):
     )
 
 
-def generate_group_admins(groups=tuple(), faker=None):
+def generate_group_admins(groups=(), faker=None):
     """Creates fake development group admins for development purposes."""
 
     def create_user_and_add_to_group(group=None):

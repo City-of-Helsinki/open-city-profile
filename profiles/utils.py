@@ -11,7 +11,7 @@ def requester_has_service_permission(request, permission):
         return False
 
     if not hasattr(request, "_service_permission_cache"):
-        request._service_permission_cache = dict()
+        request._service_permission_cache = {}
 
     cache_key = f"{request.user.id}:{service.name}:{permission}"
 

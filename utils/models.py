@@ -99,7 +99,7 @@ class SerializableMixin(models.Model):
                 return getattr(data, field.get("name"))
 
         related_types = {item.name: type(item) for item in model._meta.related_objects}
-        if field.get("name") in related_types.keys():
+        if field.get("name") in related_types:
             value = (
                 getattr(model, field.get("name")).serialize()
                 if hasattr(model, field.get("name"))

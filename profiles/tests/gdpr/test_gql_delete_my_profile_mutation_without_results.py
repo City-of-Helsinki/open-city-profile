@@ -212,6 +212,7 @@ def test_user_gets_error_when_deleting_non_existent_profile(user_gql_client):
     expected_data = {"deleteMyProfile": None}
     assert executed["data"] == expected_data
     assert_match_error_code(executed, PROFILE_DOES_NOT_EXIST_ERROR)
+    assert executed["errors"][0]["message"] == "Profile does not exist"
 
 
 def test_user_can_delete_their_profile_using_correct_api_tokens(
