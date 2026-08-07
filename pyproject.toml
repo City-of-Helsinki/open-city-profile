@@ -25,7 +25,7 @@ dependencies = [
     "graphql-sync-dataloaders",
     "iso3166",
     "psycopg[c]",
-    "python-jose[cryptography]",
+    "pyjwt[crypto]",
     "pyyaml",
     "requests",
     "requests-oauthlib",

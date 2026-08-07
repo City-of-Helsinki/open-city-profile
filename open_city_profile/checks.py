@@ -64,16 +64,19 @@ def check_obsolete_contentypes(app_configs, **kwargs):
 
 
 @register(Tags.security)
-def python_jose_uses_correct_backend(app_configs, **kwargs):
-    """python-jose will use its cryptography backend if it can import it."""
+def pyjwt_uses_correct_backend(app_configs, **kwargs):
+    """PyJWT requires the cryptography package for asymmetric algorithms."""
     errors = []
 
     try:
-        import jose.backends.cryptography_backend  # noqa: F401
+        from jwt.algorithms import has_crypto
     except ImportError:
+        has_crypto = False
+
+    if not has_crypto:
         errors.append(
             Error(
-                "python-jose is not using cryptography backend",
+                "PyJWT is not using cryptography backend",
                 hint="Check installed packages.",
             )
         )
