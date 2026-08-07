@@ -1,10 +1,10 @@
 import uuid
 
+import jwt
 import requests
 import requests_mock
 from django.conf import settings
 from django.utils.crypto import get_random_string
-from jose import jwt
 
 from services.tests.factories import (
     AllowedDataFieldFactory,
