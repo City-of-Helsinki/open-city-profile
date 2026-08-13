@@ -3,7 +3,7 @@ name = "open-city-profile"
 requires-python = ">=3.12, <3.13"
 version = "2.13.1"
 dependencies = [
-    "django~=5.2.15",
+    "django~=5.2",
     "django-admin-sortable",
     "django-cors-headers",
     "django-csp<4",
