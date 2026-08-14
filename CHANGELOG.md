@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.13.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.1...open-city-profile-v2.13.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* Replace python-jose with pyjwt[crypto] ([f02fc42](https://github.com/City-of-Helsinki/open-city-profile/commit/f02fc42a4003eb0be36fa1b1516eea120c11d110))
+* Scrub verified_personal_information_input ([ff733dc](https://github.com/City-of-Helsinki/open-city-profile/commit/ff733dc3d811e19d5f0ec9b14daf58a3cbc22dde))
+* Use default parameter value for obsolete_field ([9436d3e](https://github.com/City-of-Helsinki/open-city-profile/commit/9436d3e7d61b516370e511c5d35f52747e1a2a0a))
+
+
+### Dependencies
+
+* Bump cryptography from 46.0.7 to 48.0.1 ([c00a478](https://github.com/City-of-Helsinki/open-city-profile/commit/c00a478419e0670b5ac1d174713a67cc44ac5cf0))
+* Bump cryptography from 48.0.1 to 50.0.0 ([#651](https://github.com/City-of-Helsinki/open-city-profile/issues/651)) ([a6130ec](https://github.com/City-of-Helsinki/open-city-profile/commit/a6130ecec6ab9594e9279c37b565bc10c5740030))
+* Bump django from 5.2.14 to 5.2.15 ([26fe3df](https://github.com/City-of-Helsinki/open-city-profile/commit/26fe3dfea6393ca03194718690fefd4a6ea5bcc4))
+* Bump django to latest 5.2.17 ([853f7ee](https://github.com/City-of-Helsinki/open-city-profile/commit/853f7ee57e0629d78f48d0ede8c8e34761bce4d6))
+* Bump pip from 26.1 to 26.1.2 ([afab9cb](https://github.com/City-of-Helsinki/open-city-profile/commit/afab9cb9b6f7efe68f697b753bb5c2803cbedfa4))
+* Bump pyasn1 from 0.6.3 to 0.6.4 ([9b40a11](https://github.com/City-of-Helsinki/open-city-profile/commit/9b40a115910bb0d300a4e2c0e2f33688041e7f58))
+* Bump pyjwt from 2.12.0 to 2.13.0 ([eb8c546](https://github.com/City-of-Helsinki/open-city-profile/commit/eb8c5461939325241d7741be4b91f7ba7c0ef445))
+* Bump setuptools from 80.9.0 to 83.0.0 ([d8e5eaf](https://github.com/City-of-Helsinki/open-city-profile/commit/d8e5eaff9a029bf6ce69097e1437e387c81e29bb))
+* Update pre-commit tool versions ([0512636](https://github.com/City-of-Helsinki/open-city-profile/commit/0512636089264e9714a7449b5492edc7e8758149))
+
 ## [2.13.1](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.0...open-city-profile-v2.13.1) (2026-06-03)
 
 
