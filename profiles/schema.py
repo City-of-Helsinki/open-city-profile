@@ -141,8 +141,8 @@ def _update_nested(node, profile, data, field_callback):
     model = node._meta.model
 
     for update_input in filter(None, data):
-        id = update_input.pop("id")
-        item = _safely_get_item_by_global_id(node, id, profile)
+        id_value = update_input.pop("id")
+        item = _safely_get_item_by_global_id(node, id_value, profile)
 
         for field, value in update_input.items():
             if field_callback:
