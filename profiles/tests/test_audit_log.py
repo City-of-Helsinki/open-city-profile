@@ -104,7 +104,7 @@ class ProfileWithRelated:
 
 def vpi_factory_with_addresses(*wanted_address_models):
     def factory():
-        address_args = dict()
+        address_args = {}
         for address_model in [
             VerifiedPersonalInformationPermanentAddress,
             VerifiedPersonalInformationTemporaryAddress,
