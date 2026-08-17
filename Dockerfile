@@ -27,13 +27,13 @@ RUN dnf update -y \
     && uv sync --locked --no-dev --group prod
 
 # Build and copy specific python-uwsgi-common files.
-ADD https://github.com/City-of-Helsinki/python-uwsgi-common/archive/${UWSGI_COMMON_REF}.tar.gz /usr/src/
+ADD https://github.com/City-of-Helsinki/python-uwsgi-common/archive/"${UWSGI_COMMON_REF}".tar.gz /usr/src/
 RUN mkdir -p /usr/src/python-uwsgi-common && \
-    tar --strip-components=1 -xzf /usr/src/${UWSGI_COMMON_REF}.tar.gz -C /usr/src/python-uwsgi-common && \
+    tar --strip-components=1 -xzf /usr/src/"${UWSGI_COMMON_REF}".tar.gz -C /usr/src/python-uwsgi-common && \
     mkdir -p /usr/local/etc && \
     cp /usr/src/python-uwsgi-common/uwsgi-base.ini /usr/local/etc/ && \
     uwsgi --build-plugin /usr/src/python-uwsgi-common && \
-    rm -rf /usr/src/${UWSGI_COMMON_REF}.tar.gz && \
+    rm -rf /usr/src/"${UWSGI_COMMON_REF}".tar.gz && \
     rm -rf /usr/src/python-uwsgi-common && \
     uwsgi --build-plugin https://github.com/City-of-Helsinki/uwsgi-sentry && \
     mkdir -p /usr/local/lib/uwsgi/plugins && \
