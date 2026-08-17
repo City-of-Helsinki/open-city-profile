@@ -374,7 +374,7 @@ def delete_connected_service_data(
     results = _delete_service_connection_and_service_data(
         service_connections, keycloak_token_exchange, dry_run=True
     )
-    if dry_run or any([len(r.errors) for r in results]):
+    if dry_run or any(len(r.errors) for r in results):
         return results
 
     if not dry_run:
