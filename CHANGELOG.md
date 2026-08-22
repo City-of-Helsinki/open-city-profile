@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.13.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.2...open-city-profile-v2.13.3) (2026-08-22)
+
+
+### Bug Fixes
+
+* Address SonarCloud code quality findings ([4a7428b](https://github.com/City-of-Helsinki/open-city-profile/commit/4a7428b0626dca3f4ef7f16cd39cfcfe38dc1b1d))
+
+
+### Dependencies
+
+* Bump sqlparse from 0.5.5 to 0.6.0 ([fac8047](https://github.com/City-of-Helsinki/open-city-profile/commit/fac80478c0aaf0c2d2368fde6c213cdb28a70d95))
+
 ## [2.13.2](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.1...open-city-profile-v2.13.2) (2026-08-14)
 
 
