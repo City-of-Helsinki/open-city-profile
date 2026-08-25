@@ -90,6 +90,7 @@ PERMISSION_DENIED_MESSAGE = gettext_lazy(
     "You do not have permission to perform this action."
 )
 PROFILE_DOES_NOT_EXIST_MESSAGE = gettext_lazy("Profile does not exist")
+DEPRECATED_INPUT_IGNORED_DESCRIPTION = "**DEPRECATED**. Any input is ignored."
 
 OBSOLETE_SERVICE_TYPE_DESCRIPTION = (
     "**OBSOLETE**: doesn't do anything. "
@@ -848,7 +849,7 @@ class ProfileInputBase(graphene.InputObjectType):
         description="Last name. Maximum length is 255 characters."
     )
     nickname = graphene.String(description="Nickname. Maximum length is 32 characters.")
-    image = graphene.String(description="**DEPRECATED**. Any input is ignored.")
+    image = graphene.String(description=DEPRECATED_INPUT_IGNORED_DESCRIPTION)
     language = Language(description="Language.")
     contact_method = ContactMethod(description="Contact method.")
     add_emails = graphene.List(CreateEmailInput, description="Add emails to profile.")
@@ -940,22 +941,22 @@ class CreateProfileInput(ProfileInputBase):
     There's no replacement for these."""
 
     update_emails = graphene.List(
-        UpdateEmailInput, description="**DEPRECATED**. Any input is ignored."
+        UpdateEmailInput, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
     remove_emails = graphene.List(
-        graphene.ID, description="**DEPRECATED**. Any input is ignored."
+        graphene.ID, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
     update_phones = graphene.List(
-        UpdatePhoneInput, description="**DEPRECATED**. Any input is ignored."
+        UpdatePhoneInput, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
     remove_phones = graphene.List(
-        graphene.ID, description="**DEPRECATED**. Any input is ignored."
+        graphene.ID, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
     update_addresses = graphene.List(
-        UpdateAddressInput, description="**DEPRECATED**. Any input is ignored."
+        UpdateAddressInput, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
     remove_addresses = graphene.List(
-        graphene.ID, description="**DEPRECATED**. Any input is ignored."
+        graphene.ID, description=DEPRECATED_INPUT_IGNORED_DESCRIPTION
     )
 
 
