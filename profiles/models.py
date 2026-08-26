@@ -8,6 +8,7 @@ from django.utils import timezone
 from encrypted_fields import fields
 from enumfields import EnumField
 
+from open_city_profile.exceptions import CustomerDataImportError
 from services.models import Service, ServiceConnection
 from users.models import User
 from utils.fields import (
@@ -233,7 +234,7 @@ class Profile(UUIDModel, SerializableMixin, AllowedDataFieldsMixin):
                     if "customer_id" in item
                     else f"Could not import unknown customer, index: {customer_index}"
                 )
-                raise Exception(msg) from err
+                raise CustomerDataImportError(msg) from err
         return result
 
 

@@ -71,6 +71,10 @@ class TokenExchangeError(Exception):
     """OAuth/OIDC token exchange related exception."""
 
 
+class CustomerDataImportError(RuntimeError):
+    """Customer data import failed."""
+
+
 class InsufficientLoaError(ProfileGraphQLError):
     """The requester has insufficient level of authentication to retrieve this data"""
 

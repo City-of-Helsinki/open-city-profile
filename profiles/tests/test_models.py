@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
+from open_city_profile.exceptions import CustomerDataImportError
 from services.tests.factories import ServiceConnectionFactory
 
 from ..models import Email, Profile, TemporaryReadAccessToken
@@ -346,7 +347,7 @@ def test_import_customer_data_with_missing_customer_id():
         },
     ]
     assert Profile.objects.count() == 0
-    with pytest.raises(Exception) as e:
+    with pytest.raises(CustomerDataImportError) as e:
         Profile.import_customer_data(data, "")
     assert str(e.value) == "Could not import unknown customer, index: 0"
     assert Profile.objects.count() == 0
