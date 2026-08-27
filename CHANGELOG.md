@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.4](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.3...open-city-profile-v2.13.4) (2026-08-27)
+
+
+### Bug Fixes
+
+* Replace generic import exception ([0eacc07](https://github.com/City-of-Helsinki/open-city-profile/commit/0eacc07b94b2476ad35854a68c15a2348785a009))
+
 ## [2.13.3](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.2...open-city-profile-v2.13.3) (2026-08-25)
 
 
