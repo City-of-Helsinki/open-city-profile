@@ -15,7 +15,7 @@ dependencies = [
     "django-helusers",
     "django-logger-extra",
     "django-parler<2.4",
-    "django-resilient-logger==1.1.1",
+    "django-resilient-logger",
     "django-sanitized-dump",
     "django-searchable-encrypted-fields",
     "graphene-django",
@@ -30,7 +30,7 @@ dependencies = [
     "requests",
     "requests-oauthlib",
     "sentry-sdk",
-    "social-auth-app-django<6",
+    "social-auth-app-django",
 ]
 
 [dependency-groups]
