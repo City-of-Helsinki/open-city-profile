@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.13.5](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.4...open-city-profile-v2.13.5) (2026-10-02)
+
+
+### Dependencies
+
+* Bump django-helusers ([ed115e3](https://github.com/City-of-Helsinki/open-city-profile/commit/ed115e3978ec2045623e64c83086e6420a538c16))
+* Bump oauthlib from 3.3.1 to 4.0.0 ([170e737](https://github.com/City-of-Helsinki/open-city-profile/commit/170e7370c1db816447e8550659fb93b83f7f6ed2))
+* Bump pyjwt from 2.13.0 to 2.15.0 ([feda728](https://github.com/City-of-Helsinki/open-city-profile/commit/feda7284e33a3adc049c28ff9154d5126001da4a))
+* Bump social-auth-core from 4.9.1 to 5.0.0 ([5ff52b2](https://github.com/City-of-Helsinki/open-city-profile/commit/5ff52b2c5338e6e1f825bbcf3377fa9321046f60))
+* Bump urllib3 from 2.7.0 to 2.8.0 ([ef7f5a8](https://github.com/City-of-Helsinki/open-city-profile/commit/ef7f5a8151247241009e6a1d36b2ae7cd0831271))
+* Bump virtualenv from 21.7.1 to 21.7.12 ([db4d276](https://github.com/City-of-Helsinki/open-city-profile/commit/db4d276e1a452e0905d4a27f6957cb982bbeca4b))
+* Bump virtualenv from 21.7.12 to 21.7.13 ([719b51a](https://github.com/City-of-Helsinki/open-city-profile/commit/719b51a4fb2ba88ddf348e456c183526df6a4241))
+
 ## [2.13.4](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.3...open-city-profile-v2.13.4) (2026-08-27)
 
 
