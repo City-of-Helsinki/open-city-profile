@@ -753,7 +753,7 @@ requires-dist = [
     { name = "django-helusers" },
     { name = "django-logger-extra" },
     { name = "django-parler", specifier = "<2.4" },
-    { name = "django-resilient-logger", specifier = "==1.1.1" },
+    { name = "django-resilient-logger" },
     { name = "django-sanitized-dump" },
     { name = "django-searchable-encrypted-fields" },
     { name = "graphene-django" },
@@ -768,7 +768,7 @@ requires-dist = [
     { name = "requests" },
     { name = "requests-oauthlib" },
     { name = "sentry-sdk" },
-    { name = "social-auth-app-django", specifier = "<6" },
+    { name = "social-auth-app-django" },
 ]
 
 [package.metadata.requires-dev]
