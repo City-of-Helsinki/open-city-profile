@@ -3,7 +3,7 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-10-03T14:02:45.479293Z"
 exclude-newer-span = "P3D"
 
 [[package]]
@@ -973,11 +973,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.15.0"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/02/a5/5197bfd06417837ac079921c66fa6393f1dea3557272a263cebfef69e432/pyjwt-2.15.0.tar.gz", hash = "sha256:b11c5f9791d7bf51c2b39a81ed669f6b2dbbd669df2942f6c60167e9e3d1abe4", size = 120513, upload-time = "2026-09-23T16:56:00.689Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/ea/5194e52748b0da83d71e082d75496eaec6e58f419f5e184786ded517e6a9/pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8", size = 121252, upload-time = "2026-09-28T18:40:42.598Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/55/40e45bf052ee8ee12a4dfd785519660f8effa7b065442b91646ec6828619/pyjwt-2.15.0-py3-none-any.whl", hash = "sha256:7a3742debf6b879e912dbb9819ceec1594be812452b78c5f2e2dfc56564954f8", size = 33680, upload-time = "2026-09-23T16:55:59.241Z" },
+    { url = "https://files.pythonhosted.org/packages/50/ca/44de4e75f8aadc457f0634be3b542815078ded46dca30efb960edeecad6e/pyjwt-2.15.1-py3-none-any.whl", hash = "sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193", size = 33860, upload-time = "2026-09-28T18:40:41.429Z" },
 ]
 
 [package.optional-dependencies]
@@ -1173,21 +1173,21 @@ wheels = [
 
 [[package]]
 name = "social-auth-app-django"
-version = "6.0.1"
+version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
     { name = "social-auth-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/7a/5d3f1e4a90edaff35824864c233a3c6a291621cc9dd39c157431fbb6376d/social_auth_app_django-6.0.1.tar.gz", hash = "sha256:43002de0530e2ad13ef067f54aba7185a05fc8527310006c5328dc0b5e7a4cfd", size = 31664, upload-time = "2026-07-24T06:55:59.119Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/8c/813d5fdcc1b81500b4803bd4807825321c307fc45bae9efcfa5d660d4aa8/social_auth_app_django-6.1.0.tar.gz", hash = "sha256:7ce0489710f450dafd652833eea833505ccf5dacda6b188daa8bf90038986557", size = 47148, upload-time = "2026-09-30T16:42:17.508Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/e9/c0b06b90b76d02b8e45d6989d0adb947df9b6d9b37d3c96e486f2de37bdb/social_auth_app_django-6.0.1-py3-none-any.whl", hash = "sha256:652ec21105ef58a34ffd223a02c338bc03e5f56d357ee69c33283afd08442065", size = 29481, upload-time = "2026-07-24T06:55:58.115Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/18/e64decbe38a820c6e844658d079c6f37108035161cb95352ffa6a79a03fc/social_auth_app_django-6.1.0-py3-none-any.whl", hash = "sha256:b192b1f7c432c7d5d552ac44f43d07c7c01bfd528c6dfa0f7605df5a8495afd8", size = 38879, upload-time = "2026-09-30T16:42:16.49Z" },
 ]
 
 [[package]]
 name = "social-auth-core"
-version = "5.0.0"
+version = "5.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
@@ -1198,9 +1198,9 @@ dependencies = [
     { name = "requests" },
     { name = "requests-oauthlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/44/c2/06f62efd11c849431ea2de86a64555db5ebf6871d1c8f19501c78486925e/social_auth_core-5.0.0.tar.gz", hash = "sha256:e8c8197d44dee8fdc9f7c1dc772813ad9bda1627abc0a6d65f1452b2ec0f11d2", size = 258994, upload-time = "2026-06-23T14:18:36.731Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/0b/8d5137b3a020719702e1d159a68c6c4dd863e1ae57fd4875a4a68b2855fe/social_auth_core-5.2.0.tar.gz", hash = "sha256:72d3c52fe87d07c0db8421fee5f5ec33b3dacce449975b8a572cd0691e3de315", size = 292820, upload-time = "2026-09-30T15:55:58.723Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/96/c91707c0e9ffd7e98574f19ceffb013313c2a85265f720656d5778c0de1e/social_auth_core-5.0.0-py3-none-any.whl", hash = "sha256:16ad700be843614e60d6d891b92b6cf32cadd97954c2680753bdd01355380a54", size = 456679, upload-time = "2026-06-23T14:18:35.346Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/31/245e19405808689b60810ec8ebd0a4d6be51d73e69c810e686fb7aede33a/social_auth_core-5.2.0-py3-none-any.whl", hash = "sha256:e7b9990450291488deffce8d92d14d4396021b8d3c4a0ac5c32ec03bfaccc496", size = 492771, upload-time = "2026-09-30T15:55:57.372Z" },
 ]
 
 [[package]]
