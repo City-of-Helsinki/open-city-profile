@@ -5,7 +5,7 @@ FROM registry.access.redhat.com/ubi9/python-312 AS appbase
 # Branch or tag used to pull python-uwsgi-common.
 ARG UWSGI_COMMON_REF=main
 
-COPY --from=ghcr.io/astral-sh/uv:0.12.2@sha256:069a51314a7bb6031777a9273205fe1b0b19e914ef418207d1338b268df641dd /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce245946826e608e11c93ad4f5bba55b21 /uv /uvx /usr/local/bin/
 
 USER root
 WORKDIR /app
