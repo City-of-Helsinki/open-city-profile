@@ -1,10 +1,12 @@
 import logging
 import threading
 from collections import defaultdict
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.text import camel_case_to_spaces
+from logger_extra.logger_context import get_logger_context, logger_context
 from resilient_logger.sources.resilient_log_source import (
     ResilientLogSource,
     StructuredResilientLogEntryData,
@@ -168,7 +170,12 @@ def _create_log_entries(current_user, service, client_id, ip_address, audit_logg
             )
             entries.append(entry)
 
-    ResilientLogSource.bulk_create_structured(entries)
+    request_id = get_logger_context().get("request_id")
+    context_overrides = (
+        {"request_id": str(request_id)} if isinstance(request_id, UUID) else {}
+    )
+    with logger_context(context_overrides):
+        ResilientLogSource.bulk_create_structured(entries)
 
 
 def _commit_audit_logs():

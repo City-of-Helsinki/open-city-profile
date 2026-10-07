@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from guardian.shortcuts import assign_perm
 from resilient_logger.models import ResilientLogEntry
-from resilient_logger.sources import ResilientLogSource
+from resilient_logger.sources.resilient_log_source_entry import ResilientLogSourceEntry
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_almost_equal
@@ -575,7 +575,8 @@ def test_actor_service(live_server, user, group, service_client_id):
     assert log_entry.context["actor"]["client_id"] == service_client_id.client_id
 
 
-def test_audit_logger_origin(live_server, profile, service_client_id):
+def test_audit_logger_origin(live_server, profile, service_client_id, settings):
+    settings.RESILIENT_LOGGER["environment"] = "unit-testing"
     service = service_client_id.service
     ServiceConnectionFactory(profile=profile, service=service)
     user = profile.user
@@ -585,7 +586,7 @@ def test_audit_logger_origin(live_server, profile, service_client_id):
     log_entries = list(ResilientLogEntry.objects.all())
     assert len(log_entries) == 1
     log_entry = log_entries[0]
-    document = ResilientLogSource(log_entry).get_document()
+    document = ResilientLogSourceEntry(log_entry).get_document()
     assert document["audit_event"]["origin"] == "helsinki-profile-api"
 
 
@@ -601,7 +602,7 @@ def test_audit_logger_env(live_server, profile, service_client_id, settings):
     log_entries = list(ResilientLogEntry.objects.all())
     assert len(log_entries) == 1
     log_entry = log_entries[0]
-    document = ResilientLogSource(log_entry).get_document()
+    document = ResilientLogSourceEntry(log_entry).get_document()
     assert document["audit_event"]["environment"] == environment
 
 
