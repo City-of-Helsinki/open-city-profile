@@ -3,7 +3,7 @@ revision = 3
 requires-python = "==3.12.*"
 
 [options]
-exclude-newer = "2026-10-03T14:02:45.479293Z"
+exclude-newer = "2026-10-04T10:27:01.517369Z"
 exclude-newer-span = "P3D"
 
 [[package]]
@@ -358,15 +358,15 @@ wheels = [
 
 [[package]]
 name = "django-resilient-logger"
-version = "1.1.1"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
-    { name = "elasticsearch" },
+    { name = "elasticsearch8" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/4f/d8f3bc05c0b858eb5637d9d711d911d1ee797f3d2fbb3d14c3a9b0d10f7d/django_resilient_logger-1.1.1.tar.gz", hash = "sha256:3e007683d8d1e2fb1c87f81e843ce5cfbaaa9b2202428b2ba30444a69519549a", size = 20953, upload-time = "2025-11-28T13:31:59.364Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/a9/ae8034664263373d813a4bef626574129771989754b7377c00014c579c10/django_resilient_logger-3.1.0.tar.gz", hash = "sha256:e770d4e58c7db7cda9f6268624069f41ae31bb0487a76cb555584b1246b93044", size = 31477, upload-time = "2026-10-01T11:45:26.532Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/39/e2e0793be5f8cd93272eb45f08c2e05a8615b9925b1b9f911138d118bdac/django_resilient_logger-1.1.1-py2.py3-none-any.whl", hash = "sha256:7d68fc14f3c67158653e08c3007875682b031c70ab43998b30be3f451bac07bd", size = 21612, upload-time = "2025-11-28T13:31:57.682Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/ca/9c0cbb63293f5a5006b946bad7c3ba09ed48f091176861712248939061c6/django_resilient_logger-3.1.0-py2.py3-none-any.whl", hash = "sha256:46369fbea1dee66b3a05f29b44a56c7c689654f97feb3b57a1e0a53491c86595", size = 29356, upload-time = "2026-10-01T11:45:25.192Z" },
 ]
 
 [[package]]
@@ -407,7 +407,7 @@ wheels = [
 ]
 
 [[package]]
-name = "elasticsearch"
+name = "elasticsearch8"
 version = "8.19.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
@@ -415,9 +415,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/79/365e306017a9fcfbbefab1a3b588d2404bea8806b36766ff0f886509a20e/elasticsearch-8.19.3.tar.gz", hash = "sha256:e84dd618a220cac25b962790085045dd27ac72e01c0a5d81bd29a2d47a71f03f", size = 800298, upload-time = "2025-12-23T12:56:00.72Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/6a/1a7d54c1aee0a96870aa54375da4b4a6d5390dd767c917de58242d3d49b8/elasticsearch8-8.19.3.tar.gz", hash = "sha256:7effe95b360241b6d56ef68219037a90ad0f56723614db54bbe57d33058402f4", size = 800428, upload-time = "2025-12-23T12:56:01.961Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/0f/ac126833c385b06166d41c486e4911f58ad7791fd1a53dd6e0b8d16ff214/elasticsearch-8.19.3-py3-none-any.whl", hash = "sha256:fe1db2555811192e8a1be78b01234d0a49d32b185ea7eeeb6f059331dee32838", size = 952820, upload-time = "2025-12-23T12:55:56.796Z" },
+    { url = "https://files.pythonhosted.org/packages/90/ff/1033bf0048d8492c1bcfcf058511dff119895ba50888c7a6e364aa3b168f/elasticsearch8-8.19.3-py3-none-any.whl", hash = "sha256:4b52e59e68aea6f59bf37c28f6f4512333302dd8a52e26c17d0f10c076d833a1", size = 953171, upload-time = "2025-12-23T12:55:58.781Z" },
 ]
 
 [[package]]
