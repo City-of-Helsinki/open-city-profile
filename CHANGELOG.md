@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.13.6](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.5...open-city-profile-v2.13.6) (2026-10-10)
+
+
+### Bug Fixes
+
+* Support resilient logger 3 audit logging ([196b022](https://github.com/City-of-Helsinki/open-city-profile/commit/196b022a7f96a40e10f02fc71c8a6d86b89aa06f))
+
+
+### Dependencies
+
+* Bump social-auth-app-django ([4d58be1](https://github.com/City-of-Helsinki/open-city-profile/commit/4d58be16d993328fdae23a98540675948e504b29))
+* Upgrade django-resilient-logger to 3.1.0 ([e00db64](https://github.com/City-of-Helsinki/open-city-profile/commit/e00db642372a2eaf445266a83252cdf8d816999c))
+
 ## [2.13.5](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.4...open-city-profile-v2.13.5) (2026-10-02)
 
 
