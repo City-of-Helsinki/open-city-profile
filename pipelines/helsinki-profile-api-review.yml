@@ -30,9 +30,6 @@ pr:
     - 'pipelines/helsinki-profile-api-dev.yml'
     - 'compose*'
 
-# By default, use self-hosted agents
-pool: Default
-
 resources:
   repositories:
     # Azure DevOps repository
