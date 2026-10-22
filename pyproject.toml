@@ -55,7 +55,7 @@ prod = [
 
 [tool.uv]
 package = false
-required-version = ">=0.9.17"
+required-version = ">=0.13.4"
 exclude-newer = "P3D"
 
 [tool.ruff]
