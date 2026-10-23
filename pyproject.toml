@@ -21,7 +21,7 @@ dependencies = [
     "graphene-django",
     "graphene-federation==3.1.4",
     "graphene-validator@https://github.com/City-of-Helsinki/graphene-validator/archive/refs/heads/graphene3.zip",
-    "graphql-core==3.2.6",
+    "graphql-core==3.2.12",
     "graphql-sync-dataloaders",
     "iso3166",
     "psycopg[c]",
