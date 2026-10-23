@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.13.7](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.6...open-city-profile-v2.13.7) (2026-10-23)
+
+
+### Bug Fixes
+
+* Bump uv version to 0.13.5 ([bbdf3ea](https://github.com/City-of-Helsinki/open-city-profile/commit/bbdf3ead6fd722bed248eb86ce9c2acbc525277e))
+
+
+### Dependencies
+
+* Bump certifi from 2026.7.22 to 2026.10.19 ([8c188c8](https://github.com/City-of-Helsinki/open-city-profile/commit/8c188c808f245de807f135bd1fc8673d8ec44cdb))
+
 ## [2.13.6](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.5...open-city-profile-v2.13.6) (2026-10-13)
 
 
