@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.13.8](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.7...open-city-profile-v2.13.8) (2026-10-26)
+
+
+### Dependencies
+
+* Bump filelock from 3.32.2 to 4.2.1 ([5c729dd](https://github.com/City-of-Helsinki/open-city-profile/commit/5c729dd477f0a62d43effe5750d4b6c496be60c1))
+* Bump virtualenv from 21.14.9 to 21.14.13 ([3cb04d8](https://github.com/City-of-Helsinki/open-city-profile/commit/3cb04d8d63f895f51ec03f65127db0f5acb058e1))
+* Bump virtualenv from 21.7.13 to 21.14.9 ([2fee9e6](https://github.com/City-of-Helsinki/open-city-profile/commit/2fee9e66f88921024b241b9d8f442dd2a3580e26))
+
 ## [2.13.7](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.6...open-city-profile-v2.13.7) (2026-10-23)
 
 
