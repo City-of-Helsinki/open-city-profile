@@ -391,7 +391,6 @@ GRAPHENE = {
         # NOTE: Graphene runs its middlewares in reverse order!
         "open_city_profile.graphene.AllowedDataFieldsMiddleware",
         "open_city_profile.graphene.JWTMiddleware",
-        "open_city_profile.graphene.GQLDataLoaders",
     ],
 }
 
