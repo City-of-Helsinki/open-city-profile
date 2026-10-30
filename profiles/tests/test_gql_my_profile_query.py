@@ -145,9 +145,7 @@ def test_normal_user_can_query_addresses(user_gql_client, service):
     assert dict(executed["data"]) == expected_data
 
 
-def test_normal_user_can_query_primary_contact_details(
-    user_gql_client, execution_context_class, service
-):
+def test_normal_user_can_query_primary_contact_details(user_gql_client, service):
     profile = ProfileFactory(user=user_gql_client.user)
     phone = PhoneFactory(profile=profile, primary=True)
     email = EmailFactory(profile=profile, primary=True)
@@ -203,9 +201,7 @@ def test_normal_user_can_query_primary_contact_details(
     )
     ServiceConnectionFactory(profile=profile, service=service)
 
-    executed = user_gql_client.execute(
-        query, execution_context_class=execution_context_class, service=service
-    )
+    executed = user_gql_client.execute(query, service=service)
     assert dict(executed["data"]) == expected_data
 
 

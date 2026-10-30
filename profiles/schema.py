@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import F, OuterRef, Prefetch, Q, Subquery
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy, override
@@ -28,6 +28,13 @@ from graphene_federation import key
 from graphene_validator.decorators import validated
 from graphene_validator.errors import ValidationError as GrapheneValidationError
 from graphene_validator.validation import validate
+from graphql.language.ast import (
+    BooleanValueNode,
+    FieldNode,
+    FragmentSpreadNode,
+    InlineFragmentNode,
+    VariableNode,
+)
 from graphql_relay import from_global_id
 
 from open_city_profile.decorators import (
@@ -86,6 +93,7 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+
 PERMISSION_DENIED_MESSAGE = gettext_lazy(
     "You do not have permission to perform this action."
 )
@@ -112,6 +120,114 @@ LoginMethodTypeEnum = graphene.Enum.from_enum(
 
 """Provides the updated Profile instance as a keyword argument called `instance`."""
 profile_updated = django.dispatch.Signal()
+
+
+def _selection_is_included(selection, variable_values):
+    """Apply GraphQL's @skip and @include directives to a selection."""
+    for directive in selection.directives:
+        directive_name = directive.name.value
+        if directive_name not in {"skip", "include"}:
+            continue
+
+        argument = next(
+            (
+                argument
+                for argument in directive.arguments
+                if argument.name.value == "if"
+            ),
+            None,
+        )
+        if argument is None:
+            continue
+
+        value = argument.value
+        if isinstance(value, BooleanValueNode):
+            condition = value.value
+        elif isinstance(value, VariableNode):
+            condition = variable_values.get(value.name.value)
+        else:
+            continue
+
+        if (directive_name == "skip" and condition) or (
+            directive_name == "include" and not condition
+        ):
+            return False
+
+    return True
+
+
+def _requested_field_names(info):
+    """Collect field names from included selections, expanding fragments."""
+    field_names = set()
+    visited_fragments = set()
+
+    def collect(selection_set):
+        if selection_set is None:
+            return
+
+        for selection in selection_set.selections:
+            if not _selection_is_included(selection, info.variable_values):
+                continue
+
+            if isinstance(selection, FieldNode):
+                field_names.add(selection.name.value)
+                collect(selection.selection_set)
+            elif isinstance(selection, InlineFragmentNode):
+                collect(selection.selection_set)
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_name = selection.name.value
+                if fragment_name not in visited_fragments:
+                    visited_fragments.add(fragment_name)
+                    fragment = info.fragments.get(fragment_name)
+                    if fragment:
+                        collect(fragment.selection_set)
+
+    for field_node in info.field_nodes:
+        if _selection_is_included(field_node, info.variable_values):
+            collect(field_node.selection_set)
+
+    return field_names
+
+
+def _prefetch_primary_contacts(profiles, info):
+    requested_fields = _requested_field_names(info)
+    prefetches = {
+        "primaryEmail": Prefetch(
+            "emails",
+            queryset=Email.objects.filter(primary=True),
+            to_attr="_primary_emails",
+        ),
+        "primaryPhone": Prefetch(
+            "phones",
+            queryset=Phone.objects.filter(primary=True),
+            to_attr="_primary_phones",
+        ),
+        "primaryAddress": Prefetch(
+            "addresses",
+            queryset=Address.objects.filter(primary=True),
+            to_attr="_primary_addresses",
+        ),
+    }
+    requested_prefetches = [
+        prefetch
+        for field_name, prefetch in prefetches.items()
+        if field_name in requested_fields
+    ]
+    if requested_prefetches:
+        return profiles.prefetch_related(*requested_prefetches)
+    return profiles
+
+
+def _get_primary_contact(profile, related_name, prefetched_name):
+    """Use prefetched rows when available.
+
+    Preserve the previous latest-by-ID choice when duplicates exist.
+    """
+    prefetched_contacts = getattr(profile, prefetched_name, None)
+    if prefetched_contacts is not None:
+        return prefetched_contacts[-1] if prefetched_contacts else None
+
+    return getattr(profile, related_name).filter(primary=True).order_by("-id").first()
 
 
 def get_claimable_profile(token=None) -> Profile:
@@ -584,13 +700,13 @@ class RestrictedProfileNode(DjangoObjectType):
     contact_method = ContactMethod()
 
     def resolve_primary_email(self: Profile, info, **kwargs):
-        return info.context.primary_email_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "emails", "_primary_emails")
 
     def resolve_primary_phone(self: Profile, info, **kwargs):
-        return info.context.primary_phone_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "phones", "_primary_phones")
 
     def resolve_primary_address(self: Profile, info, **kwargs):
-        return info.context.primary_address_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "addresses", "_primary_addresses")
 
     def resolve_emails(self: Profile, info, **kwargs):
         return self.emails.all()
@@ -1770,7 +1886,8 @@ class Query(graphene.ObjectType):
     @staff_required(required_permission="view")
     def resolve_profiles(self, info, **kwargs):
         service = info.context.service
-        return Profile.objects.filter(service_connections__service=service)
+        profiles = Profile.objects.filter(service_connections__service=service)
+        return _prefetch_primary_contacts(profiles, info)
 
     @login_required
     def resolve_claimable_profile(self, info, **kwargs):

@@ -171,9 +171,7 @@ def test_can_not_delete_primary_email(user_gql_client):
     assert_match_error_code(executed, "PROFILE_MUST_HAVE_PRIMARY_EMAIL")
 
 
-def test_changing_an_email_address_marks_it_unverified(
-    user_gql_client, execution_context_class
-):
+def test_changing_an_email_address_marks_it_unverified(user_gql_client):
     profile = ProfileFactory(user=None)
     email = EmailFactory(profile=profile, verified=True)
     claim_token = ClaimTokenFactory(profile=profile)
@@ -210,7 +208,6 @@ def test_changing_an_email_address_marks_it_unverified(
     executed = user_gql_client.execute(
         CLAIM_PROFILE_MUTATION,
         variables=variables,
-        execution_context_class=execution_context_class,
         allowed_data_fields=["email"],
     )
     assert "errors" not in executed

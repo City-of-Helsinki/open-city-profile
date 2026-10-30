@@ -2,12 +2,16 @@ import uuid
 from string import Template
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils.translation import gettext_lazy as _
 from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles import schema as profiles_schema
 from profiles.enums import AddressType, EmailType, PhoneType
+from profiles.models import Address, Email, Phone
 from services.tests.factories import AllowedDataFieldFactory, ServiceConnectionFactory
 
 from .factories import (
@@ -72,6 +76,230 @@ def test_admin_user_can_query_profiles(superuser_gql_client, profile, service):
     }
     executed = superuser_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
+
+
+def _get_primary_contact_query_counts(superuser_gql_client, service, profile_count):
+    profiles = ProfileFactory.create_batch(profile_count)
+    for profile in profiles:
+        ServiceConnectionFactory(profile=profile, service=service)
+        EmailFactory(profile=profile, primary=True)
+        PhoneFactory(profile=profile, primary=True)
+        AddressFactory(profile=profile, primary=True)
+
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="phone"),
+        AllowedDataFieldFactory(field_name="address"),
+    )
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        primaryEmail { email }
+                        primaryPhone { phone }
+                        primaryAddress { address }
+                    }
+                }
+            }
+        }
+    """
+
+    with CaptureQueriesContext(connection) as captured_queries:
+        executed = superuser_gql_client.execute(query, service=service)
+
+    assert "errors" not in executed
+    edges = executed["data"]["profiles"]["edges"]
+    assert len(edges) == profile_count
+    for edge in edges:
+        node = edge["node"]
+        assert node["primaryEmail"] is not None
+        assert node["primaryPhone"] is not None
+        assert node["primaryAddress"] is not None
+
+    contact_models = (Address, Email, Phone)
+    query_counts = {model._meta.db_table: 0 for model in contact_models}
+    for captured_query in captured_queries.captured_queries:
+        sql = captured_query["sql"].lower()
+        if "select" in sql:
+            for table_name in query_counts:
+                if table_name in sql:
+                    query_counts[table_name] += 1
+
+    return query_counts
+
+
+@pytest.mark.parametrize("profile_count", [1, 3])
+def test_primary_contact_prefetch_queries_each_contact_table_once(
+    superuser_gql_client, service, profile_count
+):
+    query_counts = _get_primary_contact_query_counts(
+        superuser_gql_client, service, profile_count
+    )
+
+    assert query_counts == {
+        model._meta.db_table: 1 for model in (Address, Email, Phone)
+    }
+
+
+@pytest.mark.parametrize("profile_count", [1, 3])
+def test_primary_contact_fallback_queries_each_profile(
+    superuser_gql_client, service, monkeypatch, profile_count
+):
+    monkeypatch.setattr(
+        profiles_schema,
+        "_prefetch_primary_contacts",
+        lambda profiles, info: profiles,
+    )
+    query_counts = _get_primary_contact_query_counts(
+        superuser_gql_client, service, profile_count
+    )
+
+    assert query_counts == {
+        model._meta.db_table: profile_count for model in (Address, Email, Phone)
+    }
+
+
+def test_profiles_query_returns_latest_primary_contacts(superuser_gql_client, service):
+    profile = ProfileFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    first_phone = PhoneFactory(profile=profile, phone="+358111", primary=True)
+    latest_phone = PhoneFactory(profile=profile, phone="+358222", primary=True)
+    first_address = AddressFactory(profile=profile, address="First", primary=True)
+    latest_address = AddressFactory(profile=profile, address="Latest", primary=True)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="phone"),
+        AllowedDataFieldFactory(field_name="address"),
+    )
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        primaryPhone { phone }
+                        primaryAddress { address }
+                    }
+                }
+            }
+        }
+    """
+
+    executed = superuser_gql_client.execute(query, service=service)
+
+    assert "errors" not in executed
+    node = executed["data"]["profiles"]["edges"][0]["node"]
+    assert node["primaryPhone"]["phone"] == latest_phone.phone
+    assert node["primaryAddress"]["address"] == latest_address.address
+    assert first_phone.phone != latest_phone.phone
+    assert first_address.address != latest_address.address
+
+
+def test_primary_contact_fallback_returns_latest_primary_contacts():
+    profile = ProfileFactory()
+    PhoneFactory(profile=profile, phone="+358111", primary=True)
+    latest_phone = PhoneFactory(profile=profile, phone="+358222", primary=True)
+    AddressFactory(profile=profile, address="First", primary=True)
+    latest_address = AddressFactory(profile=profile, address="Latest", primary=True)
+
+    assert (
+        profiles_schema._get_primary_contact(profile, "phones", "_primary_phones")
+        == latest_phone
+    )
+    assert (
+        profiles_schema._get_primary_contact(profile, "addresses", "_primary_addresses")
+        == latest_address
+    )
+
+
+def test_profiles_query_does_not_prefetch_excluded_contacts(
+    superuser_gql_client, service
+):
+    profiles = ProfileFactory.create_batch(2)
+    for profile in profiles:
+        ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="email"),
+        AllowedDataFieldFactory(field_name="phone"),
+        AllowedDataFieldFactory(field_name="address"),
+    )
+
+    query = """
+        query($shouldSkip: Boolean!, $shouldInclude: Boolean!) {
+            profiles {
+                edges {
+                    node {
+                        primaryEmail @skip(if: $shouldSkip) { email }
+                        primaryPhone @include(if: $shouldInclude) { phone }
+                        primaryAddress @include(if: false) { address }
+                        ... on ProfileNode @skip(if: $shouldSkip) {
+                            primaryAddress { address }
+                        }
+                        ...ContactFields @skip(if: $shouldSkip)
+                    }
+                }
+            }
+        }
+
+        fragment ContactFields on ProfileNode {
+            primaryPhone { phone }
+        }
+    """
+
+    with CaptureQueriesContext(connection) as captured_queries:
+        executed = superuser_gql_client.execute(
+            query,
+            variables={"shouldSkip": True, "shouldInclude": False},
+            service=service,
+        )
+
+    assert "errors" not in executed
+    contact_table_names = {
+        Address._meta.db_table,
+        Email._meta.db_table,
+        Phone._meta.db_table,
+    }
+    assert not any(
+        table_name in captured_query["sql"].lower()
+        for captured_query in captured_queries.captured_queries
+        for table_name in contact_table_names
+    )
+
+
+def test_profiles_query_does_not_prefetch_unrequested_contacts(
+    superuser_gql_client, service
+):
+    profiles = ProfileFactory.create_batch(3)
+    for profile in profiles:
+        ServiceConnectionFactory(profile=profile, service=service)
+    service.allowed_data_fields.add(AllowedDataFieldFactory(field_name="name"))
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node { firstName }
+                }
+            }
+        }
+    """
+
+    with CaptureQueriesContext(connection) as captured_queries:
+        executed = superuser_gql_client.execute(query, service=service)
+
+    assert "errors" not in executed
+    assert len(executed["data"]["profiles"]["edges"]) == len(profiles)
+    contact_table_names = {
+        Address._meta.db_table,
+        Email._meta.db_table,
+        Phone._meta.db_table,
+    }
+    assert not any(
+        table_name in captured_query["sql"].lower()
+        for captured_query in captured_queries.captured_queries
+        for table_name in contact_table_names
+    )
 
 
 def test_admin_user_cant_query_fields_that_are_not_allowed(
