@@ -50,6 +50,7 @@ from open_city_profile.exceptions import (
     ServiceNotIdentifiedError,
     TokenExpiredError,
 )
+from profiles.execution import PrimaryContactBatchingExecutionContext
 from profiles.models import Profile
 
 error_codes_shared = {
@@ -100,6 +101,8 @@ def _get_error_code(exception):
 
 
 class GraphQLView(BaseGraphQLView):
+    execution_context_class = PrimaryContactBatchingExecutionContext
+
     def _run_custom_validators(self, query):
         result = None
 

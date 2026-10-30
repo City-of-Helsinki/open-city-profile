@@ -7,6 +7,7 @@ from guardian.shortcuts import assign_perm
 
 from open_city_profile.tests import to_graphql_name
 from open_city_profile.tests.asserts import assert_match_error_code
+from profiles import schema as profiles_schema
 from profiles.enums import AddressType, EmailType, PhoneType
 from services.tests.factories import AllowedDataFieldFactory, ServiceConnectionFactory
 
@@ -72,6 +73,58 @@ def test_admin_user_can_query_profiles(superuser_gql_client, profile, service):
     }
     executed = superuser_gql_client.execute(query, service=service)
     assert executed["data"] == expected_data
+
+
+def test_profiles_query_returns_latest_primary_contacts(superuser_gql_client, service):
+    profile = ProfileFactory()
+    ServiceConnectionFactory(profile=profile, service=service)
+    first_phone = PhoneFactory(profile=profile, phone="+358111", primary=True)
+    latest_phone = PhoneFactory(profile=profile, phone="+358222", primary=True)
+    first_address = AddressFactory(profile=profile, address="First", primary=True)
+    latest_address = AddressFactory(profile=profile, address="Latest", primary=True)
+    service.allowed_data_fields.add(
+        AllowedDataFieldFactory(field_name="phone"),
+        AllowedDataFieldFactory(field_name="address"),
+    )
+
+    query = """
+        {
+            profiles {
+                edges {
+                    node {
+                        primaryPhone { phone }
+                        primaryAddress { address }
+                    }
+                }
+            }
+        }
+    """
+
+    executed = superuser_gql_client.execute(query, service=service)
+
+    assert "errors" not in executed
+    node = executed["data"]["profiles"]["edges"][0]["node"]
+    assert node["primaryPhone"]["phone"] == latest_phone.phone
+    assert node["primaryAddress"]["address"] == latest_address.address
+    assert first_phone.phone != latest_phone.phone
+    assert first_address.address != latest_address.address
+
+
+def test_primary_contact_fallback_returns_latest_primary_contacts():
+    profile = ProfileFactory()
+    PhoneFactory(profile=profile, phone="+358111", primary=True)
+    latest_phone = PhoneFactory(profile=profile, phone="+358222", primary=True)
+    AddressFactory(profile=profile, address="First", primary=True)
+    latest_address = AddressFactory(profile=profile, address="Latest", primary=True)
+
+    assert (
+        profiles_schema._get_primary_contact(profile, "phones", "_primary_phones")
+        == latest_phone
+    )
+    assert (
+        profiles_schema._get_primary_contact(profile, "addresses", "_primary_addresses")
+        == latest_address
+    )
 
 
 def test_admin_user_cant_query_fields_that_are_not_allowed(

@@ -10,18 +10,9 @@ from graphene.utils.str_converters import to_snake_case
 from graphene_django import DjangoObjectType
 from graphene_django.forms.converter import convert_form_field
 from graphene_django.types import ALL_FIELDS
-from graphql_sync_dataloaders import SyncDataLoader
 from parler.models import TranslatableModel
 
 from open_city_profile.exceptions import FieldNotAllowedError, ServiceNotIdentifiedError
-from profiles.loaders import (
-    addresses_by_profile_id_loader,
-    emails_by_profile_id_loader,
-    phones_by_profile_id_loader,
-    primary_address_for_profile_loader,
-    primary_email_for_profile_loader,
-    primary_phone_for_profile_loader,
-)
 
 
 class JWTMiddleware:
@@ -53,31 +44,6 @@ def convert_form_field_to_uuid_list(field):
 
 class UUIDMultipleChoiceFilter(MultipleChoiceFilter):
     field_class = UUIDMultipleChoiceField
-
-
-_LOADERS = {
-    "addresses_by_profile_id_loader": addresses_by_profile_id_loader,
-    "emails_by_profile_id_loader": emails_by_profile_id_loader,
-    "phones_by_profile_id_loader": phones_by_profile_id_loader,
-    "primary_address_for_profile_loader": primary_address_for_profile_loader,
-    "primary_email_for_profile_loader": primary_email_for_profile_loader,
-    "primary_phone_for_profile_loader": primary_phone_for_profile_loader,
-}
-
-
-class GQLDataLoaders:
-    def __init__(self):
-        self.cached_loaders = False
-
-    def resolve(self, next, root, info, **kwargs):
-        context = info.context
-
-        if not self.cached_loaders:
-            for loader_name, loader_function in _LOADERS.items():
-                setattr(context, loader_name, SyncDataLoader(loader_function))
-            self.cached_loaders = True
-
-        return next(root, info, **kwargs)
 
 
 def _parler_field_resolver(attname, instance, info, language=None):
