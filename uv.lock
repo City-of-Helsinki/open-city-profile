@@ -553,18 +553,6 @@ wheels = [
 ]
 
 [[package]]
-name = "graphql-sync-dataloaders"
-version = "0.1.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "graphql-core" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/01/ba/329bda79f7876804d03da659f9b6317ff30f34a1a93c3f4b097f4038d618/graphql-sync-dataloaders-0.1.1.tar.gz", hash = "sha256:67c708e89c46b401188b773af055850278e4e1d5af2f66bf31d9bd0d504d95b9", size = 8596, upload-time = "2022-09-28T13:16:35.699Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/04/5176bd5dabb56f835ed80ba2367e190575b3c9f8015f8d2ce9058a9a4fab/graphql_sync_dataloaders-0.1.1-py3-none-any.whl", hash = "sha256:f003f1184417acf156b2f73c4f0e76487514a455143a22ab796c110db4bc4693", size = 8126, upload-time = "2022-09-28T13:16:36.971Z" },
-]
-
-[[package]]
 name = "identify"
 version = "2.6.19"
 source = { registry = "https://pypi.org/simple" }
@@ -708,7 +696,6 @@ dependencies = [
     { name = "graphene-federation" },
     { name = "graphene-validator" },
     { name = "graphql-core" },
-    { name = "graphql-sync-dataloaders" },
     { name = "iso3166" },
     { name = "psycopg", extra = ["c"] },
     { name = "pyjwt", extra = ["crypto"] },
@@ -760,7 +747,6 @@ requires-dist = [
     { name = "graphene-federation", specifier = "==3.1.4" },
     { name = "graphene-validator", url = "https://github.com/City-of-Helsinki/graphene-validator/archive/refs/heads/graphene3.zip" },
     { name = "graphql-core", specifier = "==3.2.6" },
-    { name = "graphql-sync-dataloaders" },
     { name = "iso3166" },
     { name = "psycopg", extras = ["c"] },
     { name = "pyjwt", extras = ["crypto"] },

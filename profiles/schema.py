@@ -86,6 +86,7 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+
 PERMISSION_DENIED_MESSAGE = gettext_lazy(
     "You do not have permission to perform this action."
 )
@@ -112,6 +113,19 @@ LoginMethodTypeEnum = graphene.Enum.from_enum(
 
 """Provides the updated Profile instance as a keyword argument called `instance`."""
 profile_updated = django.dispatch.Signal()
+
+
+def _get_primary_contact(profile, related_name, prefetched_name):
+    """Use prefetched rows when available.
+
+    If duplicates exist, select the latest by ID. This is to preserve
+    previous behavior from graphql-sync-dataloaders.
+    """
+    prefetched_contacts = getattr(profile, prefetched_name, None)
+    if prefetched_contacts is not None:
+        return prefetched_contacts[-1] if prefetched_contacts else None
+
+    return getattr(profile, related_name).filter(primary=True).order_by("-id").first()
 
 
 def get_claimable_profile(token=None) -> Profile:
@@ -584,13 +598,13 @@ class RestrictedProfileNode(DjangoObjectType):
     contact_method = ContactMethod()
 
     def resolve_primary_email(self: Profile, info, **kwargs):
-        return info.context.primary_email_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "emails", "_primary_emails")
 
     def resolve_primary_phone(self: Profile, info, **kwargs):
-        return info.context.primary_phone_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "phones", "_primary_phones")
 
     def resolve_primary_address(self: Profile, info, **kwargs):
-        return info.context.primary_address_for_profile_loader.load(self.id)
+        return _get_primary_contact(self, "addresses", "_primary_addresses")
 
     def resolve_emails(self: Profile, info, **kwargs):
         return self.emails.all()
