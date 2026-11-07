@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.9](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.8...open-city-profile-v2.13.9) (2026-11-07)
+
+
+### Dependencies
+
+* Bump oauthlib from 4.0.0 to 4.0.1 ([8429eb4](https://github.com/City-of-Helsinki/open-city-profile/commit/8429eb4269c9751700800a40df84c59870b73db2))
+
 ## [2.13.8](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.7...open-city-profile-v2.13.8) (2026-10-26)
 
 
