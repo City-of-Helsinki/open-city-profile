@@ -237,6 +237,7 @@ strategy:
     created: null
     extra_data: null
     id: null
+    id_key: null
     modified: null
     provider: null
     uid: null
