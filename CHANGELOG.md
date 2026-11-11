@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.13.9](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.8...open-city-profile-v2.13.9) (2026-11-11)
+
+
+### Bug Fixes
+
+* Add missing social auth field to sanitizer config ([93a42c6](https://github.com/City-of-Helsinki/open-city-profile/commit/93a42c67c90a5899b25928626661caa950db74e6))
+
+
+### Dependencies
+
+* Bump django-helusers from 1.3.0 to 1.3.2 ([242f5fd](https://github.com/City-of-Helsinki/open-city-profile/commit/242f5fdad08d4c76820292ea60b5a9f5e5f118ef))
+* Bump oauthlib from 4.0.0 to 4.0.1 ([8429eb4](https://github.com/City-of-Helsinki/open-city-profile/commit/8429eb4269c9751700800a40df84c59870b73db2))
+* Bump social-auth-core from 5.2.0 to 6.2.0 ([9f676a3](https://github.com/City-of-Helsinki/open-city-profile/commit/9f676a32f9170a6df88c842445c4e48db4622200))
+* Drop graphql-sync-dataloaders ([eeb3022](https://github.com/City-of-Helsinki/open-city-profile/commit/eeb3022c1ba621f596f1a571857d7526b4861696))
+
 ## [2.13.8](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.7...open-city-profile-v2.13.8) (2026-10-26)
 
 
