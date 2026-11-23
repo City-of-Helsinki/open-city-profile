@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.10](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.9...open-city-profile-v2.13.10) (2026-11-23)
+
+
+### Dependencies
+
+* Bump graphql-core from 3.2.6 to 3.2.12 ([68014d7](https://github.com/City-of-Helsinki/open-city-profile/commit/68014d73c7eb09b6bb974a1b1f52b5338db6bb93))
+
 ## [2.13.9](https://github.com/City-of-Helsinki/open-city-profile/compare/open-city-profile-v2.13.8...open-city-profile-v2.13.9) (2026-11-11)
 
 
